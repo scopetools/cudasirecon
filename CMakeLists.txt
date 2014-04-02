@@ -1,11 +1,12 @@
 #######################################################################
 # Build instruction for CUDA SIMrecon project
-# 1. Prerequisite
+# 1. Prerequisites
 #  1.1 Cmake (> 2.8.11)
 #  1.2 CUDA SDK (>5.0)
 #  1.3a. If Linux or Mac OS X, GCC (< 4.8)
-#  1.3b. If Windows, Visual C++ (> 2008)
+#  1.3b. If Windows, Visual C++ (> 2012)
 #  1.4 Boost libraries (> 1.48)
+#  1.5 IVE libraries (download from http://msg.ucsf.edu/IVE/Download/index.html). Place the priism-4.2.9/ folder under this folder where this file is located
 #
 # 2. Make a build dir (assumed to be "build" under the main folder where this 
 #    CMakeLists.txt is located) and cd into it
@@ -107,7 +108,7 @@ set(CUDA_NVCC_FLAGS
 
 if(WIN32)
   set(CUDA_NVCC_FLAGS
-     ${CUDA_NVCC_FLAGS};-I${Boost_INCLUDE_DIRS};--use-local-env;--cl-version=2010)
+     ${CUDA_NVCC_FLAGS};-I${Boost_INCLUDE_DIRS};--use-local-env;--cl-version=2012)
 endif(WIN32)
 
 add_subdirectory(Buffers)
