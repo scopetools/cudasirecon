@@ -108,7 +108,7 @@ set(CUDA_NVCC_FLAGS
 
 if(WIN32)
   set(CUDA_NVCC_FLAGS
-     ${CUDA_NVCC_FLAGS};-I${Boost_INCLUDE_DIRS};--use-local-env;--cl-version=2012)
+     ${CUDA_NVCC_FLAGS};-I${Boost_INCLUDE_DIRS};--use-local-env;--cl-version=2013)
 endif(WIN32)
 
 add_subdirectory(Buffers)
