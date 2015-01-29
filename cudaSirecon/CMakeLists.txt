@@ -11,8 +11,9 @@ if(WIN32)# OR APPLE)
 endif()
 
 if(WIN32)
-	set(PRIISM_LIB_PATH "${CMAKE_SOURCE_DIR}/priism-4.2.9/Win/win64/LIB")
-	include_directories("${CMAKE_SOURCE_DIR}/priism-4.2.9/Win/win64/INCLUDE/")
+	set(PRIISM_LIB_PATH "${CMAKE_SOURCE_DIR}/IVE/win64/LIB")
+	include_directories("${CMAKE_SOURCE_DIR}/IVE/win64/INCLUDE/")
+    link_directories ( ${PRIISM_LIB_PATH} )
     if(WITH_TIFF)
         include_directories( ${TIFF_INCLUDE_DIR} )
         link_directories ( ${TIFF_LIBRARY} ) 
@@ -30,12 +31,12 @@ endif(WIN32)
 
 if(WIN32)
   message(STATUS "PRIISM_LIB_PATH: " ${PRIISM_LIB_PATH})
-  find_library(IMLIB libimlib
-    PATHS ${PRIISM_LIB_PATH}
-    REQUIRED)
-  find_library(IVELIB libive
-    PATHS ${PRIISM_LIB_PATH}
-    REQUIRED)
+  # find_library(IMLIB libimlib.a
+  #   PATHS ${PRIISM_LIB_PATH}
+  #   REQUIRED)
+  # find_library(IVELIB ive
+  #   PATHS ${PRIISM_LIB_PATH}
+  #   REQUIRED)
 else(WIN32)
   find_library(IMLIB imlib 
     PATHS ${PRIISM_LIB_PATH}
@@ -114,8 +115,10 @@ if(WIN32)
       cudaSirecon
       gpuFunctions
       Buffer
-      ${IMLIB}
-      ${IVELIB}
+      # ${IMLIB}
+      # ${IVELIB}
+	  libimlib
+	  libive
       ${LAPACK}
       ${BLAS}
     )
