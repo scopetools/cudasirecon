@@ -3,19 +3,25 @@
 
 int main(int argc, char **argv)
 {
-  SIM_Reconstructor myreconstructor(argc, argv);
+  try {
+    SIM_Reconstructor myreconstructor(argc, argv);
 
-  for (int it = 0; it < myreconstructor.getNTimes(); ++it) {
-    for (int iw = 0; iw < 1; ++iw) {
-      myreconstructor.loadAndRescaleImage(it, iw);
-      myreconstructor.setCurTimeIdx(it);
-      myreconstructor.processOneVolume();
-      myreconstructor.writeResult(it, iw);
+    for (int it = 0; it < myreconstructor.getNTimes(); ++it) {
+      for (int iw = 0; iw < 1; ++iw) {
+        myreconstructor.loadAndRescaleImage(it, iw);
+        myreconstructor.setCurTimeIdx(it);
+        myreconstructor.processOneVolume();
+        myreconstructor.writeResult(it, iw);
+      }
     }
-  }
 
 #ifndef __SIRECON_USE_TIFF__
-  myreconstructor.closeFiles();
+    myreconstructor.closeFiles();
 #endif
+  }
+  catch (std::exception &e) {
+    std::cerr << "\n!!Error occurred: " << e.what() << std::endl;
+    return 0;
+  }
   return 0;
 }

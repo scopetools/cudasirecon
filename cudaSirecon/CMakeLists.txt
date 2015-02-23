@@ -150,7 +150,7 @@ else(WIN32)
     lapack
     ${TIFF_LIBRARIES}
     X11
-    nvidia-ml
+#    nvidia-ml
   )
 endif(WIN32)
 CUDA_ADD_CUFFT_TO_TARGET(cudaSireconDriver)
