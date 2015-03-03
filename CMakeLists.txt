@@ -103,6 +103,16 @@ else()
   find_package( Boost REQUIRED COMPONENTS program_options filesystem regex system)
 endif(WIN32)
 
+if(WIN32 OR APPLE)
+  link_directories ( ${Boost_LIBRARY_DIRS} )
+  include_directories(  ${Boost_INCLUDE_DIRS} )
+endif()
+
+if(APPLE)
+  find_package(X11)
+  link_directories ( ${X11_INCLUDE_DIR}/../lib )
+endif()
+
 set(CUDA_NVCC_FLAGS
   -gencode=arch=compute_20,code=sm_20;-gencode=arch=compute_30,code=sm_30;-gencode=arch=compute_35,code=sm_35)
 

@@ -14,7 +14,7 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->phaseSteps = 0;
   pParams->norders_output = 0;
   pParams->bTwolens = 0;
-  pParams->bFastSIM = 1;
+  pParams->bFastSIM = 0;
 
   pParams->zoomfact = 2;
   pParams->z_zoom = 1;
@@ -1519,6 +1519,7 @@ int SIM_Reconstructor::setupProgramOptions()
     ("input-file", po::value<std::string>()->required(), "input file (or data folder in TIFF mode)")
     ("output-file", po::value<std::string>()->required(), "output file (or filename pattern in TIFF mode)")
     ("otf-file", po::value<std::string>()->required(), "OTF file")
+    ("usecorr", po::value<std::string>(), "use the flat-field correction file provided")
     ("ndirs", po::value<int>(&m_myParams.ndirs)->default_value(3),
      "number of directions")
     ("nphases", po::value<int>(&m_myParams.nphases)->default_value(5),
@@ -1551,6 +1552,8 @@ int SIM_Reconstructor::setupProgramOptions()
      "user given pattern vector k0 angles for all directions")
     ("otfRA", po::value<int>(&m_myParams.bRadAvgOTF)->implicit_value(1),
      "using rotationally averaged OTF")
+    ("fastSI", po::value<int>(&m_myParams.bFastSIM)->implicit_value(1),
+     "SIM data is organized in Z->Angle->Phase order; default being Angle->Z->Phase")
     ("k0searchAll", po::value<int>(&m_myParams.bUseTime0k0)->implicit_value(0),
      "search for k0 at all time points")
     ("equalizez", po::value<int>(&m_myParams.equalizez)->implicit_value(true), 
@@ -1605,6 +1608,11 @@ int SIM_Reconstructor::setParams()
   if (m_varsmap.count("otf-file")) {
     strcpy(m_myParams.otffiles, m_varsmap["otf-file"].as<std::string>().c_str());
     // m_myParams.otffilein = 1;
+  }
+
+  if (m_varsmap.count("usecorr")) {
+    strcpy(m_myParams.corrfiles, m_varsmap["usecorr"].as<std::string>().c_str());
+    m_myParams.bUsecorr = 1;
   }
 
   if (m_varsmap.count("forcemodamp")) {
@@ -1787,7 +1795,9 @@ void SIM_Reconstructor::writeResult(int it, int iw)
   //                   &minval, &maxval);
   m_reconData.outbuffer.set(&outbufferHost, 0, outbufferHost.getSize(), 0);
 
+#ifndef __clang__
   float t1 = omp_get_wtime();
+#endif
 
 #ifdef __SIRECON_USE_TIFF__
   CImg<> outCimg((float*) outbufferHost.getPtr(),
@@ -1829,8 +1839,10 @@ void SIM_Reconstructor::writeResult(int it, int iw)
   }
 #endif
 
+#ifndef __clang__
   float t2 = omp_get_wtime();
   printf("amin, amax took: %f s\n", t2 - t1);
+#endif
 
   printf("Time point %d, wave %d done\n", it, iw);
 }

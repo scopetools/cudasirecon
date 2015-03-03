@@ -83,7 +83,7 @@ elseif(APPLE)
 else ()
   CUDA_ADD_LIBRARY(
     cudaSirecon
-    ${SHARED_OR_NOT}
+#    ${SHARED_OR_NOT}
     cudaSirecon.cpp
   )
 endif()
@@ -154,6 +154,3 @@ else(WIN32)
   )
 endif(WIN32)
 CUDA_ADD_CUFFT_TO_TARGET(cudaSireconDriver)
-
-
-

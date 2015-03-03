@@ -17,7 +17,9 @@
 #include <cmath>
 #include <stdexcept>
 
+#ifndef __clang__
 #include <omp.h>
+#endif
 
 #include <memory>
 #include <cfloat>
@@ -158,22 +160,22 @@ struct ReconParams {
   float constbkgd;
   int bBgInExtHdr; /** In Andor EMCCD, background varies with each exposure, esp. in EM mode. Hidden-behind-aluminum-foil pixels can be used to estimate background of each exposure and stored in the extended header. When this option is true, the 3rd float of the extended header stores such estimated background values. */
   int   bUsecorr;    /** whether to use a camera flat-fielding (or correction) file */
-  char  corrfiles[200];  /** name of the camera correction file if bUsecorr is 1 */
+  char  corrfiles[400];  /** name of the camera correction file if bUsecorr is 1 */
   float readoutNoiseVar;
   float electrons_per_bit;
 
   /* Debugging flags */
   int   bMakemodel;  /** whether to fake an ideal point source and obtain a recontruction of it (i.e., an effective PSF in some sense) */
   int   bSaveSeparated; /** whether to save separated bands and then quit before filterbands */
-  char  fileSeparated[200];
+  char  fileSeparated[400];
   int   bSaveAlignedRaw; /** whether to save dirft-corrected raw images (within each direction) and then quit before filterbands */
-  char  fileRawAligned[200];
+  char  fileRawAligned[400];
   int   bSaveOverlaps; /** whether to save makeoverlaps() output into a file */
-  char  fileOverlaps[200];
+  char  fileOverlaps[400];
 
-  char ifiles[200];
-  char ofiles[200];
-  char otffiles[200];
+  char ifiles[400];
+  char ofiles[400];
+  char otffiles[400];
   int ifilein;
   int ofilein;
   int otffilein;
