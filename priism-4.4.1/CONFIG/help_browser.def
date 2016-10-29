@@ -1,0 +1,62 @@
+Method WMHelp
+  Label Internal .hlp Viewer
+  DefaultFor Any
+  BrowserFixed yes
+  Browser WMHelp
+  ContactCommandFixed yes
+  ContactCommand %b '%s'
+  LaunchCommandFixed yes
+  UsesHTMLFixed yes
+  UsesHTML no
+
+Method XWindowsNetscapeCompatible
+  Label X Windows Netscape Compatible
+  DefaultFor IRIX Linux
+  BrowserFixed no
+  Browser ive_netscape_wrapper
+  ContactCommandFixed yes
+  ContactCommand %b -remote 'OpenURL(%s)'
+  LaunchCommandFixed yes
+  LaunchCommand %b '%s' &
+  UsesHTMLFixed yes
+  UsesHTML yes
+
+Method AppleScriptWebBrowser
+  Label AppleScript OpenURL
+  BrowserFixed no
+  Browser Internet Explorer
+  ContactCommandFixed yes
+  ContactCommand osascript -e 'tell application "%b" to OpenURL "%s"' >/dev/null
+  LaunchCommandFixed yes
+  UsesHTMLFixed yes
+  UsesHTML yes
+
+Method KonquerorKDE3
+  Label Konqueror (KDE 3)
+  BrowserFixed yes
+  Browser konqueror
+  ContactCommandFixed yes
+  ContactCommand dcop `dcopfind -a '%b-*'` KonquerorIface openBrowserWindow '%s' >/dev/null 2>&1
+  LaunchCommandFixed yes
+  LaunchCommand %b '%s' >/dev/null 2>&1 &
+  UsesHTMLFixed yes
+  UsesHTML yes
+
+Method Safari
+  Label Safari
+  DefaultFor Mac
+  BrowserFixed yes
+  Browser Safari
+  ContactCommandFixed yes
+  ContactCommand PriismShowURLInSafari '%s' >/dev/null
+  LaunchCommandFixed yes
+  UsesHTMLFixed yes
+  UsesHTML yes
+
+Method Custom
+  Label Custom
+  BrowserFixed no
+  ContactCommandFixed no
+  LaunchCommandFixed no
+  UsesHTMLFixed no
+  UsesHTML yes

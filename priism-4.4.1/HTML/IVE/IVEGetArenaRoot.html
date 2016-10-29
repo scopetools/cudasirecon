@@ -1,0 +1,53 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEGetArenaRoot</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVEGetArenaRoot.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEGetArenaRoot</H1>
+<H2>Overview</H2>
+<P>IVEGetArenaRoot returns the value stored in a reserved part of
+an <A HREF="IVEArena.html">IVEArena</A>.  Unrelated processes may use
+IVEGetArenaRoot and its counterpart,
+<A HREF="IVESetArenaRoot.html">IVESetArenaRoot</A>, to exchange the information
+needed to start communication.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_shm.h"</CODE>
+<BR><CODE>IVEPtrRep IVEGetArenaRoot(IVEArena arena);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P>There is no Fortran interface.
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>arena</VAR><DD><VAR>arena</VAR> is the arena on which to operate.
+</DL>
+<H2>Return value</H2>
+<P>Returns the value stored in the root location for <VAR>arena</VAR>.
+Until IVESetArenaRoot has been called for the arena, the returned value
+will be zero.
+<H2>Cross references</H2>
+<P><A HREF="IVESetArenaRoot.html">IVESetArenaRoot</A>,
+<A HREF="IVECompareSwapArenaRoot.html">IVECompareSwapArenaRoot</A>,
+<A HREF="IVEArena.html">IVEArena</A>, and
+<A HREF="IVEPtrRep.html">IVEPtrRep</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified May 7, 2002
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

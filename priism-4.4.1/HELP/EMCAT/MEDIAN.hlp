@@ -1,0 +1,21 @@
+KEYWORD
+
+DESCRIPTION
+      The processing pipeline for alignment and
+      reconstruction of EM tomography data includes
+      the option to run a median smoothing filter
+      on the raw data before passing it to the
+      alignment, mass-normalization, and tilt axis
+      determination calculations.  The reconstruction
+      is still done with the raw data.
+
+      The median filter in the pipeline is Priism's
+      Filter2D using the median filter option with the
+      enhance mode off.  There are two input parameters.
+      One selects the dimension in full resolution
+      pixels of the square region in the input that
+      affects the value at pixel in the output.  Using
+      a larger kernel size results in a smoother (more
+      heavily filtered) result.  The second parameter
+      selects which resolution (zero is the highest)
+      to process from the input file.

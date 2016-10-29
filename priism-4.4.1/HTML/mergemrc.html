@@ -1,0 +1,804 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: mergemrc</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the application to merge (and reorder if desired) Priism datasets.">
+  <META NAME="Keywords" CONTENT="Priism,conversion">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="mergemrc">Merge Files</A></H1>
+<H2>Overview</H2>
+<P>This application merges sets of sections from one or more dataset files
+into a new dataset and can be used to reorder the sections as well.  The
+program has two interfaces:  a <A HREF="#GraphicalInterface">graphical
+interface</A> which assumes that the datasets can be stacked along either
+the z, wavelength, or time dimensions (the sets must have the same dimensions
+in the other four dimensions) or a <A HREF="#CommandLineInterface">command
+line interface</A> which in addition to the capabilities of the graphical
+interface allows merging of sequences of sections without regard to how they
+are structured in z, wavelength, or time.  In either case, the merge/reorder
+operation can not be done in place:  the output file must be different than
+any of the input files.
+
+<H3>Topics</H3>
+<P>
+  Overview |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  <A HREF="#CommandLineInterface">Command line interface</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="Priism.html">Priism</A> |
+  <A HREF="CopyRegion.html">CopyRegion</A>
+
+<HR>
+
+<H2><A NAME="GraphicalInterface">Graphical Interface</A></H2>
+<P>You can start the graphical interface by selecting the
+<EM>Merge/Reorder</EM> option from the <EM>File</EM> menu in
+<A HREF="Priism.html">Priism</A> or by entering <CODE>mergemrc_i</CODE>
+at the command line.
+
+<P>The key part of the interface is the
+<A HREF="#Datasets">central section</A>; it is there
+that you construct the list of ranges of sections to combine in the
+output file.  Once you have selected that list, enter the name of
+the output file in the top line of the dialog (or you can press
+the <EM>Output file</EM> button to bring up a file selection dialog) and
+then press the <EM>DoIt</EM> button at the bottom right to generate the result.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  Graphical interface |
+  <A HREF="#CommandLineInterface">Command line interface</A> |
+  <A HREF="#PixelMode">Pixel mode</A> |
+  <A HREF="#Interleaving">Interleaving</A> |
+  <A HREF="#ExtendedHeader">Extended header</A> |
+  <A HREF="#Datasets">Datasets to merge</A> |
+  <A HREF="#AppendMode">Append mode</A> |
+  <A HREF="#FileSizes">Sizes</A> |
+  <A HREF="#ZRange">Z range</A> |
+  <A HREF="#WRange">Wavelength range</A> |
+  <A HREF="#TRange">Time range</A> |
+  <A HREF="#XYRange">X/Y range</A>
+<HR>
+
+<H2><A NAME="PixelMode">Pixel Mode</A></H2>
+<P>When working with the graphical interface, use this menu to modify the
+numeric format used to store that value at each pixel in the output file.
+The options are:
+<DL>
+  <DT>Same as first input file
+  <DD>The format used is the one used in the first file listed under
+    <A HREF="#Datasets">Datasets to merge</A>.
+
+  <DT>Unsigned 8 bit integer
+  <DD>This is also referred to as <EM>Byte mode</EM>.
+
+  <DT>Signed 16 bit integer
+  <DD>This is also referred to as <EM>Short mode</EM>.
+
+  <DT>Floating-point
+  <DD>Each pixel is stored as a 32 bit IEEE floating-point value.
+
+  <DT>Complex (2 signed integers)
+  <DD>Each pixel is treated as a complex number; the real and imaginary
+    parts are each stored as 16 bit signed integers.
+
+  <DT>Complex (2 floating-point values)
+  <DD>Each pixel is treated as a complex number; the real and imaginary
+    parts are each stored as 32 bit IEEE floating-point values.
+
+  <DT>Unsigned 16 bit integer
+  <DD>This format is new in IVE 4 and is not a standard MRC format.
+
+  <DT>Signed 32 bit integer
+  <DD>This format is new in IVE 4 and is not a standard MRC format.
+
+  <DT>Unsigned 4 bit integer
+  <DD>This format is new in IVE 4.4.0 and is not a standard MRC format.
+</DL>
+
+<P>When converting to complex values from a real value, mergemrc sets the
+imaginary part to zero.  When converting from a complex value to a real value,
+mergemrc discards the imaginary part.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  <A HREF="#CommandLineInterface">Command line interface</A> |
+  Pixel mode |
+  <A HREF="#Interleaving">Interleaving</A> |
+  <A HREF="#ExtendedHeader">Extended header</A> |
+  <A HREF="#Datasets">Datasets to merge</A> |
+  <A HREF="#AppendMode">Append mode</A> |
+  <A HREF="#FileSizes">Sizes</A> |
+  <A HREF="#ZRange">Z range</A> |
+  <A HREF="#WRange">Wavelength range</A> |
+  <A HREF="#TRange">Time range</A> |
+  <A HREF="#XYRange">X/Y range</A>
+<HR>
+
+<H2><A NAME="Interleaving">Interleaving</A></H2>
+<P>When working with the graphical interface, use this menu to set how
+the z, wavelength, and time dimensions are arranged in the output file.
+The options are:
+
+<DL>
+  <DT>Non-interleaved (ZTW)
+  <DD>Sections with that same time and wavelength indices are
+    adjacent in the output file and appear in order of increasing z index.
+    Given two sections with the same wavelength indices and different time
+    indices, the one with the smaller time index appears first.  Given
+    two sections with different wavelength indices, the one with the
+    smaller wavelength index appears first.
+
+  <DT>Interleaved (WZT)
+  <DD>Sections with that same z and time indices are
+    adjacent in the output file and appear in order of increasing wavelength index.
+    Given two sections with the same time indices and different z
+    indices, the one with the smaller z index appears first.  Given
+    two sections with different time indices, the one with the
+    smaller time index appears first.
+
+  <DT>Interleaved (ZWT)
+  <DD>Sections with that same wavelength and time indices are
+    adjacent in the output file and appear in order of increasing z index.
+    Given two sections with the same time indices and different wavelength
+    indices, the one with the smaller wavelength index appears first.  Given
+    two sections with different time indices, the one with the
+    smaller time index appears first.
+</DL>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  <A HREF="#CommandLineInterface">Command line interface</A> |
+  <A HREF="#PixelMode">Pixel mode</A> |
+  Interleaving |
+  <A HREF="#ExtendedHeader">Extended header</A> |
+  <A HREF="#Datasets">Datasets to merge</A> |
+  <A HREF="#AppendMode">Append mode</A> |
+  <A HREF="#FileSizes">Sizes</A> |
+  <A HREF="#ZRange">Z range</A> |
+  <A HREF="#WRange">Wavelength range</A> |
+  <A HREF="#TRange">Time range</A> |
+  <A HREF="#XYRange">X/Y range</A>
+<HR>
+
+<H2><A NAME="ExtendedHeader">Extended Header</A></H2>
+<P>You can perform two two operations on the extended header
+when merging and reordering files.  The first is, for each section
+written to the output file, to copy part or all of the extended header
+entries that were associated with that section.  In the graphical
+interface, enable this operation by turning on the toggle labeled
+<EM>Copy from input data</EM>.
+
+<P>The second operation is to reserve space in the output file for
+an extended header.  In the graphical interface, when the toggle labeled
+<EM>Set size per section</EM> is off, the space reserved depends on whether
+or not you have enabled copying of the input extended header.  If you have
+enabled copying, mergemrc reserves sufficient space for that header (based on
+the number of entries per section in the first file listed in the
+<A HREF="#Datasets">Datasets to merge</A> section); otherwise, mergemrc
+reserves no space for the extended header.  When the
+<EM>Set size per section</EM> toggle is on, mergemrc reserves space for the
+given number of integers and floating-point values per section.  If copying
+the extended header from the input files and the reserved space is
+insufficient, mergemrc does not transfer the extra entries for each section.
+If the reserved space is bigger than the copied extended header or you request
+not to copy the extended header, mergemrc sets the additional extended header
+entries to zero.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  <A HREF="#CommandLineInterface">Command line interface</A> |
+  <A HREF="#PixelMode">Pixel mode</A> |
+  <A HREF="#Interleaving">Interleaving</A> |
+  Extended header |
+  <A HREF="#Datasets">Datasets to merge</A> |
+  <A HREF="#AppendMode">Append mode</A> |
+  <A HREF="#FileSizes">Sizes</A> |
+  <A HREF="#ZRange">Z range</A> |
+  <A HREF="#WRange">Wavelength range</A> |
+  <A HREF="#TRange">Time range</A> |
+  <A HREF="#XYRange">X/Y range</A>
+<HR>
+
+<H2><A NAME="Datasets">Datasets to Merge</A></H2>
+<P>The merge/reorder process works with a list of regions selected from one or
+more files.  For the graphical interface, each region in the list has an entry
+in the box in the center of the dialog.  When you press the <EM>DoIt</EM>
+button, mergemrc merges the regions along either the z, wavelength,
+or time dimension but preserves the other four dimensions (to set the
+dimension along which mergemrc merges the regions, use the menu labeled
+<A HREF="#AppendMode">Append datasets along</A>).  The order of the
+regions in the list determines the order in which they appear in the output
+file.  For instance, if mergemrc merges two regions along their wavelength
+dimension, the <VAR>n</VAR> wavelengths in the first region become the first
+<VAR>n</VAR> wavelengths in the output file.  The <VAR>m</VAR> wavelengths
+in the second region become the <VAR>n</VAR>+1 through <VAR>n</VAR>+m
+wavelengths in the output file.
+
+<P>You can perform five basic operations on the list of regions:
+
+<UL>
+  <LI>Add a region to the end of the list by pressing the <EM>Add</EM>
+    button.
+  <LI>Insert a region before the currently selected region, shown in
+    reverse colors, by pressing the <EM>Insert</EM> button.
+  <LI>Delete the currently selected region by pressing the <EM>Delete</EM>
+    button.
+  <LI>Change the currently selected region by positioning the mouse pointer
+    over a file name in the list box and pressing and releasing the left
+    mouse button.
+  <LI>Change the settings for the currently selected region by changing
+    the range of sections to read in (discussed in more detail
+    in the <A HREF="#ZRange">Z range</A>, <A HREF="#WRange">Wavelength
+    range</A>, and <A HREF="#TRange">Time range</A> topics) or by changing the
+    file from which the region is drawn (use the <EM>File</EM> button
+    to start a file selection dialog or enter the file name directly in the
+    field next to the <EM>File</EM> button.  Once the changes are made,
+    save them by pressing the <EM>Commit changes</EM> button; you can
+    clear the changes made since the last save by pressing the
+    <EM>Discard changes</EM> button.
+</UL>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  <A HREF="#CommandLineInterface">Command line interface</A> |
+  <A HREF="#PixelMode">Pixel mode</A> |
+  <A HREF="#Interleaving">Interleaving</A> |
+  <A HREF="#ExtendedHeader">Extended header</A> |
+  Datasets to merge |
+  <A HREF="#AppendMode">Append mode</A> |
+  <A HREF="#FileSizes">Sizes</A> |
+  <A HREF="#ZRange">Z range</A> |
+  <A HREF="#WRange">Wavelength range</A> |
+  <A HREF="#TRange">Time range</A> |
+  <A HREF="#XYRange">X/Y range</A>
+<HR>
+
+<H2><A NAME="AppendMode">Append Mode</A></H2>
+<P>When combining and reordering datasets with the graphical interface,
+the selected regions from each dataset must have the same sizes
+in four of the dimensions:  x and y and in two of the other dimensions
+(z, wavelength, or time).  The output file will have the same sizes
+in these four dimensions, but in the fifth dimension the size will be the
+sum of the sizes for the fifth dimension for each of the selected regions.
+
+<P>Use the menu labeled <EM>Append datasets along</EM> to select which
+dimension should be the fifth dimension along which mergemrc combines
+the selected regions.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  <A HREF="#CommandLineInterface">Command line interface</A> |
+  <A HREF="#PixelMode">Pixel mode</A> |
+  <A HREF="#Interleaving">Interleaving</A> |
+  <A HREF="#ExtendedHeader">Extended header</A> |
+  <A HREF="#Datasets">Datasets to merge</A> |
+  Append mode |
+  <A HREF="#FileSizes">Sizes</A> |
+  <A HREF="#ZRange">Z range</A> |
+  <A HREF="#WRange">Wavelength range</A> |
+  <A HREF="#TRange">Time range</A> |
+  <A HREF="#XYRange">X/Y range</A>
+<HR>
+
+<H2><A NAME="FileSizes">Z, wave, and time sizes</A></H2>
+<P>When working with the graphical interface, this read-only field shows
+the dimensions of the dataset that is the source for the currently selected
+region.  If for some reason the dataset is not readable, this field will be
+blank.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  <A HREF="#CommandLineInterface">Command line interface</A> |
+  <A HREF="#PixelMode">Pixel mode</A> |
+  <A HREF="#Interleaving">Interleaving</A> |
+  <A HREF="#ExtendedHeader">Extended header</A> |
+  <A HREF="#Datasets">Datasets to merge</A> |
+  <A HREF="#AppendMode">Append mode</A> |
+  Sizes |
+  <A HREF="#ZRange">Z range</A> |
+  <A HREF="#WRange">Wavelength range</A> |
+  <A HREF="#TRange">Time range</A> |
+  <A HREF="#XYRange">X/Y range</A>
+<HR>
+
+<H2><A NAME="ZRange">Z start index, size, step</A></H2>
+<P>When working with the graphical interface, this field shows which z
+sections from source dataset of the currently selected region are to be
+used.  The first value is the index of the first section
+to use; valid indices range from zero to the z dimension of the dataset minus
+one (the z dimension is the first value shown in the
+<A HREF="#FileSizes">Z, wave and time sizes</A> field).  The second value
+is the number of sections to use.  The third value is the amount by which
+the z index will be incremented to find the next section that will be read
+from the dataset.  Any value for the increment and any positive value for the
+size are allowed as long as
+
+<PRE>
+     (start index) + (size - 1) * step
+</PRE>
+
+<P>falls between zero and the number of z sections in the dataset minus one.
+In particular, you can use a negative step to reverse the order in which
+the z sections will appear in the output file or a step of zero to copy
+a single section to multiple sections in the output file.
+
+<P>The <EM>Reverse</EM> button next to the field is just a way to change
+the values in the field to cover the same set of z sections in reverse order.
+
+<P>When you select a new file with the <EM>File</EM> button or by changing
+the contents of the field next to that button, mergemrc changes the start
+index, size, and step to values that would select all z sections in the file:
+start index will be zero, the size will be the z dimension of the file; and
+the step will be one.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  <A HREF="#CommandLineInterface">Command line interface</A> |
+  <A HREF="#PixelMode">Pixel mode</A> |
+  <A HREF="#Interleaving">Interleaving</A> |
+  <A HREF="#ExtendedHeader">Extended header</A> |
+  <A HREF="#Datasets">Datasets to merge</A> |
+  <A HREF="#AppendMode">Append mode</A> |
+  <A HREF="#FileSizes">Sizes</A> |
+  Z range |
+  <A HREF="#WRange">Wavelength range</A> |
+  <A HREF="#TRange">Time range</A> |
+  <A HREF="#XYRange">X/Y range</A>
+<HR>
+
+<H2><A NAME="WRange">Wavelength start index, size, step</A></H2>
+<P>When working from the graphical interface, this field shows which
+wavelengths from the source dataset for the currently selected region are
+to be used.  The first value is the index of the first
+wavelength to use; valid indices range from zero to the number of wavelengths
+in the dataset (the number of wavelengths is the second value shown in the
+<A HREF="#FileSizes">Z, wave and time sizes</A> field).  The second value
+is the number of wavelengths to use.  The third value is the amount by which
+the wavelength index will be incremented to find the next wavelength that
+will be read from the dataset.  Any value for the increment and any positive
+value for the size are allowed as long as
+
+<PRE>
+     (start index) + (size - 1) * step
+</PRE>
+
+<P>falls between zero and the number of wavelengths in the dataset minus one.
+In particular, you can use a negative step to reverse the order in which
+the wavelengths will appear in the output file or a step of zero to copy
+a single wavelength to multiple wavelengths in the output file.
+
+<P>The <EM>Reverse</EM> button next to the field is just a way to change
+the values in the field to cover the same set of wavelengths in reverse
+order.
+
+<P>When you select a new file with the <EM>File</EM> button or by changing
+the contents of the field next to that button, mergemrc changes the start
+index, size, and step to values that would select all wavelengths in the file:
+start index will be zero, the size will be the number of wavelengths in the
+file; and the step will be one.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  <A HREF="#CommandLineInterface">Command line interface</A> |
+  <A HREF="#PixelMode">Pixel mode</A> |
+  <A HREF="#Interleaving">Interleaving</A> |
+  <A HREF="#ExtendedHeader">Extended header</A> |
+  <A HREF="#Datasets">Datasets to merge</A> |
+  <A HREF="#AppendMode">Append mode</A> |
+  <A HREF="#FileSizes">Sizes</A> |
+  <A HREF="#ZRange">Z range</A> |
+  Wavelength range |
+  <A HREF="#TRange">Time range</A> |
+  <A HREF="#XYRange">X/Y range</A>
+<HR>
+
+<H2><A NAME="TRange">Time start index, size, step</A></H2>
+<P>When working from the graphical interface, this field shows which time
+points from the source dataset for the currently selected region are to be
+used.  The first value is the index of the first
+time point to use; valid indices range from zero to the number of time points
+in the dataset (the number of time points is the third value shown in the
+<A HREF="#FileSizes">Z, wave and time sizes</A> field).  The second value
+is the number of time points to use.  The third value is the amount by which
+the time index will be incremented to find the next time point that
+will be read from the dataset.  Any value for the increment and any
+positive value for the size are allowed as long as
+
+<PRE>
+     (start index) + (size - 1) * step
+</PRE>
+
+<P>falls between zero and the number of time points in the dataset minus one.
+In particular, you can use a negative step to reverse the order in which
+the time points will appear in the output file or a step of zero to copy
+a single time point to multiple time points in the output file.
+
+<P>The <EM>Reverse</EM> button next to the field is just a way to change
+the values in the field to cover the same set of time points in reverse
+order.
+
+<P>When a new file is selected using the <EM>File</EM> button or changing
+the contents of the field next to that button, the start index, size, and
+step will be changed to values that would select all time points in the file:
+start index will be zero, the size will be the number of wavelengths in the
+file; and the step will be one.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  <A HREF="#CommandLineInterface">Command line interface</A> |
+  <A HREF="#PixelMode">Pixel mode</A> |
+  <A HREF="#Interleaving">Interleaving</A> |
+  <A HREF="#ExtendedHeader">Extended header</A> |
+  <A HREF="#Datasets">Datasets to merge</A> |
+  <A HREF="#AppendMode">Append mode</A> |
+  <A HREF="#FileSizes">Sizes</A> |
+  <A HREF="#ZRange">Z range</A> |
+  <A HREF="#WRange">Wavelength range</A> |
+  Time range |
+  <A HREF="#XYRange">X/Y range</A>
+<HR>
+
+<H2><A NAME="XYRange">X/Y Range</A></H2>
+<P>In the process of merging and or reordering the input sections, a
+rectangular region of each section can be transfered to the output file
+with the restriction that the region have the same size and same indices
+for the lower left corner for all sections.  For the graphical interface,
+when the toggle labeled <EM>Use full X/Y from first file</EM> is on the x
+and y indices for the lower left corner are zero, and the size of the
+region is the size of a section from the first file listed in the
+<A HREF="#Datasets">Datasets to merge</A> section.  Otherwise, the
+indices for the lower left corner are the values in the
+<EM>X start index</EM> and <EM>Y start index</EM> fields and the x and
+y dimensions of the rectangle are the values in the <EM>X size</EM> and
+<EM>Y size</EM> fields.
+
+<P>The input files can differ in size, but the selected rectangular region
+must fall within the bounds of any of the files or mergemrc will report an
+error and will not generate an output file.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  <A HREF="#CommandLineInterface">Command line interface</A> |
+  <A HREF="#PixelMode">Pixel mode</A> |
+  <A HREF="#Interleaving">Interleaving</A> |
+  <A HREF="#ExtendedHeader">Extended header</A> |
+  <A HREF="#Datasets">Datasets to merge</A> |
+  <A HREF="#AppendMode">Append mode</A> |
+  <A HREF="#FileSizes">Sizes</A> |
+  <A HREF="#ZRange">Z range</A> |
+  <A HREF="#WRange">Wavelength range</A> |
+  <A HREF="#TRange">Time range</A> |
+  X/Y range
+<HR>
+
+<H2><A NAME="CommandLineInterface">Command Line Interface</A></H2>
+<P>The syntax for running the merge/reorder application at the command
+line is (optional parts are included in brackets):
+
+<PRE>
+  mergemrc [-<A HREF="#CmdLineInterleave">interleave</A>=interleaveType] [-<A HREF="#CmdLineMode">mode</A>=pixelType] \
+       [-<A HREF="#CmdLineXY">x</A>=xStart:xSize] [-<A HREF="#CmdLineXY">y</A>=yStart:ySize] \
+       [-<A HREF="#CmdLineNoCpyExt">no_copy_extended</A>] \
+       [-<A HREF="#CmdLineExtSize">extended_size</A>=nIntegers:nFloats] \
+       [-<A HREF="#CmdLineSpecOut">specify_out</A>] [-<A HREF="#CmdLineAppend">append_waves</A>] [-<A HREF="#CmdLineAppend">append_z</A>] [-<A HREF="#CmdLineAppend">append_times</A>] \
+       <A HREF="#CmdLineOutputFile">outputFile</A> \
+       [-<A HREF="#CmdLineF">f</A>=file] \
+       [<A HREF="#CmdLineInputFile">inputFile1</A> [-<A HREF="#CmdLineIn">in_sections</A>=start[:size[:step]]] \
+       [-<A HREF="#CmdLineIn">in_z</A>=start[:size[:step]]] [-<A HREF="#CmdLineIn">in_w</A>=start[:size[:step]]] \
+       [-<A HREF="#CmdLineIn">in_t</A>=start[:size[:step]]] \
+       [-<A HREF="#CmdLineOut">out_sections</A>=start[:size[:step]]] \
+       [-<A HREF="#CmdLineOut">out_z</A>=start[:size[:step]]] [-<A HREF="#CmdLineOut">out_w</A>=start[:size[:step]]] \
+       [-<A HREF="#CmdLineOut">out_t</A>=start[:size[:step]]]] \
+       ...
+</PRE>
+
+<P>For examples of how mergemrc could be used, see
+<A HREF="#CommandLineExamples">Command Line Examples</A>.  Below
+are descriptions of the input options and arguments:
+
+<DL>
+  <DT><STRONG><A NAME="CmdLineInterleave">-interleave</A></STRONG>
+  <DD><CODE>-interleave=</CODE><VAR>interleaveType</VAR> specifies
+    how the z, wavelength, and time dimensions should be organized
+    when stored in the output file.  Valid options for
+    <VAR>interleaveType</VAR> are <SAMP>ztw</SAMP> (this is the
+    default when <CODE>-interleave</CODE> is not used),
+    <SAMP>wzt</SAMP>, and <SAMP>zwt</SAMP>.
+    <BR><A HREF="#CommandLineInterface">Return to the syntax summary</A>
+
+  <DT><STRONG><A NAME="CmdLineMode">-mode</A></STRONG>
+  <DD><CODE>-mode=</CODE><VAR>pixelType</VAR> specifies the numeric
+    format to use for each output pixel.  Valid options for
+    <VAR>pixelType</VAR> are
+    <SAMP>unsigned8</SAMP>, <SAMP>signed16</SAMP>, <SAMP>float32</SAMP>,
+    <SAMP>complex_signed16</SAMP>, <SAMP>complex_float32</SAMP>,
+    <SAMP>unsigned16</SAMP>, <SAMP>signed32</SAMP>, and <SAMP>unsigned4</SAMP>.
+    When <CODE>-mode</CODE> is not used, the program uses the same format
+    as was used in the first input file on the command line.
+    <BR><A HREF="#CommandLineInterface">Return to the syntax summary</A>
+
+  <DT><STRONG><A NAME="CmdLineXY">-x and -y</A></STRONG>
+  <DD><CODE>-x=</CODE><VAR>xStart</VAR><CODE>:</CODE><VAR>xSize</VAR> and
+   <CODE>-y=</CODE><VAR>yStart</VAR><CODE>:</CODE><VAR>ySize</VAR> can be
+   used to only output a rectangular portion of the input sections.
+   Only pixels whose x index is in the range
+   [<VAR>xStart</VAR>, <VAR>xStart</VAR> + <VAR>xSize</VAR> - 1] and
+   whose y index is in the range
+   [<VAR>yStart</VAR>, <VAR>yStart</VAR> + <VAR>ySize</VAR> - 1] are
+   written to the output file.  Indices start from zero.  If you do not
+   specify <CODE>-x</CODE>, mergemrc assumes a value of zero for
+   <VAR>xStart</VAR> and a value equal to the number of pixels in x for
+   <VAR>xSize</VAR>.  Similarly, mergemrc uses zero for <VAR>yStart</VAR> and
+   the number of input pixels in y for <VAR>ySize</VAR> if you do not
+   specify <CODE>-y</CODE>.
+   <BR><A HREF="#CommandLineInterface">Return to the syntax summary</A>
+
+  <DT><STRONG><A NAME="CmdLineNoCpyExt">-no_copy_extended</A></STRONG>
+  <DD>When <CODE>-no_copy_extended</CODE> appears on the command line, mergemrc
+    does not copy the extended header entries from the input files and fills
+    with zeroes any extended header reserved with the
+    <CODE>-<A HREF="#CmdLineExtSize">extended_size</A></CODE> option.
+    If <CODE>-no_copy_extended</CODE> does not appear on the command line,
+    mergemrc transfers the extended header entries for the sections written to
+    the output.  When the output extended header has fewer integer entries per
+    section than the input header, mergemrc does not transfer the additional
+    entries in the input header.  If the output extended header has more
+    integer entries per section than the input header, mergemrc fills the
+    extra entries with zeroes.  mergemrc truncates or pads the floating-point
+    values in the extended header in a similar fashion.
+    <BR><A HREF="#CommandLineInterface">Return to the syntax summary</A>
+
+  <DT><STRONG><A NAME="CmdLineExtSize">-extended_size</A></STRONG>
+  <DD>Use <CODE>-extended_size=</CODE><VAR>nIntegers</VAR><CODE>:</CODE><VAR>nFloats</VAR>
+    to reserve space for the extended header where <VAR>nIntegers</VAR>
+    is the number of integers per section in the extended header
+    and <VAR>nFloats</VAR> is the number of floating-point values per
+    section.  When <CODE>-<A HREF="#CmdLineNoCpyExt">no_copy_extended</A></CODE> appears on the command
+    line and <CODE>-extended_size</CODE> does not, mergemrc assumes that
+    <VAR>nIntegers</VAR> and <VAR>nFloats</VAR> are both zero.  If you use
+    <CODE>-no_copy_extended</CODE> and <CODE>-extended_size</CODE>, the number
+    of extended header entries per section is the same as in the first
+    input file on the command line.
+    <BR><A HREF="#CommandLineInterface">Return to the syntax summary</A>
+
+  <DT><STRONG><A NAME="CmdLineSpecOut">-specify_out</A></STRONG>
+  <DD>To use the <CODE>-<A HREF="#CmdLineOut">out_z</A></CODE>, <CODE>-<A HREF="#CmdLineOut">out_t</A></CODE>,
+    <CODE>-<A HREF="#CmdLineOut">out_w</A></CODE>, or <CODE>-<A HREF="#CmdLineOut">out_sections</A></CODE>,
+    you must specify <CODE>-specify_out</CODE> on the command line.
+    You may not use <CODE>-specify_out</CODE> with <CODE>-<A HREF="#CmdLineAppend">append_waves</A></CODE>,
+    <CODE>-<A HREF="#CmdLineAppend">append_z</A></CODE>, or <CODE>-<A HREF="#CmdLineAppend">append_times</A></CODE>.
+    If you use <CODE>-specify_out</CODE>, mergemrc does not transfer
+    wavelength information from the input files to the output file.
+    If you do not use <CODE>-specify_out</CODE>, mergemrc, by default,
+    creates an output file with wavelength and time dimensions
+    of 1, appends the input ranges along the z dimension, and does not
+    preserve the wavelength information from the original data.
+    <BR><A HREF="#CommandLineInterface">Return to the syntax summary</A>
+
+  <DT><STRONG><A NAME="CmdLineAppend">-append_z, -append_waves, and -append_times</A></STRONG>
+  <DD>If you do not use <CODE>-<A HREF="#CmdLineSpecOut">specify_out</A></CODE>
+    mergemrc creates, by default, an output file with wavelength and time
+    dimensions of 1, appends the input ranges along the z dimension, and
+    does not preserve the wavelength information from the original data.  You
+    can use <CODE>-append_waves</CODE>, <CODE>-append_z</CODE> or
+    <CODE>-append_times</CODE> to override this default and preserve more of
+    the arrangement of the input ranges.  In general, the
+    <CODE>-append_</CODE><VAR>x</VAR> option, where <VAR>x</VAR> is
+    <SAMP>z</SAMP>, <SAMP>waves</SAMP>, or <SAMP>times</SAMP>, causes mergemrc
+    to combine the input files along the <VAR>x</VAR>
+    dimension but leave the other dimensions alone (you can still
+    use the <CODE>-<A HREF="#CmdLineIn">in_z</A></CODE>,
+    <CODE>-<A HREF="#CmdLineIn">in_w</A></CODE>, or
+    <CODE>-<A HREF="#CmdLineIn">in_t</A></CODE> options to select sections
+    from the input).  The order in which the input files appear on the
+    command line is important because mergemrc appends the files along the
+    dimension that is changed in that order.  Also, the input
+    ranges must have the same size along the other dimensions
+    (this restriction is applied after the <CODE>-in_z</CODE>,
+    <CODE>-in_w</CODE>, or <CODE>-in_t</CODE> options are applied).  As an
+    example, if you want to create a file which has wavelength 1 from
+    file A, wavelength 3 from file B, and wavelengths 2 and 3 from file
+    A in that order,
+    <BR><CODE>mergemrc -append_waves A -in_w=0:1 B -in_w=2:1 A -in_w=1:2</CODE><BR>
+    does the trick as long as A and B have the same dimensions in z and time.
+    <BR><A HREF="#CommandLineInterface">Return to the syntax summary</A>
+
+  <DT><STRONG><A NAME="CmdLineOutputFile">outputFile</A></STRONG>
+  <DD><VAR>outputFile</VAR> is the name mergemrc will use use for the output
+    data file.  If a file with that name exists, mergemrc will overwrite it;
+    this implies that the merge operation can not be done in place.
+    <BR><A HREF="#CommandLineInterface">Return to the syntax summary</A>
+
+  <DT><STRONG><A NAME="CmdLineF">-f</A></STRONG>
+  <DD>A <CODE>-f=</CODE><VAR>file</VAR> option supplies the name of a text file
+    that mergemrc will read for input section ranges.  Use a single dash for
+    the file name to cause mergemrc to read the information from standard
+    input.  The format of the file  is just like specifying the section
+    ranges on the command line except that newlines are treated as spaces and
+    you may not use <CODE>-f</CODE> options in the file (i.e. you may not
+    nest <CODE>-f</CODE> options).  You may use any number of -f options on
+    the command line, and you may mix them with directly specified input
+    ranges.
+    <BR><A HREF="#CommandLineInterface">Return to the syntax summary</A>
+
+  <DT><STRONG><A NAME="CmdLineInputFile">inputFile</A></STRONG>
+  <DD>On the command line, specify an input range of sections by supplying
+    a filename followed directly with options to control the sections to
+    extract and, if you use the <CODE>-<A HREF="#CmdLineSpecOut">specify_out</A></CODE>
+    option, options to specify where to write the output sections.
+    <BR><A HREF="#CommandLineInterface">Return to the syntax summary</A>
+
+  <DT><STRONG><A NAME="CmdLineIn">-in_z, -in_w, -in_t, and -in_sections</A></STRONG>
+  <DD>The options to set the input range of sections are <CODE>-in_sections</CODE>,
+    <CODE>-in_z</CODE>, <CODE>-in_w</CODE>, and <CODE>-in_t</CODE>.
+    You may not use <CODE>-in_sections</CODE> if you use
+    <CODE>-<A HREF="#CmdLineAppend">append_waves</A></CODE>,
+    <CODE>-<A HREF="#CmdLineAppend">append_z</A></CODE>, or
+    <CODE><A HREF="#CmdLineAppend">-append_times</A></CODE>, and for one
+    range, you may not use <CODE>-in_sections</CODE> in combination with
+    <CODE>-in_z</CODE>, <CODE>-in_w</CODE>, or <CODE>-in_t</CODE>.  Finally,
+    you may not use one of the <CODE>-in_z</CODE>, <CODE>-in_w</CODE>,
+    or <CODE>-in_t</CODE> options more than once for a single range.  With
+    those restrictions, the following are not allowed:
+    <UL>
+      <LI><CODE>mergemrc -append_times A -in_sections=0:10:2</CODE>
+      <LI><CODE>mergemrc A -in_t=5:10 -in_sections 7:10</CODE>
+      <LI><CODE>mergemrc A -in_w=3:1 -in_w=0:2</CODE>
+    </UL>
+    The last two can be expressed in alternate ways which are allowed:
+    <UL>
+      <LI><CODE>mergemrc A -in_t=5:10 A -in_sections 7:10</CODE>
+      <LI><CODE>mergemrc A -in_w=3:1 A -in_w=0:2</CODE>
+    </UL>
+    For a given <CODE>-in_</CODE><VAR>x</VAR> option, you may omit the
+    size and step.  If you omit the size and step, the range is from the
+    starting point through the maximum index in the dimension with
+    a step of one.  If you omit the step, mergemrc will use a step of one.
+    A negative step is allowed (useful for reversing the order); and
+    a zero step is allowed (useful for filling the output with repeated
+    copies of a section or set of sections).
+
+    If you do not specify any <CODE>-in_</CODE><VAR>x</VAR> for a file,
+    mergemrc uses all of its contents; that is equivalent to
+    <CODE>-in_z=0 -in_w=0 -in_t=0</CODE> if you use
+    <CODE>-append_waves</CODE>, <CODE>-append_z</CODE>, or
+    <CODE>-append_times</CODE> or is equivalent to <CODE>-in_sections=0</CODE>
+    otherwise.  If you use one or more of <CODE>-in_z</CODE>,
+    <CODE>-in_w</CODE>, or <CODE>in_t</CODE> but omit one or more, mergemrc
+    assumes the omitted ones cover the full range of the file.  If you do not
+    use <CODE>-append_waves</CODE>, <CODE>-append_z</CODE>, or
+    <CODE>-append_times</CODE> and you use <CODE>-in_z</CODE>,
+    <CODE>-in_w</CODE>, or <CODE>-in_t</CODE> options for a range, the order
+    in which the <CODE>-in_</CODE><VAR>x</VAR> options appear is important
+    since it  influences the order in which mergemrc writes the sections to
+    the output file.  The first that appears is the innermost in the loop (it
+    varies fastest); the second is the next innermost in the loop, and the
+    third is the outer loop.  When ordering is important, you must be careful
+    if you use just one of the <CODE>in_z</CODE>, <CODE>in_w</CODE>, or
+    <CODE>in_t</CODE> options for a range:  if at least one of the other
+    dimensions does not have a size of one, the ordering is underdetermined
+    and mergemrc will report an error.
+    <BR><A HREF="#CommandLineInterface">Return to the syntax summary</A>
+
+  <DT><STRONG><A NAME="CmdLineOut">-out_z, -out_w, -out_t, and -out_sections</A></STRONG>
+  <DD>You can only use <CODE>-out_sections</CODE>, <CODE>-out_z</CODE>,
+    <CODE>-out_w</CODE>, or <CODE>-out_t</CODE> if you have specified
+    <CODE>-<A HREF="#CmdLineSpecOut">specify_out</A></CODE>.
+    All of the <CODE>-out_</CODE><VAR>x</VAR> options set where in the output
+    file mergemrc writes the input sections.  Like the
+    <CODE>-in_</CODE><VAR>x</VAR> options, you may not specify the same
+    <CODE>-out_z</CODE>, <CODE>-out_w</CODE>, or <CODE>-out_t</CODE> more than
+    once per range, and you may not mix <CODE>-out_sections</CODE> with
+    <CODE>-out_z</CODE>, <CODE>-out_w</CODE>, or <CODE>-out_t</CODE> for any
+    one range.  If you do not supply any <CODE>-out_</CODE><VAR>x</VAR> options
+    for a range and you use <CODE>-specify_out</CODE>, mergemrc writes the
+    selected input sections in the order they were selected to the output file
+    starting at the first section in the file (i.e. no
+    -<CODE>out_</CODE><VAR>x</VAR> options is the same as <CODE>-out_sections=0</CODE>).
+    If you specify one or more of the <CODE>-out_z</CODE>, <CODE>-out_w</CODE>,
+    or <CODE>-out_t</CODE> options but omit one or more of the others, mergemrc
+    uses a starting index of zero, a size of one, and a step of one for the
+    missing options.  If you omit the step for any of the <CODE>-out_z</CODE>,
+    <CODE>-out_w</CODE>, or <CODE>-out_t</CODE> options
+    mergemrc assumes a step of one; if you omit the size, mergemrc assumes a
+    size of one.  For the <CODE>-out_sections</CODE> option, an omitted step is
+    equivalent to one and an omitted size is equivalent to the number of
+    input sections in the range.
+    <BR><A HREF="#CommandLineInterface">Return to the syntax summary</A>
+</DL>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  Command line interface |
+  <A HREF="#CommandLineExamples">Command line examples</A>
+<HR>
+
+<H2><A NAME="CommandLineExamples">Command Line Examples</A></H2>
+<P>File a.dat has a series of z-sections as does b.dat.  A combined
+file, c.dat, with the z-sections from a.dat followed by those in b.dat
+is desired.
+<PRE>
+        mergemrc c.dat a.dat b.dat
+</PRE>
+
+<P>File a.stk has 60 sections representing tilt angles from 2.5
+degrees to 65 degrees; file b.stk has 63 sections representing tilt
+angles from 0 to -65 degrees (in that order).  A file, c.stk, is
+desired which has the tilts in increasing order but excludes the
+5th and 30th sections in b.stk since they are corrupt frames.
+<PRE>
+        mergemrc c.stk b.stk -in_sections=62:33:-1 \
+            b.stk -in_sections=28:24:-1 \
+            b.stk -in_sections=3:4:-1 \
+            a.stk
+</PRE>
+
+<P>File a.dat has ten z sections, three wavelengths, and one time.
+It is to be combined with b.dat which has the same number of
+wavelengths and times but has 30 sections which should appear
+contiguous with the ones from the matching wavelength in a.dat.
+<PRE>
+        mergemrc -append_z c.dat a.dat b.dat
+</PRE>
+
+<P>File a.dat was collected by repeatedly moving the stage up and
+down while collecting data by taking quick exposures at
+fixed intervals.  There are 5 up and down sequences with 40
+frames apiece.  Because of backlash in the stage motor, the
+19th, 20th, 39th, and 40th frames of each of these sequences
+are not to be included in the final output file which will have
+the sequences properly grouped in time and reordered in z.
+<PRE>
+        mergemrc -specify_out b.dat \
+	    c.dat -in_sections=0:18 -out_z=0:18 -out_t=0 \
+            c.dat -in_sections=37:18:-1 -out_z=0:18 -out_t=1 \
+	    c.dat -in_sections=40:18 -out_z=0:18 -out_t=2 \
+	    c.dat -in_sections=77:18:-1 -out_z=0:18 -out_t=3 \
+	    c.dat -in_sections=80:18 -out_z=0:18 -out_t=4 \
+            c.dat -in_sections=117:18:-1 -out_z=0:18 -out_t=5 \
+	    c.dat -in_sections=120:18 -out_z=0:18 -out_t=6 \
+            c.dat -in_sections=157:18:-1 -out_z=0:18 -out_t=7 \
+	    c.dat -in_sections=160:18 -out_z=0:18 -out_t=8 \
+            c.dat -in_sections=197:18:-1 -out_z=0:18 -out_t=9
+</PRE>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#mergemrc">Overview</A> |
+  <A HREF="#GraphicalInterface">Graphical interface</A> |
+  <A HREF="#CommandLineInterface">Command line interface</A> |
+  Command line examples
+<HR>
+
+</BODY>
+</HTML>

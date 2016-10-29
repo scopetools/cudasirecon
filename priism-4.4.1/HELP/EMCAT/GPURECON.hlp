@@ -1,0 +1,594 @@
+KEYWORD
+      AlignedSeries Reconstruction NX:NY:NV OutputXZSize YRange
+      Method InitialGuess Cycles Blocks ConvergenceFactor Smooth
+      ProjectionOrder SlabWeighting PositivityInterval BackprojectionWeight
+      BackprojectionHamming BackprojectionParticleSize Resolution
+      ResolutionScale Multires GuessResolution
+
+DESCRIPTION
+      GPURECON is a client application that contacts
+      one or more remote servers to have the servers
+      perform a reconstruction calculation.  The current
+      servers use graphics cards to accelerate the
+      calculation, thus the name GPURECON.  GPURECON
+      generates reconstructions in a non-flipped (x,
+      y, and then z) orientation rather than the
+      flipped orientation (x, z, and then y) produced
+      by the stand-alone reconstruction applications,
+      EWBP and TAPIR.
+
+      The actual reconstruction calculations can use
+      one of three algorithms.  You select which one
+      to use with the "Method" menu.  The backprojection
+      algorithm is similar to the algorithm used by
+      EWBP.  The backprojection weight, backprojection
+      Hamming, and particle size options in the special
+      parameters dialog affect the output of the
+      backprojection algorithm.  The sart and em
+      algorithms are iterative algorithms.  You should
+      set the number of iterations to perform.  You may
+      also specify an initial guess for those two
+      algorithms.  The sart algorithm with a block size
+      of one and a convergence factor of one is similar
+      to the algorithm used by TAPIR.
+
+      Use the button labeled "GPU execution settings..."
+      in EMTAR's main dialog and the adjacent toggle
+      button to access the dialog that controls how
+      GPURECON determines which servers to use and
+      other parameters related to the configuration
+      of those servers.
+
+      On the command line, you should normally run
+      GPURECON through the helper utility,
+      rgemt_autostart.  That utility is described in
+      the GPUParallel section of Parallel.hlp.  Here's
+      a sample command file for GPURECON to have three
+      servers perform a reconstruction similar to what
+      TAPIR would produce:
+
+          (time rgemt_autostart \
+           /home/eric/sample.MnAln \
+           /home/eric/sample.xyz \
+           -istrfile=/home/eric/sample_orig.xyz \
+           -reconxz=1024:300 -iy=0:1023 -method=sart \
+           -cycles=10 -block=1 \
+           -server=169.230.30.118 \
+           -server=169.230.30.119  \
+           -server=169.230.30.120 -rgemt_client=gpurecon ) \
+           > /home/eric/emrecon.log
+
+AlignedSeries
+      This is the name of the input file which contains the
+      mass normalized and aligned projection series created
+      by APPL_PRM.  On the command line, the name of the
+      file with mass-normalized and aligned data is the first
+      argument.
+
+Reconstruction
+      This is the name of the file that will contain the data
+      for the reconstructed volume.  On the command line, the
+      name of for the output image data is the second argument.
+
+NX:NY:NV
+      The first two values are, respectively, the x and y
+      dimensions of the data in the input projection series.
+      The last value is the number of projections in the series.
+
+OutputXZSize
+      These two values set the x and z dimensions, in pixels,
+      of the reconstructed volume.  If the initial reconstruc-
+      tion guess is supplied as an input, then these
+      dimensions should match the x and z dimensions of
+      that file.
+
+      On the command line, use
+
+          -reconxz=nx:nz
+
+      to set the x and z dimensions of the reconstruction.
+      When nx is not set, the x dimension of the reconstructed
+      volume is the same as the x dimension of the input data.
+      When nz is not set, the z dimension of the reconstructed
+      volume is one fourth of the x dimension of the input data.
+
+YRange
+      These two values set the range of y pixels from the
+      aligned tilt series to use in the reconstruction.  The
+      first is the first index (running from 0 to the number
+      of y pixels minus one) to use, and the second is the
+      last possible index to use.  If you supply an initial
+      guess, the y dimension of the guess must match that
+      specified with these values.
+
+      The range of indices used is set on the command line
+      with
+
+          -iy=start_index:last_index
+
+      If you do not specify a range, all y pixels are used:
+      start_index is set to zero and last_index is set to
+      the number of y pixels minus one.
+
+Method
+      You have three choices for the reconstruction algorithm
+      when you use GPURECON.  The choices are:
+
+      backprojection
+          Computes the reconstruction from a direct
+          backprojection of the tilted views.  This is the
+          fastest algorithm but typically suffers from lower
+          contrast and resolution than the other methods.
+          The reconstructions with this algorithm should be
+          very similar to the results from EWBP.  On the
+          command line, use the option,
+
+              -method=backprojection
+
+          , to select this method.
+
+      sart
+          Computes the reconstruction with an iterative
+          algorithm with an additive update step.  With
+          a single block and a convergence factor of
+          one, the algorithm should give similar results
+          to TAPIR.  On the command line, use the option,
+
+              -method=sart
+
+          , to select this method.
+
+      em
+          Computes the reconstruction with an iterative
+          expectation maximization algorithm.  On the
+          command line, use the option,
+
+              -method=em
+
+          , to select this method.
+
+      For the sart and em algorithms, you can use the
+      "Cycles" field to specify the number of iterations
+      to use, the "Blocks" field to select a simultaneous
+      form (one block) or a block-iterative form (two
+      blocks) of the algorithm, and the "Initial guess"
+      field to supply the file name of an initial guess.
+      Your choice for the convergence factor and smoothing
+      affects the sart and em algorithms.  It has no
+      effect on the backprojection algorithm.  The
+      ordering of projections will have an effect for
+      the sart or em algorithms when you use more than
+      one block; in other cases the ordering of the
+      projections will have a minimal effect (the only
+      differences will be due to round-off error).  The
+      positivity interval will affect the sart algorithm.
+
+InitialGuess
+      This is the name of a file containing the initial
+      reconstruction guess; GPURECON only uses the
+      initial guess if you do not select the backprojection
+      method.  The initial guess is optional; when none
+      is used as the file name, it is assumed that there
+      is no initial guess available.
+
+      If the initial guess is supplied, its dimensions
+      must match the dimensions of the output reconstruction
+      as set by the output XZ size and y range input
+      parameters.  The initial guess must also be in the
+      same unflipped orientation as the output reconstruction.
+
+      To set the file name for the initial guess on the
+      command line, use
+
+          -istrfile=filename
+
+      If you do not specify a -istrfile option, GPURECON
+      will assume that no initial guess is available.
+
+Cycles
+      This parameter sets the maximum number of iterations
+      that are performed for the sart or em algorithms.
+
+      On the command line, use
+
+          -cycles=n
+
+      to perform n iterations.  If you do not supply a
+      -cycles option, GPURECON will perform one iteration.
+
+Blocks
+      GPURECON's sart and em algorithms can be run in a
+      simultaneous mode or block-iterative mode.  In the
+      simultaneous mode, each iteration considers all the
+      measurements at once.  In the block-iterative mode,
+      the measurements are broken into subsets.  At each
+      iteration the subsets are processed in turn; once
+      all the measurements have been taken into account,
+      the next iteration begins.  The "Blocks" field sets
+      the number of subsets to use:  a value of one in
+      that field selects the simultaneous mode.
+
+      On the command line, use
+
+          -block=n
+
+      to have GPURECON use n subsets for the sart or em
+      algorithms.  If you do not supply a -blocks option,
+      GPURECON will use one block.
+
+ConvergenceFactor
+      The convergence factor is the scalar by which
+      corrections after the first computed in the sart
+      and em algorithms are multiplied.  If you supply
+      an initial guess for the reconstruction, the
+      convergence factor is also used for the first
+      correction.  Otherwise, the first correction
+      is used without modification.  Convergence
+      factors greater than zero and less than or equal
+      to two are accepted by GPURECON.  You can set
+      the convergence factor from the graphical user
+      interface by editing the value in the field
+      labeled "Convergence".
+
+      On the command line, include
+
+          -convf=f
+
+      in the options to set the convergence factor to
+      be the floating-point value, f.  The command
+      line also accepts the form,
+
+          -convf=fname
+
+      , where fname is the name of a text file which
+      contains at least m floating-point values
+      separated by whitespace.  m is the number
+      of blocks multiplied by the number of cycles.
+      The ith value in the file will be used as the
+      relaxation factor for the update from the
+      jth block, j = 1 + ((i - 1) modulo the number
+      of blocks), in the kth cycle, k = 1 +
+      ((i - 1) divided by the number of blocks).
+
+Smooth
+      For the sart and em algorithms, you can apply
+      a 3D Gaussian filter to the reconstruction
+      result at the end of each iteration.  Use the
+      field labeled "Smooth" in the graphical user
+      interface or, on the command line, include
+
+          -smooth=sigma
+
+      in the options to set the standard deviation,
+      sigma, for the filter.  The standard
+      deviation must be greater than or equal to
+      zero.  When zero, no filter will be applied.
+
+      Internally, the filter is implemented as a
+      convolution with 5 x 5 x 5 kernel.  When the
+      reconstruction is performed in pieces (either
+      to parallelize execution or because of memory
+      constraints), the application of the filter is
+      only approximate:  the pieces are processed
+      independently.  The pieces are embedded in a
+      slightly larger box (up to 6 elements on each
+      side in the y direction, the direction used
+      to divide the reconstruction) to account for
+      some of the blurring effect between pieces.
+
+ProjectionOrder
+      If you use the sart or em algorithms with more
+      than one block, how the projections are ordered
+      will have an effect on the result.  There are four
+      options available for reordering the projections
+      prior to the reconstruction calculation:
+
+      blocked
+          In effect, sorts the projections into ascending
+          order by tilt angle, assembles blocks by taking
+          every mth projection where m is the number of
+          blocks, and then takes every jth block where j
+          is the maximum of (m + 1) / 3 or 2.  This is
+          the default.
+
+      random
+          Randomly shuffles the projections.
+
+      sorted
+          Sorts the projections into ascending order by
+          tilt angle.
+
+      as is
+          Does not reorder the projections:  takes the
+          projections in sequence from the input file.
+
+      For the sart or em algorithms with one block or
+      for the backprojection algorithm, the effect of
+      the ordering is minimal:  the differences will
+      only be due to the accumulation of round-off
+      error.
+
+      On the command-line, use
+
+          -permute=p
+
+      to set the ordering.  p must be block1 (for the
+      blocked mode), random, sorted, or none (for the
+      as is mode).
+
+SlabWeighting
+      The sart and em algorithms compare computed
+      projections of the reconstruction to the
+      measured projections and, by default, rescale
+      the computed projections to approximate the
+      contribution from portions of the sample
+      beyond the reconstruction bounds.  The
+      rescaling assumes that the reconstruction
+      is portion of a more or less uniform slab
+      of material.  You can turn on or off the
+      rescaling of the projection values and set
+      the dimensions and position of the slab.
+
+      In the graphical user interface, the menu
+      next to the button labeled "Slab weighting"
+      controls whether or not the computed
+      projection is rescaled.  That menu is in
+      the special parameters dialog.  The three
+      options are:
+
+      none
+          Do not rescale the computed projections.
+          That is the same as assuming that no
+          material beyond the bounds of the
+          reconstruction volume would make a
+          contribution to the measured projections.
+
+      default
+          Rescale the computed projections under the
+          assumption the reconstruction is centered
+          in a slab of material with the same height
+          as the reconstruction and with a width in
+          x that is very large.
+
+      custom
+          Rescale the computed projections under
+          the assumption that the reconstruction is
+          part of a slab whose half-widths and
+          position are given in the adjacent field.
+
+      The first value in the field for the slab
+      half widths and position is the half width
+      in x.  The second value in the field is the
+      x position for the center of the slab.  The
+      third value in the field is the z half width,
+      and the fourth value in the field is the z
+      position for the center of the slab.  All
+      of the values are in units of reconstruction
+      samples.  The position of the center of the
+      slab is measured relative to the point,
+      (0.5 * nx, 0.5 * nz), of the reconstruction.
+      nx and nz are the number of samples in x
+      and z for the reconstruction.
+
+      On the command line, include
+
+           -nomissing
+
+      in the options to disable rescaling of the
+      computed projections.  Otherwise, rescaling
+      will be done and the half widths and
+      position of the slab can be set by including
+
+          -missingx=xhw:xpos
+
+      and
+
+          -missingz=zhw:zpos
+
+      in the options.  xhw is the desired half
+      width in x, xpos is the x coordinate for
+      the center of the slab, zhw is the desired
+      half width in z, and zpos is the z
+      coordinate for the center of the slab.
+      All of those values are in units of
+      reconstruction samples.  The positions
+      are relative to the point,
+      (0.5 * nx, 0.5 * nz), of the reconstruction
+      where nx and nz are the number of samples
+      in x and z for the reconstruction.  If
+      the x half width and x position are not
+      set, the x half-width will be 3.40282 x 10^38,
+      and the x position will be zero.  If the
+      z half width and z position are not set, the
+      z half-width will be 0.5 times the number
+      of samples in z for the reconstruction, and
+      the z position will be zero.
+
+PositivityInterval
+      The current implementation of the GPU
+      reconstruction software accepts this
+      parameter but does not make use of it.
+      The intent of the parameter is to control
+      how often the reconstruction values are
+      coerced to be non-negative in the sart
+      algorithm.  Currently, the values are
+      coerced to be non-negative after
+      updating the reconstruction with the
+      correction from a block of views.
+      With a positivity interval, p,
+      greater than one, the reconstruction
+      values would be coerced to be positive
+      after the updates from p blocks.
+
+      From the graphical user interface,
+      the field labeled, "Positivity interval",
+      in the special parameters dialog sets the
+      positivity interval.  When the toggle
+      button next to that field is on, the
+      positivity interval is set equal to the
+      number of blocks.  On the command line,
+      you can set the positivity interval to
+      be p by including -posintvl=p in the
+      options.  When you do not set the
+      inverval from the command line, an
+      interval equal to the number of blocks
+      will be used.  From either the graphical
+      user interface or the command line,
+      the positivity interval must be a
+      positive integer.
+
+BackprojectionWeight
+      For the backprojection reconstruction algorithm,
+      there are five available choices for how to
+      filter the projections to compensate for the fact
+      that an average of the backprojected measurements
+      without filtering will overemphasize the low
+      frequency components from the measurements.  Those
+      choices are:
+
+      none
+          With this option, the projection data is not
+          filtered.  Therefore there is no compensation
+          for the unequal sampling in frequency space for
+          the reconstruction and no adjustment for the
+          intensities such that projections of the
+          reconstruction have a range of intensities
+          similar to the original projection data.
+
+      elliptical
+          Can be used with any set of tilt angles and
+          ensures that the projections of the
+          reconstruction have similar intensities to the
+          original projection data.  The values for the
+          particle size affect this weighting function.
+          You may also use the option to apply a Hamming
+          filter to the projections in conjunction with
+          this weighting function.
+
+      elliptical-square
+          Can be used with any set of tilt angles and
+          ensures that the projections of the reconstruction
+          have similar intensities to the original
+          projection data.  The values for the particle
+          size affect this weighting function.  You may
+          also use the option to apply a Hamming filter
+          to the projections in conjunction with this
+          weighting function.
+
+      r*
+          This filtering option assumes that the tilt angles
+          are evenly spaced.  Also, the projections of the
+          reconstruction will have a different range of
+          intensities than the original projections.  You
+          may use the option to apply a Hamming filter to
+          the projections in conjunction with this weighting
+          function.
+
+      r* with Hamming
+          This filtering option is the same as the r* filter
+          except that it includes a Hamming filter applied
+          to the projections as well.  If you want to filter
+          the projections twice with a Hamming filter, you
+          can use the "Backprojection Hamming" option
+          as well.
+
+BackprojectionHamming
+      If you use the backprojection reconstruction method and
+      use a weighting function different than "none", then
+      you may specify that a Hamming filter (a one-dimensional
+      local smoothing filter) be applied to the projections as
+      well prior to the backprojection.  To turn on the Hamming
+      filter from the graphical user interface, turn on the
+      "Backprojection Hamming" toggle button in the special
+      parameters dialog.
+
+BackprojectionParticleSize
+      If you use the backprojection reconstruction method with
+      the elliptical or elliptical square weighting function,
+      the weighting function uses the particle size to account
+      for the approximate spatial bounds of the object to
+      reconstruct.  The first particle size parameter is the
+      extent in x, and the second particle size parameter and
+      the second is the extent in z.  Both have units of pixels.
+      By default, the particle size parameters are set to the
+      same size as the reconstruction bounds.
+
+Resolution
+      The resolution parameter selects which resolution to
+      process from the input tilt series.  Normally, the
+      tilt series has been preprocessed with apply parameters,
+      and the highest resolution in the tilt series corresponds
+      to the resolution you want.  In those situations, you
+      would set the resolution parameter to zero (the default
+      value) to select the highest resolution from the tilt
+      series.
+
+      On the command line, use
+
+          -res=i
+
+      to have the reconstruction use the ith resolution from
+      the tilt series.  When run from the command line and no
+      resolution is selected, the reconstruction will use the
+      highest resolution present in the input tilt series.
+
+ResolutionScale
+      The resolution scale parameter controls the
+      scale factor applied to the reconstruction
+      size parameters.  In the typical case where
+      you select a resolution level to process
+      from the main dialog of EMTAR, the graphical
+      interface will automatically fill in the
+      resolution scale correctly.  In the case
+      where you are running the reconstruction
+      directly on a downsampled tilt series but
+      still specify the reconstruction size in
+      terms of the full resolution, you should
+      set the resolution scale to be the same as
+      the downsampling factor (if the data is
+      scaled down by a factor of four set the
+      resolution scale parameter to four).
+
+      On the command line, use
+
+          -rscale=i
+
+      to set the resolution scale to be i.  When
+      run from the command line without the -rscale
+      option, GPURECON will use a scale factor equal
+      to two raised to the power of the resolution
+      level selected with -res.
+
+Multires
+      Turn on the "Add multires" toggle button to cause
+      GPURECON to add lower resolutions to the reconstruc-
+      tion if the x and y dimensions of the reconstruction
+      are large enough.  Turn off the "Add multires"
+      toggle button to cause GPUREC to generate a
+      reconstruction with a single resolution.
+
+      On the command line, include
+
+          -multires
+
+      in the command-line options for GPURECON to cause
+      GPURECON to add lower resolutions to the recon-
+      struction if the x and y dimensions of the
+      reconstruction are large enough.
+
+GuessResolution
+      The guess resolution parameter allows you to select
+      which resolution to use from the file containing the
+      initial guess.  The dimensions of the resolution you
+      select must be compatible with the dimensions you've
+      specified for the reconstruction.
+
+      On the command line, use
+
+          -gres=i
+
+      in the command-line options for GPURECON to use the
+      ith resolution from the initial guess file.  When
+      run from the command line without the -gres option,
+      GPURECON will use the highest resolution present in
+      the initial guess file.

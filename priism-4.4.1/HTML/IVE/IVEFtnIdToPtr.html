@@ -1,0 +1,51 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEFtnIdToPtr</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVEFtnIdToPtr.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEFtnIdToPtr</H1>
+<H2>Overview</H2>
+<P>Converts a result of <A HREF="IVEPtrToFtnId.html">IVEPtrToFtnId</A> back
+into a pointer.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_fortran.h"</CODE>
+<BR><CODE>void* IVEFtnIdToPtr(ftn_int_t id);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P>There is no Fortran interface.
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>id</VAR><DD><VAR>id</VAR> is the value to convert.
+</DL>
+<H2>Return value</H2>
+<P>May return zero if <VAR>id</VAR> is non-zero and, when checked, was
+determined to not be the result of a previous call to
+<A HREF="IVEPtrToFtnId.html">IVEPtrToFtnId</A>.  Otherwise the return value
+always satisfies the following:  if <VAR>id</VAR> is zero, the return value
+is zero; if <VAR>id</VAR> is the value returned by
+IVEPtrToFtnId(<VAR>ptr</VAR>), the return value is <VAR>ptr</VAR>.
+<H2>Cross references</H2>
+<P><A HREF="IVEPtrToFtnId.html">IVEPtrToFtnId</A> and
+<A HREF="FortranTypes.html">fortran_types.h</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified July 1, 2001
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

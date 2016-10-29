@@ -1,0 +1,366 @@
+KEYWORD
+    file_format greyscale interleaving output_file name_format
+    output_directory output_prefix extension template
+
+DESCRIPTION
+    The Image Capture utility captures images from an image
+    window and saves the result in one of a variety of formats.
+    The different formats are handled by loadable modules
+    (plugins); consult the file_format topic for a list of
+    the supported formats.
+
+    Because the images are captured from the screen, all of
+    the following caveats apply:
+
+        1) Any graphics overlayed on the image are captured
+           as well (the one exception is the box drawn by this
+           application to highlight the region selected).
+           Graphics outside the image bounds are not captured.
+
+        2) Anything that obscures the window will be captured
+           as well so you'll want to make the image window
+           the top window on the screen.
+
+        3) Only the portion of the data that is displayed in
+           the window can be captured; you will be warned if
+           the x and y bounds you selected cover parts of the
+           data not visible in the window.
+
+    Depending on the output format, the result is either a
+    single file whose name is set by the "Output file"
+    field or a sequence of files.  In the latter case,
+    the format of the file names are controlled by the
+    Name format" menu and the Directory, Prefix, Extension,
+    and Template fields.
+
+    Image Capture accepts the command-line arguments
+    described in Region.hlp.  In addition, it has
+    the following options (parts in brackets are
+    optional):
+
+        -dir=dir
+            Sets the name of the directory to use in the
+            file name template when Image Capture generates
+            multiple output files.  If the output format
+            (set via the -format option) stores the sections
+            in a single file, the -dir option has no effect.
+            By default, the directory used in file name
+            templates will be the value of the HOME environment
+            variable or, if that variable is not set, /var/tmp.
+
+        -extension=ext
+            Sets the file name extension to use in the file
+            name template when Image Capture generates multiple
+            output files.  If the output format (set via the
+            -format option) stores the sections in a single
+            file, the -extension option has no effect.  If
+            you do not specify the -extension option, Image
+            Capture will use the default extension for the
+            selected output format.
+
+        -format=format_name[,format_option...]
+            Sets the format for the captured images.  To set
+            a format-specific option, append a comma and then
+            the format-specific option.  You can specify -format
+            multiple times:  the options for any format will
+            accumulate and, if you use different values for
+            format_name, the one that appears in the last
+            -format option will take precedence.  format_name
+            can be one of the following:
+
+            jfif
+                Compresses each image with the JPEG algorithm
+                and stores each compressed image as a JFIF file.
+                Consult JFIF_Save.hlp for the options supported
+                by this format.
+
+            pgm_ppm
+                Saves each image separately as a PGM (portable
+                greymap) or PPM (portable pixmap) file.  Consult
+                PGM_PPM_Save.hlp for the options supported by
+                this format.
+
+            tiff
+                Saves the images as a single TIFF file or as a
+                sequence of TIFF files.  Consult TIFF_Save.hlp
+                for the options supported by this format.
+
+            qt
+                Saves the images as a QuickTime movie.  The exact
+                options supported are different on different
+                systems.  For Mac OS X, consult AppleQT.hlp.  For
+                Linux, consult LQT.hlp.
+
+            By default, Image Capture will use TIFF as the output
+            format or, if it can not load the TIFF output plugin,
+            the format supported by the first plugin it can load.
+
+        -gray or -grey
+            If you specify -gray or -grey on the command line,
+            Image Capture will save the captured images as
+            greyscale (single component images).  By default,
+            Image Capture saves the three components (red, green,
+            blue) of the captured images.
+
+        -interleave=arrangement
+            Sets the interleaving to use when writing multiple
+            sections to a single file or for calculating output
+            section indices for custom file name templates.
+            Allowed values for arrangement are zt or tz; zt is
+            the default.
+
+        -out=name or -out=name_format
+            If the output format (set via the -format option)
+            stores multiple sections in a single file, use -out
+            to set the name of the file to generate.  Otherwise,
+            use -out to select one of the predefined output file
+            name templates.  When the output format stores each
+            section in a separate file, the allowed values for
+            name_format are:
+
+            prefix+zt
+                Causes Image Capture to generate output file
+                names as if "prefix_z#_t#extension" had been
+                selected from the user interface.  This is the
+                default.
+
+            prefix+z
+                Causes Image Capture to generate output file
+                names as if "prefix_z#extension" had been
+                selected from the user interface.
+
+            prefix+t
+                Causes Image Capture to generate output file
+                names as if "prefix_t#extension" had been
+                selected from the user interface.
+
+            When each section is written to a separate file,
+            the -template option will override the -out option.
+
+        -prefix=pref
+            Sets the prefix to use in the file name template
+            when Image Capture generates multiple output files.
+            If the output format (set via the -format option)
+            stores the sections in a single file, the -prefix
+            option has no effect.  By default the prefix used
+            in the file name template is "img".
+
+        -template=custom_template
+            Sets the file name template Image Capture will
+            use when generating multiple files.  This option
+            has no effect if you use an output format which
+            stores multiples sections in a single file.  When
+            the output format stores each section in a separate
+            file, this option overrides the -out option.
+
+    The following example captures the contents of image
+    window 1 and saves them as JPEG (with a quality parameter
+    of 60) compressed images:
+
+        ImageCapture 1 -format=jfif,qual=60 -dir=/var/tmp \
+            -prefix=win1
+
+    The above example uses /var/tmp/win1_z##_t##.jpg as the
+    file name pattern for the output files (the number of
+    digits following _z and _t will depend on the number of
+    z sections and time points in image window 1).
+
+file_format
+    Use the "File format" menu in Image Capture's main
+    dialog to select the output format.  Supported file
+    formats are:
+
+        1) JPEG compressed images stored as JFIF files
+           (see JFIF_Save.hlp)
+
+        2) PGM and PPM image files (see PGM_PPM_Save.hlp)
+
+        3) TIFF image files (see TIFF_Save.hlp)
+
+        4) QuickTime movies:  available on Mac OS X via
+           the native libraries (see AppleQT.hlp) and on
+           Linux via libquicktime (see LQT.hlp)
+
+    To view and edit the options specific to the currently
+    selected format, press the "options..." button next to
+    the "File format" menu.
+
+    Image Capture determines the available formats by reading
+    save_plugins.def in Priism's CONFIG directory and
+    excluding all the formats which do not have an installed
+    plugin.
+
+
+greyscale
+    When this toggle is on, Image Capture saves the captured
+    images as greyscale (single component) images.  Image
+    Capture uses a weighted average of the red, green, and
+    blue components at a pixel to determine the greyscale pixel
+    value: nearest_integer(0.299 * red + 0.587 * green +
+    0.114 * blue).
+
+    When this toggle is off, Image Capture saves the three
+    components (red, green, and blue) of the captured images.
+
+interleaving
+    Interleaving controls the order in which Image Capture
+    records images.  With the "zt" interleaving, Image Capture
+    records all the selected z sections at a given time point
+    before proceeding to the next time point.  With the "tz"
+    interleaving, Image Capture records all the selected time
+    points for a given z section before proceeding to the next
+    z section.
+
+    If the output is separate image files, the choice of
+    interleaving only has an impact if you use a custom file
+    template which includes the one dimensional output section
+    index.  If the output is a single file with multiple images,
+    the order of the images in the file is the order in which
+    the images were captured.
+
+output_file
+    If the chosen file format stores multiple images in a
+    single file, enter the desired name of the output file in
+    the "Output file" field or press the "Output file" button
+    to select the output file with a file browser.
+
+name_format
+    If the chosen file format stores one image per file, use
+    the "Name format" menu to set the template used by Image
+    Capture to generate the file names.  From the "Name format"
+    menu you may select a standard template or choose the
+    "custom template" option to use the template entered in
+    the Template field.  For the standard templates, the
+    generated file names will all start with the contents
+    of the Directory field, followed by a slash, and followed
+    by the contents of the Prefix field.  The remainder of
+    the file name depends on which template was chosen:  it
+    will be the template name ("prefix_z#_t#extension", for
+    instance) without the leading "prefix" and with "t#"
+    replaced with a t followed by the output time index for
+    the image in the file, "z#" replaced with a z followed
+    by the output z index for the image in the file, and
+    extension replaced by either the default extension for
+    the file format or the contents of the Extension field.
+    The number of digits used for an index is the number
+    of digits needed to represent the largest index in that
+    dimension.  As an example, with the
+
+        prefix_z#_t#.extension
+
+    template, /var/tmp as the output directory, exp12_2002
+    as the output prefix, .tif as the extension, and an
+    input region that has 500 time points and 30 z sections,
+    the file name for the section whose output z and time
+    indices are 1 and 2 respectively would be
+
+        /var/tmp/exp12_2002_z01_t002.tif.
+
+output_directory
+    If the chosen file format stores one image per file and
+    you have selected one of the standard file name formats,
+    the files generated by Image Capture will all have names
+    that start with the contents of the Directory field.
+    The section on name formats has an example of this.  For
+    a custom file name template, the contents of the Directory
+    field are substituted for any %d conversion codes.
+
+output_prefix
+    If the chosen file format stores one image per file and
+    you have selected one of the standard file name formats,
+    the files generated by Image Capture will have names
+    that include the contents of the Prefix field.  The 
+    section on name formats has an example of this.  For
+    a custom file name template, the contents of the Prefix
+    field are substituted for any %p conversion codes.
+
+extension
+    If the chosen file format stores one image per file and
+    you have selected one of the standard file name formats,
+    the files generated by Image Capture will have file
+    names that end with the default extension for the
+    chosen file format if the "default" toggle next to the
+    Extension field is on or the contents of the extension
+    field if the "default" toggle is off.  The section on
+    name formats has an example of this.  For a custom file
+    name template, the default file name extension (if the
+    "default" toggle is on) or the contents of the Extension
+    field (if the "default" toggle is off) are substituted
+    for any %e conversion codes.
+
+template
+    If the chosen file format stores one image per file,
+    you can force Image Capture to use your own file name
+    template by selecting "custom template" from the "Name
+    format" menu and enter the template in the Template
+    field.  When Image Capture generates file names, it
+    expands special conversion codes in the template.  The
+    conversion codes have the following general form:
+
+        %[width][modifier]code
+
+    Image Capture recognizes the following conversion codes:
+
+        %
+            Causes a percent sign to be inserted in the
+            file name.
+
+        d
+            This conversion code is replaced with the
+            contents of the Directory field.
+
+        p
+            This conversion code is replaced with the
+            contents of the Prefix field.
+
+        e
+            This conversion code is replaced with the
+            contents of the Extension field if the
+            "default" toggle adjacent to the Extension
+            field is off or is replaced with the default
+            extension for the chosen file format if the
+            "default" toggle is on.
+
+        z
+            This conversion code is replaced with the z
+            index for the image stored in the file.
+
+        t
+            This conversion code is replaced with the time
+            point index for the image stored in the file.
+
+        s
+            This conversion code is replaced with the section
+            number for the image stored in the file.
+
+    width is optional and may be used with the z, t, and s
+    codes to specify the minimum number of digits which are
+    used to display the index value.  width may be a positive
+    integer indicating the minimum number of digits to use or
+    the letter a to indicate that the minimum number of digits
+    should be the number of digits in the maximum corresponding
+    index.  If an index would have less than the minimum number
+    of digits, leading zeros are added to fill in the missing
+    portion.
+
+    modifier is optional and may be used with the z, t, and s
+    codes.  If modifier is not present, the index generated
+    by those codes is computed for the output file.  If
+    modifier is the letter i, then the index is computed
+    relative to the input file.
+
+    As an example, the standard name format,
+
+        prefix_z#_t#extension
+
+    is equivalent to the custom template,
+
+        %d/%p_z%az_t%at%e
+
+    The custom template,
+
+        /var/tmp/%2iz_%2it.tif
+
+    would generate file names which included the input z
+    and time indices of the image in the file.  Each index
+    would be displayed with at least two digits.

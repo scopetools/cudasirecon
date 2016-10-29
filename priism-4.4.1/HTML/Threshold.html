@@ -1,0 +1,248 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD 3.2 HTML//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Threshold</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to apply a single threshold to a data set.">
+  <META NAME="Keywords" CONTENT="Priism,segmentation,mask,threshold">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Overview">Threshold</A></H1>
+<H2>Overview</H2>
+<P>Use Threshold to remove all data in an image whose intensity does not match
+a condition that you set.  In the output, the pixels which do not match the
+condition are replaced with the <A HREF="#Background">background intensity</A>.
+If you have selected the <EM>masked data</EM> option from the
+<A HREF="#Result">Result menu</A>, the pixels which do satisfy the condition
+retain their intensities.  If you have selected the <EM>mask</EM> option from
+the Result menu, the pixels which satisfy the condition are set to one.
+
+<P>For the condition, you have the three choices in the
+<A HREF="#Condition">Condition menu</A>:  the pixel's intensity equals or
+or exceeds the <A HREF="#Threshold">threshold value</A>, the pixel's intensity
+is less than or equal to the threshold value, or an arbitrary expression
+entered in the <A HREF="#Expression">Expression field</A>.
+
+<P>The controls for selecting the input file, output file, and region to
+process are shared with many other Priism applications and are described
+<A HREF="Region.html">elsewhere</A>.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Condition">Condition</A> |
+  <A HREF="#Threshold">Threshold</A> |
+  <A HREF="#Expression">Expression</A> |
+  <A HREF="#Background">Background</A> |
+  <A HREF="#Result">Result</A> |
+  <A HREF="#PtList">Point list</A> |
+  <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="Condition">Condition</A></H2>
+<P>Use the <EM>Condition</EM> menu in conjunction with either the
+<A HREF="#Threshold">Threshold</A> or <A HREF="#Expression">Expression</A>
+fields to set the criteria the application uses to select pixels.  The three
+choices available from the <EM>Condition</EM> menu are:
+<DL>
+  <DT>above or equal to threshold<DD>Selects pixels whose intensity
+    (or magnitude of the pixel value if the input is complex-valued) is greater
+    than or equal to the value in the <A HREF="#Threshold">threshold field</A>.
+  <DT>below or equal to threshold<DD>Selects pixels whose intensity
+    (or magnitude of the pixel value if the input is complex-valued) less
+    than or equal to the value in the <A HREF="#Threshold">threshold field</A>.
+  <DT>generic expression<DD>For this case, use the
+    <A HREF="#Expression">Expression field</A> to enter an expression (for
+    instance, "<CODE>p &gt; 2000 or p &lt; 1000</CODE>" where p stands for the
+    pixel value) to enter an arbitrary selection expression.
+</DL>
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+<H2><A NAME="Threshold">Threshold</A></H2>
+<P>Use the <EM>Threshold</EM> field to enter the threshold value used
+when the <A HREF="#Condition">condition for selecting pixels</A> is either
+"above or equal to threshold" or "below or equal to threshold".
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+<H2><A NAME="Expression">Expression</A></H2>
+<P>If you select "generic expression" as the
+<A HREF="#Condition">pixel selection condition</A>, then enter the selection
+criteria in the <EM>Expression</EM> field.  You may use the following in
+the criteria:
+
+<DL>
+  <DT>p<DD>Represents the pixel value of the pixel to be tested.
+  <DT>numbers or constants<DD>Explicit values (for instance 1, 5.7, and 1e3;
+    the last is an alternative way to say 1000) stand for themselves.  Also
+    recognizes the following named constants:  <CODE>pi</CODE>
+    (i.e. 3.14159...), <CODE>e</CODE> (i.e. 2.71828...), and <CODE>i</CODE>
+    (represents a purely imaginary value with a magnitude of one).
+  <DT>( and )<DD>Use parentheses to specify a different order of operations
+    than the default ordering (exponentiation has highest precedence,
+    followed by multiplication and division, followed by addition and
+    subtraction, followed by the comparison operators, and followed by the
+    Boolean operators among which not has the highest precedence; operators
+    with the same precedence which appear consecutively are evaluated left
+    to right).
+  <DT>comparison operations<DD>These are <CODE>==</CODE> (is equal to),
+    <CODE>!=</CODE> (is not equal to), <CODE>&lt;</CODE> (is less than),
+    <CODE>&gt;</CODE> (is greater than), <CODE>&lt;=</CODE> (is less than or
+    equal to), and <CODE>&gt;=</CODE> (is greater than or equal to).  Except
+    for <CODE>==</CODE> and <CODE>!=</CODE>, the comparison operators expect
+    the quantities compared to be real; for complex values, use one of the
+    conversion functions to convert the value to a real quantity.
+  <DT>Boolean operations<DD>These are <CODE>not</CODE> (<CODE>not</CODE>
+    <VAR>x</VAR> is true if <VAR>x</VAR> is false and is false if <VAR>x</VAR>
+    is true; as a shortcut, you may use <CODE>!</CODE> instead of
+    <CODE>not</CODE>), <CODE>and</CODE> (<VAR>x</VAR> <CODE>and</CODE>
+    <VAR>y</VAR> is true if both <VAR>x</VAR> and <VAR>y</VAR> are true;
+    otherwise it is false), <CODE>or</CODE> (<VAR>x</VAR> <CODE>or</CODE>
+    <VAR>y</VAR> is false if <VAR>x</VAR> and <VAR>y</VAR> are false; otherwise
+    it is true), and <CODE>xor</CODE> (<VAR>x</VAR> <CODE>xor</CODE>
+    <VAR>y</VAR> is true if only one of <VAR>x</VAR> and <VAR>y</VAR> is
+    true; otherwise it is false).
+  <DT>conversion functions<DD>The functions to convert a real or complex value
+    to a real value are <CODE>real(</CODE><VAR>x</VAR><CODE>)</CODE>,
+    <CODE>imag(</CODE><VAR>x</VAR><CODE>)</CODE>,
+    <CODE>mag(</CODE><VAR>x</VAR><CODE>)</CODE>, and
+    <CODE>phase(</CODE><VAR>x</VAR><CODE>)</CODE>.  The first returns the
+    real part of <VAR>x</VAR>, the second returns the imaginary part of
+    <VAR>x</VAR>, the third returns the magnitude of <VAR>x</VAR>, and the
+    fourth returns the phase, in radians, of <VAR>x</VAR>.
+    <CODE>complex(</CODE><VAR>x</VAR><CODE>,</CODE><VAR>y</VAR><CODE>)</CODE>
+    is also available to create a complex number with a real component equal
+    to <VAR>x</VAR> and an imaginary component equal to <VAR>y</VAR>.
+  <DT>numeric operations<DD>These are <CODE>+</CODE> (addition),
+    <CODE>-</CODE> (subtraction), <CODE>*</CODE> (multiplication),
+    <CODE>/</CODE> (division), and <CODE>^</CODE> (exponentiation).
+  <DT>transcendental functions<DD>These are
+    <CODE>cos(</CODE><VAR>x</VAR><CODE>)</CODE> (the cosine of <VAR>x</VAR>,
+    assuming <VAR>x</VAR> is in radians), <CODE>sin(</CODE><VAR>x</VAR><CODE>)</CODE>
+    (the sine of <VAR>x</VAR>, assuming <VAR>x</VAR> is in radians),
+    <CODE>tan(</CODE><VAR>x</VAR><CODE>)</CODE> (the tangent of <VAR>x</VAR>,
+    assuming <VAR>x</VAR> is in radians),
+    <CODE>log(</CODE><VAR>x</VAR><CODE>)</CODE> (the natural logarithm of
+    <VAR>x</VAR>), and <CODE>log10(</CODE><VAR>x</VAR><CODE>)</CODE> (the
+    logarithm base 10 of <VAR>x</VAR>). 
+  <DT>miscellaneous functions<DD><CODE>abs(</CODE><VAR>x</VAR><CODE>)</CODE>
+    expects a real value and returns its absolute value.
+    <CODE>max(</CODE><VAR>x</VAR><CODE>,</CODE><VAR>y</VAR><CODE>)</CODE>,
+    expects two real values and returns the larger of the two.
+    <CODE>min(</CODE><VAR>x</VAR><CODE>,</CODE><VAR>y</VAR><CODE>)</CODE>,
+    expects two real values and returns the smaller of the two.
+    <CODE>in_range(</CODE><VAR>b1</VAR><CODE>,</CODE><VAR>b2</VAR><CODE>,</CODE><VAR>x</VAR><CODE>)</CODE> is a shortcut for the expression "<VAR>x</VAR> <CODE>&gt;=</CODE> <VAR>b1</VAR> <CODE>and</CODE> <VAR>x</VAR> <CODE>&lt;=</CODE> <VAR>b2</VAR>".
+</DL>
+
+<P>As an example, if the input data is real and the desired threshold is 1500,
+then the expression
+<PRE>    p &gt;= 1500</PRE>
+<P>is equivalent to the "above or equal to threshold" selection from the
+<A HREF="#Condition">Condition menu</A>.  The slightly more complicated
+expression
+<PRE>    abs(p - 800) &lt; 10</PRE>
+<P>selects all pixels with values between 791 and 809.  The same condition
+can be expressed in other ways:
+<PRE>    p &gt; 790 and p &lt; 810</PRE>
+<P>or
+<PRE>    in_range(791, 809, p)</PRE>
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+<H2><A NAME="Background">Background</A></H2>
+<P>In the output, pixels whose original value does not satisfy the specified
+<A HREF="#Condition">condition</A> are set to the background value.
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+<H2><A NAME="Result">Result</A></H2>
+<P>Use the <EM>Result</EM> menu to control what is done with pixels that
+satisfy the <A HREF="#Condition">condition you have set</A> (pixels which
+do not satisfy the condition are set to the
+<A HREF="#Background">background value</A>).  The two available options are:
+<DL>
+  <DT>mask<DD>Pixels satisfying the condition are set to one.
+  <DT>masked data<DD>Pixels satisfying the condition retain their values.
+</DL>
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+<H2><A NAME="PtList">Point list</A></H2>
+<P>If the <EM>Point list</EM> toggle is on, a file will be written with the
+pixel coordinates of the points that satisfy the
+<A HREF="#Condition">specified condition</A>.  Enter the name of the file in
+the field next to the toggle button.  The format of the file is plain text
+with three columns separated by spaces.  The first column is the x coordinate,
+the second is the y coordinate, and the third is the z coordinate.  The
+coordinates are relative to the dimensions of the output.
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command line</A></H2>
+<P>Threshold accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, Threshold
+has the following options:
+
+<DL>
+  <DT><CODE>-not_below=</CODE><VAR>v</VAR>
+  <DD>Selects the "above or equal to threshold" condition with a threshold
+    equal to <VAR>v</VAR>.  If <CODE>-not_below</CODE>,
+    <CODE>-not_above</CODE> or <CODE>-expression</CODE> do not appear on
+    the command line, Threshold proceeds as if <CODE>-not_below=0</CODE>
+    had been specified.
+
+  <DT><CODE>-not_above=</CODE><VAR>v</VAR>
+  <DD>Selects the "below or equal to threshold" condition with a threshold
+    equal to <VAR>v</VAR>.
+
+  <DT><CODE>-expression=</CODE><VAR>expr</VAR>
+  <DD>Sets the pixel selection condition to be the expression given by
+    expr (see the <A HREF="#Expression">Expression topic</A> for more details
+    about acceptable expressions).  Because some characters in expressions
+    (notably &lt;, &gt;, (, ), and !) likely have special meanings to the
+    shell, you will usually have to put <VAR>expr</VAR> in quotes.
+
+  <DT><CODE>-background=</CODE><VAR>b</VAR>
+  <DD>Sets the background value, used to fill pixels which do not satisfy the
+    selection criteria, to <VAR>b</VAR>.  If <CODE>-background</CODE> is not
+    set on the command line, Threshold assumes a background value of zero.
+
+  <DT><CODE>-result=mask</CODE> or <CODE>-result=masked_data</CODE>
+  <DD>The first form causes the pixels which satisfy the selection criteria
+    to have an intensity of one assigned to them in the output file; the
+    other form preserves the intensity values of the pixels that satisfy
+    the selection criteria.  If <CODE>-result</CODE> does not appear on the
+    command-line, Threshold proceeds as if <CODE>-result=mask</CODE> had
+    appeared on the command line.
+
+  <DT><CODE>-ptlist=</CODE><VAR>filename</VAR>
+  <DD>Causes Threshold to generate a file named <VAR>filename</VAR> with the
+    pixel coordinates of the pixels that satisfy the selection criteria.
+</DL>
+
+<P>As an example, if in.dat has non-complex data, then the following generates
+out.dat which has ones where the intensity falls in the range of 800 to 1000
+and zeros elsewhere:
+
+<PRE>
+    Threshold in.dat out.dat -expression='p &gt;= 800 and p &lt;= 1000' -result=mask
+</PRE>
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

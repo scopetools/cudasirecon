@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Select Image Colors</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the dialog to select which colors are used when drawing color images.">
+  <META NAME="Keywords" CONTENT="Priism,monitor,color">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="SelectImgColors">Select Image Colors</A></H1>
+<H2>Overview</H2>
+
+<P>Use <EM>Select Image Colors</EM> to specify how the image data is
+displayed in an image window. Images can either be displayed one wavelength
+at a time in pseudocolor or as one to three wavelengths simultaneously
+using RGB mode.
+
+<P>Pseudocolor shows a single wavelength in false color.  The colors are
+shades of grey by default; you can change the palette with the "Change
+Lookup Table" menu in Priism's color menu.  The number of colors used is
+typically 240 to 256, depending on the hardware.  Because of the way the
+eye reacts to colors, you may be able to see more detail in an image when
+looking at it in pseudocolor mode.
+
+<P>RGB mode shows each wavelength as shades of red, green, blue, or a
+blended color (cyan = green + blue, yellow = red + green, or purple =
+red + blue).  A maximum of 3 wavelengths can be displayed simultaneously
+using the simple colors red, green, and blue. If a blended color is used,
+a maximum of 2 wavelengths can be displayed simultaneously.  The colors can
+only be combined so that red, green and blue are assigned once each. For
+example, if cyan is being used for one wavelength, the only color left to
+display an additional wavelength is red.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#ColorMode">Color display mode</A> |
+   <A HREF="#WaveColor">Wave display color</A> |
+   <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="Monitor.html">Image windows</A>
+<HR>
+
+<H2><A NAME="ColorMode">Color Display Mode</A></H2>
+<P>Use this option menu to toggle between pseudocolor and RGB display styles.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#SelectImgColors">Overview</A> |
+   Color display mode |
+   <A HREF="#WaveColor">Wave display color</A> |
+   <A HREF="#CommandLine">Command line</A>
+
+<HR>
+
+<H2><A NAME="WaveColor">Wave Display Color</A></H2>
+<P>When the monitor is in <EM>RGB</EM> mode, you can use these option
+menus (one per wavelength) to select the color used to represent each
+wavelength.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#SelectImgColors">Overview</A> |
+   <A HREF="#ColorMode">Color display mode</A> |
+   Wave display color |
+   <A HREF="#CommandLine">Command line</A>
+
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>SelectImgColors has a command line interface so that you can automate the
+process of changing the image colors for an image window.  The basic syntax
+for invoking SelectImgColors is this: <CODE>SelectImgColors</CODE>
+<VAR>window_number</VAR> <VAR>options</VAR>.  The options currently understood
+are listed below.  If you do not specify any options after the window number,
+you'll get the graphical
+user interface.
+
+<DL>
+  <DT><CODE>-colors=</CODE><VAR>color0</VAR>[<CODE>:</CODE><VAR>color1</VAR>...]
+  <DD>Sets the colors used to display each wavelength when the image window
+    is in the true color display mode.  Specify the colors by providing a list
+    of color names separated by colons.  The first color in the list will be
+    used for the first wavelength, the second color will be used for the second
+    wavelength, and so on.  The allowed color names, which are
+    case-insensitive, are black, blue, cyan, green, purple, red, and yellow.
+    You may omit the color name for a wavelength to use the currently assigned
+    color for the wavelength.  If you do omit a color, do not omit the
+    separating colons.  For instance, <CODE>-colors=::green</CODE> keeps the
+    currently assigned colors for the first two wavelengths, assigns green
+    to the third wavelength, and, if the image window has more than three
+    wavelengths, retains the current colors for the remaining wavelengths.  If
+    there are colors that overlap (for instance red and purple), the
+    overlapping color components are removed as follows:
+    <OL>
+      <LI>If wavelengths <VAR>i</VAR> and <VAR>j</VAR> have colors assigned
+        by <CODE>-colors</CODE>, the overlapping components will be removed
+        from the color assigned to the higher wavelength index.
+      <LI>If wavelength <VAR>i</VAR> has a color assigned by
+        <CODE>-colors</CODE> that overlaps with the color of wavelength
+        <VAR>j</VAR> which was not set with <CODE>-colors</CODE>, the
+        overlapping color components will be removed from the color assigned to
+        wavelength <VAR>j</VAR>.
+      <LI>If wavelengths <VAR>i</VAR> and <VAR>j</VAR> have overlapping colors
+        that were not assigned by by <CODE>-colors</CODE>, the overlapping
+        components will be removed from the color assigned to the higher
+        wavelength index.
+    </OL>
+
+  <DT><CODE>-map=</CODE><VAR>on0</VAR>[<CODE>:</CODE><VAR>on1</VAR>...]
+  <DD>Sets which wavelengths are displayed.  Specify whether each wavelength is
+    on or off by providing a list of ones and zeros separated by colons.  A
+    value of zero turns off display of a wavelength, and a value of one turns
+    on display of a wavelength.  The first value in the list will be applied to
+    the first wavelength, the second value of the second wavelength, and so on.
+    You may omit a value for a wavelength to not change whether that wavelength
+    is mapped.  If you do omit a value, do not omit the separating colons.
+    For instance, <CODE>-map=:1::0</CODE> turns on display of the second
+    wavelength, turns off display of the fourth wavelength, and keeps the other
+    wavelengths as they are.  If the image window uses the pseudocolor display
+    mode (either because you use the <CODE>-pseudo</CODE> option or because the
+    image window was already in the pseudocolor mode and you did not use
+    <CODE>-rgb</CODE>), the <CODE>-map</CODE> option will cause the image
+    window to display the first wavelength that is turned on.  For instance,
+    <CODE>-map=0::0:1</CODE> will cause a pseudocolor window to display the
+    fourth wavelength unless the second wavelength is currently displayed.  If
+    the image window uses true color display mode, SelectImgColors will
+    silently ignore attempts to display wavelengths that are displayed in
+    black.
+
+  <DT><CODE>-pseudo</CODE>
+  <DD>Causes the image window to switch to the pseudocolor mode where one
+    wavelength is displayed per image and the image is colored according
+    to the currently loaded color lookup table.
+  
+  <DT><CODE>-query</CODE>
+  <DD>Prints out the current wavelength coloring and mapping attributes for the
+    image window to standard output.  The printed report consists of several
+    lines, each starting with the name (a combination of digits and lower- or
+    uppercase characters) of the attribute, followed immediately by a colon,
+    followed by the attribute's values which are separated from the color and
+    each other by white space.  The attributes currently printed are
+    DisplayMode, WavelengthColors, and MappedWavelengths.  For DisplayMode,
+    the value will be pseudocolor, rgb, or an integer for an unknown display
+    type.  For WavelengthColors, there will be five color names each of which
+    will be black, blue, cyan, green, purple, red, yellow, white, or an integer
+    for an unknown color.  For MappedWavelengths, there will be 5 values.
+    Each of those values will either be yes or no indicating whether or not
+    the wavelength is mapped.
+
+  <DT><CODE>-rgb</CODE>
+  <DD>Causes the image window to switch to the true color mode where up to
+    three wavelengths are displayed per image with each wavelength rendered
+    in a different color.
+</DL>
+
+<P>As an example,
+
+<PRE>
+    SelectImgColors 3 -rgb -colors=blue:black:green:red:black -map=1:0:1:1:0
+</PRE>
+
+<P>would switch window 3 to a true color display with the first, third, and
+fourth wavelengths displayed.  The first wavelength will be rendered in blue,
+the third in green, and the fourth in red.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#SelectImgColors">Overview</A> |
+   <A HREF="#ColorMode">Color display mode</A> |
+   <A HREF="#WaveColor">Wave display color</A> |
+   Command line
+
+<HR>
+
+</BODY>
+</HTML>

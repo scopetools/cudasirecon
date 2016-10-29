@@ -1,0 +1,1120 @@
+KEYWORD
+      Resolution ApplyMassnorm ReconstructionShift
+      ReconstructionZSize ReconCyclesPerRun RestartRecon
+      NumberOfRuns TemporaryDirectory InitialGuess
+      CrossCorrelationImages GuessResolution StartingRunNumber
+      ResolutionScale FullSize AlignedSize SectionRange
+      ReconstructionMethod ProjectionOrder ReconCyclesPerRun
+      Blocks Smoothing ConvergenceFactor PositivityInterval
+      Slab BackprojectionWeight BackprojectionHamming
+      BackprojectionParticleSize Multires AlignmentMethod
+      SimplexFilter Offset PhaseWeighting WienerCoefficient
+      CenterPeakDistance 2ndPeakThreshold SimplexDeviations
+      CommandLine
+
+DESCRIPTION
+      EMTIARGPU is a front-end for the iterative alignment
+      and reconstruction of EM tomography data.  It is
+      essentially the same as EMTIAR, but uses servers
+      outfitted with graphics cards to accelerate the
+      reconstruction and projection calculations.
+
+      The basic recipe for generating a reconstruction with
+      EMTIARGPU is:
+
+      1) Use the mass-normalization and alignment components
+         of EMTAR to generate the final values for the mass-
+         normalization parameters and initial guess for the
+         alignment parameters.  If your data has fiducial
+         markers, you can use BALIGN instead to generate the
+         initial guess for the alignment parameters and then
+         use the mass-normalization component of EMTAR to
+         add the mass-normalization values.
+
+      2) Start EMTIARGPU.  Enter the name of the tilt series
+         in the "TiltSeries" field at the top of the dialog.
+         Enter the name of the file with the mass-
+         normalization parameters and initial guess at the
+         alignment parameters in the "InAlignParam" field
+         at the top of the dialog.
+
+      3) Adjust other parameters.  Parameters that
+         are commonly changed are:
+
+         The resolution level to process
+             If you've added multiple resolutions
+             to the input tilt series using
+             AppendRes with a z scaling of one,
+             then you can enter the resolution
+             level (zero is the highest) to process
+             in the "Resolution" field.  The generated
+             alignment parameters will always be in
+             terms of the coordinates of the highest
+             resolution.  The generated reconstruction
+             will be at the selected resolution level.
+             Size-related input parameters are
+             automatically scaled by the resolution
+             factor so you should choose values for
+             those that are appropriate for the highest
+             resolution.  Performing initial refinement
+             at lower resolutions can significantly
+             speed up the process because the
+             reconstructions are smaller.
+
+         Bounds of the reconstructed volume
+             The bounds are controlled by the
+             "Reconstruction shift" and "Reconstruction
+             Z size" fields.  The x and y dimensions
+             of the reconstruction are constrained to be
+             the same size as the x and y dimensions of
+             the input tilt series.  EMTAR has methods
+             to interactively select the bounds; you can
+             use them and then copy the values from EMTAR's
+             "Shift (XYZ)" field to the "Reconstruction
+             shift" field in EMTIARGPU and the third value
+             in EMTAR's "Size XYZ" field to the
+             "Reconstruction Z size" field in EMTIARGPU.
+
+         Number of runs
+             This is the number of times the steps of
+             reconstruction, reprojection, and alignment
+             to the reprojection are repeated.
+
+         GPU execution settings
+             To change which hosts are used for GPU
+             calculations and how to start the
+             software on those hosts, turn off the
+             toggle button, labeled "default", next
+             to the button labeled "GPU execution
+             settings..." and then press the button
+             labeled "GPU execution settings...".
+             That will open another dialog with the
+             relevant controls.  Those controls are
+             described in the GPUParallel section of
+             Parallel.hlp.  When the toggle button
+             next to the "GPU execution settings..."
+             button is on, the Refine Alignment uses
+             what has been configured for the queue
+             or host currently selected from the
+             button labeled "Options" in the main
+             dialog.
+
+      4) Press the "Do It" button to start the alignment
+         and reconstruction.  Before pressing "Do It" you
+         way want to alter the job submission settings
+         by pressing the "Options" button at the bottom
+         of the EMTIARGPU dialog.  The job submission
+         settings are described in BatchRegion.hlp.
+
+      Besides a log file, the iterative alignment and
+      reconstruction generates two outputs.  The first
+      is an alignment parameter file for each iteration.
+      The names for these files are the contents of the
+      "OutParamBase" field with an underscore, the
+      iteration number, and the extension of the input
+      alignment parameter file appended.  The second
+      output is the data for the reconstructed volume.
+      The file name for the reconstructed volume is in
+      the "Reconstruction" field.
+
+Resolution
+      The resolution parameter selects which resolution
+      to process from the input tilt series.  0 is the
+      highest (full) resolution.  Normally all that you
+      need to do to process a different resolution is
+      set the resolution parameter.  There are other
+      parameters in the special parameters dialog
+      that affect the handling of different resolutions
+      (guess resolution, resolution scale, and full
+      size), but in typical cases the user interface
+      chooses correct defaults for those parameters.
+
+ApplyMassnorm
+      The default behavior for the iterative alignment
+      and reconstruction has an initialization step
+      where the mass-normalization parameters are used
+      to generate a mass-normalized (but not aligned)
+      version of the input tilt series.  The toggle
+      button next to "Apply massnorm" controls whether
+      or not to use the initialization step.  If you
+      have already applied the mass-normalization
+      parameters to the input tilt series, turn the
+      toggle button off; otherwise, make sure it is on.
+
+      Two controls affect the application of the mass-
+      normalization parameters during the initialization
+      step.  The menu at the end of the "Apply massnorm"
+      line allows you to select the image formation model.
+      You have three choices:
+
+      logarithmic
+          The mass density is linearly related to the
+          logarithm of the electron counts.
+
+      scaled linear
+          The mass density is linearly related to the
+          electron counts.
+
+      linear
+          The electron counts are used without modification
+          as a measure of the mass density.
+
+      The other control is the pcBase field in the special
+      parameters dialog.  For the scaled linear or logarithmic
+      image formation models, the value in that field
+      controls the contribution of an additive term
+      corresponding to a sheet of uniform mass density.
+      The documentation for appl_prm, APPL_PRM.hlp, has
+      more information about the pcBase parameter.
+
+ReconstructionShift
+      These three values (they are in units of pixels)
+      shift the imaginary 3D tilt axis of the projection
+      data from its default location; they are used to
+      center the reconstruction volume on an object of
+      interest.  The default orientation of the 3D tilt
+      axis has it pass through the point whose x and y
+      coordinates are the center of the reference
+      projection.
+
+ReconstructionZSize
+      This value sets the size of the z dimension, in
+      pixels, for the reconstructed volume.
+
+ReconCyclesPerRun
+      EMTIARGPU uses either the SART or EM algorithms
+      provided by gpurecon to calculate the reconstruction
+      from the aligned data.  The value in the "Recon.
+      cycles/run" field is the number of iterations of
+      the reconstruction algorithm to perform for each
+      each run of the EMTIARGPU steps.
+
+RestartRecon
+       If the "Restart recon" toggle button is on, the
+       reconstructions in all iterations after the
+       first do not start with an initial guess.  If
+       the "Restart recon" button is off, the
+       reconstructions use the reconstruction result
+       from the previous iteration as the initial guess.
+       Use the "Initial guess" field to control whether
+       or not the reconstruction during the first iteration
+       uses an initial guess.
+
+       By default, the "Restart recon" toggle button is
+       on.
+
+NumberOfRuns
+      The value in the "Number of Runs" field is the
+      number of iterations that should be performed to
+      refine the alignment parameters and reconstruction.
+
+TemporaryDirectory
+      The iterative alignment and reconstruction
+      procedure will use the directory specified
+      in the "Temporary directory" field for
+      storage of the temporary results:  the mass-
+      normalized tilt series from the initialization
+      step (a floating-point data set which has the
+      same dimensions as the input tilt series), the
+      aligned tilt series (a floating-point data set
+      whose size is given by the "Aligned size" and
+      "Section range" fields), the
+      intermediate reconstruction (a floating-point
+      data set whose size is given by the x and y
+      dimensions of the input tilt series and the
+      reconstruction z size), and the reprojection
+      result (a data set which is the same size
+      as the input tilt series).  At any given
+      time, the temporary files present will be the
+      result of the initialization step, if any, and,
+      at most, either an intermediate reconstruction
+      and aligned tilt series, or an intermediate
+      reconstruction and reprojection result.
+
+      By default, the temporary directory is a
+      directory named tmp in your home directory.
+      You might change the temporary directory if
+      you were short on space in the default directory
+      or the default directory was on a slow disk and
+      you have a fast disk with enough space for the
+      temporary files.
+
+InitialGuess
+      To specify an initial guess for the reconstruction,
+      enter the name of the file containing the initial
+      guess into the "Initial guess" field or press the
+      adjacent button to launch a file browser to help
+      you select the file.  The initial guess is optional,
+      if you do not enter anything in the "Initial guess"
+      field or use "none" as the name of the file, the
+      reconstruction will proceed without an initial
+      guess.  If you do use an initial guess, its
+      dimensions must match the dimensions of the
+      reconstruction (i.e. have an x size equal to the
+      x size of the input tilt series, a y size equal
+      to the y size of the input tilt series, and z size
+      equal to the value in the "Reconstruction Z size"
+      field.
+
+CrossCorrelationImages
+      If you select an alignment method that includes
+      Talign, the alignment calculations can generate
+      images of the cross-correlation results, with one
+      cross-correlation image per projection for the
+      most recent iteration.  If the field labeled
+      "Cross correlations" is not empty and not set
+      to "none", those cross-correlation images will
+      be written to an MRC file with the name given
+      in the field.
+
+GuessResolution
+      The guess resolution parameter allows you to
+      select which resolution to use from the file
+      containing the initial guess.  The dimensions
+      of the resolution you select must be compatible
+      with the dimensions you've specified for the
+      reconstruction.
+
+StartingRunNumber
+      The iterations of alignment and reconstruction
+      will be numbered from the value in the "Starting
+      run number" field to the value in the "Starting
+      run number field" plus the number of runs minus
+      one.  That numbering only affects the names of
+      the output alignment parameter files.  If you
+      had previously done n iterations and wanted to
+      see the effect of performing m more with a
+      record of the alignment parameters for all of
+      the m plus n iterations, you would set EMTIARGPU
+      so the input alignment parameter file was the
+      output alignment parameter file from the nth
+      iteration, the number of runs was m, the
+      starting run number was n plus one, and the
+      initial guess was the reconstruction generated
+      by the previous set of iterations.
+
+ResolutionScale
+      The resolution scale parameter controls the scale
+      factor applied to the alignment parameters and to
+      the size-related input parameters (reconstruction
+      shift, reconstruction z size, aligned size, and
+      characteristic lengths for the x and y shifts).
+      In the typical case where you select a resolution
+      level to process from the main dialog, the
+      resolution scale factor will be set appropriately.
+      In the case where you are running the iterative
+      alignment and reconstruction on a downsampled
+      tilt series but the input alignment parameters
+      are from a higher resolution version of the data
+      set, you should set the resolution scale to be
+      the same as the downsampling factor (if the data is
+      scaled down by a factor of four relative to the
+      coordinates used for the alignment parameters, set
+      the resolution scale parameter to four) and also
+      adjust the values for the dimensions of the higher
+      resolution data set (the "Full size" field).
+
+FullSize
+      These two values set the x and y dimensions, in
+      pixels, for the tilt series corresponding to the
+      alignment parameters in the input alignment
+      parameter file.  For most cases the user interface
+      can correctly determine these values from the
+      dimensions of the input tilt series.  One case
+      where you will have to manually change these
+      values is if you use a downsampled tilt series
+      as the input to the iterative alignment and
+      reconstruction but the input alignment parameters
+      correspond to a higher resolution version of
+      the same tilt series.  In that case, you should
+      enter the dimensions, in pixels, of that higher
+      resolution tilt series in the "Full size" field
+      and also adjust the resolution scale.
+
+AlignedSize
+      These two values are, respectively, the x and y
+      dimensions, in pixels, of the aligned projections.
+
+SectionRange
+      These three values set which of the input
+      projections are included in the reconstruction.
+      The first value is the index of the first
+      projection to use, the second value is the index
+      of the last projection to use, and the third
+      is the index step.  Allowable values for the
+      indices are between zero and the number of
+      input projections minus one, inclusive.
+
+ReconstructionMethod
+      You have three choices for the reconstruction
+      algorithm.  The choices are
+
+      backprojection
+          Computes the reconstruction with a direct
+          backprojection of the tilted views.
+
+      sart
+          Computes the reconstruction with an iterative
+          algorithm which uses an additive update step.
+
+      em
+          Computes the reconstruction with an iterative
+          expectation maximization algorithm.
+
+      For the sart and em algorithms, you can use the
+      "Recon. Cycles/Run" field to specify the
+      number of iterations to use and the "Blocks"
+      field to select a simultaneous form for the
+      algorithm (one block) or a block-iterative form
+      (two or more blocks) of the algorithm.  You may
+      also specify an initial guess for the
+      reconstruction with the "Initial guess" field.
+      The sart and em algorithms are also affected
+      by your choices for the smoothing, convergence
+      factor, and slab weighting parameters.  The
+      backprojection algorithm is not affected by
+      those parameters.  The positivity interval
+      parameter affects the sart algorithm but has
+      not effect on the em or backprojeciton
+      algorithms.  The backprojection algorithm
+      is affected by your choices for the backprojection
+      weight, backprojection Hamming, and particle
+      size.  Those parameters have no effect on the
+      sart or em algorithms.
+
+ProjectionOrder
+      If you use the sart or em algorithms with more
+      than one block, how the projections are ordered
+      will have an effect on the result.  There are
+      four options available for reordering the
+      projections prior to the reconstruction calculation:
+
+      blocked
+          In effect, sorts the projections into ascending
+          order by tilt angle, assembles blocks by taking
+          every mth projection where m is the number of
+          blocks, and then takes every jth block where j
+          is the maximum of (m + 1) / 3 or 2.  This is
+          the default
+
+      random
+          Randomly shuffles the projections.
+
+      sorted
+          Sorts the projections into ascending order by
+          tilt angle.
+
+      as is
+          Does not reorder the projections:  takes the
+          projections in sequence from the input file.
+
+      For the sart or em algorithms with one block
+      or for the backprojection algorithm, the effect
+      of the ordering is minimal:  the differences will
+      only be due to the accumulation of round-off error.
+
+ReconCyclesPerRun
+      If you use the SART or EM reconstruction algorithms,
+      the value in the "Recon. cycles/run" field is the
+      number of iterations of the reconstruction algorithm
+      to perform for each reconstruction.
+
+Blocks
+      The sart or em reconstruction algorithms can
+      be run in a simultaneous mode or block-iterative
+      mode.  In the simultaneous mode, each iteration
+      considers all the measurements at once.  In the
+      block-iterative mode, the measurements are broken
+      into subsets.  At each iteration the subsets are
+      processed in turn; once all the measurements have
+      been taken into account, the next iteration begins.
+      The "Blocks" field sets the number of subsets to
+      use:  a value of one in that field selects the
+      simultaneous mode.
+
+Smoothing
+      For the sart and em algorithms, you can apply a
+      3D Gaussian filter to the reconstruction result
+      at the end of each iteration.  Use the field
+      labeled "Smoothing" in the special parameters
+      dialog of the graphical user interface to set
+      the standard deviation, sigma, for the filter.
+      The standard deviation must be greater than
+      or equal to zero.  When zero, no filter will
+      be applied.
+
+      Internally, the filter is implemented as a
+      convolution with 5 x 5 x 5 kernel.  When the
+      reconstruction is performed in pieces (either
+      to parallelize execution or because of memory
+      constraints), the application of the filter
+      is only approximate:  the pieces are processed
+      independently.  The pieces are embedded in a
+      slightly larger box (up to 6 elements in the
+      y direction, the direction used to divide the
+      reconstruction) to account for some of the
+      blurring effect between pieces.
+
+ConvergenceFactor
+      The convergence factor is the scalar by which
+      corrections computed in the sart and em algorithms
+      are multiplied.  The convergence factor can be
+      any value greater than zero or less than or
+      equal to two.
+
+PositivityInterval
+      The current implementation of the GPU
+      reconstruction software accepts this parameter
+      but does not make use of it.  The intent of the
+      parameter is to control how often the reconstruction
+      values are coerced to be non-negative in the
+      sart algorithm. Currently, the values are coerced
+      to be non-negative after updating the
+      reconstruction with the correction from a blocks
+      of views.  With a positivity interval, p,
+      greater than one, the reconstruction values
+      would be coerced to be positive after the updates
+      from p blocks.
+
+      From the graphical user interface, the field
+      labeled, "Positivity interval", in the special
+      parameters dialog sets the positivity interval.
+      When the toggle button next to that field is on,
+      the positivity interval is set equal to the
+      number of blocks.  The positivity interval must
+      be a positive integer.
+
+Slab
+      In the computation of projections from a
+      reconstruction, the values are, by default,
+      rescaled to approximate the contribution
+      from portions of the sample beyond the
+      reconstruction bounds.  The rescaling
+      assumes that the reconstruction is portion
+      of a more or less uniform slab of material.
+      You can turn on or off the rescaling of
+      the projection values and set the dimensions
+      and position of the slab.
+
+      In the graphical user interface, the menu
+      next to the button labeled "Slab weighting"
+      controls whether or not the computed
+      projection is rescaled.  That menu is in
+      the special parameters dialog.  The three
+      options are:
+
+      none
+          Do not rescale the computed projections.
+          That is the same as assuming that no
+          material beyond the bounds of the
+          reconstruction volume would make a
+          contribution to the measured projections.
+
+      default
+          Rescale the computed projections under
+          the assumption the reconstruction is
+          centered in a slab of material with
+          the same height as the reconstruction
+          and with a width in x that is very large.
+
+      custom
+          Rescale the computed projections under
+          the assumption that the reconstruction
+          is part of a slab whose half widths and
+          position are given in the adjacent field.
+
+      The first value in the field for the slab
+      half widths and position is the half width
+      in x.  The second value in the field is
+      the x position for the center of the slab.
+      The third value in the field is the z half
+      width, and the fourth value in the field
+      is the z position for the center of the
+      slab.  All of the values are in units of
+      reconstruction samples.  The position of
+      the center of the slab is measured relative
+      to the point, (0.5 * nx, 0.5 * nz), of the
+      reconstruction.  nx and nz are the number
+      of samples in x and z for the
+      reconstruction.
+
+BackprojectionWeight
+      For the backprojection reconstruction algorithm,
+      there are five available choices for how to
+      filter the projections to compensate for the fact
+      that an average of the backprojected measurements
+      without filtering will overemphasize the low
+      frequency components from the measurements.  Those
+      choices are:
+
+      none
+          With this option, the projection data is not
+          filtered.  Therefore there is no compensation
+          for the unequal sampling in frequency space for
+          the reconstruction and no adjustment for the
+          intensities such that projections of the
+          reconstruction have a range of intensities
+          similar to the original projection data.
+
+      elliptical
+          Can be used with any set of tilt angles and
+          ensures that the projections of the
+          reconstruction have similar intensities to the
+          original projection data.  The values for the
+          particle size affect this weighting function.
+          You may also use the option to apply a Hamming
+          filter to the projections in conjunction with
+          this weighting function.
+
+      elliptical-square
+          Can be used with any set of tilt angles and
+          ensures that the projections of the reconstruction
+          have similar intensities to the original
+          projection data.  The values for the particle
+          size affect this weighting function.  You may
+          also use the option to apply a Hamming filter
+          to the projections in conjunction with this
+          weighting function.
+
+      r*
+          This filtering option assumes that the tilt angles
+          are evenly spaced.  Also, the projections of the
+          reconstruction will have a different range of
+          intensities than the original projections.  You
+          may use the option to apply a Hamming filter to
+          the projections in conjunction with this weighting
+          function.
+
+      r* with Hamming
+          This filtering option is the same as the r* filter
+          except that it includes a Hamming filter applied
+          to the projections as well.  If you want to filter
+          the projections twice with a Hamming filter, you
+          can use the "Backprojection Hamming" option
+          as well.
+
+BackprojectionHamming
+      If you use the backprojection reconstruction method and
+      use a weighting function different than "none", then
+      you may specify that a Hamming filter (a one-dimensional
+      local smoothing filter) be applied to the projections as
+      well prior to the backprojection.  To turn on the Hamming
+      filter from the graphical user interface, turn on the
+      toggle button in the special parameters dialog, labeled
+      "Hamming".  It is adjacent to the backprojection weight
+      menu.
+
+BackprojectionParticleSize
+      If you use the backprojection reconstruction method with
+      the elliptical or elliptical square weighting function,
+      the weighting function uses the particle size to account
+      for the approximate spatial bounds of the object to
+      reconstruct.  The first particle size parameter is the
+      extent in x, and the second particle size parameter and
+      the second is the extent in z.  Both have units of pixels.
+      By default, the particle size parameters are set to the
+      same size as the reconstruction bounds.
+
+Multires
+       Turn on the "Add multires" toggle button to
+       cause the iterative alignment and
+       reconstruction to add lower resolutions to
+       the reconstruction if the x and y dimensions
+       of the reconstruction are large enough.  Turn
+       off the "Add multires" toggle button to
+       generate a reconstruction with a single
+       resolution.
+
+AlignmentMethod
+       Sets the method to use for alignment.  You have
+       three choices:
+
+       Talign + Simplex
+           Use a FFT-based cross-correlation to determine
+           the translations followed by a simplex
+           optimization of all parameters.
+
+       Talign
+           Use a FFT-based cross-correlation to determine
+           the translations.  The other parameters are not
+           modified.
+
+       Simplex
+           Use a simplex optimization of all parameters.
+           This is the default.
+
+SimplexFilter
+       If the "Simplex filter" toggle button is on and
+       you have selected an alignment method that includes
+       the simplex optimization, a high pass filter will
+       be applied to the data sets prior to the simplex
+       optimization.  When the "Simplex filter" toggle
+       button is off, a high pass filter is not applied
+       prior to the simplex optimization.
+
+Offset
+       If the "Offset" toggle button is on and you have
+       selected an alignment method that includes Talign,
+       a shift along the tilt axis will be induced with
+       the intent of keeping the peak corresponding to
+       the best shift parameters (that peak would likely
+       be near the origin if the input alignment parameters
+       are sufficiently good) away from the origin which
+       receives special treatment.  Before the alignment
+       parameters are written out, the program compensates
+       them for the induced shift.  When the "Offset"
+       toggle button is off, no shift along the tilt axis
+       is induced when using one of the methods which
+       include Talign.
+
+PhaseWeighting
+       If the "Phase weighting" toggle button is on
+       and you have selected an alignment method that
+       includes Talign, phase weighting will be performed
+       to enhance the cross-correlation peak at the
+       expense of less robustness in the face of noise.
+       When the "Phase weighting" toggle button is off,
+       phase weighting is not used to enhance the
+       cross-correlation peak.
+
+Slab
+       When the toggle button with the label, "Slab",
+       is on, the projections of the reconstruction
+       will be scaled under the assumption that the
+       reconstruction is drawn from a large slab with
+       the same height as the reconstruction.  When
+       the toggle button is off, the projections are
+       not scaled to account for missing density
+       beyond the bounds of the reconstruction.
+
+WienerCoefficient
+       When you use phase weighting of the cross-
+       correlations, there is a term like that in a
+       Wiener filter to keep things well behaved
+       when the amplitude of the cross-correlation
+       value in the frequency domain approaches zero.
+       The term is an estimate of the high-frequency
+       power spectral density times the value in the user
+       interface's "Wiener coefficient" field.  A higher
+       value for the "Wiener coefficient" increases the
+       suppression of the low amplitude components.  The
+       default value is 100.
+
+CenterPeakDistance
+       With the alignment methods that include Talign,
+       the alignment algorithm will try to cancel out
+       the effect of a peak at the origin by subtracting
+       out a radial average over the central 7 x 7 region
+       from that region.  The alignment application only
+       performs that subtraction if the largest value in
+       the central 7 x 7 region occurs at the center and
+       the quadratic fit to that point and its four
+       nearest neighbors gives a peak position, (xp, yp),
+       where both the absolute value of xp and yp are
+       less than a threshold value.  The threshold value
+       is, by default, 0.05 pixels,  You can change the
+       threshold by modifying the value in the "Center
+       peak distance" field.
+
+2ndPeakThreshold
+       With the alignment methods that include Talign,
+       the algorithm prefers peaks in the cross-correlation
+       that are away from the origin and only takes the
+       peak at the origin if the next highest peak (after
+       masking out the origin) has a height less than f
+       times the height of the peak at the origin.  The
+       default value of f is .001.  In the graphical
+       user interface, alter the value in the "2nd peak
+       threshold" field to alter the value of f.
+
+SimplexDeviations
+      These six parameters set the characteristic
+      length for each of the six alignment
+      parameters that can be refined when aligning
+      a section from the tilt series to a section
+      from the reprojection.  A characteristic length
+      scale of zero for a parameter causes the
+      simplex method to not refine that parameter;
+      in the graphical user interface, you turn on
+      or off the refinement of a parameter with the
+      toggle button adjacent to the field which
+      displays the characteristic length.  The
+      six alignment parameters are the x shift
+      (in pixels), y shift (in pixels), rotation
+      (in degrees), isotropic magnification factor,
+      the orientation angle for the anisotropic
+      stretching axis (in degrees), and the anisotropic
+      stretching factor.  The first four parameters
+      have a direct effect on the output alignment
+      parameters.  The last two (the orientation of
+      the anisotropic stretching direction and the
+      anisotropic stretching factor) do not.
+
+CommandLine
+      EMTIARGPU simply generates a script that calls
+      rgemt_autostart, which is used to start and stop
+      the reconstruction server software, and that,
+      in turn, calls the command-line application,
+      emtiar_gpu, which implements the iterative
+      alignment and reconstruction.  The syntax for
+      using rgemt_autostart with emtiar_gpu is
+      (optional parts are enclosed in brackets):
+
+          rgemt_autostart input_tilt_series \
+              input_align_param \
+              output_align_param_base output_recon \
+              [emtair_gpu_options] \
+              -rgemt_client=emtiar_gpu [rgemt_autostart_options]
+
+      The GPUParallel section of Parallel.hlp
+      describes rgemt_autostart and the options
+      it accepts.  The options tha emtiar_gpu
+      understands are:
+
+      -block=n
+          Sets the number of subsets to use with the
+          em or sart reconstruction algorithms to be
+          n.  n must be greater than or equal to one.
+
+      -bpfilter=f
+          Sets the type of filtering done to the
+          projections for the backprojection
+          reconstruction algorithm.  f must be
+          none, elliptical, elliptical-square,
+          rstar, or rstar-hamming.  If you do
+          not include a -bpfilter option
+          when using the command line, the
+          reconstruction will not filter the
+          projections.
+
+      -bphamming
+          If using the backprojection
+          reconstruction algorithm with filtering
+          of the projection data (-bpfilter= is
+          not set to none), this option causes
+          a Hamming filter to be applied to the
+          projections in addition to the other
+          filtering.
+
+      -bpparticle=x:z
+          Sets the particle size used for the
+          elliptical or elliptical-square filters
+          of the projection data in the
+          backprojection reconstruction algorithm.
+          If you do not use this option, the
+          particle has the same dimensions
+          as the reconstruction.
+
+      -convf=f
+          Sets the convergence factor for the sart
+          or em reconstruction algorithms to be f.
+          f must be greater than zero and less than
+          or equal to two.  By default, emtiar_gpu
+          uses a convergence factor of one.
+          emtiar_gpu also accepts the form,
+          -convf=fname, where fname is the name of
+          a text file which contains at least m
+          floating-point values separated by
+          whitespace.  m is the number of blocks
+          multiplied by the number of cycles per
+          reconstruction.  The ith value in the
+          file will be used as the relaxation
+          factor for the update from the jth block,
+          j = 1 + ((i - 1) modulo the number of
+          blocks), in the kth cycle, k = 1 +
+          ((i - 1) divided by the number of blocks).
+
+      -cor_out=fname
+          If fname is not empty and not equal to "none"
+          and an alignment method including Talign is
+          selected, images of the cross-correlation
+          results for the most recent iteration will be
+          written to an MRC file named fname.
+
+      -cpd=d
+          To reduce the effect of a central peak, the
+          Talign algorithm will subtract off a radial
+          average from the central 7 x 7 if the brightest
+          point in the central 7 x 7 occurs at the
+          center and a quadratic fit to the center
+          and its four nearest neighbors gives a peak
+          position, (xp, yp), where the absolute values
+          of xp and yp are less than d.  The default
+          value of d is 0.05 pixels.
+
+      -cycles=n
+          Sets the number of cycles of reconstruction
+          to use for every iteration to be n.  By
+          default, emtiar_gpu uses 20 cycles of
+          reconstruction per iteration.
+
+      -dev=xs:ys:rot:mag:axis:stretch
+          Sets the characteristic length for each of
+          the six alignment parameters that can be
+          refined when aligning a section from the
+          tilt series to a section from the
+          reprojection.  By default, emtiar_gpu uses
+          a characteristic length of one pixel for
+          the x and y shift, a characteristic length
+          of zero degrees for the rotation and
+          orientation of the asymmetric stretching
+          axis, and a characteristic length of zero
+          for the magnification and asymmetric
+          stretching factor.
+
+      -dimxy=nx:ny
+          Sets the x and y dimensions of the aligned
+          projections, in pixels.  By default,
+          emtiar_gpu uses the same dimensions as the
+          input tilt series.
+
+      -fullsize=nx:ny
+          Specifies the dimensions, in pixels, of the
+          tilt series corresponding to the alignment
+          parameters in the input alignment parameter
+          file.  If you do not set this option,
+          emtiar_gpu will use the dimensions of the
+          highest resolution in the input tilt series.
+          A case where you would want to use values
+          other than the defaults is when the input
+          tilt series has been downsampled and the
+          input alignment parameters are for a
+          higher resolution of the tilt series.  In
+          that case you would also want to specify
+          the -rscale option as well.
+
+      -gres=i
+          Selects the resolution i from the initial
+          guess specified by -istrfile.  i must be
+          a non-negative integer less than the
+          number of resolutions in that file.
+
+      -imform=code
+          Sets the image formation model used during
+          the initialization step.  Valid values for
+          code are:
+
+          0    logarithmic (the default if the input
+               parameter file contains mass-normalization
+               parameters)
+          1    scaled linear
+          2    linear (the default if the input
+               parameter file does not contain mass-
+               normalization parameters)
+
+      -imod=m
+          Sets the method to use for alignment.
+          m may be one of the values listed below.
+      
+          0    Use Talign (a FFT-based cross-correlation)
+               to determine the translations followed by
+               a simplex optimization of all parameters.
+          1    Use Talign (a FFT-based cross-correlation)
+               to determine the translations.  The other
+               parameters are not modified.  This is the
+               default.
+          2    Use a simplex optimization of all parameters.
+
+      -istrfile=file
+          Specifies that the initial guess for the
+          reconstructed volume should be read from file.
+
+      -iv=ivstart:ivend:ivstep
+          Sets the range of input projections included
+          in the reconstruction.  By default, emtiar_gpu
+          includes all the projections present in the
+          input tilt series.
+
+      -missingx=xhw:xpos
+          Sets the x half width, xhw, and x position,
+          xpos, of the slab used to determine the
+          rescaling for computed projection data.
+          Both values are in reconstruction samples.
+          The position is relative to the coordinate,
+          0.5 * nx, of the reconstruction.  nx is
+          the number of samples in x.  If the half
+          width and position are not set, emtiar_gpu
+          will use a half width of 3.40282 x 10^38
+          and a position of zero.
+     
+      -missingz=zhw:xpos
+          Sets the z half width, zhw, and z position,
+          zpos, of the slab used to determine the
+          rescaling for computed projection data.
+          Both values are in reconstruction samples.
+          The position is relative to the coordinate,
+          0.5 * nz, of the reconstruction.  nz is
+          the number of samples in z.  If the half
+          width and position are not set, emtiar_gpu
+          will use a half width of 0.5 * nz and a
+          position of zero.
+
+      -method=m
+          Selects the reconstruction algorithm to use.  m
+          may be either backprojection, sart, or em.  If
+          you do not set this option, the sart algorithm
+          will be used.
+
+      -mult=s
+          Sets the scale factor, s, for the noise
+          component when performing phase weighting
+          in an alignment method that uses Talign.
+          The default value for the scale factor is
+          one hundred.
+
+      -multires
+          Causes the generated reconstruction to
+          have multiple resolutions if the x and
+          y dimensions of the reconstruction are
+          large enough.
+
+      -nofilter
+          If specified, a highpass filter is not applied
+          when you use simplex optimization in the
+          alignment; otherwise, a highpass filter is
+          applied when you use simplex optimization.
+
+      -nomissing
+          Disables rescaling of computed projection data.
+          when you set this option, any -missingx or
+          -missingz options you supply will not affect
+          the computations.
+
+      -nooffset
+          If specified, no offset along the tilt axis is
+          applied when you use one of the alignment methods
+          which include Talign; otherwise, an offset is
+          applied along the tilt axis and then compensated
+          for prior to writing out the alignment parameters.
+
+      -pcbase=b
+          Sets a factor that comes into play if the
+          scaled linear or logarithmic image formation
+          model is used during the initialization step.
+          By default, emtiar_gpu assumes a value of 0.05.
+
+      -permute=ptype
+          Sets the order in which the tilted views
+          are included in the reconstruction
+          calculations.  If the reconstruction
+          algorithm is backprojection or the
+          algorithm processes all of the views
+          in one block, the ordering of the views
+          only affects the result because of
+          differences in the accumulation of
+          rounding errors.  If the reconstruction
+          algorithm is sart or em and multiple
+          blocks are used, changing the ordering
+          could have a bigger effect on the
+          reconstruction.  ptype must be one of
+          the following:  block1, random, sorted,
+          or none.  The ProjectionOrder topic
+          describes each of those orderings in
+          more detail.  If you do not use the
+          -permute option, the block1 order is
+          the default.
+
+      -phaseweight
+          If specified, phase weighting is done when
+          you use an alignment method that includes
+          Talign; otherwise, phase weighting is not done.
+
+      -reconz=nz
+          Sets the z dimension of the reconstruction,
+          in pixels.  By default, the z dimension is one
+          fourth the size of the x dimension of the input
+          tilt series.
+
+      -res=i
+          Selects i as the resolution to process from
+          the input tilt series.  i must be a non-
+          negative integer less than the number of
+          resolution in the tilt series.  Other command-
+          line options affecting the processing of
+          different resolutions are -rscale, -fullsize,
+          and -gres, but, in normal circumstances, it
+          is sufficient to use -res by itself.  If you
+          do not specify this option, the highest
+          resolution (zero) is processed.
+
+      -restart_recon
+          If specified, reconstructions for iterations
+          other than the first do not start with an initial
+          guess.
+
+      -rscale=i
+           Controls the scale factor (1.0 / i) applied
+           to the alignment parameters and size-related
+           input parameters to compensate for processing
+           a lower resolution.  i must be a positive
+           integer.  If you do not set this option, i
+           defaults to be two raised to the power of the
+           resolution level selected with -res.  A case
+           where you would want to use a value different
+           than the default is when the input tilt series
+           has been downsampled and the input alignment
+           parameters are for a higher resolution of the
+           tilt series.  In that case you would also want
+           to specify the -fullsize option as well.
+
+      -runs=n
+          Sets the number of iterations of refinement to
+          perform.  By default, emtiar_gpu will perform a
+          single iteration.
+
+      -server=address
+          If you run emtiar_gpu under rgemt_autostart,
+          rgemt_autostart intercepts any -server=
+          options and rewrites them before passing
+          them to emtiar_gpu.  For each -server option
+          passed to it, emtiar_gpu attempts to contact
+          an instance of the reconstruction server
+          software and have it perform a portion
+          of the calculations.  address must have
+          the form of an internet host name or IP
+          address followed, optionally, by a colon
+          and the TCP port number to use when
+          contacting the server.  If emtiar_gpu is
+          not given any -server options, it will
+          look at the value of the environment
+          variable, RGEMT_SERVER_LIST, and interpret
+          it as a comma-separated list of addresses.
+
+      -shxzy=xshift:yshift:zshift
+          Specifies the shift, in pixels, of the
+          reconstructed volume from the default
+          position.  By default, emtiar_gpu does not
+          shift the reconstructed volume.
+
+      -skip_init
+          Disables the initialization step for computing
+          a mass-normalized tilt series.
+
+      -smooth=s
+          If the reconstruction algorithm is sart or em,
+          causes a Gaussian filter with a standard
+          deviation of s to be applied to the
+          reconstuction at each iteration of the
+          reconstruction algorithm.  By default, emtiar_gpu
+          does not filter apply a Gaussian filter to the
+          reconstruction.  The smoothing topic describes
+          the limitations of the filter's implementation.
+
+      -spth=t
+          In the Talign algorithm, cross-correlation peaks
+          away from the origin are preferred.  A peak at
+          the origin is only accepted if the next highest
+          peak (after masking out the origin) has a height
+          less than t times the height of the peak at the
+          origin.  The default value for t is .001.
+
+      -start=i
+          Sets the number to associate with the first
+          iteration.  By default, emtiar_gpu will use a
+          value of one.
+
+      -tmpdir=directory
+          Sets the directory used for temporary files.
+          By default, emtiar_gpu places the temporary
+          files in a directory named tmp within your
+          home directory.

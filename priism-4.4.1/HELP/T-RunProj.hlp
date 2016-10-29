@@ -1,0 +1,113 @@
+KEYWORD
+    step_size group_size Method
+
+DESCRIPTION T-RunProj
+    T-RunProj combines (either as a sum, average, or
+    maximum value) intensity information from multiple
+    time points in the input data set.  The controls for
+    selecting and processing a region are the same as in
+    many other applications and are described in Region.hlp.
+    There are additional controls to set the number of
+    sequential time points combined, the number of time
+    points stepped from the beginning of one group of time
+    points to combine to the next, and how the intensity
+    information is combined.
+
+    T-RunProj accepts the command-line arguments described
+    in Region.hlp.  In addition, T-RunProj has the
+    following options:
+
+    -average
+        Specifies that T-RunProj is to combine sections
+        by averaging them.  For compatibility with previous
+        versions, T-RunProj accepts -average_t as a
+        synonym for -average.
+
+    -group=m
+        Specifies that T-RunProj is to combine m sections
+        to generate one section of output.  m must be
+        a positive integer.  If -group is not
+        specified, T-RunProj combines 3 sections to form
+        one section of output.  For compatibility with
+        previous versions, T-RunProj accepts -t_group=m
+        as a synonym for -group=m.
+
+    -max
+        Specifies that T-RunProj is to combine sections
+        by taking the maximum value (across the
+        sections) at each pixel location.  For
+        compatibility with previous versions, T-RunProj
+        accepts -max_t as a synonym for -max.
+
+    -step=n
+        Specifies that T-RunProj is to jump n sections
+        from the first section in a group of combined
+        sections to the start of the next group.   n
+        must be a positive integer.  If -step is not
+        specified, T-RunProj jumps 3 sections between
+        groups.  For compatibility with previous
+        versions, T-RunProj accepts -t_step=n as a
+        synonym for -step=n.
+
+    -sum
+        Specifies that T-RunProj is to combine sections
+        by summing them.  For compatibility with
+        previous versions, T-RunProj accepts -sum_t
+        as a synonym for -sum.
+
+
+    If more than one of -sum, -average, or -max
+    appear on the command line, the last one takes
+    precedence.  If none of them appear on the
+    command line, T-RunProj combines sections by
+    averaging them.
+
+    As an example, if series.dat has 30 time points
+    the command line shown below generates max.dat
+    by taking that maximum value at each pixel.
+
+        T-RunProj series.dat max.dat \
+            -group=30 -step=30 -max
+
+step_size
+    Use this text field to set how many time points to
+    move ahead from the first time point in one group whose
+    intensities are combined to the first time point in the
+    next group.  For instance, if you selected a step size
+    of 4, regardless of how many time points are grouped,
+    the groups would start at tstart, tstart+4, tstart+8,
+    ....  tstart is the starting time point from the T field.
+
+group_size
+    Use this text field to set how many time points are
+    combined for the result in one output time point.  For
+    example, if the number of time points combined is three,
+    then the time points tstart, tstart+1, and tstart+2 are
+    combined to form the first time point in the output.
+    tstart is the starting time point from the T field.  If
+    the step size was also three, then the time points
+    tstart+3, tstart+4, and tstart+5 would be combined to
+    create the second time point in the output.  If the step
+    size was two, then the second time point in the output
+    would be a combination of the time points tstart+2,
+    tstart+3, and tstart+4.
+
+Method
+    Use the menu next to the "Method" button to select how
+    time points are combined:
+
+    Sum
+        Simply adds the intensities from the different time
+        points to determine the output value.  If the output
+        file uses integers for the pixel values (this is set
+        with the Mode menu and defaults to be the same format
+        as the input file), the result can overflow giving
+        strange looking output.
+
+    Average
+        Performs an unweighted average of the different time
+        points to determine the output value.
+
+    Max
+        The output value is set to the maximum intensity from
+        the different time points.

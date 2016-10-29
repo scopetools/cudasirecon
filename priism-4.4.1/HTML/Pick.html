@@ -1,0 +1,328 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Pick Points</TITLE>
+  <META NAME="Description" CONTENT="On-line for Priism's application to interactively select points from an image window.">
+  <META NAME="Keywords" CONTENT="Priism,model,point">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+  
+<H1><A NAME="Pick">Pick Points</A></H1>
+<H2>Overview</H2>
+<P>The Pick Points tool is used to create lists of points. Multiple lists may
+be created for each wavelength and time point.
+
+<H3>Topics</H3>
+<PRE>
+<A HREF="#Window">Window</A>          <A HREF="#PickingMode">Picking mode</A>    <A HREF="#Wave">Wave</A>
+<A HREF="#Time">Time</A>            <A HREF="#List">List</A>            <A HREF="#Npts">Npts</A>
+<A HREF="#Coordinates">Coordinates</A>     <A HREF="#Name">Name</A>            <A HREF="#Color">Color</A>
+<A HREF="#Marker">Marker</A>          <A HREF="#ShowAllWaves">Show all waves</A>  <A HREF="#Show3DPointsAllSections">Show 3D points</A>
+<A HREF="#CheckExisting">Check point</A>     <A HREF="#SearchMethod">Search method</A>   <A HREF="#Box">Box</A>
+<A HREF="#Range">Range</A>           <A HREF="#Load">Load</A>            <A HREF="#Save">Save</A>
+<A HREF="#Format">File format</A>     <A HREF="#Copy">Copy</A>            <A HREF="#Grid">Grid</A>
+<A HREF="#KeyBindings">Key bindings</A>
+</PRE>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="PickToModel.html">PickToModel</A> |
+   <A HREF="Clouds.html">Clouds</A> |
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="Window">Window</A></H2>
+<P>Use this field to enter the number of the image window to be used for
+picking points.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="PickingMode">Picking Mode</A></H2>
+<P>This option menu controls what happens when the left mouse button is clicked
+in the image window.  The options are:
+
+<DL>
+  <DT>Add Points<DD>When the button is clicked, a point is added to the current
+    list at (or near if a <A HREF="#SearchMethod">neighborhood search</A> is
+    done) the location of the click.
+  <DT>Delete Points<DD>When the button is clicked near a point, that point
+    is deleted.  The current list, time point, and wavelength are updated to
+    correspond to the list that held the point.  The coordinates of the deleted
+    point are displayed in the <A HREF="#Coordinates">X, Y, and Z fields</A>.
+  <DT>Select Points<DD>When the button is clicked near a point, the current
+    list, time point, and wavelength are updated to correspond to the list that
+    holds the point.  The coordinates of the point are displayed in the
+    <A HREF="#Coordinates">X, Y, and Z fields</A>.
+  <DT>Off<DD>Nothing is done when the button is clicked; useful if you want
+    to do selections from the window using another application while Pick
+    Points is running.
+</DL>
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Wave">Wave</A></H2>
+<P>Displays the index of the wavelength for the current list.  When
+the image window is in pseudocolor mode, any change to the current
+wavelength will cause the current list and the <EM>Wave</EM> field to be
+changed; changing the <EM>Wave</EM> field in this case will cause the image
+window to display that wavelength.  If the image window is in RGB mode,
+the current list and <EM>Wave</EM> field are not changed as wavelengths
+are mapped or unmapped; in this case, changing the value in the <EM>Wave</EM>
+field is necessary to switch between the lists in different wavelengths.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Time">Time</A></H2>
+<P>Displays the index of the time point for the current list.  When the
+current time point displayed in the image window is changed, this field
+and the current list will be changed as well.  You may change this value
+to change to the current list in a different time point and to cause
+the image window to display that time point.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="List">List</A></H2>
+<P>The point lists for each combination of wavelength and time point (i.e. each
+x, y, z volume) are numbered from zero.  This field shows the number for the
+current list.  You may change this value to change to another one of the
+lists at the <A HREF="#Wave">current wavelength</A> and
+<A HREF="#Time">current time point</A> or to create a new list.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Npts">Npts</A></H2>
+<P>The number of points in the current list is reported in this field.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Coordinates">Coordinates</A></H2>
+<P>The x, y, and z coordinates for the last point chosen are shown in the
+fields labeled <EM>X</EM>, <EM>Y</EM>, and <EM>Z</EM>, respectively.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Name">Name</A></H2>
+<P>Each point has an additional number, referred to as the name, assigned to
+it.  This may be of interest if you want to distinguish classes of points
+within the same list: for instance if you choose to have Pick Points
+<A HREF="#Color">color points by their names</A>.  The value shown in this
+field is the name that will be assigned to the next point added by clicking
+in the image window.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Color">Color</A></H2>
+<P>When points are displayed in the image window, they are either colored
+according to the wavelength they are in or by the name assigned to each
+point.  Use the <EM>Color</EM> option menu to choose between these two
+alternatives.  If you color points by name, there are twelve colors available
+so the color of a point is the <VAR>n</VAR>th color where <VAR>n</VAR> is
+the point's name modulo 12.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Marker">Marker</A></H2>
+<P>All points in the same list are drawn using the same marker to identify
+a point's position.  The marker for the current list is shown on the
+<EM>list marker</EM> option menu and may be changed using that menu.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="ShowAllWaves">Show all waves</A></H2>
+<P>If this toggle is on, points in all wavelengths are show and not just the
+wavelengths whose images are currently shown in the image window.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Show3DPointsAllSections">Show 3D Points all sections</A></H2>
+<P>If this toggle is on, the z coordinate for a point is ignored for display
+purposes and the point is shown in all sections in the same wavelength and
+time point.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="CheckExisting">Check for point already picked</A></H2>
+<P>If this toggle is on, then when selecting points interactively, a new
+point will not be added if its coordinates match those of another point
+in the same list.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="SearchMethod">Search method</A></H2>
+<P>When points are added interactively, a local search and average is done to
+refine the coordinates of the point selected with the mouse.  This
+refinement is not done if the <A HREF="#Range">search ranges</A> are zero and
+the <A HREF="#Box">box size for averaging</A> is one.  For the local search,
+the <EM>Search Method</EM> option menu selects whether a search for a minimum
+or a maximum in the intensity (density) is done.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Box">Box</A></H2>
+<P>When selecting points interactively, a two step refinement of the selected
+position is performed which involves a search (see the topics
+<A HREF="#SearchMethod">Search method</A> and <A HREF="#Range">Range</A>) and
+a first moment calculation using the image intensities as the weighting
+factors.  The moment calculation is done over a region
+<VAR>nx</VAR> by <VAR>ny</VAR> by <VAR>nz</VAR> pixels where
+<VAR>nx</VAR> is the value shown in the <EM>XBox</EM> field, <VAR>ny</VAR>
+is the value shown in the <EM>YBox</EM> field, and <VAR>nz</VAR> is one-half
+of the value show in the <EM>ZRange</EM> field.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Range">XY Range, Z Range</A></H2>
+<P>When selecting points interactively, a two step refinement of the selected
+position is performed which involves a search and a first moment calculation
+using the image intensities as the weighting factors.  The range of the
+search covers a volume <VAR>nxy</VAR> by <VAR>nxy</VAR> by <VAR>nz</VAR>
+pixels where <VAR>nxy</VAR> is one plus two times the value shown in the
+<EM>XYRange</EM> field and <VAR>nz</VAR> is one plus two times the value shown
+in the <EM>ZRange</EM> field.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Load">Load</A></H2>
+<P>Pressing the <EM>Load Points</EM> button will open a dialog for selecting
+a previously created points list file.  The file must be in the
+<A HREF="#Format">old pick points</A> format.  If you already have point lists,
+you have the option to either keep or delete them when loading another points
+list file.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Save">Save</A></H2>
+<P>Pressing the <EM>Save Points</EM> button will open a dialog to enter the
+file name and <A HREF="#Format">file format</A> to use.  If the <EM>old
+pick points</EM> format is used, then if the <EM>sort by z</EM> toggle is on
+the points in each list will be sorted in order of increasing z coordinate
+before it is saved; otherwise, the order of the points is not modified.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Format">File format</A></H2>
+<P>Pick Points works with two file formats.  One, referred to as the
+<EM>old pick points format</EM>, can be read and written by Pick Points
+and is also used in many other applications.  The other, referred to as
+the <EM>new object library format</EM>, can be written by Pick Points and
+is used in <A HREF="Clouds.html">Clouds</A>.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Copy">Copy</A></H2>
+<P>Pressing the <EM>Copy...</EM> button will open a dialog to specify how
+to copy points which fall within a subset of the data set to another
+subset of the data set.  The source and destination are specified as
+ranges in z and time and a set of selected wavelengths; the ranges appear
+in the dialog as the minimum value, maximum value, and step size.  For the
+source, minimum and maximum values for the x and y coordinate are also
+specified; points that fall outside those bounds are not copied.
+
+<P>The number of z sections, wavelengths, and time points in the
+source region must either match the respective value for the destination
+region or must be one (in which case it is replicated to fill the
+destination region).  As an example, if the source region is as follows:
+
+<DL>
+  <DT>Z range<DD>0 0 1
+  <DT>Waves<DD>on off off off off
+  <DT>T range<DD>0 0 1
+</DL>
+
+<P>and the destination region is
+
+<DL>
+  <DT>Z range<DD>1 15 1
+  <DT>Waves<DD>on off off off off
+  <DT>T range<DD>0 0 1
+</DL>
+
+<P>all the points in the first z section of the first wavelength and time
+point will be copied to the second through sixteenth sections in that
+wavelength and time point.
+
+<P>As another example, if the source region is
+
+<DL>
+  <DT>Z range<DD>0 0 1
+  <DT>Waves<DD>on on on on on
+  <DT>T range<DD>0 0 1
+</DL>
+
+<P>and a destination region defined as
+
+<DL>
+  <DT>Z range<DD>1 15 1
+  <DT>Waves<DD>on on on on on on
+  <DT>T range<DD>0 0 1
+</DL>
+
+<P>the points that fall in the first section of the first wave will
+be copied to sections two through sixteen of the first wave, the points
+that fall in the first section of the second wave will be copied to
+sections two through sixteen of the second wave, and so on.
+
+<P>The copy operation does not check if it generates points at the same
+locations.  The copy operation does preserve the ordering of points in a
+list (i.e. each destination list generated will contain the points, in order,
+which fall within the x, y, and z bounds for the source region from a single
+source list).
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="Grid">Grid</A></H2>
+<P>Occasionally, it is useful to generate points on a rectangular grid
+(for instance, if you use <A HREF="FixBadPixel.html">FixBadPixel</A>
+to correct for bad lines in an image).  Pressing the <EM>Grid...</EM>
+button opens a dialog where you enter the parameters for a grid of points
+and have them added to the current list when the <EM>Generate</EM> button
+in the dialog is pressed.  If the number of points would overflow the
+current list, new lists are created as necessary.  No checking is done
+to see if the points on the grid have the same coordinates as points already
+present in the list.
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+<H2><A NAME="KeyBindings">Key bindings</A></H2>
+<P>The following keys may be used while the mouse pointer is in the image
+window to change certain Pick Points parameters:
+<DL>
+  <DT>F1<DD>Toggles on and off graphics for wave 1.
+  <DT>F2<DD>Toggles on and off graphics for wave 2.
+  <DT>F3<DD>Toggles on and off graphics for wave 3.
+  <DT>F4<DD>Toggles on and off graphics for wave 4.
+  <DT>F5<DD>Toggles on and off graphics for wave 5.
+  <DT>F6<DD>Turn on the graphics in all wavelengths.
+  <DT>F7<DD>Decrements the current wave.
+  <DT>F8<DD>Increments the current wave.
+  <DT>TAB<DD>Cycles through the <A HREF="#PickingMode">picking mode choices</A>.
+</DL>
+
+<P><A HREF="#Pick">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

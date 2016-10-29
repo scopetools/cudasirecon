@@ -1,0 +1,172 @@
+KEYWORD
+
+DESCRIPTION headit
+   headit is a command-line utility to change the contents
+   of an image file's header.  To use it, enter
+
+        headit <filename>
+
+   where you should replace <filename> with the name of
+   the file to be altered.
+
+   For each change, headit will print the current header
+   and will prompt you to enter a three letter code to
+   specify what change you would like to make.  The codes
+   headit understands are (all are case insensitive):
+
+   exi
+       Quit headit.
+
+   num
+       Change the image size.  headit will print the
+       current x and y dimensions and the number of
+       sections and then expects you to enter the new
+       values as three integers.
+
+   dat
+       Change the organization of the sections into z,
+       wavelength, and time dimensions.  headit will
+       print the current number of z sections,
+       wavelengths, and time points.  It then expects
+       you to enter the new values as three integers.
+       If the new number of wavelengths if greater than
+       one, headit will print how z, wavelengths, and
+       times are interleaved and then expects you to
+       enter the new interleaving code (0 is ZTW, 1 is
+       WZT, 2 is ZWT) as an integer.
+
+   mul
+       Change the multiresolution settings.  headit
+       will print the current number of resolutions
+       and the z downsampling factor and then expects
+       you to enter the new values as two integers.
+
+   map
+       Change the pixel data type.  headit will print
+       the current data type code (0 for unsigned 8-bit
+       integer, 1 for signed 16-bit integer, 2 for
+       32-bit IEEE floating-point, 3 for complex
+       values as 2 signed 16-bit integers, 4 for
+       complex values as 2 32-bit IEEE floating-point
+       values, 5 for signed 16-bit integer, 6 for
+       unsigned 16-bit integer, and 7 for signed 32-bit
+       integer).  It then expects you to enter the new
+       data type code as an integer.
+
+   sta
+       Change the starting pixel indices.  headit will
+       print the current three starting indices and
+       then expects you to enter the new values as
+       three integers.
+
+   gri
+       Change the grid spacing (also referred to as
+       the sampling frequency).  headit will print
+       the current grid sampling and then expects you
+       to enter the new values as three integers.
+
+   pix
+       Change the pixel size.  headit will print the
+       current pixel spacing and then expects you to
+       enter the new values as three floating-point
+       values.
+
+   cel
+       Change the cell angles.  headit will print
+       the current cell angles in degrees and then
+       expects you to enter the new values, in
+       degrees, as three floating-point values.
+
+   ori
+       Change the origin.  headit will print the current
+       origin and then expects you to enter the new
+       origin as three floating-point values.
+
+   min
+       Change the value recorded as the minimum
+       intensity for the first wavelength.  headit will
+       print the currently recorded minimum and then
+       expects you to enter the new value as a
+       floating-point value.
+
+   max
+       Change the value recorded as the maximum
+       intensity for the first wavelength.  headit will
+       print the currently recorded maximum and then
+       expects you to enter the new value as a
+       floating-point value.
+
+   mea
+       Change the value recorded as the mean intensity
+       for the first wavelength.  headit will print
+       the currently recorded mean and then expects
+       you to enter the new value as a floating-point
+       value.
+
+   til
+       Change the rotation (also call tilt) angles.
+       headit will print the current values in degrees
+       and expects you to enter the new values, in
+       degrees, as three floating-point values.
+
+   spa
+       Change the space group, number of bytes in the
+       extended header, and image type information.
+       headit will print the current space group and
+       number of bytes in the extended header and
+       expects you to enter the new values as two
+       integers.  It will then print the current image
+       type information (a type code, lens ID, two
+       integer values, and two floating-point values)
+       and expects you to enter the new values as four
+       integer values followed by two floating-point
+       values.
+
+   wav
+       Change the number of wavelengths and the
+       wavelength values.  headit will print the current
+       number of wavelengths and expects you to enter
+       the new number as an integer.  For each
+       wavelength, it will then print the current
+       wavelength value and expects you to enter the
+       new value as a floating-point number.
+
+   tit
+       Add a new title as the only title or add it
+       to the beginning or end of the current titles.
+       headit first expects you to enter an integer
+       indicating how you want to add the title
+       (0 to add it as the only title, 1 to add it
+       at the end of the list, 2 to add it at the
+       beginning of the list).  It then expects you
+       to enter the title.
+
+   fas
+       Change the mapping from columns, rows, sections
+       to x, y, and z.  headit will print the current
+       mapping and expects you to enter the new mapping
+       as three integers (1 is x, 2 is y, 3 is z).
+
+   ext
+       Change extended header entries.  headit will
+       first display the current values in the
+       extended header.  It will ask you for the
+       range of sections to display; simply press
+       return to display all the sections or enter
+       the index for the first section and the index
+       of the last section.  It will also ask you for
+       the range of fields to display; simply press
+       return to display all the fields or enter the
+       index for the first field and the index for
+       the last field.  Then headit will ask you for
+       the range of sections to alter; simply press
+       return to display all the sections or enter
+       the index for the first section and the index
+       for the last section.  It will also ask you
+       for the range of fields to alter; simply press
+       return to display all the sections or enter
+       the index for the first field and the index
+       for the last field.  Then, for each section
+       to be altered, headit will print the current
+       extended header entries in the selected fields
+       and ask you for the new values for those fields.

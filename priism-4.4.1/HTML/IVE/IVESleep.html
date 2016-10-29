@@ -1,0 +1,45 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVESleep</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVESleep.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVESleep</H1>
+<H2>Overview</H2>
+<P>IVESleep suspends execution of the caller until at least a specified
+number of microseconds has elapsed.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_time.h"</CODE>
+<BR><CODE>void IVESleep(IVETimeInterval intvl_us);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P><CODE>subroutine IVESleep(intvl_us)</CODE>
+<BR><CODE>integer intvl_us</CODE>
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>intvl_us</VAR><DD><VAR>intvl_us</VAR> is the number of microseconds
+    for which execution should be suspended.
+</DL>
+<H2>Cross references</H2>
+<P><A HREF="IVETimeInterval.html">IVETimeInterval</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified June 30, 2001
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

@@ -1,0 +1,75 @@
+#! /bin/sh
+
+# A script for doing a hard shutdown of the IVE environment.  The -f option
+# can be tried if a simple ivekill doesn't take care of things.  A -l forces
+# an attempt to clean up persistent synchronization structures.
+
+
+PATH=/bin:/usr/bin
+export PATH
+
+# This choice of environment variables used to get the name of the shared
+# memory file should match what is done in the IW library (IWAppHelpers.c).
+shmdir=${IVE_SHMDIR:-${HOME:+${HOME}}}
+shmfile=${IVE_SHMDIR}/IWL.SHM${LOGNAME:+_${LOGNAME}}
+procnames='(Priism|Monitor|WMHelp) *$'
+forceopt=0
+lockopt=0
+while test $# -gt 0;
+do
+    if test X"$1" = X-f; then
+        forceopt=1
+    elif test X"$1" = X-l; then
+        lockopt=1
+    fi
+    shift
+done
+
+case `uname -s` in
+    Darwin)
+	myps="ps -o pgid,ucomm -xU"
+        # /bin/kill in Darwin does not kill process groups when given
+        # the negative of the process group ID so use an alternative
+        # kill, if available, that does.
+        if test -x "${IVE_EXE:-.}/kill_replacement"; then
+            mykill="${IVE_EXE}/kill_replacement"
+        else
+            mykill=kill
+        fi
+        ;;
+    Linux)
+        myps="env PS_PERSONALITY=posix ps -o pgid,comm -u"
+        mykill=kill
+        ;;
+    *)
+	# Assumes X/Open behavior
+	myps="env LANG=POSIX ps -o pgid,comm -u"
+        mykill=kill
+        ;;
+esac
+
+for pgid in `${myps} ${USER} | grep -E "${procnames}" | sed -e 's/^ *//' -e 's/  */ /g' | cut -d ' ' -f 1 | sort -n | uniq`; do
+    "${mykill}" -TERM -$pgid
+done
+
+# A force mode to take care of possible cases where the kill above does not
+# work.
+if test ${forceopt} = 1; then
+    for pgid in `${myps} ${USER} | grep -E "${procnames}" | sed -e 's/^ *//' -e 's/  */ /g' | cut -d ' ' -f 1 | sort -n | uniq`; do
+        "${mykill}" -KILL -$pgid
+    done
+fi
+
+# Clean up the shared memory file and any files that represent window contents
+# swapped out to disk.
+rm -f "${shmfile}" "${shmdir}"/.ive"${LOGNAME:+_${LOGNAME}}"_* 1>/dev/null 2>&1
+
+if test ${lockopt} = 1; then
+    # Attempt to remove any persistent system structures used to implement
+    # synchronization primitives.
+    if test -x "${IVE_EXE:-.}/clean_locks"; then
+	"${IVE_EXE:-.}/clean_locks"
+    else
+	echo "Could not execute ${IVE_EXE:-.}/clean_locks."
+    fi
+fi

@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>-3- How do I change the user interface's colors?</title>
+<link rev=made href="mailto:ive@msg.ucsf.edu">
+</head>
+<body>
+<a href="./index.html">Up: Priism-IVE-4:  Frequently Asked Questions (FAQ)</a>
+<br><a href="4.html">Next: -4- How do I change the user interface's fonts?</a>
+<br><a href="2.html">Previous: -2- How do I change where the shared memory file is stored?</a>
+<hr>
+<pre>
+Subject:    -3- How do I change the user interface's colors?
+Date:  3 May 2002 18:00:00 PDT
+
+  On IRIX, Priism uses the color scheme that's been selected
+  for the SGI desktop.  You can change this scheme by selecting
+  Desktop-&gt;Customize-&gt;Color Schemes from the Toolchest menu.
+  (If you don't know where that is you should consult the SGI
+  Desktop User's Guide at
+
+    &lt;<a href="http://techpubs.sgi.com/library/tpl/cgi-bin/getdoc.cgi?coll=0650&amp;db=bks&amp;srch=&amp;fname=/SGI_EndUser/Desktop_UG" target="_top">http://techpubs.sgi.com/library/tpl/cgi-bin/getdoc.cgi?coll=0650&amp;db=bks&amp;srch=&amp;fname=/SGI_EndUser/Desktop_UG</a>&gt;
+
+  Chapter 11 in particular has information on changing the desktop).
+  Not all of the color schemes work equally well with Priism; typical
+  problems are:  help buttons and function buttons have the same or
+  similar colors, read-only text is not distinguishable from editable
+  text, or the small arrows on pulldown menus to indicate a nested
+  pulldown are not visible.  Predefined schemes that avoid all of these
+  problems are Arizona, IndigoMagic, Inverness, Milan, RedGreenSafe, and
+  Vancouver.
+
+
+  On Linux and MacOSX or for changes on IRIX beyond what is possible
+  by changing the desktop scheme, changes to the colors require
+  editing X resources files.  Changes for an individual user can be
+  stored in the .Xdefaults file in his or her home directory; changes
+  for all users of a system can be stored in 
+
+    /usr/X11R6/lib/X11/app-defaults/IVE
+
+  (/usr/lib/X11/app-defaults/IVE on IRIX).  Either for the personal
+  or the system-wide ones, you would need to create the file if it
+  was not already there.
+
+
+  Below are listed the default colors resources used on Linux and
+  MacOS X (these emulate the SGI IndigoMagic scheme with a gamma
+  of 1.7).  As a brute force approach to modifying the colors,
+  you could copy some or all of these resources specifications
+  to the resource file and experiment with different values.
+  Below all of the colors are colors are given with their RGB
+  values in hexadecimal.  Colors can be set by name as well and
+  /usr/X11R6/lib/X11/rgb.txt (/usr/lib/X11/rgb.txt on IRIX) lists
+  names that are allowed.
+
+    IVE*foreground: #000000
+    IVE*background: #c1c1c1
+    IVE*XmList.background: #999999
+    IVE*XmPushButton.background: #999999
+    IVE*XmDrawnButton.background: #999999
+    IVE*XmRowColumn*OptionButton.background: #999999
+    IVE*XmArrowButton.background: #c1c1c1
+    IVE*XmText.background: #b98e8e
+    IVE*XmScrolledWindow.XmText.background: #000000
+    IVE*XmTextField.background: #b98e8e
+    IVE*XmScrollBar.background: #999999
+    IVE*XmScrollBar.foreground: #999999
+    IVE*XmScale*foreground: #000000
+    IVE*XmMenuShell*background: #c1c1c1
+    IVE*XmMenuShell*XmToggleButton.selectColor: #000000
+    IVE*highlightColor: #000000
+    IVE*form*statusBar*foreground: #c1c1c1
+    IVE*form*statusBar*troughColor: #b98e8e
+    IVE*form*helpButton*background: #9f8484
+    IVE*form*textLabel*background: #999999
+
+
+  On IRIX, there are three other resources that can be used to
+  modify the color scheme without working at the level of the
+  colors for types of dialog items.  The first is IVE*useSchemes
+  which you can use to tell Priism that it should not rely on the
+  color schemes.  To do this you would enter
+
+    IVE*useSchemes: none
+
+  in the resource file.  The second is IVE*scheme which you can use
+  to have Priism use a specific scheme without affecting the scheme
+  used by other applications.  For instance, if you wanted to use
+  the scheme defined in /usr/lib/X11/schemes/Milan for Priism but
+  not for other applications, you would put
+
+    IVE*scheme: /usr/lib/X11/schemes/Milan
+
+  in the resource file.  The third resource controls which color
+  from the color scheme is used on help buttons.  By default, Priism
+  acts as if
+
+    IVE*form*helpButton*background: SGI_DYNAMIC AlternateBackground1
+
+  was specified in a resource file.  If you like a scheme but not how
+  the help buttons are colored, you might experiment with the other
+  possible background colors; a scheme provides six different choices
+  (AlternateBackground1 to AlternateBackground6).
+
+
+  On all systems, a way to cause Priism to use the IVE 3 color scheme
+  is to set the environment variable IVE_OLD_LOOK to yes before running
+  Priism.
+</pre>
+<hr>
+<a href="./index.html">Up: Priism-IVE-4:  Frequently Asked Questions (FAQ)</a>
+<br><a href="4.html">Next: -4- How do I change the user interface's fonts?</a>
+<br><a href="2.html">Previous: -2- How do I change where the shared memory file is stored?</a>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEDesc</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the IVEMessage type.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEMessage</H1>
+<H2>Overview</H2>
+<P>An IVEMessage is an integer used to identify a class of messages for
+use with <A HREF="IVESetMessageHandler.html">IVESetMessageHandler</A> and
+<A HREF="IVEPostMessage.html">IVEPostMessage</A>.  Only values between
+IVE_MESSAGE_MIN and IVE_MESSAGE_MAX are recognized as valid messages.  Those
+limits are defined in ive_eventloop.h for C and ive_eventloop.inc for Fortran.
+IVE_MESSAGE_MIN - IVE_MESSAGE_MAX + 1 is guaranteed to be at least 255.
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified September 21, 2007
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

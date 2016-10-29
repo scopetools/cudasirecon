@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Normalize</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to scale a set of sections to the same range of values.">
+  <META NAME="Keywords" CONTENT="Priism,processing">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Normalize">Normalize</A></H1>
+<H2>Overview</H2>
+<P>This application linearly scales the input data to fall in a set range.  The
+scaling is done by determining a range of input values to scale based on
+the <A HREF="#Method">Method input parameter</A> and then linearly scaling
+them (and coercing the values outside of the input range) to the output
+range set by <A HREF="#Range">NDiv</A>.
+
+<P>The other inputs select which region of the input file is processed.  See
+<A HREF="Region.html">Region.html</A> for more details.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="Region.html">Region processing</A> |
+   <A HREF="#Method">Method</A> |
+   <A HREF="#Range">NDiv</A> |
+   <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="Method">Method</A></H2>
+<P>The <EM>Method</EM> parameter sets the range of intensities in
+the input data that are linearly scaled to the output range of intensities.
+Input pixels with intensities outside of the range are mapped to one
+of the two endpoints of the output range.
+
+<P>There are three options for setting the input range to scale:
+<DL>
+  <DT><STRONG>vol min and max</STRONG>
+  <DD>With this option the input range is the same for all sections
+      in the same wavelength and at the same time point (a z stack).
+      The minimum for the input range is the minimum intensity in
+      the z stack, and the maximum for the input range is the
+      maximum intensity in the z stack.
+
+   <DT><STRONG>mid sec min and max</STRONG>
+   <DD>Like the above option, the same input range is used for all sections
+       in the same z stack.  The minimum and maximum for the range are
+       set differently.  They are the minimum and maximum for the
+       middle section in the z stack (when numbering the sections in the
+       stack from zero to nz minus one, the middle section is nz divided
+       by two and rounded down).
+
+    <DT><STRONG>2D</STRONG>
+    <DD>With this option, the range to scale is different for each input
+        section.  The minimum for the range is the minimum of the section
+        to scale, and the maximum for the range is the maximum of the
+        section to scale.
+</DL>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Normalize">Overview</A> |
+   <A HREF="Region.html">Region processing</A> |
+   Method |
+   <A HREF="#Range">NDiv</A> |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Range">NDiv</A></H2>
+<P>The output of <A HREF="#Normalize">Normalize</A> will have intensities
+between zero and <VAR>NDiv</VAR>, inclusive.  <VAR>NDiv</VAR> may be
+negative.
+
+<P>
+   <A HREF="#Normalize">Overview</A> |
+   <A HREF="Region.html">Region processing</A> |
+   <A HREF="#Method">Method</A> |
+   NDiv |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>Normalize accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, Normalize
+has the following options:
+
+<DL>
+  <DT><CODE>-scale_calculation=</CODE><VAR>method</VAR>
+  <DD>Sets how Normalize calculates the intensity bounds used when normalizing
+    the data.  Valid values for <VAR>method</VAR> are listed below; if
+    <CODE>-scale_calculation</CODE> does not appear on the command line,
+    Normalize uses the <CODE>volume_bounds</CODE> method.
+    <DL>
+      <DT><CODE>volume_bounds</CODE><DD>The bounds Normalize uses to scale a
+        section are the minimum and maximum intensity values from the x/y/z
+        volume containing the section.
+      <DT><CODE>middle_section_bounds</CODE><DD>The bounds Normalize uses to
+        scale a section are the minimum and maximum intensity values from the
+        middle section of the x/y/z volume containing the section to scale.
+      <DT><CODE>2d</CODE><DD>The bounds Normalize uses to scale a section
+        are the minimum and maximum intensity values from that section
+    </DL>
+
+  <DT><CODE>-scale_multiplier=</CODE><VAR>n</VAR>
+  <DD>Sets the multiplier applied by Normalize after scaling the input data
+    to have intensity values between zero and one.  <VAR>n</VAR> must be
+    an integer.  Normalize uses 1024 for the multiplier if
+    <CODE>-scale_multiplier</CODE> does not appear on the command line.
+</DL>
+
+<P>As an example, if you wanted to convert a 3D floating-point file, x.dat,
+to 16-bit integers by scaling the data so that the full range of intensities
+in the input mapped to the range of 0 to 32767 in the output, y.dat, then the
+following is what you would execute:
+
+<PRE>
+    Normalize x.dat y.dat -mode=short -scale_calculation=volume_bounds \
+        -scale_multiplier=32767
+</PRE>
+
+<P>
+   <A HREF="#Normalize">Overview</A> |
+   <A HREF="Region.html">Region processing</A> |
+   <A HREF="#Method">Method</A> |
+   <A HREF="#Range">NDiv</A> |
+   Command line
+<HR>
+
+</BODY>
+</HTML>

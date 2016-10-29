@@ -1,0 +1,433 @@
+KEYWORD
+    XY SectionRange Wave CurrentSection ComplexConversion Cutoffs LastResult
+    Loop RecordedResults CommandLine
+
+DESCRIPTION Percentiles
+    Given or more cutoff values between zero and one,
+    this program finds, for each cutoff value, the
+    smallest intensity value such that the fraction
+    of the data set that is less than or equal to
+    that intensity value is at least as large as
+    the cutoff value.  To use the application,
+    first enter the file name or window number in
+    the first line.  Then use the controls below
+    that to select a region of interest.  The XY
+    field has the starting x index, starting y
+    index, x size, and y size.  The starting and
+    ending z indices are in the Z field, and the
+    starting and ending time are in the T field.
+    Select the wavelength used with the toggles
+    next to the W button.  When the input is from
+    an image window, there are two controls to ease
+    region selection:
+
+    1) When the "Current section" toggle is on,
+       the z, time, and wavelength fields are
+       automatically set based on the currently
+       displayed section.  Also, if the section
+       changes the result will be recalculated
+       and shown in the dialog.
+    2) Pressing the button labeled "Select region"
+       enables the mouse for selection of the x/y
+       region of interest.  A recipe to do that is
+
+       a) Press the button labeled "Select region".
+       b) Move the mouse pointer to the image window.
+       c) Depending on where the pointer is relative
+          to the region selecte, you can:
+          i) Shift an existing region by depressing
+             the left mouse button when the pointer
+             is in the center of the region, dragging
+             the mouse, and releasing the left mouse
+             button.
+          ii) Adjust the size of a region by
+             depressing the left mouse button when
+             the pointer is at an edge or corner
+             of the region, dragging the mouse, and
+             releasing the left mouse button.
+          iii) Select a new region by depressing the
+            left mouse button while the pointer is
+            outside of the existing region, dragging
+            the mouse, and releasing the left mouse
+            button.
+       d) After the left mouse button has been
+          pressed in the image window, the selection
+          process will terminate if the mouse pointer
+          leaves the image and the left mouse button
+          is not held down.  Press the button labeled
+          "Select region" again to restart the
+          selection process.
+
+    In addition to selecting a region, you must set
+    the cutoff values to use.  You can do this with
+    the controls in the center of the dialog:
+
+    a) The text field immediately below the the button
+       labeled "Cutoffs", displays the current cutoff
+       values.
+    b) To enter a new cutoff, enter the value, between
+       zero and one, in the field next to the button
+       labeled, "New level".  Then press the button
+       labeled "Add" to add the cutoff at the end of
+       the list.  Use the button labeled "Insert"
+       to add the cutoff before the currently
+       selected value in the list (to select a value
+       click on it with the mouse).
+    c) To delete a cutoff value, select it in the
+       list by clicking on it and then press the
+       button labeled "Delete" below the list.
+    d) To delete all the cutoff values, press the
+       button labeled "Delete all".
+    
+    Once you have selected a region and a set of
+    cutoff values, press the button labeled
+    "Calculate" to determine the intensity values
+    corresponding to each cutoff.  After pressing
+    calculate, the intensity value matching the
+    first cutoff will be shown immediately below
+    the button labeled "Calculate".  To see the
+    intensity values for any other cutoff you
+    entered, press the button labeled "Record"
+    and then press the button labeled "Display".
+    If you want to perform the calculation for
+    multiple regions of the same file and those
+    regions have the same size and are regularly
+    spaced, use the button labeled "Loop..."
+    to set up calculation; the results of the
+    loop will be automatically appended to the
+    list of recorded results.
+
+    The button labeled "Record" causes the most
+    recently calculated result to be added to a
+    list of results.  You can view a table of
+    those results by pressing the button labeled
+    "Display".  You can save those results as a
+    table in plain text by pressing the button
+    label "Save" and then selecting the file
+    name to use.  Use the button labeled "Clear"
+    to erase the list of recorded results.
+
+    The application also has a command-line mode
+    of execution.  For more information on that
+    mode, look at the CommandLine topic.
+
+XY
+    When you press the button labeled "Calculate",
+    the lower-lefthand corner and size of the
+    x/y bounds for the region of interest are
+    read from the values in the field labeled
+    "XY" in the main dialog.  The first value
+    is the starting x index, the second value
+    is the starting y index, the third value
+    is the x size, and the last value is the
+    y size.
+
+    There is a similar control in the dialog
+    to loop over multiple regions (use the
+    button labeled "Loop.." in the main dialog
+    to open this dialog); the meaning of the
+    values in the field is the same but they
+    set the x/y bounds for the first region
+    of interest.  The other regions of
+    interest are shifted from this first
+    region of interest based on the values
+    for the step size in x and y.
+
+SectionRange
+    When you press the button labeled
+    "Calculate", the z and time bounds for
+    the region of interest are set from the
+    fields labeled "Z" and "T" in the main
+    dialog.  The first value in the field
+    is the starting index (in z or time,
+    respectively) for the region and the
+    second value is the last index in the
+    region.
+
+    There are similar controls in the
+    dialog to loop over multiple regions
+    (use the button labeled "Loop..."
+    button in the main dialog to open
+    this dialog).  The values in these
+    fields have the same meaning, but
+    they set the z and time bounds for
+    the first region of interest.  The
+    other regions of interest are shifted
+    from this first region based on the
+    values for the step size in z and time.
+
+Wave
+    The toggles next to the button labeled
+    "W" in the main dialog control from
+    which wavelength the region of interest
+    is drawn.  The leftmost toggle represents
+    the first wavelength in the file, and
+    the rightmost toggle represents the
+    last wavelength in the file.
+
+CurrentSection
+    When the input is drawn from an image
+    window and the toggle labeled "Current
+    section" in the main dialog is on, the
+    region of interest is limited to a
+    subset of the section currently
+    displayed in the window and the results
+    for the first cutoff will be automatically
+    updated when the displayed section is
+    changed.
+
+    When the input is a file or the the
+    toggle labeled "Current section" is
+    off, the region of interest can be 4D
+    (x, y, z, and time) and, to update the
+    display of the most recent result, it
+    is always necessary to press the button
+    labeled "Calculate".
+
+ComplexConversion
+    If the data is complex-valued, it will
+    be converted to floating-point.  Use the
+    menu next to the button labeled "Convert
+    complex" to set how the conversion shall
+    be done.  You have four options:
+
+    extract real part
+        Uses only the real component of the
+        complex value.
+
+    extract imaginary part
+        Uses only the imaginary component
+        of the complex value.
+
+    amplitude
+        Uses the square root of sum of the
+        real component squared and the
+        imaginary component squared.
+
+    phase
+        Uses the phase, in radians, for
+        the complex value.
+
+Cutoffs
+    The list of current cutoff values is
+    shown immediately below the button
+    labeled "Cutoffs" in the main dialog.
+    For each cutoff value, the application
+    will find the smallest intensity level
+    such that the fraction of the data set
+    with intensity values less than or equal
+    to that level is greater than or equal
+    to the cutoff value.  At least one cutoff
+    value must be specified before any
+    computations can be done.
+
+    To add a cutoff value, enter the desired
+    level, between zero and one in the field
+    next to the button labeled "New level".
+    Then press the button labeled "Add" to
+    add that cutoff at the end of the list
+    or press the button labeled "Insert" to
+    insert it immediately before the selected
+    cutoff.
+
+    To delete a cutoff value, select the
+    value to delete by clicking on it in
+    the list.  Then press the button labeled
+    "Delete".  Use the button labeled
+    "Delete all" to clear the list of cutoff
+    values.
+
+LastResult
+    The result from the last time you
+    pressed the button labeled "Calculate"
+    (or when the current section in the
+    input window was last changed and the
+    Current section toggle was on), is
+    shown on the line immediately below
+    the button labeled "Calculate".  Use
+    the button labeled "Record" button to
+    save this result in a list which can
+    be saved to a file.  The result show
+    only includes the value for the first
+    cutoff.  To see the values for any
+    additional cutoffs, press the button
+    labeled "Record" and then press the
+    button labeled "Display".
+
+Loop
+    To repeat the calculation for several,
+    regularly spaced, regions which have
+    the same size and are drawn from the
+    same dataset, the controls in the
+    looping controls, accessed with the
+    button labeled "Loop..." in the main
+    dialog, may be useful.  These controls
+    allow you to set up an initial region
+    and m - 1 additional regions where m is
+
+    m = (# regions in x) * (# regions in y) *
+        (# regions in z) * (# regions in time) *
+        (# selected waves)
+
+    The number of regions in each dimension
+    is the first value in each of the fields
+    below the button labeled "Loop sizes and
+    steps".  The displacement, in pixels or
+    samples, along one dimension between
+    adjacent regions is given by the second
+    value.
+
+    As a simple example, consider performing
+    the calculation for the four quadrants
+    of each section in a 1024 x 1024 x 30
+    stack.  For the first region, the field
+    labeled "XY" should be
+
+        0 0 512 512
+
+    , and the fields labeled "Z" and "T"
+    should be
+
+        0 0
+
+    .  The x size and step and y size and
+    step would be the same:
+
+       2 512
+
+    , and the z size and step would be
+
+       30 1
+
+    .  The time size and step would be
+
+       1 1
+
+    Once the initial regions, number
+    of regions, and step sizes are selected,
+    use the button labeled "Start loop"
+    to start the calculation.  For each
+    region the result will be calculated
+    and recorded; the most recent result
+    in the main dialog is not changed.
+    During processing, the button that
+    was labeled "Start loop" will be
+    labeled "Interrupt" and can be
+    pressed to stop the calculation.
+    Use the button labeled "Close" to
+    dismiss the dialog and interrupt
+    processing if it is not finished.
+
+RecordedResults
+    The button labeled "Record" in the
+    main dialog adds the most recent
+    result to a list of results; the
+    looping option also adds to this
+    list.
+
+    Use the button labeled "Save"
+    near the bottom of the main
+    dialog to save the list of
+    results to a text file.  The file
+    has a one line header with column
+    titles and the data follows in
+    columns delimited by one or more
+    spaces.  The columns are:  the
+    starting x index for the region,
+    the starting y index for the
+    region, the region's x size,
+    the region's y size, the starting
+    z index for the region, the
+    region's z size, the wave index
+    for the region, and one column
+    for each cutoff value.  If you mix
+    results computed with differing
+    number of cutoff values, the results
+    will be separated by a header line.
+
+    The button labeled "Display"
+    will open a dialog with the
+    recorded results shown in a
+    tabular format.  If you want
+    to delete some of the recorded
+    results, use the button labeled
+    "Delete..." in that dialog to
+    choose a range of results (as
+    they are numbered in the first
+    column, titled "ID") to delete.
+
+    Use the button labeled "Clear"
+    in the main dialog to erase all
+    the stored results.
+
+CommandLine
+    When called with one or more
+    command-line arguments, the
+    application will not display
+    the graphical interface and
+    instead proceed to perform the
+    computations for one or more
+    regions in the same file,
+    write the results (by default
+    to standard output), and exit.
+    The command-line syntax is
+    (optional parts are enclosed
+    in brackets):
+
+    mrcpercentiles input_file_name \
+        -cut=cut1 [-cut=cut2 ...] \
+        [-complex=real|imag|amp|phase] \
+        [-x=start[:stop]] [-y=start[:stop]] \
+        [-z=start[:stop]] [-t=start[:stop]] \
+        [-w=wave1[:wave2[...]]] \
+        [-xloop=count[:step]] \
+        [-yloop=count[:step]] \
+        [-zloop=count[:step]] \
+	[-tloop=count[:step]] \
+        [-out=output_file_name]
+
+    The -cut option sets a cutoff value to use.
+    The cutoff value must be between zero and
+    one.  Use multiple -cut options to set
+    multiple cutoff levels.  The results for
+    the cutoff values will be recorded in the
+    same order as they appear on the command
+    line.
+
+    The -complex option selects how to convert
+    complex-valued data.  It has no effect
+    if the data is not complex-valued.  Use
+    -complex=real to select the real component,
+    -complex=imag to select the imaginary
+    component, -complex=amp to select the
+    amplitude, or -complex=phase to select
+    the phase, in radians.  If you do not
+    use a -complex option, the complex-valued
+    data will be converted to the amplitude.
+
+    The -x, -y, -z, and -t options select a
+    region from the input file.  If you omit
+    one or more of them, the application will
+    use the full range of the corresponding
+    dimension for the selected region.  The
+    -xloop, -yloop, -zloop, and -tloop
+    options instruct the application to report
+    results for more than region in the input
+    file (the bounds of the initial region
+    are still under the control of the -x,
+    -y, -z, and -t options).  Loop options
+    that you do not specify will implicitly
+    have a count of one.  The -w option
+    selects the wavelengths to use.  If you
+    do not use the -w option, the application
+    will use the first wavelength in the file.
+
+    You can use the -out option to control
+    where the application will write the
+    results.  By default, the application will
+    write them to standard output (the
+    application will also write the results
+    to standard output if the given file
+    name is a single hyphen, i.e. "-").  The
+    results are written in the format
+    described in the RecordedResults topic.

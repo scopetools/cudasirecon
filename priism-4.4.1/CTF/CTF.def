@@ -1,0 +1,18 @@
+# Defines association between lens number and CTF file name.  Used by the
+# deconvolution graphical interface to automatically select a CTF based
+# on the lens number.  An individual user may override these settings by
+# creating a CTF.def file in the .iveprefs subdirectory of the user's
+# home directory.
+#
+# The format is (optional parts are listed in brackets):
+#     [whitespace] lens_number whitespace "ctf_filename"
+# lens_number may be an integer value or default; the latter sets the
+# CTF to use if there is not a match for the lens number of the data.
+# Comments, which begin with #, and blank lines (containing only whitespace)
+# are allowed.
+
+# om1; Olympus 60x/1.4/1.5x; Nd = 1.5140; 24.7 deg. C
+12	"${IVE_BASE}/CTF/lens12.realctf"
+
+# om1; Nikon 100x; Nd = 1.5150; 24.35 deg. C
+default	"${IVE_BASE}/CTF/lens13.realctf"

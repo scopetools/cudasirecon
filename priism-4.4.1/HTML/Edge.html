@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Edge Enhancement</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to enhance edges in an image.">
+  <META NAME="Keywords" CONTENT="Priism,edge,enhancement">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Edge">Edge Enhancement</A></H1>
+<H2>Overview</H2>
+<P>Edge Enhancement uses the image intensity gradient to enhance object
+boundaries.  At any pixel, i, the result at that pixel is given by
+<PRE>
+    result(i) = input(i) * (<VAR>fraction</VAR> + (1 - <VAR>fraction</VAR>) * gradient(<VAR>F</VAR>(input))(i))
+</PRE>
+<P>where <VAR>fraction</VAR> is a number between 0 and 1 and <VAR>F</VAR> is
+either a linear or an arctangent function.
+
+<P>The controls for selecting the input file, output file, and region to
+process are shared with many other Priism applications and are described
+<A HREF="Region.html">elsewhere</A>.  The controls specific to Edge Enhancement
+are described below.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Atan">Atan</A> |
+  <A HREF="#Fraction">Fraction</A> |
+  <A HREF="#MinMax">Min/max</A> |
+  <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="Atan">Atan</A></H2>
+<P>When this toggle is on, the arctangent of the input (after scaling it
+with the given <A HREF="#MinMax">minimum and maximum values</A>) is used.  When
+the toggle is off, the input is simply restricted by the minimum and
+maximum values.
+
+<P>In some cases, applying the arctangent function gives improved edge
+enhancement.
+
+<P><A HREF="#Edge">Return to overview</A>
+<HR>
+
+<H2><A NAME="Fraction">Fraction</A></H2>
+<P>This is a weighting factor between zero and one which determines the
+relative contributions of the original image and the gradient of the original.
+With a larger weighting factor, the result of the edge enhancement will
+look more like the input image.
+
+<P><A HREF="#Edge">Return to overview</A>
+<HR>
+
+<H2><A NAME="MinMax">Min/max</A></H2>
+<P>In the gradient calculation, the input image values are restricted to
+fall in the given range.  Values outside the range are taken to be the value
+of the closest endpoint.
+
+<P><A HREF="#Edge">Return to overview</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>Edge Enhancement accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, Edge
+Enhancement has the following options (optional parts are shown in brackets):
+
+<DL>
+  <DT><CODE>-atan</CODE>
+  <DD>If present on the command line, this option causes the arctangent
+    of the input data (after clamping to the range given by the minimum and
+    maximum values) to be used.  The default is to use the clamped input data
+    without further modification.
+
+  <DT><CODE>-fraction=</CODE><VAR>weight</VAR>
+  <DD>Sets the weighting factor for combining the gradient of the input
+    data and the input data.  Valid values for <VAR>weight</VAR> are
+    between zero and one with larger values giving a result that is
+    closer to the input data.
+
+  <DT><CODE>-scl1=</CODE><VAR>min</VAR>[<CODE>:</CODE><VAR>max</VAR>]
+  <DD>Sets the minimum and maximum used to clamp the first wavelength's
+    data before calculating the gradient.  The default is to use the minimum
+    and maximum values recorded in the input's header.  There are similar
+    options (<CODE>-scl2</CODE>, <CODE>-scl3</CODE>, <CODE>-scl4</CODE>, and
+    <CODE>-scl5</CODE> to set the range for values drawn from other input
+    wavelengths).
+</DL>
+
+<P>As an example, the following writes the gradient amplitude to gradient.dat
+for every other of the first thirty time points in series.dat; the arctangent
+is taken before computing the gradient:
+
+<PRE>
+    Edge series.dat gradient.dat -atan -t=0:29:2
+</PRE>
+
+<P><A HREF="#Edge">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

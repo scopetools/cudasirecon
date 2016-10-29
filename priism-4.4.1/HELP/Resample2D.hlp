@@ -1,0 +1,120 @@
+KEYWORD
+    ZRotation ShiftInXY AngleBetweenAxes MagnificationInXY Center
+    OutputXYSize KeepCellDimensions AutoSize
+
+DESCRIPTION Resample2D
+    Use Resample2D to reorient or resize an image file section-
+    by-section.
+
+    Resample2D accepts the command-line arguments described in
+    Region.hlp, including the -prompt option to operate in a
+    text-only mode.  In addition, Resample2D has the following
+    options:
+
+         -axes_angle=angle
+              Specifies the angle, in degrees, between the x
+              and y axes; if not specified, the default is 90
+              degrees.
+
+         -center=x:y
+              Specifies the pixel coordinates in the input
+              about which the rotation (specified by -rotation)
+              is done.  The default value is the center of the
+              processed region.
+
+         -mag=x_mag:y_mag
+              Specifies the factors by which the x and y
+              directions are magnified.  If not specified,
+              no magnification is done.
+
+         -rotation=angle
+              Specifies the angle, in degrees, that the images
+              are rotated about the z axis.  A positive value
+              causes a clockwise rotation.  If not specified,
+              no rotation is done.
+
+         -same_cell
+              If specified, the output will have x and y cell
+              dimensions (the pixel spacing times the sampling
+              frequency) which are the same as the input's x
+              and y cell dimensions.  If not specified, the cell
+              dimensions may not be preserved.  For more
+              details, consult the KeepCellDimensions topic.
+
+         -shift=x_shift:y_shift
+              Specifies the x and y displacements, in pixels,
+              applied to the images after rotation, skewing
+              and magnification are applied.  If not specified,
+              no shift is applied.
+
+         -size=x_size:y_size
+              Specifies the x and y dimensions for the images
+              produced.  If not specified, the output size is
+              calculated by multiplying the size of the
+              input region by the magnification factors.
+
+    As an example, if embryo.dat contained images that
+    were 480x512, then the following command would generate
+    embryo_x2.dat which would contain the data rotated
+    by 90 degrees counterclockwise and resampled it to a
+    two times finer grid:
+
+         Resample2D embryo.dat embryo_x2.dat -rotation=-90 \
+              -mag=2:2 -size=1024:960
+
+ZRotation
+    This field is the angle (clockwise, in degrees) by which
+    each section is rotated.
+
+ShiftInXY
+    Each section is shifted by this amount after the rotation,
+    skewing, and magnification are applied.  The displacements
+    are in pixels.
+
+AngleBetweenAxes
+    Specifies an angle between the X and Y axes.  If other than
+    90, the image will be skewed by this amount.
+
+MagnificationInXY
+    This field holds the factors by which the x and y directions
+    are magnified or reduced.  The new image is calculated by
+    bilinear interpolation.
+
+Center
+    This  field specifies the point, in pixel coordinates, about
+    which the rotation is done.
+
+OutputXYSize
+    Use this field to specify the size of the output image in
+    pixels.  If the autosize toggle is on, this field will be
+    automatically changed when the magnification is changed.
+
+KeepCellDimensions
+    When this toggle is on, the cell dimensions (the pixel
+    spacing times the sampling frequency) will be the same
+    in the output as they are in the input.  If the sampling
+    frequencies in the input are all one, preserving the cell
+    dimensions will force the reported output pixel spacings
+    to be the same as the input spacings.  Otherwise, the
+    sampling frequencies are set equal to the output
+    dimensions, and the reported output pixel spacing will
+    be the input cell dimensions divided by the altered
+    sampling frequencies.
+
+    When this toggle is off, the cell dimensions may not
+    be preserved.  The output pixel spacing in x and y will
+    be the input pixel spacing divided by the magnification.
+    The output pixel spacing in z will be the input pixel
+    spacing in z times the z step size.  If the sampling
+    frequencies in the input are all one, the sampling
+    frequencies in the output will be the same.  Otherwise,
+    the sampling frequencies are set equal to the output
+    dimensions.  The cell dimensions of the output will
+    be product of the modified pixel spacings and sampling
+    frequencies.
+
+Autosize
+    When this toggle is on and the magnification is adjusted,
+    the output size will be changed automatically to be the
+    given magnification times the input image size and the
+    center will be reset to the center of the input image.

@@ -1,0 +1,624 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: EditPolygon</TITLE>
+  <META NAME="Description" CONTENT="On-line help for EditPolygon.">
+  <META NAME="Keywords" CONTENT="Priism,polygon,segmentation,modeling">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="EditPolygon">EditPolygon</A></H1>
+<H2>Overview</H2>
+<P>EditPolygon lets you create 2D polygons in the image window to identify
+objects in the image. These polygons are used to delineate areas of the
+data for measurements, for cutting out part of the image, or as building
+blocks for 3D Objects which can be used for 3D measurement and modeling.
+EditPolygon provides interactive and automatic creation of polygons and
+editing of existing polygons. There are other programs that can generate
+polygons: <A HREF="2DObjFinder.html">2DObjFinder</A> automatically creates
+polygons from a binary mask and <A HREF="FPPolygons.html">FPPolygons</A>
+functions similarly but operates on data where each pixel value is a region
+number.  Programs that use polygons are <A HREF="CutMask.html">CutMask</A>,
+which masks out the data either inside or outside the polygons,
+<A HREF="VolumeBuilder.html">Volume Builder</A>, which associates polygons
+into three-dimensional objects, and <A HREF="FindPoints.html">Find Points</A>,
+which can use polygons to mark regions of interest to search for point-like
+intensity features.  All of these programs can look at the same set of
+polygons so that they can be used together.  When any of one of these programs
+are running and have a set of polygons loaded into an image window, any other
+one will see those polygons and be able to work with them.
+
+<H3>Topics</H3>
+<P>
+  Overview |
+  <A HREF="#Basic_Steps">Basic Steps</A> |
+  <A HREF="#Wave_Mode">Wave Mode</A> |
+  <A HREF="#Action_Mode">Action Mode</A> |
+  <A HREF="#Test_Section">Test Section</A> |
+  <A HREF="#Edit_Options">Edit Options</A> |
+  <A HREF="#Copy_Polygons">Copy Polygons</A> |
+  <A HREF="#Clear_Polygons">Clear Polygons</A> |
+  <A HREF="#Auto_Polygon">AutoPolygon</A> |
+  <A HREF="#Graphics_Toggles">Graphics Toggles</A> |
+  <A HREF="#Hot_Keys">Hot Keys</A> |
+  <A HREF="#Save_.POL_File">Save .POL File</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="2DObjFinder.html">2DObjFinder</A> |
+  <A HREF="FPPolygons.html">FPPolygons</A> |
+  <A HREF="CutMask.html">CutMask</A> |
+  <A HREF="FindPoints.html">FindPoints</A> |
+  <A HREF="VolumeBuilder.html">Volume Builder</A> |
+  <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="Basic_Steps">Basic Steps</A></H2>
+<OL>
+  <LI>Enter the image window number for the image that you wish to use for
+    editing or creating polygons.
+  <LI>If you want to edit an existing polygon data set, enter the name
+    of the polygon data set in the field next to the <EM>polygon data</EM>
+    button or press the <EM>polygon data</EM> button to open a file selection
+    dialog to choose the file.
+  <LI>Create polygons by clicking in the image where you want the vertices
+    of the polygons to lie.  To complete the polygon press the
+    space bar while the mouse pointer is over the image or press the
+    <EM>Close Polygon</EM> button in the EditPolygon dialog.
+  <LI>Now that you've gone through the work of tracing some object by hand,
+    read the <A HREF="#Action_Mode">action mode section</A> to learn
+    about how to modify existing polygons or semiautomatically creating
+    new ones.
+  <LI>When you are finished creating or editing polygons, you can save
+    the polygons to a file by pressing the <EM>Save .POL File</EM> button
+    in the EditPolygon dialog.  You can also just leave the EditPolygon
+    program running and start the program that you want to use the polygons.
+    Point that program at the window with the polygons and it will use the
+    polygons that EditPolygon loaded into that window. The polygons will stay
+    loaded in the window as long as one of the polygon manipulation programs
+    is using them.
+</OL>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#EditPolygon">Overview</A> |
+  Basic Steps |
+  <A HREF="#Wave_Mode">Wave Mode</A> |
+  <A HREF="#Action_Mode">Action Mode</A> |
+  <A HREF="#Test_Section">Test Section</A> |
+  <A HREF="#Edit_Options">Edit Options</A> |
+  <A HREF="#Copy_Polygons">Copy Polygons</A> |
+  <A HREF="#Clear_Polygons">Clear Polygons</A> |
+  <A HREF="#Auto_Polygon">AutoPolygon</A> |
+  <A HREF="#Graphics_Toggles">Graphics Toggles</A> |
+  <A HREF="#Hot_Keys">Hot Keys</A> |
+  <A HREF="#Save_.POL_File">Save .POL File</A>
+<HR>
+
+<H2><A NAME="Wave_Mode">Wave Mode</A></H2>
+<P>If you are working with multiple wave data, you can always be sure of
+which wave you are modeling in, by setting the active wave toggles.  If
+you are in black and white mode in the image, it's easy, because the wave
+that is displayed is the one you are modeling.  In this case, polygons that
+are actually applied to a section will be red.  In RGB mode, the current
+wave is not obvious in the window so you are more dependent on the toggles
+in the EditPolygon menu.  In this case polygons will be different colors
+for the different waves so you can distinguish which is from which wave.
+The colors are controllable using <A HREF="SelectGrColors.html">Graphics
+Colors</A> from the <EM>Options</EM> menu on the image window.
+There you can set the colors for each wave to be whatever you want.  The
+option menu for the active wave mode provides a shortcut for modeling in
+data with multiple waves.  If it is set to <EM>one</EM>, then the polygons
+you create will only be applied to the currently active wave.  If it is set to
+<EM>all</EM>, then all the polygons created while in this mode will be applied
+to all of the waves.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#EditPolygon">Overview</A> |
+  <A HREF="#Basic_Steps">Basic Steps</A> |
+  Wave Mode |
+  <A HREF="#Action_Mode">Action Mode</A> |
+  <A HREF="#Test_Section">Test Section</A> |
+  <A HREF="#Edit_Options">Edit Options</A> |
+  <A HREF="#Copy_Polygons">Copy Polygons</A> |
+  <A HREF="#Clear_Polygons">Clear Polygons</A> |
+  <A HREF="#Auto_Polygon">AutoPolygon</A> |
+  <A HREF="#Graphics_Toggles">Graphics Toggles</A> |
+  <A HREF="#Hot_Keys">Hot_Keys</A> |
+  <A HREF="#Save_.POL_File">Save .POL File</A>
+<HR>
+
+<H2><A NAME="Action_Mode">Action Mode</A></H2>
+<P>The action mode option menu contains the choices for what will happen when
+you click in the image window using the mouse.  The possible actions are:
+
+<DL>
+  <DT><STRONG>Add</STRONG><DD>Clicking in the image window will add a
+    point to the currently open polygon in that section or create a new
+    polygon and add the point clicked as the first vertex.  When the last
+    point is picked for a polygon, press the space bar while the mouse
+    is over the image window or press the <EM>Close Polygon</EM> button
+    in the EditPolygon dialog to close the polygon.
+  <DT><STRONG>Modify</STRONG><DD>Allows changes to be made to the positions of
+    individual vertices.  Pressing and holding the left mouse button while
+    the pointer is near a vertex selects that vertex, and until the left
+    mouse button is released, the vertex's position will change as the mouse
+    is moved.
+  <DT><STRONG>Roam</STRONG><DD>Allows whole polygons to be shifted.
+    Pressing and holding the left mouse button while the pointer is inside
+    a polygon selects that polygon, and until the left mouse button is
+    released, motions of the mouse will cause the polygon to translate.
+  <DT><STRONG>Select</STRONG><DD>Clicking inside a polygon causes it to
+    be the current selection.  The currently selected polygon is highlighted,
+    and may have operations performed on it by pressing one of the following
+    keys when the pointer is in the image window:
+    <DL>
+      <DT>a<DD>Deletes the selected polygon.
+      <DT>f<DD>Smoothes the jagged edges of the polygon one at a time starting
+        with the worst.
+      <DT>g<DD>Deselects the polygon.
+      <DT>s<DD>Smoothes the jagged edges all at once; currently,
+        smoothing just means putting the very wrong point in between its two
+        adjacent points.
+    </DL>
+    Note that when a new polygon is created via the Auto action or when
+    a manually-created polygon is closed, that polygon becomes the current
+    selection and the actions described above can be applied without
+    entering the selection mode.  While in the selection mode the <EM>d</EM>
+    key for deleting the last polygon in a section is disabled to avoid
+    it being mistakenly used when deleting the currently selected polygon
+    was intended.  The smoothing keys are most useful for polygons generated
+    via the Auto action.  
+  <DT><STRONG>Auto</STRONG><DD>Clicking in the image window causes the
+    point selected to be used as the starting point for automatically
+    generating a polygon.  While in the Auto mode, a dialog is displayed
+    which controls how the polygons are generated in relation to the
+    starting point.  The <A HREF="#Auto_Polygon">AutoPolygon</A> topic
+    discusses the available options in more detail.
+  <DT><STRONG>Off</STRONG><DD>Clicking in the image window has no
+    effect on EditPolygon.  This is useful if you wish to use the
+    mouse for actions in other programs without having an effect
+    on EditPolygon.
+</DL>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#EditPolygon">Overview</A> |
+  <A HREF="#Basic_Steps">Basic Steps</A> |
+  <A HREF="#Wave_Mode">Wave Mode</A> |
+  Action Mode |
+  <A HREF="#Test_Section">Test Section</A> |
+  <A HREF="#Edit_Options">Edit Options</A> |
+  <A HREF="#Copy_Polygons">Copy Polygons</A> |
+  <A HREF="#Clear_Polygons">Clear Polygons</A> |
+  <A HREF="#Auto_Polygon">AutoPolygon</A> |
+  <A HREF="#Graphics_Toggles">Graphics Toggles</A> |
+  <A HREF="#Hot_Keys">Hot Keys</A> |
+  <A HREF="#Save_.POL_File">Save .POL File</A>
+<HR>
+
+<H2><A NAME="Test_Section">Test Section</A></H2>
+<P>When the <EM>test section</EM> toggle is on, you can create polygons that
+will be shown in all sections as you move through the sections but which will
+not be applied to the section unless you press the <EM>apply test section</EM>
+button or press <EM>t</EM> while the pointer is in the image window.  Polygons
+in the test section are displayed in green; when they are copied to the
+polygon list for the current section they are displayed in the normal color
+used for polygons (red for pseudocolor mode or the current color for the
+wave's graphics for RGB mode).  If you want to add, delete or modify
+a polygon that is not in the test section, turn off the <EM>test section</EM>
+toggle so that the actions are applied to the polygons in the real sections.
+The next time you want to work with the test section, toggle the
+<EM>test section</EM> toggle back on and the polygons that were in the test
+section will appear again and can still be used.  If you want to delete the
+polygons in the test section, use <EM>Clear Test Section</EM> from the
+<A HREF="#Edit_Options">edit options menu</A> or, while the
+<EM>test section</EM> toggle is on and the pointer is in the image window,
+press the <EM>d</EM> key repeatedly until the all the polygons are deleted.
+You can also enter the <A HREF="#Action_Mode">select action mode</A> to select
+a polygon from the test section and then press the <EM>a</EM> key to delete
+it. You may want to use test section to make sure you have a polygon or
+polygons that are good for a number of sections.  When you've got the right
+polygon for all the sections you can you the copy polygons function in the
+edit options pulldown to copy the test section to all the sections at once.
+When you apply a test section, if the <A HREF="#Wave_Mode">active wave mode</A>
+is <EM>one</EM>, the section will be applied to the current section in the
+toggled wave. If the wave mode is <EM>all</EM>, the test section will be
+applied to that current section in all the waves.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#EditPolygon">Overview</A> |
+  <A HREF="#Basic_Steps">Basic Steps</A> |
+  <A HREF="#Wave_Mode">Wave Mode</A> |
+  <A HREF="#Action_Mode">Action Mode</A> |
+  Test Section |
+  <A HREF="#Edit_Options">Edit Options</A> |
+  <A HREF="#Copy_Polygons">Copy Polygons</A> |
+  <A HREF="#Clear_Polygons">Clear Polygons</A> |
+  <A HREF="#Auto_Polygon">AutoPolygon</A> |
+  <A HREF="#Graphics_Toggles">Graphics Toggles</A> |
+  <A HREF="#Hot_Keys">Hot Keys</A> |
+  <A HREF="#Save_.POL_File">Save .POL File</A>
+<HR>
+
+<H2><A NAME="Edit_Options">Edit Options</A></H2>
+<P>The <EM>edit</EM> pulldown in the EditPolygon dialog provides the
+following operations:
+
+<DL>
+  <DT><STRONG>Copy Polygon(s)</STRONG><DD>Opens a dialog in which
+    a range of sections is specified as the source and another range
+    of sections as the destination.  When the <EM>Do it</EM> button
+    is pressed in the dialog, polygons are copied from the source to
+    the destination.  The <A HREF="#Copy_Polygons">Copy Polygons</A>
+    topic covers the operation of this dialog in more detail.
+  <DT><STRONG>Clear Test Section</STRONG><DD>Removes all polygons
+    from the <A HREF="#Test_Section">test section</A>.
+  <DT><STRONG>Clear Partial</STRONG><DD>Opens a dialog in which
+    a range of sections is specified.  When the <EM>Do it</EM> button
+    is pressed in the dialog, all the polygons within that range are
+    removed.  The <A HREF="#Clear_Polygons">Clear Polygons</A>
+    topic covers the operation of this dialog in more detail.
+  <DT><STRONG>Clear All</STRONG><DD>Removes all polygons.
+</DL>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#EditPolygon">Overview</A> |
+  <A HREF="#Basic_Steps">Basic Steps</A> |
+  <A HREF="#Wave_Mode">Wave Mode</A> |
+  <A HREF="#Action_Mode">Action Mode</A> |
+  <A HREF="#Test_Section">Test Section</A> |
+  Edit Options |
+  <A HREF="#Copy_Polygons">Copy Polygons</A> |
+  <A HREF="#Clear_Polygons">Clear Polygons</A> |
+  <A HREF="#Auto_Polygon">AutoPolygon</A> |
+  <A HREF="#Graphics_Toggles">Graphics Toggles</A> |
+  <A HREF="#Hot_Keys">Hot Keys</A> |
+  <A HREF="#Save_.POL_File">Save .POL File</A>
+<HR>
+
+<H2><A NAME="Copy_Polygons">Copy Polygons</A></H2>
+<P>When <EM>Copy Polygons</EM> is selected from the
+<A HREF="#Edit_Options">edit pulldown</A> in the EditPolygon dialog, a dialog
+is displayed in which the sections to be used as the source and destination
+are entered.  Pressing the <EM>Do it</EM> button in this dialog performs
+the copy.  The source region is controlled by the controls on the lefthand
+side of the dialog and the destination by the controls on the right.  The
+toggles on the left control how the copy is performed.
+
+<P>If the uppermost toggle on the left (the one next to the <EM>z</EM>
+field) is on, the copy is done from a single section specified by the values
+in the <EM>z</EM>, <EM>time</EM>, and <EM>wave</EM> fields on the lefthand
+side.  The polygons in this section are copied to the range of sections
+specified by the <EM>z</EM> field, <EM>time</EM> field, and <EM>wave</EM>
+toggles on the right.  The z and time destination ranges are controlled by
+two values:  the first is the starting point and the second is the final
+point.  If the destination range includes the source section, the polygons
+in that section will not appear twice.
+
+<P>If the second toggle on the left (the one next to the <EM>time</EM>
+field) is on, the copy is done from all z sections in a single time point
+and wave as specified by the <EM>time</EM> and <EM>wave</EM> fields on the
+left.  The destination for the copy is all z sections for the range of times
+and waves specified on the right.  If the destination range includes the
+source time and wave, the polygons in that time and wave will not appear twice.
+
+<P>If the third toggle on the left (the one next to the <EM>wave</EM>
+field) is on, the copy is done from all time points z sections in
+the wave given by the <EM>wave</EM> field on the left.  The destination
+is all the corresponding time and z points in the waves selected
+on the right.  If the destination waves includes the source wave, the
+polygons in that wave will not appear twice.
+
+<P>If the fourth toggle on the left is on, the copy is done from the
+<A HREF="#Test_Section">test section</A> to all sections in the range
+set by the <EM>z</EM> field, <EM>time</EM> field, and <EM>wave</EM> toggles
+on the right.
+
+<P>In all cases the <EM>set all</EM> button may be used to have the destination
+cover the entire data set.
+
+<P>
+  <A HREF="#EditPolygon">Overview</A> |
+  <A HREF="#Basic_Steps">Basic Steps</A> |
+  <A HREF="#Wave_Mode">Wave Mode</A> |
+  <A HREF="#Action_Mode">Action Mode</A> |
+  <A HREF="#Test_Section">Test Section</A> |
+  <A HREF="#Edit_Options">Edit Options</A> |
+  Copy Polygons |
+  <A HREF="#Clear_Polygons">Clear Polygons</A> |
+  <A HREF="#Auto_Polygon">AutoPolygon</A> |
+  <A HREF="#Graphics_Toggles">Graphics Toggles</A> |
+  <A HREF="#Hot_Keys">Hot Keys</A> |
+  <A HREF="#Save_.POL_File">Save .POL File</A>
+<HR>
+
+<H2><A NAME="Clear_Polygons">Clear Polygons</A></H2>
+<P>When <EM>Clear Partial</EM> is selected from the
+<A HREF="#Edit_Options">edit pulldown</A> in the EditPolygon dialog, a
+dialog is displayed to specify the range of sections to be cleared.  Pressing
+the <EM>Do it</EM> button in this dialog clears the sections.  If the
+toggle button next to the <EM>z</EM> field is on, the range of sections
+cleared is set in the <EM>z</EM> field, <EM>time</EM> field, and
+the <EM>wave</EM> toggles.  For z and time, the first value in the field is
+the starting index and the second value is the final index.  If the toggle
+button next to the <EM>time</EM> field is on, all z sections in the
+selected times and waves are cleared.  If the toggle next to the <EM>wave</EM>
+field is on, all z sections and time points in the selected waves are
+cleared.
+
+<P>
+  <A HREF="#EditPolygon">Overview</A> |
+  <A HREF="#Basic_Steps">Basic Steps</A> |
+  <A HREF="#Wave_Mode">Wave Mode</A> |
+  <A HREF="#Action_Mode">Action Mode</A> |
+  <A HREF="#Test_Section">Test Section</A> |
+  <A HREF="#Edit_Options">Edit Options</A> |
+  <A HREF="#Copy_Polygons">Copy Polygons</A> |
+  Clear Polygons |
+  <A HREF="#Auto_Polygon">AutoPolygon</A> |
+  <A HREF="#Graphics_Toggles">Graphics Toggles</A> |
+  <A HREF="#Hot_Keys">Hot Keys</A> |
+  <A HREF="#Save_.POL_File">Save .POL File</A>
+<HR>
+
+<H2><A NAME="Auto_Polygon">AutoPolygon</A></H2>
+<P>When EditPolygon is in the autopolygon mode, rather than manually selecting
+all the vertices of a polygon, a seed point is selected and that is used
+to generate the polygon (or polygons if a 3D search is enabled).  While in
+the EditPolygon mode a dialog is displayed that controls the algorithm used
+to generate a polygon from the seed point (if the dialog is not visible, it
+can be redisplayed by resetting the <A HREF="#Action_Mode">action mode</A>
+option menu to <EM>Auto</EM>.  Use the <EM>auto pick file</EM> button in the
+dialog to select a list of seed points in
+<A HREF="Pick.html">Pick Points format</A> in lieu of selecting the seed
+points manually.  Use the <EM>more tools...</EM> button to display a dialog
+with controls to propagate the polygons from one section to other sections.
+
+<P>Use the <EM>method</EM> option menu in the autopolygon dialog to select
+the type of algorithm used to generate a polygon from a seed point.  Adjacent
+to it is an option menu to control whether a polygon is only generated on
+the current section (the <EM>2D</EM> option) or if the seed point is used
+to generate polygons on sections within <VAR>x</VAR> sections of the current
+section where <VAR>x</VAR> is the value shown in the <EM>max z reach</EM>
+field.  The <EM>biggest change</EM>, <EM>percent change</EM>,
+<EM>rate of change</EM>, and <EM>change from center</EM> algorithms are
+radial search algorithms:  a search is done along each of
+<VAR>num points</VAR> evenly spaced rays from the seed point to determine
+where to place the boundary.  The radial search is done for points between
+<VAR>min xy reach</VAR> and <VAR>max xy reach</VAR> pixels from the seed
+point; if the search fails the boundary is placed at <VAR>max xy reach</VAR>
+pixels from the seed point.  The search criteria for these methods are:
+
+<DL>
+  <DT><STRONG>biggest change</STRONG><DD>Searches for the largest absolute
+    intensity change along the ray subject to the requirement that it occur
+    at a distance from the seed point which is no more than
+    <VAR>max length diff</VAR> pixels different from the distance between the
+    boundary point on the previous ray and the seed point.
+  <DT><STRONG>percent change</STRONG><DD>Searches for the first point
+    along the ray at which the relative intensity along the ray exceeds
+    a threshold and whose distance from the seed point is no more
+    than <VAR>max length diff</VAR> pixels different from the distance
+    between the boundary point on the previous ray and the seed point
+    The threshold for the relative intensity change is expressed as a
+    percentage and is shown in the <EM>change</EM> field.  Whether the
+    threshold is crossed for an increase, decrease, or either increase or
+    decrease in intensity is controlled by the <EM>change</EM> option menu.
+    The available options are:
+    <DL>
+      <DT>% higher<DD>The threshold is crossed only for a relative increase
+        which is larger than the threshold value.
+      <DT>% lower<DD>The threshold is crossed only for a relative decrease
+        which is larger than the threshold value.
+      <DT>% hi/lo<DD>The threshold is crossed for relative increases or
+        decreases which are larger than the threshold level.
+    </DL>
+  <DT><STRONG>rate of change</STRONG><DD>Searches for the largest rate of
+    change in intensity along the ray subject to the requirement that it occur
+    at a distance from the seed point which is no more than
+    <VAR>max length diff</VAR> pixels different from the distance between the
+    boundary point on the previous ray and the seed point.
+  <DT><STRONG>change from center</STRONG><DD>Is similar to the
+    <EM>percent change</EM> method, but instead of comparing adjacent
+    samples along the ray to determine the relative intensity change, the
+    comparison is done between the sample and the intensity at the seed point.
+</DL>
+
+<P>The other method, <EM>tracer % change</EM>, is the one that is recommended
+for most applications.  It uses the same criteria as
+<EM>change from center</EM> to locate a point on the polygon edge to the right
+of the seed point.  A second point on the boundary is then located by
+searching downward from the first edge point.  Subsequent points on the
+boundary are located by searching in the direction established by the previous
+two points for a sample whose change in intensity relative to the seed point
+matches the same criteria as used for <EM>change from center</EM>.  Because of
+the nature of the search, it is not necessary for the seed point to lie within
+the polygon which is generated.  For this method, <EM>num points</EM> sets the
+minimum number of points that a generated polygon will have (if the polygon
+were to have fewer, it will not be generated at all).  <EM>step size</EM> sets
+the distance between adjacent vertices on the traced boundary.
+
+<P>For all methods, intensity measurements are based on a local average
+of the intensity values.  The size, in pixels, of the square region used
+to perform the average is given in the <EM>sample size</EM> field.
+
+<P>The polygon that is generated can be larger or smaller than the boundary
+found using any of the methods.  If the <EM>extend</EM> field is nonzero,
+the vertices of the polygon are shifted by that number of pixels from the
+vertices of the boundary (the shift is radial relative to the seed point).
+     
+<P>For each algorithm, the choice of relative intensity threshold,
+<VAR>num points</VAR>, <VAR>step size</VAR>, <VAR>sample size</VAR>,
+<VAR>min xy reach</VAR>, <VAR>max xy reach</VAR>, <VAR>max z reach</VAR>,
+<VAR>max length diff</VAR>, and <VAR>extend</VAR> are recorded in the
+.iveprefs subdirectory of your home directory.  The last values for these
+parameters will be restored whenever the choice of algorithm is changed.
+
+<P>Automatically generated polygons can have sharp edges.  You can selectively
+smooth these (see the <A HREF="#Action_Mode">action mode</A> and
+<A HREF="#Hot_Keys">hot keys</A> topics for details) or, if the
+<EM>automatic smooth</EM> toggle is on, the polygons are smoothed immediately
+after they are generated.
+
+<P>The propagation of polygons from one section to another (via the
+controls in the dialog opened by the <EM>more tools...</EM> button), is
+done by determining a seed point for each of the existing polygons and then
+applying the algorithms described above to generate new polygons from those
+seed points.  To use the propagation tools, you must determine the
+section whose polygons are to be used as the source and enter the corresponding
+z, wave, and time indices in the <EM>Using ZWT</EM> field.  The determination
+of the seed point from the existing polygon is controlled by the
+<EM>using last picked pt</EM> toggle.  If this toggle is off or if the
+existing polygon was not generated with the autopolygon tools, the seed
+point is the geometric center of the existing polygon.  If this toggle is on,
+the seed point is the seed point that was used to generate the existing
+polygon.  With those values selected, press the
+<EM>AutoPick Current Section</EM> button to propagate the polygons to the
+currently displayed section or press the <EM>AutoPick Range</EM> button
+to propagate the polygons to the range of sections given by the
+<EM>z range</EM> and <EM>t range</EM> fields.  The <EM>set all</EM> button
+is a shortcut for changing the z and time ranges to cover the entire dataset.
+
+<P>
+  <A HREF="#EditPolygon">Overview</A> |
+  <A HREF="#Basic_Steps">Basic Steps</A> |
+  <A HREF="#Wave_Mode">Wave Mode</A> |
+  <A HREF="#Action_Mode">Action Mode</A> |
+  <A HREF="#Test_Section">Test Section</A> |
+  <A HREF="#Edit_Options">Edit Options</A> |
+  <A HREF="#Copy_Polygons">Copy Polygons</A> |
+  <A HREF="#Clear_Polygons">Clear Polygons</A> |
+  AutoPolygon |
+  <A HREF="#Graphics_Toggles">Graphics Toggles</A> |
+  <A HREF="#Hot_Keys">Hot Keys</A> |
+  <A HREF="#Save_.POL_File">Save .POL File</A>
+<HR>
+
+<H2><A NAME="Graphics_Toggles">Graphics Toggles</A></H2>
+<P>There are several toggles in the EditPolygon dialog which control
+how polygon graphics are displayed in the image window.  The effects
+of these toggles are:
+
+<DL>
+  <DT><STRONG>show graphics zwt</STRONG><DD>If this toggle is on, the
+    adjacent field specifies the z, wave, and time indices for a reference
+    section; the polygons in the reference section will be displayed in
+    light brown regardless of the section currently visible in the image
+    window.
+  <DT><STRONG>show polygons in all waves</STRONG><DD>When on, all polygons
+    in the currently displayed z section and time point are displayed,
+    regardless of the wave.
+  <DT><STRONG>graphics</STRONG><DD>When on, the outlines of the polygons
+    are displayed in the image window; when off, they are not displayed.
+</DL>
+
+<P>
+  <A HREF="#EditPolygon">Overview</A> |
+  <A HREF="#Basic_Steps">Basic Steps</A> |
+  <A HREF="#Wave_Mode">Wave Mode</A> |
+  <A HREF="#Action_Mode">Action Mode</A> |
+  <A HREF="#Test_Section">Test Section</A> |
+  <A HREF="#Edit_Options">Edit Options</A> |
+  <A HREF="#Copy_Polygons">Copy Polygons</A> |
+  <A HREF="#Clear_Polygons">Clear Polygons</A> |
+  <A HREF="#Auto_Polygon">AutoPolygon</A> |
+  Graphics Toggles |
+  <A HREF="#Hot_Keys">Hot Keys</A> |
+  <A HREF="#Save_.POL_File">Save .POL File</A>
+<HR>
+
+<H2><A NAME="Hot_Keys">Hot Keys</A></H2>
+
+<P>If the toggle labeled <EM>keys</EM> is on, the keys listed below
+can be used as shortcuts for performing the listed actions.  When the
+toggle is off, these keys have no effect.
+
+<DL>
+  <DT><STRONG>spacebar</STRONG><DD>Closes the open polygon on the section,
+    if any.
+  <DT><STRONG>a</STRONG><DD>Deletes the currently selected polygon.
+  <DT><STRONG>b</STRONG><DD>If EditPolygon is in the
+    <A HREF="#Action_Mode">autopolygon mode</A>, changes the algorithm
+    to find the boundaries to be <A HREF="#Auto_Polygon">tracer % change</A>.
+  <DT><STRONG>c</STRONG><DD>If EditPolygon is in the
+    <A HREF="#Action_Mode">autopolygon mode</A>, changes the algorithm
+    to find the boundaries to be <A HREF="#Auto_Polygon">rate of change</A>.
+  <DT><STRONG>d</STRONG><DD>Deletes the last polygon made in a section.  Has
+    no effect if EditPolygon is in the <A HREF="#Action_Mode">select mode</A>.
+  <DT><STRONG>e</STRONG><DD>Deletes the last point of the last polygon
+    in the section and leaves that polygon open.
+  <DT><STRONG>f</STRONG><DD>Smoothes the currently selected polygon by
+    operating on the jagged edges one at a time starting with the worst.
+  <DT><STRONG>g</STRONG><DD>Deselects the currently selected polygon.
+  <DT><STRONG>s</STRONG><DD>Smoothes the currently selected polygon by
+    operating on all the jagged edges at once.
+  <DT><STRONG>t</STRONG><DD>Transfers the polygons in the
+    <A HREF="#Test_Section">test section</A> to the current section.
+  <DT><STRONG>v</STRONG><DD>If EditPolygon is in the
+    <A HREF="#Action_Mode">autopolygon mode</A>, changes the algorithm
+    to find the boundaries to be
+    <A HREF="#Auto_Polygon">change from center</A>.
+  <DT><STRONG>x</STRONG><DD>If EditPolygon is in the
+    <A HREF="#Action_Mode">autopolygon mode</A>, changes the algorithm
+    to find the boundaries to be <A HREF="#Auto_Polygon">percent change</A>.
+  <DT><STRONG>z</STRONG><DD>If EditPolygon is in the
+    <A HREF="#Action_Mode">autopolygon mode</A>, changes the algorithm
+    to find the boundaries to be <A HREF="#Auto_Polygon">biggest change</A>.
+  <DT><STRONG>1</STRONG><DD>Puts EditPolygon in the
+    <A HREF="#Action_Mode">add mode</A>.
+  <DT><STRONG>2</STRONG><DD>Puts EditPolygon in the
+    <A HREF="#Action_Mode">modify mode</A>.
+  <DT><STRONG>3</STRONG><DD>Puts EditPolygon in the
+    <A HREF="#Action_Mode">roam mode</A>.
+  <DT><STRONG>4</STRONG><DD>Puts EditPolygon in the
+    <A HREF="#Action_Mode">select mode</A>.
+  <DT><STRONG>5</STRONG><DD>Puts EditPolygon in the
+    <A HREF="#Action_Mode">autopolygon mode</A>.
+</DL>
+
+<P>
+  <A HREF="#EditPolygon">Overview</A> |
+  <A HREF="#Basic_Steps">Basic Steps</A> |
+  <A HREF="#Wave_Mode">Wave Mode</A> |
+  <A HREF="#Action_Mode">Action Mode</A> |
+  <A HREF="#Test_Section">Test Section</A> |
+  <A HREF="#Edit_Options">Edit Options</A> |
+  <A HREF="#Copy_Polygons">Copy Polygons</A> |
+  <A HREF="#Clear_Polygons">Clear Polygons</A> |
+  <A HREF="#Auto_Polygon">AutoPolygon</A> |
+  <A HREF="#Graphics_Toggles">Graphics Toggles</A> |
+  Hot Keys |
+  <A HREF="#Save_.POL_File">Save .POL File</A>
+<HR>
+
+<H2><A NAME="Save_.POL_File">Save .POL File</A></H2>
+<P>To save the current polygon lists to a file, press the
+<EM>Save .POL File</EM> button in the EditPolygon dialog.  A dialog will
+be displayed allowing you to enter the file name directly or to use
+a file selection dialog to choose the file (press the <EM>getfile</EM>
+button to open the file selection dialog).  Once the file is selected,
+press the <EM>save</EM> button to save the polygons.
+
+<P>
+  <A HREF="#EditPolygon">Overview</A> |
+  <A HREF="#Basic_Steps">Basic Steps</A> |
+  <A HREF="#Wave_Mode">Wave Mode</A> |
+  <A HREF="#Action_Mode">Action Mode</A> |
+  <A HREF="#Test_Section">Test Section</A> |
+  <A HREF="#Edit_Options">Edit Options</A> |
+  <A HREF="#Copy_Polygons">Copy Polygons</A> |
+  <A HREF="#Clear_Polygons">Clear Polygons</A> |
+  <A HREF="#Auto_Polygon">AutoPolygon</A> |
+  <A HREF="#Graphics_Toggles">Graphics Toggles</A> |
+  <A HREF="#Hot_Keys">Hot Keys</A> |
+  Save .POL File
+<HR>
+
+</BODY>
+</HTML>

@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: headit</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's command-line utility to edit a MRC header.">
+  <META NAME="Keywords" CONTENT="Priism,header,MRC">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="header">headit</A></H1>
+<H2>Overview</H2>
+<P>headit is a command-line utility to change the contents of an image file's
+header.  To use it, enter
+
+<PRE>
+     <CODE>headit</CODE> <VAR>filename</VAR>
+</PRE>
+
+<P>where you should replace <VAR>filename</VAR> with the name of the file to
+be altered.
+
+<P>For each change, headit will print the current header and will prompt you
+to enter a three letter code to specify what change you would like to make.
+The codes headit understands are (all are case insensitive):
+
+<DL>
+  <DT><STRONG>exi</STRONG><DD>Quit headit.
+  <DT><STRONG>num</STRONG><DD>Change the image size.  headit will print the
+    current x and y dimensions and the number of sections and then expects you
+    to enter the new values as three integers.
+  <DT><STRONG>dat</STRONG><DD>Change the organization of the sections into z,
+    wavelength, and time dimensions.  headit will print the current number of
+    z sections, wavelengths, and time points.  It then expects you to enter
+    the new values as three integers.  If the new number of wavelengths if
+    greater than one, headit will print how z, wavelengths, and times are
+    interleaved and then expects you to enter the new interleaving code
+    (0 is ZTW, 1 is WZT, 2 is ZWT) as an integer.
+  <DT><STRONG>mul</STRONG><DD>Change the multiresolution settings.  headit will
+    print the current number of resolutions and the z downsampling factor and
+    then expects you to enter the new values as two integers.
+  <DT><STRONG>map</STRONG><DD>Change the pixel data type.  headit will
+    print the current data type code (0 for unsigned 8-bit integer,
+    1 for signed 16-bit integer, 2 for 32-bit IEEE floating-point,
+    3 for complex values as 2 signed 16-bit integers, 4 for
+    complex values as 2 32-bit IEEE floating-point values, 5 for
+    signed 16-bit integer, 6 for unsigned 16-bit integer, and 7 for
+    signed 32-bit integer).  It then expects you to enter the new data type
+    code as an integer.
+  <DT><STRONG>sta</STRONG><DD>Change the starting pixel indices.  headit will
+    print the current three starting indices and then expects you to enter
+    the new values as three integers.
+  <DT><STRONG>gri</STRONG><DD>Change the grid spacing (also referred to as
+    the sampling frequency).  headit will print the current grid sampling
+    and then expects you to enter the new values as three integers.
+  <DT><STRONG>pix</STRONG><DD>Change the pixel size.  headit will print the
+    current pixel spacing and then expects you to enter the new values as
+    three real floating-point values.
+  <DT><STRONG>cel</STRONG><DD>Change the cell angles.  headit will print
+    the current cell angles in degrees and then expects you to enter the
+    new values, in degrees, as three floating-point values.
+  <DT><STRONG>ori</STRONG><DD>Change the origin.  headit will print the current
+    origin and then expects you to enter the new origin as three floating-point
+    values.
+  <DT><STRONG>min</STRONG><DD>Change the value recorded as the minimum
+    intensity for the first wavelength.  headit will print the currently
+    recorded minimum and then expects you to enter the new value as a
+    floating-point value.
+  <DT><STRONG>max</STRONG><DD>Change the value recorded as the maximum
+    intensity for the first wavelength.  headit will print the currently
+    recorded maximum and then expects you to enter the new value as a
+    floating-point value.
+  <DT><STRONG>mea</STRONG><DD>Change the value recorded as the mean
+    intensity for the first wavelength.  headit will print the currently
+    recorded mean and then expects you to enter the new value as a
+    floating-point value.
+  <DT><STRONG>til</STRONG><DD>Change the rotation (also call tilt) angles.
+     headit will print the current values in degrees and expects you to
+     enter the new values, in degrees, as three floating-point values.
+  <DT><STRONG>spa</STRONG><DD>Change the space group, number of bytes
+     in the extended header, and image type information.  headit will
+     print the current space group and number of bytes in the extended
+     header and expects you to enter the new values as two integers.
+     It will then print the current image type information (a type
+     code, lens ID, two integer values, and two floating-point values)
+     and expects you to enter the new values as four integer values followed
+     by two floating-point values.
+  <DT><STRONG>wav</STRONG><DD>Change the number of wavelengths and the
+    wavelength values.  headit will print the current number of wavelengths
+    and expects you to enter the new number as an integer.  For each
+    wavelength, it will then print the current wavelength value and expects
+    you to enter the new value as a floating-point number.
+  <DT><STRONG>tit</STRONG><DD>Add a new title as the only title or add
+    it to the beginning or end of the current titles.  headit first expects
+    you to enter an integer indicating how you want to add the title
+    (0 to add it as the only title, 1 to add it at the end of the list,
+    2 to add it at the beginning of the list).  It then expects you to enter
+    the title.
+  <DT><STRONG>fas</STRONG><DD>Change the mapping from columns, rows, sections
+    to x, y, and z.  headit will print the current mapping and expects you
+    to enter the new mapping as three integers (1 is x, 2 is y, 3 is z).
+  <DT><STRONG>ext</STRONG><DD>Change extended header entries.  Has no effect
+    if the file does not contain an extended header, does not have a space
+    group of zero, or has zero for both the number of integer fields and
+    the number of floating-point fields in the extended header.  headit
+    will first display the current values in the extended header.  It
+    will ask you for the range of sections to display; simply press return
+    to display all the sections or enter the index for the first section
+    and the index of the last section.  It will also ask you for the range of
+    fields to display; simply press return to display all the fields or enter
+    the index for the first field and the index for the last field.  Then
+    headit will ask you for the range of sections to alter; simply press
+    return to display all the sections or enter the index for the first
+    section and the index for the last section.  It will also ask you
+    for the range of fields to alter; simply press return to display all
+    the sections or enter the index for the first field and the index for
+    the last field.  Then, for each section to be altered, headit will
+    print the current extended header entries in the selected fields and
+    ask you for the new values for those fields.
+</DL>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="EditHeader.html">EditHeader</A> |
+   <A HREF="IM_ref2.html">Image file format</A> |
+   <A HREF="Priism.html">Priism</A>
+
+</BODY>
+</HTML>

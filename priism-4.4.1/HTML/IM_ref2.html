@@ -1,0 +1,3868 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>IM Library Reference Guide</TITLE>
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1>Imsubs File and Stream Functions</H1>
+
+<H1>Reference Guide</H1>
+
+<H2><A HREF="#Introduction">Introduction</A></H2>
+<H2><A HREF="#CompilingLinking">Compiling and Linking</A></H2>
+<H2><A HREF="#ReleaseNotes">Release Notes</A></H2>
+<H2><A HREF="#LibraryFunctions">Library Functions</A></H2>
+
+<HR>
+
+<H2><A NAME="Introduction">Introduction</A></H2>
+
+<H2>About the IMSubs File Format</H2>
+
+<P>IVE images are stored using the Imsubs image file format. This format
+is derived from, the "MRC" file format, which was originated
+at the Medical Research Council in Cambridge, England. 
+
+<P>In brief, Imsubs images consist of several main parts: 
+
+<DL>
+  <DT><A HREF="#Image Header">Primary header</A><DD>Is a 1024 byte section that
+    describes the history of the image and its primary attributes.
+
+  <DT><A HREF="#Image File Extended">Extended header</A><DD>Holds
+    additional information about the image data.  A field in the primary
+    header sets its size.
+
+  <DT><A HREF="#Image Data">Image data elements</A><DD>Is a table of numbers
+    representing the intensity of a regularly spaced array of picture elements.
+    Fields in the primary header set the number of columns, rows, and sections
+    expected as well as the how each element is encoded.
+
+  <DT><A HREF="#Image Data">Sub-resolution image data elements</A><DD>Holds
+    zero or more downsampled versions of the data.  Fields in the primary
+    header set the total number of resolutions and the z downsampling factor.
+</DL>
+
+<P>The functions described in this document were originally intended for
+manipulating image data stored on hard disks. Over time, the functions
+were enhanced, so that they can also manipulate image data contained in
+computer display windows. The distinction between files and windows is
+simple: when a stream is opened with a simple numeric name, such as "1"
+or "2", the stream will be connected to window with the same
+number; when a stream is opened with a more complicated file name, such
+as "myfile" the functions will connect the stream to a file.
+
+
+<P>When linking your application, you can choose whether or not to use
+the extended versions; see
+<A HREF="#CompilingLinking">Compiling and Linking</A> for details.
+In the case where these functions are being used to connect streams
+to windows, you will probably want to use functions from the
+<A HREF="IW.html">Image Window Library (IWL)</A> to better control how the
+data is presented in the window.
+
+<HR>
+
+<H2><A NAME="ImageFormat">Imsubs Image Files</A></H2>
+
+<P>Imsubs image files consist of a header, extended header, and image data.
+Each part is detailed below.
+
+<H3><A NAME="Image Header">Image Header</A></H3>
+
+<P>The Imsubs image header has a fixed size of 1024 bytes. The information
+within the header includes a description of the extended header and image
+data.  Imsubs will write one of two header formats.  The
+<A HREF="priism_mrc_header.html">first format</A> is
+primarily used for optical microscope data and is the same format as Priism
+has used for years.
+<A HREF="priism_mrc_header.html">priism_mrc_header.html</A> describes its
+header layout.  The <A HREF="em_mrc_header.html">second format</A> is
+primarily used for electron microscope data and deviates less from the
+<A HREF="http://www2.mrc-lmb.cam.ac.uk/image2000.html" TARGET="_top">Image2000 format</A>
+used for crystallography.  <A HREF="em_mrc_header.html">em_mrc_header.html</A>
+describes the header layout for the second format.  The Imsubs library
+automatically recognizes the two formats and presents much the same programming
+interface for working with them.  You can use the Imsubs functions,
+<A HREF="#IMRtHdrFmt">IMRtHdrFmt() (irthfmt() in Fortran)</A> and
+<A HREF="#IMAlHdrFmt">IMAlHdrFmt() (ialhfmt() in Fortran)</A>, to control which
+of the two header formats that library uses.  If you are working with the files
+without the Imsubs library, the easiest way to distinguish the two formats is
+to look at bytes 209 through 214 (with one as the first byte in the file). 
+The EM format has the ASCII character string 'MAP ' (i.e. 115, 101, 120, and
+40) in bytes 209 through 212 and either 17 and 17 (indicating big-endian data)
+or 68 and 65 (indicating little-endian data) in bytes 213 and 214.  Priism's
+original format does not have a fixed pattern for the values in those bytes.
+
+<H3><A NAME="Image File Extended">Image File Extended Header</A></H3>
+
+<P>The extended header follows immediately after the standard header. It
+contains additional information that relates to each individual section.
+The layout of the extended header is determined by the contents of the
+standard header. 
+
+<P>Most importantly, the total size (<VAR>next</VAR>) is given by the signed
+32-bit integer in header bytes 93 through 96.   The signed 32-bit integer
+in bytes 89 through 92 (<VAR>nspg</VAR>) indicate how the extended header
+should be interpreted.  Values between one and 230 (if using Priism's
+standard version of the header) or between two and 230 (if using the EM
+version of the header) are used for crystallographic data.  All other values
+for <VAR>nspg</VAR> assumed to correspond to crystallographic data.  If you
+use the IM library, the helper function,
+<A HREF="#IMRtExHdrFmt">IMRtExHdrFmt() (irtexhf() in Fortran)</A>,
+is the recommended way to test whether the extended header represents
+crystallography symmetry information.
+
+<P>For non-crystallogaphic data, the extended header contains
+<VAR>NumInts</VAR> (from the signed 16-bit integer in bytes 129 and 130)
+4-byte integers and <VAR>NumFloats</VAR> (from the signed 16-bit integer in
+bytes 131 and 132) 4-byte floating-point values per section so the size of the
+extended header should be at least
+
+<PRE>
+     (NumInts + NumFloats) * NumSections * 4
+</PRE>
+
+<P>where NumSections is the signed 32-bit integer in bytes 9 - 12 of the
+header.  The size may be more than that with the extra bytes unused.  The
+extended header values for section <VAR>k</VAR> (<VAR>k</VAR> in the range of
+1 to <VAR>NumSections</VAR>) start at the offset (from the beginning of the
+file),
+
+<PRE>
+    1025 + (k - 1) * (NumInts + NumFloats) * 4
+</PRE>
+
+<P>The integer values for the section appear first and the floating-point
+values appear after them; all are packed contiguously.  The byte ordering
+for the extended header is the same as for the primary header.  For more
+details about the extended header for image data, see
+<A HREF="#IMRtExHdrType">IMRtExHdrType</A> and
+<A HREF="#IMRtExHdrValueZWT">IMRtExHdrValueZWT</A>. 
+
+<P>Four extended header formats that have been used for data collection
+systems in the Agard and Sedat labs are:
+<DL>
+  <DT>UCSF Tomography<DD>Has thirty two floating-point values and zero integer
+    values for each image.  <A HREF="UCSFTomographyExtendedHeader.html">UCSFTomographyExtendedHeader.html</A>
+    describes how the values are used.
+  <DT>EM430 and older EM microscopes<DD>Data from these systems have the
+    <A HREF="#ImageTypes">image type</A> set to five and use either two
+    floating-point values or one floating-point value and one integer value
+    for each image.  With two floating-point values, the first is the setting
+    for the objective lens current and the second is the tilt angle, in
+    degrees.  With one floating-point value and one integer, the floating-point
+    value is the tilt angle in degrees, and the integer is the setting for the
+    objective lens current.
+  <DT>OM1<DD>Has one integer and one floating-point value per image.  The
+    integer value is the photosensor reading and the floating-point value is
+    the exposure time in seconds.
+  <DT>OM0<DD>Has three integer values and one floating-point value per image.
+    The first integer value is the least significant portion of the
+    photosensor reading.  The second integer value is the most significant
+    portion of the photosensor reading.  The third value is the number of
+    conversions performed by the photosensor.  The floating-point value is
+    the exposure time in seconds.
+</DL>
+
+<P>In the case of x-ray crystallographs, the extended header contains symmetry
+information, as outlined in International Tables. Operators are separated
+by an asterisk, "*", and grouped into lines of 80 characters. Note
+that symmetry operators cannot extend beyond an 80 character width and
+do not terminate with an asterisk. Symmetry information is not used with
+Priism images. 
+
+<H3><A NAME="Image Data">Image Data</A></H3>
+<P>The image data immediately follow the extended header.  The bytes between
+the offsets, (<VAR>n</VAR>-1)*<VAR>m</VAR>+1) and <VAR>n</VAR>*<VAR>m</VAR>,
+past the extended header hold the value for the <VAR>n</VAR> element of the
+image data.  <VAR>m</VAR> is the number of bytes per pixel as indicated in
+the <A HREF="#PixelDataTypes">list of pixel data types</A>.  The byte ordering
+for multi-byte pixel formats is the same as is used in the primary header.
+The <VAR>n</VAR>th element belongs to the
+((<VAR>n</VAR>-1) modulo <VAR>ncol</VAR> + 1) column,
+(((<VAR>n</VAR>-1) / <VAR>ncol</VAR>) modulo <VAR>nrow</VAR> + 1) row,
+and ((<VAR>n</VAR>-1) / (<VAR>ncol</VAR>*<VAR>nrow</VAR>)) section.
+<VAR>ncol</VAR> is the 32-bit signed integer in bytes 1 through 4 of the
+header.  <VAR>nrow</VAR> is the 32-bit signed integer in bytes 5 through 8 of
+the header.  The section index may represent one or more dimensions for more
+information on that see the description of the
+<A HREF="#ImageSequenceValues">image sequence values</A>.  The
+different <A HREF="#ImageTypes">image types</A> can also describe how different
+sections in the data relate to one another.  The maximum value for the section
+index is the 32-bit integer in bytes 9 through 12 of the header.
+
+<P>The <VAR>i</VAR>th (<VAR>i</VAR> is an integer greater than zero)
+resolution data set should be present if the 16-bit signed integer in bytes
+133 and 134 of the header is greater than <VAR>i</VAR>.  That data immediately
+follows the (<VAR>i</VAR>-1)th resolution (the 0th resolution is the full
+resolution data described above) and has the same layout except that the
+number of columns and rows is one half (truncating any remainder) of the
+previous resolution and the number of z sections is divided by the z
+downsampling factor (the 16-bit signed integer in bytes 136 and 136 of the
+the header) with any remainder rounded up.  Any other dimensions contributing
+to the section count are not downsampled.
+
+<HR>
+
+<H2><A NAME="ImageTypes">Image Types</A></H2>
+
+<P>The type of a Priism image is given by the signed 16-bit integer in
+header bytes 161 and 162. The meaning of these types is given in the table
+below. The floating-point attributes, v1 and v2, used by some image types
+are stored as 16-bit signed integers in the header; to do so the values
+are multiplied by 100 and rounded to the nearest integer when stored and
+are divided by 100 when retrieved.  These conversions are automatically
+applied if the <A HREF="#IMAlDat">IMAlDat</A> or
+<A HREF="#IMRtDat">IMRtDat</A> calls are used.<BR>
+
+<DL>
+  <DT><STRONG>0 (IM_NORMAL_IMAGES)</STRONG><DD>Used for normal image data.
+  <DT><STRONG>1 (IM_TILT_SERIES)</STRONG><DD>Used for single axis tilt series
+    with a uniform angle increment.  n1 specifies the tilt axis (1 for x, 2
+    for y, 3 for z) and v1 the angle increment in degrees.  n2 relates
+    the coordinates in the tilt series to coordinates in a 3D volume:  the
+    assumed center of rotation is the z origin from the header plus n2 times
+    one half of the z pixel spacing from the header.  v2 is always zero.
+  <DT><STRONG>2 (IM_STEREO_TILT_SERIES)</STRONG><DD>Used for stereo tilt series.  n1 specifies
+    the tilt axis (1 for x, 2 for y, 3 for z), v1 the angle increment in
+    degrees, and v2 is the angular separation in degrees for the stereo pairs.
+    n2 is always zero.
+  <DT><STRONG>3 (IM_AVERAGED_IMAGES)</STRONG><DD>Used for averaged images.  n1 is the
+    number of averaged sections and n2 is the number of sections between
+    averaged sections.  v1 and v2 are always zero.
+  <DT><STRONG>4 (IM_AVERAGED_STEREO_PAIRS)</STRONG><DD>Used for averaged stereo pairs.  n1
+    is the number of averaged sections, n2 is the number of sections between
+    averaged sections, and v2 is the angular separation in degrees for the
+    stereo pairs.  v2 is always zero.
+  <DT><STRONG>5 (IM_EM_TILT_SERIES)</STRONG><DD>Used for EM tomography data.
+    The tilt angles are stored in the extended header.
+  <DT><STRONG>20 (IM_MULTIPOSITION)</STRONG><DD>Used for images of well
+    plates.  The following quantities are bit-encoded in n1 (valid range for
+    each is show in parentheses): iwell (0-3), ishape (0-1), ibin (0-15),
+    ispeed (0-2), igain (0-3), and mag (0-1).  n2 is the number of fields
+    per well.  v1 is the fill factor (.01 to 1.5 in .01 steps).  v2 is not
+    used.
+  <DT><STRONG>8000 (IM_PUPIL_FUNCTION)</STRONG><DD>Used for images of
+    pupil functions.  n1 and n2 are not used.  v1 is the numerical aperture
+    times ten.  v2 is the immersion media refractive index times one hundred.
+    The pixel spacings and origin have units of cycles per micron rather than
+    microns.
+</DL>
+
+<HR>
+
+<H2><A NAME="PixelDataTypes">Pixel Data Types</A></H2>
+
+<P>The data type used for image pixel values, stored as a signed 32-bit
+integer in bytes 13 through 16, is designated by one of the code numbers in
+the following table.<BR>
+
+<CENTER><TABLE BORDER=2>
+<TR><TD><STRONG>Code</STRONG><TD><STRONG>C/C++ Macro</STRONG><TD><STRONG>Description</STRONG>
+
+<TR><TD>0<TD>IW_BYTE<TD>1-byte unsigned integer
+<TR><TD>1<TD>IW_SHORT<TD>2-byte signed integer (two's complement for negative values)
+<TR><TD>2<TD>IW_FLOAT<TD>4-byte floating-point (IEEE)
+<TR><TD>3<TD>IW_COMPLEX_SHORT<TD>4-byte complex value as 2 2-byte signed integers
+<TR><TD>4<TD>IW_COMPLEX<TD>8-byte complex value as 2 4-byte floating-point (IEEE) values
+<TR><TD>5<TD>IW_EMTOM<TD>2-byte signed integer (two's complement for negative values)
+<TR><TD>6<TD>IW_USHORT<TD>2-byte unsigned integer
+<TR><TD>7<TD>IW_LONG<TD>4-byte signed integer (two's complement for negative values)
+<TR><TD>101<TD>IW_U4BIT<TD>4-bit unsigned integer.  Within a row, the values
+are stored contiguously.  A byte holds the value from an even column
+in the least significant 4 bits and holds the value from the next odd column
+in the most significant 4 bits.  If the number of columns is odd, the row is
+padded at the end with 4 bits so that start of the rows are aligned on byte
+boundaries.
+</TABLE></CENTER>
+
+<P>Note that IMLIB functions that read images from a storage device
+will always convert the data to floating-point. Also, IMLIB functions that
+write images to the storage device will always convert images from
+floating-point to the type indicated by <VAR>PixelType</VAR>
+(in header bytes 13 through 16).  If necessary, use the
+<A HREF="#IMAlCon">IWAlCon</A> function to prevent conversion to and from
+floating-point data.
+
+<P>Type codes 5, 6, 7, and 101 are not standard MRC types and are not likely to
+be correctly interpreted by other software that uses MRC files.
+
+<HR>
+
+<H2><A NAME="ImageSequenceValues">Image Sequence Values</A></H2>
+<P>The sections in the MRC file may represent several different dimensions
+of the data.  If the data uses <A HREF="#Image Header">Priism's header
+format</A>, the section index is decomposed to three indices, z, wavelength,
+and time.  The number of wavelengths (<VAR>nw</VAR>)is set by the signed
+16-bit integer in bytes 197 through 198 of the header (most applications,
+however, will only recognize up to five wavelengths).  The number of time
+points (<VAR>nt</VAR>) is set by the signed 16-bit integer in bytes 181 and
+182 of the header.  The number of z sections (<VAR>nz</VAR>) is the total
+number of sections (<VAR>ns</VAR>) divided (with the remainder discarded)
+by the product of the number of wavelengths and time points.  The header field
+for the <A HREF="#ImageTypes">image type</A> indicates how to interpret the
+z sections.  The ordering of the z, wavelength, and time sections in the
+file is indicated by the signed 16-bit integer in bytes 183 and 184 of the
+header.  Currently three values for that integer are understood.  They are:
+
+<DL>
+  <DT>0 (C/C++ macro is ZTW_SEQUENCE)<DD>This is the normal arrangement for
+    processed images.  Sometimes referred to as "non-interleaved".  The
+    relationship between the section index, <VAR>is</VAR> with 0 &lt;=
+    <VAR>is</VAR> &lt; <VAR>ns</VAR>, and the z (<VAR>iz</VAR>),
+    wavelength (<VAR>iw</VAR>), and time (<VAR>it</VAR>) indices is
+    <VAR>is</VAR> = <VAR>iz</VAR> + <VAR>nz</VAR> * (<VAR>it</VAR> +
+    <VAR>nt</VAR> * <VAR>iw</VAR>).  Reversing that gives <VAR>iz</VAR> =
+    <VAR>is</VAR> modulo <VAR>nz</VAR>, <VAR>iw</VAR> = <VAR>is</VAR> /
+    (<VAR>nz</VAR> * <VAR>nt</VAR>), and <VAR>it</VAR> =
+    (<VAR>is</VAR> / <VAR>nz</VAR>) modulo <VAR>nt</VAR>.
+  <DT>1 (C/C++ macro is WZT_SEQUENCE)<DD>This is the typical arrangement for
+    images acquired from a microscope.  Sometimes referred to as "interleaved".
+    The relationship between the section index, <VAR>is</VAR> with 0 &lt;=
+    <VAR>is</VAR> &lt; <VAR>ns</VAR>, and the z (<VAR>iz</VAR>),
+    wavelength (<VAR>iw</VAR>), and time (<VAR>it</VAR>) indices is
+    <VAR>is</VAR> = <VAR>iw</VAR> + <VAR>nw</VAR> * (<VAR>iz</VAR> +
+    <VAR>nz</VAR> * <VAR>it</VAR>).  Reversing that gives <VAR>iz</VAR> =
+    (<VAR>is</VAR> / <VAR>nw</VAR>) modulo <VAR>nz</VAR>, <VAR>iw</VAR> =
+    <VAR>is</VAR> modulo <VAR>nw</VAR>, and <VAR>it</VAR> =
+    <VAR>is</VAR> / ( <VAR>nw</VAR> * <VAR>nz</VAR>).
+  <DT>2 (C/C++ macro is ZWT_SEQUENCE)<DD>Although not widely used, ZWT will
+    find uses with certain processing algorithms.  The relationship between
+    the section index, <VAR>is</VAR> with 0 &lt;= <VAR>is</VAR> &lt; 
+   <VAR>ns</VAR>, and the z (<VAR>iz</VAR>), wavelength (<VAR>iw</VAR>), and
+    time (<VAR>it</VAR>) indices is
+    <VAR>is</VAR> = <VAR>iz</VAR> + <VAR>nz</VAR> * (<VAR>iw</VAR> +
+    <VAR>nw</VAR> * <VAR>it</VAR>).  Reversing that gives <VAR>iz</VAR> =
+    <VAR>is</VAR> modulo <VAR>nz</VAR>, <VAR>iw</VAR> = (<VAR>is</VAR> /
+    <VAR>nz</VAR>) modulo <VAR>nw</VAR>, and <VAR>it</VAR> = <VAR>is</VAR> /
+     (<VAR>nz</VAR> * <VAR>nw</VAR>).
+</DL>
+
+<P>If the data is in <A HREF="#Image Header">the EM header format</A>, it
+should fall into one of these three categories based on the value of the
+space group, the signed 32-bit integer in bytes 89 through 92:
+
+<DL>
+  <DT>0<DD>The <VAR>ns</VAR> sections in the file should be interpreted as
+    appropriate for the value of the <A HREF="#ImageTypes">image type</A>.
+  <DT>1<DD>The <VAR>ns</VAR> sections in the file should be
+    interpreted as <VAR>ns</VAR> parallel slices through one volume.  For use
+    with Priism, the <A HREF="#ImageTypes">image type</A> would normally be
+    zero.
+  <DT>401<DD>The <VAR>ns</VAR> sections in the file should
+    be interpreted as <VAR>nv</VAR> volumes each with <VAR>nvz</VAR> slices.
+    <VAR>nvz</VAR> is the signed 32-bit bit integer in bytes 37 through 40 of
+    the header, and <VAR>nv</VAR> is <VAR>ns</VAR> divided by <VAR>nvz</VAR>
+    (discarding any remainder).  The <VAR>nvz</VAR> slices of the first volume
+    appear first in the file, followed by the <VAR>nvz</VAR> slices of the
+    second volume, and so on.
+</DL>
+
+<P>The IMSubs library will report one wavelength for all three categories.
+It will report one time point for the first two categories, and <VAR>nv</VAR>
+time points for the third category.  All three categories will be reported
+as having the ZTW_SEQUENCE interleaving.  If you use the IMSubs library to
+alter the number of wavelengths, number of time points, or interleaving,
+consult the function call documentation (<A HREF="#IMAlZWT">IMAlZWT()</A> or
+<A HREF="#IMAlWav">IMAlWav()</A>) for how the IMSubs library will change the
+space group or header representation, to satisfy the request.
+
+<HR>
+
+<H2><A NAME="CompilingLinking">Compiling and Linking</A></H2>
+
+<P>Programs written in C/C++ which use the IM functions should include
+IWInclude.h to provide prototypes and define structures and macros used with
+the IM functions.  If you only use the IM functions and do not use the IWL
+calls, you can, starting with the March 2000 release of IVE 3.3, include
+IMInclude.h rather than IWInclude.h.  The version of the library for Windows
+only provides IMInclude.h.  Programs written in Fortran which use
+<A HREF="#IMRtExHdrType">IMRtExHdrType</A> or
+<A HREF="#IMRtExHdrValueZWT">IMRtExHdrValueZWT</A> should include exhdr.inc
+to define constants for the different extended header types and values.
+
+<P>When linking your application, link against libIWL.a or libIWL.so
+(libIWL.dylib on Mac OS X) to get the extended IM functions which can operate
+on image windows; otherwise, link against libimlib.a or libimlib.so
+(libimlib.dylib on Mac OS X).  The version of the library for Windows only
+provides the archive library, libimlib.a.
+
+<P>Another library, libimcompat.a, provides functions that were previously
+packaged with the IM and IW libraries but which were primarily used by Fortran
+programs and which were not documented in the IM and IW library documentation.
+At this point, that library is only available for OS X and Linux.
+
+<H3>Platform Specifics</H3>
+
+<H4><A NAME="CompilingLinking_x86Linux">x86 Linux</A></H4>
+<P>To use the x86 Linux libraries, you will need an x86 Linux system that
+supports compiling ELF executables and has glibc2.3 or later.  To use the IW
+library and headers, the X libraries and headers must be installed.
+
+<P>The headers are located in the Linux/x86/INCLUDE directory of the
+Priism distribution.  IWInclude.h (via IWL.h) includes one of the X include
+files; so if your code includes either of those files and the X include
+directory is not in the search path, it will be necessary to add the X include
+directory to the search path (in most cases, adding
+
+<PRE>
+     -I/usr/X11R6/include
+</PRE>
+
+<P>to the compilation options will do this).
+
+<P>The libraries are located in the Linux/x86/LIB directory of the Priism
+distribution.  If you link against libIWL.so, it is necessary to instruct the
+linker to search Linux/x86/LIB for libraries that libIWL.so uses.  If you
+invoke the linker directly, this can be done by adding
+
+<PRE>
+     -rpath-link <VAR>install_dir</VAR>/Linux/x86/LIB
+</PRE>
+
+<P>to the linker options (replace <VAR>install_dir</VAR> with the path to
+the Priism distribution).  If the compiler is used to invoke the linker, then
+you will need to determine how to instruct the compiler to pass the above
+option to the linker; for most compilers it can be done with
+
+<PRE>
+     -Wl,-rpath-link,<VAR>install_dir</VAR>/Linux/x86/LIB
+</PRE>
+
+<P>libIWL.so also depends on the X libraries so if the X library directory
+is not in the directory search path it is also necessary to supply a
+-rpath-link option for the X library directory.
+
+<P>If you use the archive libraries (libimlib.a or libIWL.a), it is necessary
+to link against the libraries that those libraries use.  For libimlib.a,
+these additional libraries can be specified on the command-line as
+
+<PRE>
+     <VAR>install_dir</VAR>/Linux/x86/LIB/libive.a -lm -lc
+</PRE>
+
+<P>For libIWL.a, the additional libraries can be specified on the command line
+as
+
+<PRE>
+     -lX11 <VAR>install_dir</VAR>/Linux/x86/LIB/libive.a -lm -lc
+</PRE>
+
+<P>(this assumes that the X libraries are in the library directory search path;
+if not it will be necessary to add them).
+
+<P>For Fortran programs, the name mangling of the libraries is compatible
+with the default mangling done by the Intel Fortran compiler (names are
+converted to lower case with a single underscore appended to the end).  The
+library includes alternate entry points which are compatible with the default
+name mangling done by g77.  Three versions of libimcompat.a are included:
+the one in <VAR>install_dir</VAR>/Linux/x86/LIB is for the Intel compiler
+(version 9 was used to generate the library; when linking against the library
+also link against Intel's libifport, i.e. add -lifport to the link options),
+the one in <VAR>install_dir</VAR>/Linux/x86/LIB/pg is for the Portland Group
+compiler (version 10.2 was used to generate the library), and the one in
+<VAR>install_dir</VAR>/Linux/x86/LIB/g77 is for GNU's g77 (version 3.2.3 was
+used to generate the library).
+
+<H4><A NAME="CompilingLinking_x86_64Linux">x86_64 Linux</A></H4>
+<P>To use the x86_64 Linux libraries, you will need an x86_64 Linux system
+with glibc 2.3.  To use the IW library and headers, the X libraries and
+headers must be installed.
+
+<P>The headers are located in the Linux/x86_64/INCLUDE directory of the
+Priism distribution.  IWInclude.h (via IWL.h) includes one of the X include
+files; so if your code includes either of those files and the X include
+directory is not in the search path, it will be necessary to add the X include
+directory to the search path (in most cases, adding
+
+<PRE>
+     -I/usr/X11R6/include
+</PRE>
+
+<P>to the compilation options will do this).
+
+<P>The libraries are located in the Linux/x86_64/LIB directory of the Priism
+distribution.  If you link against libIWL.so, it is necessary to instruct the
+linker to search Linux/x86/LIB for libraries that libIWL.so uses.  If you
+invoke the linker directly, this can be done by adding
+
+<PRE>
+     -rpath-link <VAR>install_dir</VAR>/Linux/x86/LIB
+</PRE>
+
+<P>to the linker options (replace <VAR>install_dir</VAR> with the path to
+the Priism distribution).  If the compiler is used to invoke the linker, then
+you will need to determine how to instruct the compiler to pass the above
+option to the linker; for most compilers it can be done with
+
+<PRE>
+     -Wl,-rpath-link,<VAR>install_dir</VAR>/Linux/x86/LIB
+</PRE>
+
+<P>libIWL.so also depends on the X libraries so if the X library directory
+is not in the directory search path it is also necessary to supply a
+-rpath-link option for the X library directory.
+
+<P>If you use the archive libraries (libimlib.a or libIWL.a), it is necessary
+to link against the libraries that those libraries use.  For libimlib.a,
+these additional libraries can be specified on the command-line as
+
+<PRE>
+     <VAR>install_dir</VAR>/Linux/x86/LIB/libive.a -lm -lc
+</PRE>
+
+<P>For libIWL.a, the additional libraries can be specified on the command line
+as
+
+<PRE>
+     -lX11 <VAR>install_dir</VAR>/Linux/x86/LIB/libive.a -lm -lc
+</PRE>
+
+<P>(this assumes that the X libraries are in the library directory search path;
+if not it will be necessary to add them).
+
+<P>For Fortran programs, the name mangling of the libraries is compatible
+with the default mangling done by the Intel Fortran compiler (names are
+converted to lower case with a single underscore appended to the end).  The
+library includes alternate entry points which are compatible with the default
+name mangling done by g77.  Two versions of libimcompat.a are included:
+the one in <VAR>install_dir</VAR>/Linux/x86_64/LIB is for the Intel compiler
+(version 9 was used to generate the library; when linking against the library
+also link against Intel's libifport, i.e. add -lifport to the link options)
+and the one in <VAR>install_dir</VAR>/Linux/x86_64/LIB/pg is for the
+PortlandGroup compiler (version 10.2 was used to generate the library).
+
+<H4><A NAME="CompilingLinking_MacOSX">Mac OS X</A></H4>
+<P>To use the IW library on Mac OS X, it is necessary to have the X libraries
+and include files installed.
+
+<P>If you are compiling a 32-bit application, the headers are located in the
+Darwin/INCLUDE directory of the Priism distribution.  If you are compiling
+a 64-bit application (you will need an Intel-based system running at least
+Mac OS X 10.5 for that), the headers are located in Darwin64/INCLUDE.
+IWInclude.h (via IWL.h) includes one the X include files; so if your code
+includes either of those files, you will have to add the X include directory
+to the search path (in most cases, adding
+
+<PRE>
+     -I/usr/X11R6/include
+</PRE>
+
+<P>to the compilation options will do this).
+
+<P>The 32-bit libraries are located in the Darwin/LIB directory of the Priism
+distribution.  The 64-bit libraries are included in the Darwin64/LIB directory
+of the Priism distribution.  If you link against libimlib.dylib or
+libIWL.dylib, it is necessary to link against libive which is in the same
+directory, i.e. add
+<PRE>
+    -live
+</PRE>
+
+<P>If you use libimlib.a, you'll also have to link with either the dynamic
+version (libive.dylib) or the archive version (libive.a) of libive.  Assuming
+you want the archive version, you'd add
+<PRE>
+    <VAR>install_dir</VAR>/Darwin/LIB/libive.a
+</PRE>
+<P>to the link options for the 32-bit library where you must replace
+<VAR>install_dir</VAR> with the path to Priism's top-leve directory.  For the
+64-bit library you'd add
+<PRE>
+    <VAR>install_dir</VAR>/Darwin64/LIB/libive.a
+</PRE>
+<P>to the link options.  Linking with libIWL.a is similar, but you'll also
+have to link with the X11 library, i.e. use
+<PRE>
+    <VAR>install_dir</VAR>/Darwin/LIB/libive.a -lX11
+</PRE>
+<P>for the 32-bit library and
+<PRE>
+    <VAR>install_dir</VAR>/Darwin64/LIB/libive.a -lX11
+</PRE>
+<P>for the 64-bit library.  With XFree86 or Apple's X11, the X library is in
+/usr/X11R6/lib.
+
+<P>For Fortran programs, the name mangling of the libraries is compatible
+with typical Unix behavior (names converted to all lowercase with an
+underscore appended).  The library includes alternate entry points which are
+compatible with the default name mangling done by g77.  Two versions of
+libimcompat.a are included.  The one in <VAR>install_dir</VAR>/Darwin/LIB is
+for version 10.1 of Intel's Fortran compiler.  When linking with that version
+of libimcompat, you will need to link in the Intel Fortran support library,
+libifport, and its dependencies.  When you use the Intel Fortran compiler,
+those additional libraries can be linked in by including
+<CODE>-lifport -lifcore -limf -lirc</CODE> in the linker options after the
+reference to libimcompat.a.  The version of libimcompat.a in
+<VAR>install_dir</VAR>/Darwin64/LIB is for version 10.1 of Intel's 64-bit
+Fortran compiler on Intel systems.  As with the 32-bit version, you'll need to
+link with libifport and it's dependencies when linking with that library.
+With the Intel Fortran compiler, you can link those additional libraries by
+including <CODE>-lifport -lifcore -limf -lirc</CODE> in the linker
+options after the reference to libimcompat.a.
+
+<H4><A NAME="CompilingLinking_Windows">Windows</A></H4>
+<P>A 32-bit version of the archive library, libimlib.a is in the win32/LIB
+directory.  The corresponding include files are in win32/INCLUDE.  The
+64-bit version of the library is in win64/LIB, and the include files are in
+win64/INCLUDE.  When you link against libimlib.a, you'll also have to link
+against libive.a, which is in same directory as libimlib.a.  The only other
+symbols needed are in the system libraries, KERNEL32.dll and msvcrt.dll.
+
+<P>The libraries were generated with a mingw-w64 cross-compiler running under
+Linux.  The libraries have only been tested with that compiler, but should work
+easily with other compilers.  The tests of the library on different versions
+of Windows have been limited to Windows 7 and 32-bit Windows XP.  No problems
+were found on Windows 7, but the tests for files larger than two or four
+gigabytes did not work on 32-bit Windows XP.
+
+<HR>
+
+<H2><A NAME="ReleaseNotes">Release Notes</A></H2>
+<P>Changes in IVE 4.4.0 which may break backward source or binary compatibility
+are:
+<UL>
+  <LI>Modified the library to also read and write a header format that deviates
+    less from the Image2000 format.  If reading or writing that header format,
+    several calls have more side effects than they had in previous versions.
+    <A HREF="#IMAlZWT">IMAlZWT (ialzwt)</A> may change the interpretation of
+    the header, change the space group, or change the number of intervals in z
+    with a change to the number of wavelengths or time points.
+    <A HREF="#IMAlWav">IMAlWav (ialwav)</A> may change the interpretation of
+    the header if the number of wavelengths is changed.  Because the new format
+    uses some values of the space group to encode how sections are to be
+    interpreted, calls to <A HREF="#IMAlSpg">IMAlSpg (ialspg)</A> have
+    additional side effects as do calls to
+    <A HREF="#IMAlSam">IMAlSam (ialsam)</A>.  The parts of the header affected
+    by <A HREF="#IMAlExt">IMAlExt</A> or <A HREF="#IMRtExt">IMRtExt</A> are
+    different, but for ranges that were compatible with previous versions, the
+    portions of the header modified are the same.
+</UL>
+
+<P>Changes in IVE 4.3.0 which may break backward makefile compatibility or
+binary compatibility are:
+<UL>
+  <LI>In previous IVE versions, the x86_64 Linux binaries were inadvertently
+    built with a 4 gigabyte limit to the size of the shared memory file used to
+    communicate with image windows.  IVE 4.3.0 corrects that, but breaks
+    backwards compatibility for x86_64 Linux applications that are linked with
+    libIWL.a, libpickfuncs.a, or libpolyfuncs.a or which interact directly
+    with the shared memory file (i.e. use ive_shm.h or kernel/* headers or
+    use IWEncodeSHMPtr()/IWDecodeSHMPtr()).  Those applications will have to
+    be recompiled to work with image windows generated in IVE 4.3.0 (or any
+    later version), and those applications, if compiled with the headers
+    and libraries in IVE 4.3.0 or later, will not work with image windows
+    from version of IVE prior to 4.3.0.
+  <LI>libimlib and libIWL no longer depend on the C++ runtime libraries.  You
+    can now link with libimlib.a or libIWL.a and not have to pull in a
+    compatible C++ library.  libimlib now depends on libive.  When linking with
+    libimlib.a you'll also have to link with libive.so (libive.dylib on
+    a Mac) or libive.a.  Linking with libimlib.dylib on the Mac is
+    also affected:  you'll either have to explicitly link with libive.dylib or
+    libive.a or include the equivalent of
+    -Wl,-dylib_file,<VAR>lib_dir</VAR>/libive.dylib in the link options (you'll
+    need to replace <VAR>lib_dir</VAR> with the path to the Priism libraries)
+    so that the linker can find the library.
+</UL>
+<P>Changes in IVE 4.2.9 which may break backward makefile or binary
+compatibility:
+<UL>
+  <LI>For x86 or x86_64 Linux systems, the binaries in LIB/pg are compiled with
+    version 10.2 rather than 7.2-5 of the Portland Group compiler.
+</UL>
+
+<P>Changes in IVE 4.2.7 which may break backward makefile compatibility are:
+<UL>
+  <LI>On Mac OS X Intel systems, the libimcompat.a is now compiled with
+    with version 10.1 of the Intel Fortran compiler.
+</UL>
+
+<P>Changes in IVE 4.2.6 which may break backward makefile compatibility are:
+<UL>
+  <LI>On x86 Linux systems, the libraries are now compiled with the Intel 9
+    compiler rather than the egcs 2.91 compiler.  This should be transparent
+    unless you are using a Linux system with glibc older than version 2.3
+    (IVE 4.2.6 requires glibc 2.3 or later), you use the static libraries, or
+    you make use of the library, libimcompat.a.
+</UL>
+
+<P>Changes in IVE 4.1.2 which break backward makefile compatibility are:
+
+<UL>
+  <LI>On x86 Linux systems, changed the compilers used for the libraries
+    and how the shared libraries are built.  The effects of the change are:
+    <UL>
+      <LI>Applications and libraries which use the new shared libraries
+        will not run with older (pre 4.1.2) versions of the shared libraries.
+      <LI>If you have an application which was linked with previous versions
+        of the shared libraries and has C++ code compiled with the Portland
+        Group C++ compiler, the application will need to be relinked to be
+        usable with the new libraries.
+      <LI>If you use the archive libraries, the new versions no longer require
+        linking against the Portland Group libraries (i.e. -L$(PGI) -lstd -lC
+        -lpgc).  However, it is necessary to link against libstdc++.
+    </UL>
+</UL>
+
+<P>Changes in IVE 4.1.0 which break backward makefile compatibility are:
+
+<UL>
+  <LI>For Alpha Linux and OSF1 systems, libimlib.a and libIWL.a no longer
+    identical.  libIWL.a now contains the IW functions.  If you link against
+    libIWL.a, you may need to link with additional libraries.
+</UL>
+
+<P>Changes between IVE 4 and IVE 3.3 which break backward source or makefile
+compatibility are:
+
+<UL>
+  <LI>What the library would do for operations on a stream which was not
+    open, had not been defined in the past:  typically nothing would be
+    done for a call to alter the header or write image data and the
+    return values would not be modified for a call to return a header
+    value or read image data.  The behavior now is to abort (on a
+    segmentation fault) when an operation is performed on a stream
+    which is not open.
+  <LI>When reading from a file, IMRdPas would set the elements of the
+    destination array to zero which were in the bounds (mx, my) supplied
+    but which were not otherwise affected by the read; this was not
+    done for windows.  Setting the additional array elements to zero is
+    no longer done for any source.
+  <LI>In older versions, IMRdSecl and IMWrSecl would advance the
+    file pointer by the number of lines transfered when working with a file.
+    With an image window, those functions would advance the pointer to the
+    start of the next section.  In the current version, the pointer is
+    advanced by the number of lines transfered for both files and image
+    windows.
+  <LI>The behavior of IMRdPal, IMRdPas, IMWrPal, and IMWrPas has
+    changed when working with resolutions other than the highest.  In
+    IVE 3.3, IMRdPal and IMWrPal would transfer 1 + (nx2 - nx1) / 2^res_index
+    values when working with a file; now they transfer
+    (nx2 - nx1 + 1) / 2^res_index values whatever the source is.
+    Similarly, the number of columns transfered by IMRdPas and IMWrPas
+    is now (nx2 - nx1 + 1) / 2^res_index rather than
+    1 + (nx2 - nx1) / 2^res_index and the number of rows transfered is
+    now (ny2 - ny1 + 1) / 2^res_index rather than
+    1 + (ny2 - ny1) / 2^res_index.
+  <LI>In previous versions, the IMAlZWT call had the side effect of
+    adjusting the pointer to point to the same z and time section indices
+    but to use the last wavelength; however, for a file the actual file
+    pointer was not updated.  This version updates the file pointer as well.
+  <LI>Previous versions of the IM library used the QOPEN (QSEEK, QREAD, ...)
+    family of routines to perform input and output.  This is no longer true.
+    In particular, the IMUnit call no longer returns a value usable with
+    the QOPEN family of routines; instead, the value of the Unix file
+    descriptor is returned which can be directly used with the Unix system
+    calls: open, lseek, read, write, etc.
+  <LI>The return value of IMOpen is now declared as an integer rather than
+    an integer*4.
+  <LI>The protocols used to implement operations on remote files and
+    image windows are not compatible with those used by Priism 3.3.
+  <LI>The locations of the headers and libraries has changed.  In previous
+    versions, the headers were in the INCLUDE subdirectory and the libraries
+    were in the LIB (or LIB_IRIX) subdirectory for IRIX, the LIB_Linux86
+    subdirectory for x86 Linux systems, the LIB_OSF1 subdirectory for OSF1
+    Alpha systems, and the LIB_LinuxAlpha subdirectory for Linux Alpha
+    systems.
+  <LI>When linking against the archive libraries, the steps needed to find
+    all the symbols has changed.  Consult the
+    <A HREF="#CompilingLinking">section on compiling and linking</A> for
+    details.
+  <LI>libimlib.a was called imlib.a and libIWL.a was called IWL.a.
+    The old names are still available as symbolic links to
+    the new ones, but these links may be removed in a future release.
+  <LI>There were a number of routines, primarily used from Fortran,
+    that were included with the IM and IWL libraries; these routines
+    may now be found in libimcompat.a in the IVE library directory.  The
+    routines in libimcompat.a are:  a4a1a3, angstr, angcon, aj0, aj1,
+    daatan, decomp, matinv, matmul, matvec, minv, ai0, ai1, rotate,
+    sim, trcl, vdif, vsum, vxv, qopen, qclose, qread, qwrite, qback, qskip,
+    qseek, qlocate, qinquire, getline, get_charswitch, parse_line,
+    parse_charswitch, parse_intswitch, parse_realswitch, get_xyzswitch,
+    get_wtswitch, iclcdn, cinterp, inside, icalc_matrix, icalc_angles,
+    icalc_index, icalc_coord, frefor, str$upcase, lenstring, dtc, index_ci,
+    movepp, movep, move, move_r, zero_r, zero, fill, move_r, zero_r, dopen.
+</UL>
+
+<P>The following functions or constants have been added in IVE 4.4.0:
+<UL>
+  <LI>Added <A HREF="#IMRtHdrFmt">IMRtHdrFmt (irthfmt)</A> and
+    <A HREF="#IMAlHdrFmt">IMAlHdrFmt (ialhfmt)</A> to query and control which
+    header format is used.  The macros in C/C++, IW_PRIISM0_HEADER and
+    IW_EM0_HEADER, as codes for the two current formats are new as is the
+    structure, IW_EM_Header.
+  <LI>Added <A HREF="#IMRtExHdrFmt">IMRtExHdrFmt (irtexhf)</A> as a
+    convenience function for testing what extended header layout to use.  The
+    macros in C/C++, IW_EXTHDR_PRIISM0 and IW_EXTHDR_CRYSTAL
+  <LI>Added <A HREF="#IMRtRMS">IMRtRMS (irtrms)</A> and
+    <A HREF="#IMAlRMS">IMAlRMS (ialrms)</A> for reading and writing the RMS
+    field in the header for the EM header format.
+</UL>
+
+<P>The following functions have been added in IVE 4:
+
+<UL>
+  <LI>The functions <A HREF="#IMRtFmt">IMRtFmt (irtfmt)</A> and
+    <A HREF="#IMRtMode">IMRtMode (irtmod)</A> were added to complement
+    the functions <A HREF="#IMAlFmt">IMAlFmt</A> and
+    <A HREF="#IMAlMode">IMAlMode</A>, respectively.
+  <LI>The C interface functions <A HREF="#IMGetExHdr">IMGetExHdr</A>,
+    <A HREF="#IMUnit">IMUnit</A>, <A HREF="#IMRtStream">IMRtStream</A>
+    and <A HREF="#IMRtWID">IMRtWID</A> were added to complement the Fortran
+    functions igetexhdr, imunit, irtstream, and irtwid, respectively.
+  <LI>Storing and reading the data as unsigned 16-bit integers (type code 6)
+    and signed 32-bit integers (type code 7) is now supported.  Files
+    written using these types are unlikely to be readable by other applications
+    (including previous versions of Priism) that use the MRC file format
+    or derivative thereof.
+  <LI>C/C++ macros are defined for the different standard
+    <A HREF="#ImageTypes">image types</A>.
+</UL>
+
+<P>Other changes made between IVE 4 and IVE 3.3 are:
+<UL>
+  <LI>The prototypes for the IM functions in C have been regularized.
+    The use of const qualifiers on non-pointer types has been dropped and
+    it has been added to pointer types where the memory referred to by
+    the pointer is not modified.  The pointers passed to the calls to read
+    and write data or to return or modify the entire extended header are
+    now all void*.
+</UL>
+
+<P>Changed made in IVE 3.3:
+<UL>
+  <LI>In the June 1999 release, library support for VAX format files was
+    dropped; consult the <A HREF="#IMAlFmt">documentation for IMAlFmt</A> for
+    details.
+  <LI>In the March 1998 version, added support for the UCSF_EXT_HEADER_TYPE2
+    extended header layout.
+</UL>
+
+<HR>
+
+<H2><A NAME="LibraryFunctions">Library Functions</A></H2>
+
+<P>Described below are the IM library functions. Functions prototypes are
+provided in IWL.h, and the functions themselves can be obtained by linking
+with libIWL.a (or libIWL.so). Definitions can be found in IWApiConstants.h. 
+
+<P>Categories of Functions: 
+
+<P><A HREF="#FileHeader">File Header - "IM*Hdr"</A> 
+
+<P><A HREF="#AlterImageInformation">Alter Image Information - "IMAl"</A>
+
+
+<P><A HREF="#ReturnImageInformation">Return Image Information - "IMRt"</A>
+
+
+<P><A HREF="#ReadImageInformation">Read Image Information - "IMRd"</A>
+
+
+<P><A HREF="#WriteImageInformation">Write Image Information - "IMWr"</A>
+
+
+<P><A HREF="#StreamPointerFunctions">Stream Pointer Functions</A>
+
+<P><A HREF="#StreamIdentification">Identifying the Stream Type</A>
+
+<HR>
+
+<H3><A NAME="FileHeader">File Header - "IM*Hdr"</A></H3>
+
+<P>Functions that work with the entire image header or large sections of
+the header. 
+
+<P><A HREF="#IMOpen">IMOpen</A> - Open an image file and attach it to a stream.<BR>
+<A HREF="#IMClose">IMClose</A> - Close the stream and associated image file.<BR>
+<A HREF="#IMRdHdr">IMRdHdr</A> - Read the header from the stored image.<BR>
+<A HREF="#IMWrHdr">IMWrHdr</A> - Write the image header to the storage device.<BR>
+<A HREF="#IMGetHdr">IMGetHdr</A> - Get the entire header in a single block of memory.<BR>
+<A HREF="#IMPutHdr">IMPutHdr</A> - Put an entire header into a stream.<BR>
+<A HREF="#IMGetExHdr">IMGetExHdr</A> - Get the entire extended header in a single block of memory.<BR>
+<A HREF="#IMTrHdr">IMTrHdr</A> - Transfer
+a header from one stream to another.<BR>
+<A HREF="#IMTrLab">IMTrLab</A> - Transfer image titles from one stream to
+another.<BR>
+<A HREF="#IMTrCel">IMTrCel</A> - Transfer the cell properties from one
+stream to another.<BR>
+<A HREF="#IMCrHdr">IMCrHdr</A> - Create a new header with certain user defined
+properties.<BR>
+<A HREF="#IMRtHdrFmt">IMRtHdrFmt</A> - Returns how the IM library interprets
+the primary header.<BR>
+<A HREF="#IMAlHdrFmt">IMAlHdrFmt</A> - Alters how the IM library interprets
+the primary header.<BR>
+<A HREF="#IMRtExHdrFmt">IMRtExHdrFmt</A> - Returns how to interpret the
+extended header data.<BR>
+<A HREF="#IMTrExHdr2">IMTrExHdr2</A> - Transfer
+the extended header from one stream to another.<BR>
+<A HREF="#IMFixExHdr">IMFixExHdr</A> - Fix extended header values<BR>
+<A HREF="#IMFixExHdrZWT">IMFixExHdrZWT</A> - Fix extended header values.<BR>
+<A HREF="#IMTrExHdr">IMTrExHdr</A> - Transfer the extended header
+corresponding to a single section from one stream to another.
+
+<HR>
+
+<H3><A NAME="IMOpen">IMOpen</A></H3>
+
+<H4>Name</H4>
+
+<P>IMOpen - Open an image file and attach it to a stream.
+
+<H4>C Synopsis</H4>
+
+<P>int IMOpen(int <U>StreamNum</U>, const char *<U>Name</U>, const char *<U>Attributes</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>integer function imopen(streamnum,name,attributes)<BR>
+integer istream<BR>
+character name*(*)<BR>
+character attributes*(*)
+
+<H4>Description</H4>
+
+<P>Open an image file named <U>Name </U>and attach it to stream number
+<U>StreamNum</U>. <U>StreamNum</U> must be a positive integer.  <U>Name</U>
+can either be a file name, or a window number. For example, if
+<U>Name</U>="/tmp/my_image" then the image file on the disk will be attached
+to the stream. If <U>Name</U>="1", then window number 1 will be attached to
+the stream. For this reason, it is not possible to use image files with simple
+numeric names such as "1", "2", or "3". 
+
+<P>Remote programs can access windows on your Priism session or files only
+visible to your local machine.  In this case <U>Name</U> is the window number
+or filename preceded by :: (two colons).  See the
+<A HREF="WM.html#Remote Process Event Handling">Remote Process Event Handling topic</A>
+in <A HREF="WM.html">WM.html</A> for details on how to set up such a remote
+program.
+
+<P>Use one of the image attributes listed below:
+
+<DL>
+  <DT>ro<DD>Opens an existing file or image window for reading only.
+  <DT>new<DD>Creates a file or image window and opens it for reading and
+    writing.
+  <DT>old<DD>Opens an existing file or image window for reading and writing.
+  <DT>scratch<DD>Creates a new file or image window.  In the case of a file,
+    functions identically to the "new" option except the file will
+    automatically be deleted when closed.  The behavior is very different for
+    an image window.  A new window is created and is opened for reading and
+    writing.  The window can have multiple wavelengths or z sections, but the
+    number of time points is forced to be one.  The window can only have
+    one resolution.  For a scratch window with one wavelength, new images
+    are written to increasing z section numbers (regardless of the z position
+    set with <A HREF="#IMPosn">IMPosn</A> or
+    <A HREF="#IMPosnZWT">IMPosnZWT</A>) until the last z section is filled.
+    After that, subsequent writes cause all the previous images to be shifted
+    down by one z section and the new image is written to the last z section.
+    In the process, the oldest image is lost.  A scratch window with
+    multiple wavelengths functions similarly but the wavelengths are not
+    treated independently.  If the wavelength with the most images written
+    has n images, a write to another wavelength will fill the n minus one
+    z section unless the other wavelength also has n images.  In that case
+    the image will be written to the nth z section:  if n is equal to the
+    number of z sections that can be stored, all wavelengths are shifted
+    down and the image is written to the n minus one z section.
+</DL>
+
+<H4>Return Values</H4>
+
+<P>IMOpen returns TRUE when an error has occurred, and otherwise returns
+FALSE. See also <A HREF="#IMClose">IMClose</A>.
+
+<H4>Side Effects</H4>
+
+<P>IMOpen for an image window or remote resource can have the side effect
+of calling getenv().  Because of that, if you have a pointer in C or C++
+returned by getenv() (perhaps through some other interface that calls
+getenv()) and want to guarantee that the pointed to value is preserved after
+the call to IWOpen() for an image window or remote resource, you have to copy
+the value to other storage.
+
+<HR>
+
+<H3><A NAME="IMClose">IMClose</A></H3>
+
+<H4>Name</H4>
+
+<P>IMClose - Close the stream and associated image file.
+
+<H4>C Synopsis</H4>
+
+<P>void IMClose(int <U>StreamNum</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine imclose(streamnum)<BR>
+integer streamnum
+
+<H4>Description</H4>
+
+<P>To ensure that all buffers are emptied, use IMClose when finished with
+<U>StreamNum</U>. See also <A HREF="#IMOpen">IMOpen</A>.
+
+<HR>
+
+<H3><A NAME="IMRdHdr">IMRdHdr</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRdHdr - Read the header from the stored image.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRdHdr(int <U>StreamNum</U>, int <U>ixyz</U>[3], int <U>mxyz</U>[3],
+int *<U>PixelType</U>, float *<U>Min</U>, float *<U>Max</U>, float *<U>Mean</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irdhdr(istreamnum, inxyz, mxyz, ipixeltype,dmin,dmax,dmean)<BR>
+integer istreamnum,ipixeltype<BR>
+dimension inxyz(3), mxyz(3)<BR>
+real dmin,dmax,dmean
+
+<H4>Description</H4>
+
+<P>This call must be used before any other information can be retrieved
+using IMRt functions as it reads the header into memory. In addition, basic
+information is returned through the arguments.
+
+<P>ixyz contains the number of columns, rows and sections in the data file.
+
+<P>mxyz contains the number of columns, rows and sections in the entire
+unit cell.    The values in <U>mxyz</U> usually follow one of the following
+conventions:
+
+<UL>
+  <LI>All three components are equal to one.  This is the common convention
+    for data from optical microscopes.
+  <LI>The first two components are the same as the first two components of
+    <U>ixyz</U>.  The third component is equal to the number of z sections.
+    This is the common convention for 3D reconstructions from EM tomography.
+</UL>
+
+<P>PixelType is the mode the data is stored in.  The possibilities are
+listed in the <A HREF="#PixelDataTypes">pixel data types table</A>.
+
+<P>The min, max, and mean intensity here refers to the first wavelength
+of the data file only. To access other information about the image file,
+use the IMRt functions.
+
+<P>Reading the header has the side effect of resetting the current position
+to the first line in the first section of the highest resolution.
+
+<HR>
+
+<H3><A NAME="IMWrHdr">IMWrHdr</A></H3>
+
+<H4>Name</H4>
+
+<P>IMWrHdr - Write the image header to the storage device.
+
+<H4>C Synopsis</H4>
+
+<P>void IMWrHdr(int <U>StreamNum</U>, const char <U>Title</U>[80],
+int <U>TitleFlag</U>, float <U>Min</U>, float <U>Max</U>, float <U>Mean</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine iwrhdrc(istream, title, ntflag, dmin, dmax, dmean)<BR>
+integer istream<BR>
+character*(*) title<BR>
+integer ntflag<BR>
+real dmin,dmax,dmean
+
+<P>subroutine iwrhdr(istream, title, ntflag, dmin, dmax, dmean)<BR>
+integer istream<BR>
+character title*80<BR>
+integer ntflag<BR>
+real dmin,dmax,dmean
+
+<H4>Description</H4>
+
+<P>Write image header associated with <U>StreamNum</U> to the storage device.
+Use this function to save the results of all IMAl functions. <U>Header
+modifications are not saved until IMWrHdr is used</U>! The contents of
+<U>Title</U> will be saved in the header according to the method indicated
+by <U>ntflag</U>. The minimum, maximum, and mean intensity - <U>Min</U>,
+<U>Max</U>, and <U>Mean</U>, respectively - of wavelength 0 are also saved
+in the header every time IMWrHdr is used. <BR>
+
+
+<CENTER><TABLE BORDER=2 >
+<TR>
+<TD><U>TitleFlag</U></TD>
+
+<TD>Action</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER><P>-1</P></CENTER>
+</TD>
+
+<TD>no titles added to the list</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER><P>0</P></CENTER>
+</TD>
+
+<TD>use <U>Title</U> as the only title</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER><P>1</P></CENTER>
+</TD>
+
+<TD>add <U>Title</U> to the end of the list</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER><P>2</P></CENTER>
+</TD>
+
+<TD>add <U>Title</U> to the beginning of the list</TD>
+</TR>
+</TABLE></CENTER>
+
+<HR>
+
+<H3><A NAME="IMGetHdr">IMGetHdr</A></H3>
+
+<H4>Name</H4>
+
+<P>IMGetHdr - Get the entire header in a single block of memory.
+
+<H4>C Synopsis</H4>
+
+<P>void IMGetHdr(int <U>StreamNum</U>, void *<U>Header</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine igethdr(istream, header)<BR>
+integer istream<BR>
+character header*1024
+
+<H4>Description</H4>
+
+<P>Get the header of <U>StreamNum </U>and put it into <U>Header</U>. <U>Header</U>
+should point to a memory location with 1024 bytes allocated.
+
+<HR>
+
+<H3><A NAME="IMPutHdr">IMPutHdr</A></H3>
+
+<H4>Name</H4>
+
+<P>IMPutHdr - Put an entire header into a stream.
+
+<H4>C Synopsis</H4>
+
+<P>void IMPutHdr(int <U>StreamNum</U>, const void *<U>Header</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine iputhdr(istream, header)<BR>
+integer istream<BR>
+char header*1024
+
+<H4>Description</H4>
+
+<P><U>Header</U> should point to a memory location that contains a complete
+image header.
+
+<HR>
+
+<H3><A NAME="IMGetExHdr">IMGetExHdr</A></H3>
+
+<H4>Name</H4>
+
+<P>IMGetExHdr - Retrieves the entire extended header into a single block of memory.
+
+<H4>C Synopsis</H4>
+
+<P>void IMGetExHdr(int <U>StreamNum</U>, void *<U>Extended</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine igetexhdr(istream, extended)<BR>
+integer istream<BR>
+real extended(*)
+
+<H4>Description</H4>
+
+<P>The complete contents of the extended header are copied to <U>Extended</U>.
+
+<HR>
+
+<H3><A NAME="IMTrHdr">IMTrHdr</A></H3>
+
+<H4>Name</H4>
+
+<P>IMTrHdr - Transfer a header from one stream to another.
+
+<H4>C Synopsis</H4>
+
+<P>void IMTrHdr(int <U>StreamNum</U>, int <U>StreamNum2</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine itrhdr(istream, istream2)<BR>
+integer istream,istream2
+
+<H4>Description</H4>
+
+<P>Transfer the header (including the extended header, if any) associated with
+<U>StreamNum2</U> to the header associated with <U>StreamNum</U>.
+
+<HR>
+
+<H3><A NAME="IMTrLab">IMTrLab</A></H3>
+
+<H4>Name</H4>
+
+<P>IMTrLab - Transfer image titles from one stream to another.
+
+<H4>C Synopsis</H4>
+
+<P>void IMTrLab(int <U>StreamNum</U>, int <U>StreamNum2</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine itrlab(istream,istream2)<BR>
+integer istream,istream2
+
+<H4>Description</H4>
+
+<P>Transfer the image titles associated with <U>StreamNum2</U> to those
+associated with <U>StreamNum</U>.
+
+<HR>
+
+<H3><A NAME="IMTrCel">IMTrCel</A></H3>
+
+<H4>Name</H4>
+
+<P>IMTrCel - Transfer the cell properties from one stream to another.
+
+<H4>C Synopsis</H4>
+
+<P>void IMTrCel(int <U>StreamNum</U>, int <U>StreamNum2</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine itrcel(istream,istream2)<BR>
+integer istream,istream2
+
+<H4>Description</H4>
+
+<P>Transfer the cell properties associated with <U>StreamNum2</U> to those
+associated with <U>StreamNum</U>.
+
+<HR>
+
+<H3><A NAME="IMCrHdr">IMCrHdr</A></H3>
+
+<H4>Name</H4>
+
+<P>IMCrHdr - Create a new header with certain user defined properties.
+The remaining properties are determined by default.
+
+<H4>C Synopsis</H4>
+
+<P>void IMCrHdr(int <U>StreamNum</U>, const int <U>ixyz</U>[3],
+const int <U>mxyz</U>[3], int <U>PixelType</U>, const char *<U>Titles</U>,<BR>
+int <U>NumTitles</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine icrhdr(istream, <U>ixyz</U>, <U>mxyz</U>, <U>iPixelType</U>, <U>Titles</U>,
+<U>NumTitles</U>)<BR>
+integer istream,ixyz(3),mxyz(3),iPixelType,NumTitles<BR>
+character Titles(80,NumTitles)
+
+<H4>Description</H4>
+
+<P>Creates a new header for <U>StreamNum</U>.  The byte-order and header format
+are not changed (a stream, immediately after a call to
+<A HREF="#IMOpen">IMOpen</A>, will have the machine's byte order and use
+Priism's original format for the header).  <U>ixyz</U> holds the image
+dimensions:  the first component is the number of elements in x, the second is
+the number of elements in y, and the third is the number of images.
+<U>mxyz</U> holds the number of divisions in x, y, and z per unit cell.  The
+values in <U>mxyz</U> usually follow one of the following conventions:
+
+<UL>
+  <LI>All three components are equal to one.  This is the common convention
+    for data from optical microscopes.
+  <LI>The first two components are the same as the first two components of
+    <U>ixyz</U>.  The third component is equal to the number of z sections.
+    This is the common convention for 3D reconstructions from EM tomography.
+</UL>
+
+<P><U>iPixelType</U> sets the format used to store the image values; the
+<A HREF="#PixelDataTypes">table of pixel data types</A> lists the allowed
+values for <U>iPixelType</U>.  The number of titles in the new header will
+be zero if <U>NumTitles</U> is less than one and will be the smaller of
+<U>NumTitles</U> and ten if <U>NumTitles</U> is greater than zero.  The titles
+in the header are copied from <U>Titles</U>.  When called from C or C++,
+the titles are assumed to be packed contiguously with eighty characters
+per title in the memory pointed to by <U>Titles</U>.
+
+<P>Use the IMAl functions to alter other parts of the header.  Remember that
+you must call <A HREF="#IMWrHdr">IMWrHdr</A> to ensure that any changes
+from calls to IMCrHdr or IMAl functions are saved.
+
+<HR>
+
+<H3><A NAME="IMRtHdrFmt">IMRtHdrFmt</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtHdrFmt - Returns the format that the IM library has assumed for the
+header.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtHdrFmt(int <U>istream</U>, int* <U>p_ifmt</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irthhmt(<U>istream</U>, <U>ifmt</U>)<BR>
+integer istream, ifmt<BR>
+
+<H4>Description</H4>
+
+<P>The IM library currently supports the header formats described in the
+<A HREF="#Image Header">Image Header section</A>.  IMRtHdrFmt sets
+*<U>p_ifmt</U> (<U>ifmt</U> in Fortran) to zero (equivalent to the C/C++ macro,
+IW_PRIISM0_HEADER) if <U>istream</U> uses Priism's original format.
+IMRtHdrFmt sets *<U>p_ifmt</U> to one (equivalent to the C/C++ macro,
+IW_EM0_HEADER) if <U>istream</U>'s header is in the EM format.
+
+<HR>
+
+<H3><A NAME="IMAlHdrFmt">IMAlHdrFmt</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlHdrFmt - Changes which header format to use.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlHdrFmt(int <U>istream</U>, int <U>ifmt</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialhfmt(<U>istream</U>, <U>ifmt</U>)<BR>
+integer istream, ifmt<BR>
+
+<H4>Description</H4>
+
+<P>The IM library currently supports the header formats described in the
+<A HREF="#Image Header">Image Header section</A>.  IMAlHdrFmt changes the
+format used for <U>istream</U> to be <VAR>ifmt</VAR> which should be zero
+(equivalent to the C/C++ macro, IW_PRIISM0_HEADER) for Priism's format
+or one (equivalent to the C/C++ macro, IW_EM0_HEADER) for the EM format.  If
+<VAR>ifmt</VAR> is not zero or one, IMAlHdrFmt will not change the header.
+
+<P>For an image file, the change to the format will be committed when the
+header is written with <A HREF="#IMWrHdr">IMWrHdr</A>.  Switching the header
+format from Priism's format to the EM format will force the number of
+wavelengths to be one (and lose any information about wavelength values) and
+may change the space group and z sampling information.  Switching the header
+from the EM format to Priism's format will lose the RMS value.
+
+<HR>
+
+<H3><A NAME="IMRtExHdrFmt">IMRtExHdrFmt</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtExHdrFmt - Returns how to interpret the extended header.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtExHdrFmt(int <U>istream</U>, int* <U>p_ifmt</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtexhf(<U>istream</U>, <U>ifmt</U>)<BR>
+integer istream<BR>
+
+<H4>Description</H4>
+
+<P>Currently the extended header either contains symmetry information for
+crystallographic data or per-section information for optical or electron
+microscopy data.  IMRtExHdrFmt is a convenience function for determining how
+the extended header should be interpreted.  It will set *<U>p_ifmt</U>
+(<U>ifmt</U> in Fortran) to zero (equivalent to the C/C++ macro,
+IW_EXTHDR_PRIISM0) if the extended header should be interpreted as a fixed
+number of 32-bit integers and 32-bit floating-point values per section (as
+returned by <A HREF="#IMRtExHdrSize">IMRtExHdrSize</A>) up to the size of the
+extended header (as returned by <A HREF="#IMRtSpg">IMRtSpg</A>).  It will set
+*<U>p_ifmt</U> to one (equivalent to the C/C++ macro, IW_EXTHDR_CRYSTAL) if the
+extended header should be interpreted as crystallographic symmetry information.
+
+<HR>
+
+<H3><A NAME="IMTrExHdr2">IMTrExHdr2</A></H3>
+
+<H4>Name</H4>
+
+<P>IMTrExHdr2 - Transfer the extended header from one stream to another.
+
+<H4>C Synopsis</H4>
+
+<P>int IMTrExHdr2(int <U>OutStream</U>, int <U>InStream</U>, int <U>ZSec1</U>,
+int <U>ZSec2</U>, int <U>ZInc</U>, <BR>
+int <U>WaveTable</U>[IW_MAX_WAVE], int <U>Time1</U>, int <U>Time2</U>,
+int <U>TimeInc</U>)
+
+<H4>Fortran Synopsis</H4>
+
+<P>integer function itrexhdr2(<U>OutStream</U>, <U>InStream</U>, <U>ZSec1</U>,
+<U>ZSec2</U>, <U>ZInc</U>, <U>WaveTable</U>, <U>Time1</U>, <U>Time2</U>,
+<U>TimeInc</U>)<BR>
+integer OutStream,InStream,ZSec1,ZSec2,Zinc,WaveTable(5),Time1,Time2,Timeinc
+
+<H4>Description</H4>
+
+<P>Transfer the extended header from <U>InStream</U> to <U>OutStream</U>.
+
+
+<P><U>ZSec1</U>, <U>ZSec2</U>, and <U>ZInc</U> describe the Z range that
+should be transferred. In most cases, (<U>ZSec2</U>-<U>ZSec1</U>)/<U>ZInc</U>
+should be equal to the Z dimension of OutStream. 
+
+<P>The wave table describes which wavelengths should transferred. For example,
+if <U>WaveTable</U>[0]=0 and <U>WaveTable</U>[1]=1, then wavelength number
+zero should not be transferred, whereas wavelength one should be. 
+
+<P>The time range <U>Time1</U>, <U>Time2</U>, <U>TimeInc</U> behaves the
+same was the Z range, described above.
+
+<HR>
+
+<H3><A NAME="IMFixExHdr">IMFixExHdr</A></H3>
+
+<H4>Name</H4>
+
+<P>IMFixExHdr - Fix extended header values.
+
+<H4>C Synopsis</H4>
+
+<P>void IMFixExHdr(int <U>StreamNum</U>, int <U>ZStart</U>, int <U>ZEnd</U>,
+int <U>ZSkip</U>, int isizeflag);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ifixexhdr( <U>StreamNum</U>, <U>ZStart</U>, <U>ZEnd</U>, <U>ZSkip</U>,
+isizeflag)<BR>
+integer StreamNum, ZStart,ZEnd,ZSkip<BR>
+logical isizeflag
+
+<H4>Description</H4>
+
+<P>Used to fix the extended header information when selecting a subset of image
+sections. Used following IMTrHdr and with IMAlSiz.  New extended header
+is made from data for sections <U>ZStart</U> to <U>ZEnd</U>, incrementing
+by <U>ZSkip</U>. if <U>isizeflag</U> is true, extended header will be resized,
+otherwise left at previous size. Do not set true if sections have already
+been written out.
+
+<HR>
+
+<H3><A NAME="IMFixExHdrZWT">IMFixExHdrZWT</A></H3>
+
+<H4>Name</H4>
+
+<P>IMFixExHdrZWT - Fix extended header values.
+
+<H4>C Synopsis</H4>
+
+<P>void IMFixExHdrZWT(int <U>StreamNum</U>, int <U>ZStart</U>, int
+<U>ZEnd</U>, int <U>NumWaves</U>, const int <U>Waves</U>[], int <U>TStart</U>,
+int <U>TEnd</U>, int <U>TInc</U>, int <U>isizeflag</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ifixexhdr_zwt(<U>StreamNum</U>, <U>ZStart</U>, <U>ZEnd</U>, <U>NumWaves</U>,
+<U>Waves</U>, <U>TStart</U>, <U>TEnd</U>, <U>TInc</U>, <U>isizeflag</U>)<BR>
+integer StreamNum,ZStart,Zend,NumWaves,Waves(5),TStart,TEnd,Tinc<BR>
+logical isizeflag
+
+<H4>Description</H4>
+
+<P>Similar to <A HREF="#IMFixExHdr">IMFixExHdr</A>, but used when the subset
+is described using z,wave and time ranges, as opposed to just sections.
+The Z range is described with (<U>ZStart</U>, <U>ZEnd</U>). Wavelength
+range uses <U>NumWaves</U> to tell how many waves will be included and
+the array <U>Waves</U>, to tell which actual waves to include(0-4). Time
+range is described with (<U>TStart</U>, <U>TEnd</U>, <U>TInc</U>). 
+
+<HR>
+
+<H3><A NAME="IMTrExHdr">IMTrExHdr</A></H3>
+
+<H4>Name</H4>
+
+<P>IMTrExHdr - Transfer the extended header corresponding to a single section
+from one stream to another.
+
+<H4>C Synopsis</H4>
+
+<P>void IMTrExHdr(int <U>StreamNum</U>, int <U>StreamNum2</U>,
+int <U>SectionNum</U>, int <U>SectionNum2</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine itrexhdr(<U>StreamNum</U>, <U>StreamNum2</U>, <U>SectionNum</U>, <U>SectionNum2</U>)<BR>
+integer StreamNum,StreamNum2,SectionNum,SectionNum2
+
+<H4>Description</H4>
+
+<P>Transfer the extended header of <U>StreamNum2</U>, section number <U>SectionNum2</U>
+to <U>StreamNum</U>, section number <U>SectionNum</U>.
+
+<HR>
+
+<H3><A NAME="AlterImageInformation">Alter Image Information - "IMAl"</A></H3>
+
+<P>All of these calls modify information in the image file header. Keep
+in mind that none of this information is actually written to the file
+header until the call is made to <A HREF="#IMWrHdr">IMWrHdr.</A>
+
+<P><A HREF="#IMAlCel">IMAlCel</A> - Set the cell properties.<BR>
+<A HREF="#IMAlCon">IMAlCon</A> - Set the image conversion mode during read/write
+operations from image storage.<BR>
+<A HREF="#IMAlDat">IMAlDat</A> - Set various data values in the header.<BR>
+<A HREF="#IMAlDel">IMAlDel</A> - Set the (x,y,z) voxel size.<BR>
+<A HREF="#IMAlDis">IMAlDis</A> - Enable or disable image display.<BR>
+<A HREF="#IMAlExHdr">IMAlExHdr</A> - Change the extended header values
+of a particular section.<BR>
+<A HREF="#IMAlExHdrSize">IMAlExHdrSize</A> - Set the extended header size
+for a new stream.<BR>
+<A HREF="#IMAlExHdrValueZWT">IMAlExHdrValueZWT</A> - Alter a value in the
+extended header.<BR>
+<A HREF="#IMAlExHdrZWT">IMAlExHdrZWT</A> - Change all the extended header
+values for a particular Z,W,T section.<BR>
+<A HREF="#IMAlExt">IMAlExt</A> -Alter extra information stored in unused
+portions of file header (8 words max)<BR>
+<A HREF="#IMAlFmt">IMAlFmt</A> - Change the formatting assumed for an image
+file.<BR>
+<A HREF="#IMAlLab">IMAlLab</A> - Change the image titles.<BR>
+<A HREF="#IMAlMap">IMAlMap</A> - Change the columns rows sections to xyz
+mapping<BR>
+<A HREF="#IMAlMode">IMAlMode</A> - Change the image data type.<BR>
+<A HREF="#IMAlOrig">IMAlOrig</A> - Change the coordinate origin of the
+image.<BR>
+<A HREF="#IMAlPrt">IMAlPrt</A> - Enable or disable printing to standard
+output ("stdout").<BR>
+<A HREF="#IMAlRes">IMAlRes</A> - Alter multi-resolution information<BR>
+<A HREF="#IMAlRMS">IMAlRMS</A> - Alter the RMS deviation from the mean for the first wavelength<BR>
+<A HREF="#IMAlSam">IMAlSam</A> - Alter sampling size information<BR>
+<A HREF="#IMAlSiz">IMAlSiz</A> - Change the image size and starting point.<BR>
+<A HREF="#IMAlSpg">IMAlSpg</A> - Change the crystallography space group
+number.<BR>
+<A HREF="#IMAlSym">IMAlSym</A> - Change the symmetry information in the
+extended header.<BR>
+<A HREF="#IMAlTlt">IMAlTlt</A> - Change the tilt angles.<BR>
+<A HREF="#IMAlTltRot">IMAlTltRot</A> - Rotate the existing tilt angles
+to change tilt<BR>
+<A HREF="#IMAlTSt">IMAlTSt</A> -Change the time start field in the header
+of a data set<BR>
+<A HREF="#IMAlWav">IMAlWav</A> - Change the number of wavelengths in the
+stream and the wavelength.<BR>
+<A HREF="#IMAlWavMM">IMAlWavMM</A> - Change the min and max intensity for
+a particular wavelength number.<BR>
+<A HREF="#IMAlZWT">IMAlZWT</A> - Change the number of Z sections, wavelengths,
+and time-points in the image.
+
+<HR>
+
+<H3><A NAME="IMAlCel">IMAlCel</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlCel - Set the cell properties.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlCel(int <U>StreamNum</U>, const float <U>CellProps</U>[6]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialcel( <U>StreamNum</U>, <U>CellProps</U>)<BR>
+integer StreamNum<BR>
+real cellprops(6)
+
+<H4>Description</H4>
+
+<P>Set the cell properties of <U>StreamNum</U> to the values contained
+in <U>CellProps</U>. The cell properties consist of 3 cell lengths (x,y,z)
+and 3 cell angles (alpha,beta,gamma), in sequence.
+
+<HR>
+
+<H3><A NAME="IMAlCon">IMAlCon</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlCon - Set the image conversion mode during read/write operations
+from image storage.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlCon(int <U>StreamNum</U>, int <U>ConversionFlag</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialcon( <U>StreamNum</U>, <U>ConversionFlag</U>)<BR>
+integer StreamNum<BR>
+logical ConversionFlag
+
+<H4>Description</H4>
+
+<P>By default, images that are read from image storage are converted to
+4-byte floating-point data. Similarly, when images are written to image
+storage they are converted to the data type indicated by the image data
+type associated with the corresponding stream (see
+<A HREF="#IMAlMode">IMAlMode</A>). The default is <U>ConversionFlag</U>=TRUE. 
+
+<P>When <U>ConversionFlag</U>=FALSE, IM functions will not convert the
+image data type while reading or writing images. As a result, image data
+will be directly passed between memory and the storage device without conversion.
+
+<HR>
+
+<H3><A NAME="IMAlDat">IMAlDat</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlDat - Set various data values in the header.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlDat(int <U>StreamNum</U>, int <U>ImageType</U>,
+int <U>LensNum</U>, int <U>n1</U>, int <U>n2</U>, float <U>v1</U>,
+float <U>v2</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialdat( <U>StreamNum</U>, <U>ImageType</U>, <U>LensNum</U>, <U>n1</U>,
+<U>n2</U>, <U>v1</U>, <U>v2</U>)<BR>
+integer StreamNum,ImageType,LensNum,n1,n2<BR>
+real v1,v2
+
+<H4>Description</H4>
+
+<P>Alter Data type info<BR>
+<BR>
+lens = lens choice<BR>
+itype = 0 normal mono data<BR>
+itype = 1 tilt set N1 = axis, v1=delang<BR>
+itype = 2 stereo tilt set N1 = axis, v1=delang v2=stereo ang<BR>
+itype = 3 avg mono N1 = number sects avg, N2 = offset per sect<BR>
+itype = 4 avg stereo N1 = number sects avg, N2 = offset per sect<BR>
+&nbsp;&nbsp;&nbsp; V1 = stereo ang<BR>
+itype = 5 EM data, N1=objlens current (I*4)<BR>
+itype = 6 time lapse data, N1= # sections/stack<BR>
+&nbsp;&nbsp;&nbsp; V1= time interval between stacks<BR>
+itype = 7 multi-wavelength data<BR>
+&nbsp;&nbsp;&nbsp; N2= 0 all wave/focus, 1 for all focus/wave <BR>
+itype = 8 time lapse, multi wave data, N1= # sections/stack<BR>
+&nbsp;&nbsp;&nbsp; N2= 0 all wave/focus, 1 for all focus/wave <BR>
+&nbsp;&nbsp;&nbsp; V1= time interval between stacks<BR>
+NOTE: # wavelengths stored with wavelength data (ialwav)
+
+<HR>
+
+<H3><A NAME="IMAlDel">IMAlDel</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlDel - Set the (x,y,z) voxel size.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlDel(int <U>StreamNum</U>, const float <U>PixelSize</U>[3]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialdel(<U>StreamNum</U>, <U>PixelSize</U>)<BR>
+integer StreamNum<BR>
+real PixelSize(3)
+
+<H4>Description</H4>
+
+<P>Set the pixel size for <U>StreamNum</U>. The values in <U>PixelSize</U>
+are expected to be in microns for x, y, and z for optical data and angstroms
+for em data.
+
+<HR>
+
+<H3><A NAME="IMAlDis">IMAlDis</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlDis - Enable or disable image display.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlDis(int <U>Flag</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialdis( <U>Flag</U>)<BR>
+logical Flag
+
+<H4>Description</H4>
+
+<P>By default, <U>Flag</U>=TRUE, which indicates that images will be displayed
+whenever they are written to a stream that points to a window. When <U>Flag</U>=FALSE,
+images will not be automatically displayed with each IMWr___ call.
+
+<HR>
+
+<H3><A NAME="IMAlExHdr">IMAlExHdr</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlExHdr - Change the extended header values of a particular section.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlExHdr(int <U>StreamNum</U>, int <U>SectionNum</U>,
+const int *<U>IntValues</U>, const float *<U>FloatValues</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialexhdr( <U>StreamNum</U>, <U>SectionNum</U>, <U>IntValues</U>, <U>FloatValues</U>)<BR>
+integer StreamNum,SectionNum,IntValues(nints)<BR>
+real FloatValues(nreals)
+
+<H4>Description</H4>
+
+<P>Change the extended header values of section <U>SectionNum</U>. <U>IntValues</U>
+and <U>FloatValues</U> are vectors containing as many values as expected
+for <U>StreamNum</U>'s extended header. See <A HREF="#IMRtExHdrSize">IMRtExHdrSize</A>
+to get the current the number of reals and ints or <A HREF="#IMAlExHdrSize">IMAlExHdrSize</A>
+to set the number of elements.
+
+<HR>
+
+<H3><A NAME="IMAlExHdrSize">IMAlExHdrSize</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlExHdrSize - Set the extended header size for a <B>new </B>stream.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlExHdrSize(int <U>StreamNum</U>, int <U>NumIntegers</U>,
+int <U>NumFloats</U>, int <U>NumSections</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialexhdr_size(<U>StreamNum</U>, <U>NumIntegers</U>, <U>NumFloats</U>,
+<U>NumSections</U>)<BR>
+integer StreamNum,NumIntegers,NumFloats,NumSections
+
+<H4>Description</H4>
+
+<P>Set the number of integers (<U>NumIntegers</U>), floating-point values
+(<U>NumFloats</U>), and sections (<U>NumSections</U>) in the extended header.
+Use this function only when creating a new image stream and <B>before </B>writing
+any image data. Because image data are stored after the extended header,
+it is important to reserve space for the extended header.
+
+<HR>
+
+<H3><A NAME="IMAlExHdrValueZWT">IMAlExHdrValueZWT</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlExHdrValueZWT - Alter a value in the extended header.
+
+<H4>C Synopsis</H4>
+
+<P>int IMAlExHdrValueZWT(int <U>StreamNum</U>, int <U>ZSecNum</U>, int
+<U>WaveNum</U>, int <U>TimeNum</U>, int <U>Field</U>, double <U>Value</U>)
+
+<H4>Fortran Synopsis</H4>
+
+<P>ialexhdrvaluezwt( <U>StreamNum</U>, <U>ZSecNum</U>, <U>WaveNum</U>,
+<U>TimeNum</U>, <U>Field</U>, <U>Value</U>)<BR>
+integer StreamNum,ZSecNum,WaveNum,TimeNum,Field<BR>
+double Value
+
+<H4>Description</H4>
+
+<P>For a table of what fields are available, see <A HREF="#IMRtExHdrValueZWT">IMRtExHdrValueZWT</A>.
+
+<H4>Return Values</H4>
+
+<P>IMRtExHdrValueZWT returns TRUE when it is unable to alter the requested
+field. For example, if *<U>Field</U>=STAGE_X_COORD and the extended header
+type=API_EXT_HEADER_TYPE1 (see <A HREF="#IMRtExHdrType">IMRtExHdrType</A>).
+The function will also return TRUE if <U>ZSecNum</U>, <U>WaveNum</U>, or
+<U>TimeNum</U> are inappropriate for <U>StreamNum</U>. Also, if the extended
+header size is zero IMRtExHdrValueZWT will return TRUE. Otherwise the function
+returns FALSE.
+
+<HR>
+
+<H3><A NAME="IMAlExHdrZWT">IMAlExHdrZWT</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlExHdrZWT - Change all the extended header values for a particular
+Z,W,T section.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlExHdrZWT(int <U>StreamNum</U>, int <U>ZSecNum</U>,
+int <U>WaveNum</U>, int <U>TimeNum</U>, const int *<U>IntValues</U>,
+const float *<U>FloatValues</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialexhdr_zwt( <U>StreamNum</U>, <U>ZSecNum</U>, <U>WaveNum</U>, <U>TimeNum</U>,
+<U>IntValues</U>, <U>FloatValues</U>)<BR>
+integer StreamNum,ZSecNum,WaveNum,TimeNum,IntValues(nint)<BR>
+real FloatValues(nreals)
+
+<H4>Description</H4>
+
+<P>Change the extended header values for the section corresponding to z
+section=<U>ZSecNum</U>, wavelength number=<U>WaveNum</U>, and time-point
+number=<U>TimeNum</U>. See <A HREF="#IMAlExHdr">IMAlExHdr</A> for a description
+of <U>IntValues</U> and <U>FloatValues</U>.
+
+<P>A more convenient method of changing extended header values is to use
+<A HREF="#IMAlExHdrValueZWT">IMAlExHdrValueZWT</A>.
+
+<HR>
+
+<H3><A NAME="IMAlExt">IMAlExt</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlExt -Alters extra information stored in unused portions of file header.
+
+<H4>C Synopsis</H4>
+
+<P>int IMAlExt(int <U>istream</U>, const void *<U>extra</U>, int <U>istart</U>,
+int <U>nextra</U>)
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialext(<U>istream</U>, <U>extra</U>, <U>istart</U>, <U>nextra</U>)<BR>
+integer istream,istart,nextra<BR>
+char extra(nextra * 4)
+
+<H4>Description</H4>
+
+<P>Priism's format for the header has 26 bytes that are not used.  They are,
+indexed from one, bytes 99 and 100 and bytes 105 through 128.  The EM format
+for the header has 64 unused bytes:  bytes 97 through 100, 105 through 128,
+137 through 160, and 173 through 184.  IMAlExt can modify those parts of
+the header (and the intervening parts that are in use).  <U>extra</U> holds
+the data to be transfered to the header.  IMAlExt will affect <U>nextra</U>
+4 byte chunks in the header starting with the chunk at <U>istart</U> where 
+a value of one for <U>istart</U> is bytes 97 through 100 in the header.
+<U>istart</U> must be between one and 22, inclusive.  <U>nextra</U> must be
+between zero and 22, inclusive.  Values outside of those ranges will cause
+IMAlExt to do nothing.
+
+<HR>
+
+<H3><A NAME="IMAlFmt">IMAlFmt</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlFmt - Change the formatting assumed for an image file.
+
+<H4>C Synopsis</H4>
+
+<P>IMAlFmt(int <U>StreamNum</U>, int <U>Format</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialfmt( <U>StreamNum</U>, <U>Format</U>)<BR>
+integer StreamNum,Format
+
+<H4>Description</H4>
+
+<P>Two different formats for image data files are supported: one in which
+multi-byte quantities are written in big-endian format and one in which
+they are written in litte-endian format. Both formats use IEEE floating
+point representation. By default, the library automatically detects the
+format of the file when reading it and will apply any necessary byte swapping.
+When writing files, the default is to always write them in the big-endian
+format. If you wish to override these defaults, use IMAlFmt (or ialfmt
+in FORTRAN) to alter how subsequent reads and writes will be performed.
+Setting <U>Format</U> to a non-zero value will force the file to be
+interpreted in the little-endian format; setting it to zero forces the use
+of the big-endian format. 
+
+<P>Prior to the June 1999 release of Priism, the two formats supported
+were a big-endian one which used the IEEE representation for floating-point
+values and a little-endian one which used a VAX representation for floating-point
+values. Library support for the VAX format was dropped in the June 1999
+release and replaced with the little-endian format with IEEE floating-point
+values. 
+
+<HR>
+
+<H3><A NAME="IMAlLab">IMAlLab</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlLab - Change the image titles.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlLab(int <U>StreamNum</U>, const char *<U>Titles</U>, int <U>NumTitles</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine iallab( <U>StreamNum</U>, <U>Titles</U>,<U>NumTitles</U>)<BR>
+integer StreamNum,NumTitles<BR>
+char Titles(80,NumTitles)
+
+<H4>Description</H4>
+
+<P>Change the image <U>Titles</U>. <U>NumTitles</U> determines how many
+titles will be changed. <U>Titles</U> contains at least <U>NumTitles</U>
+title strings, each of which must contain exactly 80 characters.
+
+<HR>
+
+<H3><A NAME="IMAlMap">IMAlMap</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlMap- Change the columns rows sections to xyz mapping
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlMap(int <U>StreamNum</U>, const int <U>map</U>[3]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialmap(<U>StreamNum</U>, <U>map</U>)<BR>
+integer StreamNum,map(3)
+
+<H4>Description</H4>
+
+<P>Pixel spacing for x y and z is determined by the unit cell size / sampling
+size for each direction. By altering the mapping, were saying that for example,
+the x direction is now what used to be z (or sections) so that the pixel
+spacing for the z direction is now unit cell size of oldx / sampling size of
+oldx, yet we are retaining the original values for the x y and z unit cell and
+sampling.
+
+<HR>
+
+<H3><A NAME="IMAlMode">IMAlMode</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlMode - Change the image data type.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlMode(int <U>StreamNum</U>, int <U>PixelType</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialmod(<U>StreamNum</U>, <U>PixelType</U>)<BR>
+integer StreamNum,PixelType
+
+<H4>Description</H4>
+
+<P>Change the image data type to <U>PixelType</U>. Refer to the <A HREF="#PixelDataTypes">table
+of data types</A> for the valid values of <U>PixelType</U>. Note that the
+actual image data is <STRONG>not</STRONG> changed by using this function!
+Only the <U>PixelType</U> variable in the header is changed. The most
+appropriate time to use this function is when a new image stream is being
+created and <STRONG>before</STRONG> image data has been written to storage.
+
+<HR>
+
+<H3><A NAME="IMAlOrig">IMAlOrig</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlOrig - Change the coordinate origin of the image.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlOrig(int <U>StreamNum</U>, float <U>x0</U>, float <U>y0</U>,
+float <U>z0</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialorg( <U>StreamNum</U>, <U>x0</U>, <U>y0</U>, <U>z0</U>);<BR>
+integer StreamNum<BR>
+real x0,y0,z0
+
+<H4>Description</H4>
+
+<P>Set the coordinate origin of <U>StreamNum </U>to be <U>x0</U>, <U>y0</U>,
+and <U>z0</U>. Coordinates are expected in microns for optical data and
+angstroms for em data.
+
+<HR>
+
+<H3><A NAME="IMAlPrt">IMAlPrt</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlPrt - Enable or disable printing to standard output ("stdout").
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlPrt(int <U>Flag</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialprt( <U>Flag</U>)<BR>
+logical Flag
+
+<H4>Description</H4>
+
+<P>Certain IM functions will print information to stdout if <U>Format</U>=TRUE,
+which is the default. To disable printing, set <U>flag</U>=FALSE.
+
+<HR>
+
+<H3><A NAME="IMAlRes">IMAlRes</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlRes - Alter multi-resolution information
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlRes(int <U>istream</U>, int <U>mres</U>, int <U>mzfact</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialres(<U>istream</U>, <U>mres</U>, <U>mzfact</U>)<BR>
+integer istream,mres,mzfact
+
+<H4>Description</H4>
+
+<P>Updates the file header that the file referenced by <U>istream</U> has
+<U>mres</U> resolution levels where the reduction factor is 2 for the x and y
+axis and <U>mzfact</U> for the z axis.  If the stream points to a scratch
+image window, the library silently coerces the number of resolutions to be one.
+
+<HR>
+
+<H3><A NAME="IMAlRMS">IMAlRMS</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlRMS - Alters the root-mean-square deviation from the mean
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlRMS(int <U>istream</U>, float <U>frms</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialrms(<U>istream</U>, <U>frms</U><BR>
+integer istream<BR>
+real frms
+
+<H4>Description</H4>
+
+<P>If the header of the stream, <U>istream</U>, is stored in the EM format,
+sets the root-mean-square deviation from the mean in the header to be
+<U>frms</U>.  If the header is stored in another format, does nothing.
+
+<HR>
+
+<H3><A NAME="IMAlSam">IMAlSam</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlSam - Alter sampling size information
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlSam(int <U>istream</U>, const int <U>mxyz</U>[3]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialsam( <U>istream</U>, <U>mxyz</U>)<BR>
+integer istream, mxyz(3)
+
+<H4>Description</H4>
+
+<P>Updates the file header referenced by <U>istream</U> with how many divisions
+there are in a unit cell for the x, y, and z directions.  The number of
+divisions in x is read from the first element of <U>mxyz</U>, the number of
+divisions in y is read from the second element of <U>mxyz</U>, and the
+number of divisions in z is read from the third element <U>mxyz</U>.
+
+<P>Because the EM header format uses the number of divisions in z to store the
+number of slices per volume when the data is a volume stack (indicated by a
+space group number of 401), take care when modifying the sampling intervals
+with IMAlSam.
+
+<HR>
+
+<H3><A NAME="IMAlSiz">IMAlSiz</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlSiz - Change the image size and starting point.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlSiz(int <U>StreamNum</U>, const int <U>ixyz</U>[3], const int <U>nxyzst</U>[3]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialsiz( <U>StreamNum</U>, <U>ixyz</U>, <U>nxyzst</U> )<BR>
+integer StreamNum,ixyz(3),nxyzst(3)
+
+<H4>Description</H4>
+
+<P>Change the number of columns, rows, and sections (<U>ixyz</U>) in the
+image. 
+
+<P>In most cases, this function is used when configuring new streams. That
+is, before image data has been written to <U>StreamNum</U>. If image data
+already exists in StreamNum, then it probably doesn't make sense to the
+change the <U>ixyz</U>. 
+
+<P><U>nxyzst</U> sets the starting column, row, and section number for
+the image file. This is useful when you are selecting a subregion of a
+data set and want to retain the relative position in data space.
+
+<HR>
+
+<H3><A NAME="IMAlSpg">IMAlSpg</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlSpg - Change the crystallography space group number.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlSpg(int <U>StreamNum</U>, int <U>nspg</U>, int <U>mbsym</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialspg( <U>StreamNum</U>, <U>nspg</U>, <U>mbsym</U>)<BR>
+integer StreamNum,nspg,mbsym
+
+<H4>Description</H4>
+
+<P>Change the space group number with <U>nspg</U> and number of bytes in the
+extended header with <U>mbsym</U>.  It is advisable to allocate space in units
+of 1024 bytes.
+
+<P>If the stream uses the EM header format, take care when setting the space
+group number since the EM header format uses that value to indicate the
+structure of the data:  a value of zero for images or image stack, a value of
+one for volumes, and a value of 401 for a volume stack.  If the stream uses
+Priism's header format, the space group should be zero unless the extended
+header will be used to store the crystallography symmetry information.  When
+processing an existing data set to generate a new one, copying the space
+group number from the input to the output is usually best.  Exceptions to
+that would involve the EM header format and processing that converts slices to
+a volume or vice versa.
+
+<HR>
+
+<H3><A NAME="IMAlSym">IMAlSym</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlSym - Change the symmetry information in the extended header.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlSym(int <U>StreamNum</U>, int <U>mbsym</U>, const void *<U>jbsym</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialsym( <U>StreamNum</U>, <U>mbsym</U>, <U>jbsym</U>)<BR>
+integer StreamNum,mbsym<BR>
+char jbsym(mbsym)
+
+<H4>Description</H4>
+
+<P>Change the symmetry information of <U>StreamNum</U>. <U>mbsym</U> is
+the number of bytes of information to change and <U>jbsym</U> is a character
+string containing symmetry (extended header)information.
+
+<HR>
+
+<H3><A NAME="IMAlTlt">IMAlTlt</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlTlt - Change the tilt angles.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlTlt(int <U>StreamNum</U>, const float <U>vals</U>[3]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialtlt( <U>StreamNum</U>, <U>vals</U>)<BR>
+integer StreamNum<BR>
+real vals(3)
+
+<H4>Description</H4>
+
+<P>Tilt angles may be stored in the header for recording when an image
+is rotated. By convention, <U>vals</U> contains rotation angles about the
+X, Y, and Z axes.
+
+<HR>
+
+<H3><A NAME="IMAlTltRot">IMAlTltRot</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlTltRot - Change the tilt angles by rotating the existing tilt angles
+by the new rotation angles.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlTltRot(int <U>StreamNum</U>, const float <U>vals</U>[3]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialtlt_rot( <U>StreamNum</U>, <U>vals</U>)<BR>
+integer StreamNum<BR>
+real vals(3)
+
+<H4>Description</H4>
+
+<P>The existing tilt angles are modified by the new xyz tilt angles (<U>vals</U>).
+(premultiply)
+
+<HR>
+
+<H3><A NAME="IMAlTSt">IMAlTSt</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlTSt-Change the time start field in the header of a data set
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlTSt(int <U>StreamNum</U>, int <U>itst</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialtst(<U>StreamNum</U>, <U>itst</U>)<BR>
+integer StreamNum,itst
+
+<H4>Description</H4>
+
+<P>Alters the starting time to be <U>itst</U> in file <U>StreamNum</U>,
+
+<HR>
+
+<H3><A NAME="IMAlWav">IMAlWav</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlWav - Change the number of wavelengths in the stream and the wavelength.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlWav(int <U>StreamNum</U>, int <U>NumWaves</U>,
+const float *<U>Wavelength</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialwav(<U>StreamNum</U>, <U>NumWaves</U>, <U>Wavelength</U>)<BR>
+integer StreamNum,NumWaves<BR>
+real Wavelengths(5)
+
+<H4>Description</H4>
+
+<P>Change the number of wavelengths (<U>NumWaves</U>), up to a maximum
+of 5. <U>Wavelength</U> contains the wavelengths in nm.
+
+<P>If the stream uses the EM header format, setting the number of wavelengths
+to be greater than one will cause the IM library to switch the header to
+Priism's format.
+
+<HR>
+
+<H3><A NAME="IMAlWavMM">IMAlWavMM</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlWavMM - Change the minimum and maximum intensity for a particular
+wavelength number.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlWavMM(int <U>StreamNum</U>, int <U>WaveNum</U>,
+float <U>MinInten</U>, float <U>MaxInten</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialwav_mm(<U>StreamNum</U>, <U>WaveNum</U>, <U>MinInten</U>, <U>MaxInten</U>)<BR>
+integer StreamNum,WaveNum<BR>
+real MinInten, MaxInten
+
+<H4>Description</H4>
+
+<P>Update the minimum (<U>MinInten</U>) and maximum (<U>MaxInten</U>) intensities
+for a particular wavelength (<U>WaveNum</U>). Wavelength numbers range
+from 0 to 4.
+
+<HR>
+
+<H3><A NAME="IMAlZWT">IMAlZWT</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlZWT - Change the number of Z sections, wavelengths, and time-points
+in the image.
+
+<H4>C Synopsis</H4>
+
+<P>void IMAlZWT(int <U>StreamNum</U>, int <U>NumZSec</U>, int <U>NumWaves</U>,
+int <U>NumTimes</U>, int <U>ImgSequence</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine ialzwt( <U>StreamNum</U>, <U>NumZSec</U>, <U>NumWaves</U>, <U>NumTimes</U>,
+<U>ImgSequence</U>)<BR>
+integer StreamNum, NumZSec,NumWaves,NumTimes,ImgSequence
+
+<H4>Description</H4>
+
+<P>Use IMAlZWT to change the number of Z sections (<U>NumZSec</U>), wavelengths
+(<U>NumWaves</U>), and time-points (<U>NumTimes</U>). For new images, set
+these values to the expected numbers. Before closing the file, double-check
+the image size and change the values again. 
+
+<P>There are three possible image sequences for Imsubs images. See <A HREF="#ImageSequenceValues">Image
+Sequence Values</A>.
+
+<P>Similar to other IMAl functions, IMAlZWT does not actually change the
+number or arrangement of sections in a stored image. Use IMAlZWT to make
+the header consistent with the stored image.
+
+<P>IMAlZWT has the side effect of changing the position of the pointer to
+be at the same z and time section indices but to use the last wavelength.
+
+<P>If the stream points to a scratch image window, the library silently coerces
+the number of time points to be one.
+
+<P>If the stream uses the EM header format, setting the number of wavelengths
+to be greater than one will cause the IM library to switch the header format
+to Priism's header format.  If the stream uses the EM header format, the number
+of wavelengths is set to one, and the number of times points is set to be
+greater than one, Priism will set the space group to 401 (to signal that the
+data is a "volume stack") and set the z sampling interval equal to the number
+of z points.
+
+<HR>
+
+<H3><A NAME="ReturnImageInformation">Return Image Information - "IMRt"</A></H3>
+
+<P>The IMRt functions return information about the image. To obtain valid
+information, the <A HREF="#IMRdHdr">IMRdHdr</A> function must be used before
+calling IMRt functions. 
+
+<P><A HREF="#IMRtCel">IMRtCel</A> - Return cell information: size and axis
+separation angles.<BR>
+<A HREF="#IMRtDat">IMRtDat</A> - Return various information about the image,
+such as the image type and lens ID<BR>
+<A HREF="#IMRtDel">IMRtDel</A> - Return the pixel size, in microns (or
+Angstroms)<BR>
+<A HREF="#IMRtExHdr">IMRtExHdr</A> - Return extended header values for
+a particular section.<BR>
+<A HREF="#IMRtExHdrSize">IMRtExHdrSize</A> - Return the number of exhdr
+values stored for each section of the image.<BR>
+<A HREF="#IMRtExHdrType">IMRtExHdrType</A> - Return the extended header
+type.<BR>
+<A HREF="#IMRtExHdrValueZWT">IMRtExHdrValueZWT</A> - Return a value from
+the extended header.<BR>
+<A HREF="#IMRtExHdrZWT">IMRtExHdrZWT</A> - Return extended header values
+for a particular Z-W-T section<BR>
+<A HREF="#IMRtExt">IMRtExt</A> - Return extra information stored in header<BR>
+<A HREF="#IMRtFmt">IMRtFmt</A> - Return the formatting assumed for a file<BR>
+<A HREF="#IMRtLab">IMRtLab</A> - Return the title strings and number of
+active titles.<BR>
+<A HREF="#IMRtMap">IMRtMap</A> - Return the column, row, section mapping
+info.<BR>
+<A HREF="#IMRtMode">IMRtMode</A> - Return the image data type.<BR>
+<A HREF="#IMRtMst">IMRtMst</A> - Return the starting coordinates of the
+image array.<BR>
+<A HREF="#IMRtOrig">IMRtOrig</A> - Return the coordinate origin, in microns.<BR>
+<A HREF="#IMRtRes">IMRtRes</A> - Return multi-resolution information for
+a file or window<BR>
+<A HREF="#IMRtResInfo">IMRtResInfo</A> - Return absolute information about
+the current resolution setting.<BR>
+<A HREF="#IMRtRMS">IMRtRMS</A> - Return the RMS deviation from the mean for the first wavelength<BR>
+<A HREF="#IMRtSam">IMRtSam</A> - Return the sampling size<BR>
+<A HREF="#IMRtSiz">IMRtSiz</A> - Return size information about the image
+stream.<BR>
+<A HREF="#IMRtSecNum">IMRtSecNum</A> - Return the section number for a
+given Z, W, and T position.<BR>
+<A HREF="#IMRtSpg">IMRtSpg</A> - Return the crystallography space group
+information.<BR>
+<A HREF="#IMRtSym">IMRtSym</A> - Return the symmetry information.<BR>
+<A HREF="#IMRtTlt">IMRtTlt</A> - Return the tilt angles.<BR>
+<A HREF="#IMRtTSt">IMRtTSt</A> -Return the time start field from the header
+of a data set<BR>
+<A HREF="#IMRtWav">IMRtWav</A> - Return information about the image stream's
+wavelengths.<BR>
+<A HREF="#IMRtWavMM">IMRtWavMM</A> - Return the minimum and maximum intensity
+of a particular wavelength.<BR>
+<A HREF="#IMRtZWT">IMRtZWT</A> - Return the number of Z sections, wavelengths,
+and time-points.<BR>
+<A HREF="#IMRtZWTNum">IMRtZWTNum</A> - Return the ZWT positions given the
+section number.
+
+<HR>
+
+<H3><A NAME="IMRtCel">IMRtCel</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtCel - Return cell information: size and axis separation angles.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtCel(int <U>StreamNum</U>, float <U>CellProps</U>[6]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtcel( <U>StreamNum</U>, <U>CellProps</U>)<BR>
+integer StreamNum<BR>
+real cellprops(6)
+
+<H4>Description</H4>
+
+<P>Cell information is rarely used. In most situations, however, it is
+important that <U>CellProps</U>[3], <U>CellProps</U>[4], and <U>CellProps</U>[5]
+should equal 90 degrees.
+
+<HR>
+
+<H3><A NAME="IMRtDat">IMRtDat</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtDat - Return various information about the image, such as the image
+type and lens ID number.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtDat(int <U>StreamNum</U>, int *<U>ImageType</U>, int
+*<U>LensNum</U>, int *<U>n1</U>, int *<U>n2</U>, float *<U>v1</U>, float
+*<U>v2</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtdat( <U>StreamNum</U>, <U>ImageType</U>, <U>LensNum</U>, <U>n1</U>,
+<U>n2</U>, <U>v1</U>, <U>v2</U>)<BR>
+integer StreamNum,ImageType,LensNum,n1,n2<BR>
+real v1,v2
+
+<H4>Description</H4>
+
+<P>return data type info<BR>
+lens = lens choice<BR>
+itype = 0 normal mono data N1=intensity,v1=time<BR>
+itype = 1 tilt set N1 = axis, v1=delang<BR>
+itype = 2 stereo tilt set N1 = axis, v1=delang v2=stereo ang<BR>
+itype = 3 avg mono N1 = number sects avg, N2 = offset per sect<BR>
+itype = 4 avg stereo N1 = number sects avg, N2 = offset per sect<BR>
+V1 = stereo ang<BR>
+itype = 5 EM data, N1=objlens current (I*4)<BR>
+itype = 6 time lapse data, N1= # sections/stack<BR>
+V1= time interval between stacks<BR>
+itype = 7 multi-wavelength data<BR>
+N2= 0 all wave/focus, 1 for all focus/wave <BR>
+itype = 8 time lapse, multi wave data, N1= # sections/stack<BR>
+N2= 0 all wave/focus, 1 for all focus/wave <BR>
+V1= time interval between stacks<BR>
+NOTE: # wavelengths stored with wavelength data (ialwav)
+
+<HR>
+
+<H3><A NAME="IMRtDel">IMRtDel</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtDel - Return the pixel size, in microns.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtDel(int <U>StreamNum</U>, float <U>PixelSize</U>[3]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtdel(<U>StreamNum</U>, <U>PixelSize</U>)<BR>
+integer StreamNum<BR>
+real PixelSize(3)
+
+<H4>Description</H4>
+
+<P><U>PixelSize</U> is given in microns for the X, Y, and Z. The X,Y values
+are not necessarily equal, and the Z value often represents optical section
+spacing.
+
+<HR>
+
+<H3><A NAME="IMRtExHdr">IMRtExHdr</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtExHdr - Return <A HREF="#Image File Extended">extended header</A>
+values for a particular section.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtExHdr(int <U>StreamNum</U>, int <U>SectionNum</U>,
+int *<U>IntValues</U>, float *<U>FloatValues</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtexhdr( <U>StreamNum</U>, <U>SectionNum</U>, <U>IntValues</U>, <U>FloatValues</U>)<BR>
+integer StreamNum,SectionNum, IntValues(nints)<BR>
+real FloatValues(nreals)
+
+<H4>Description</H4>
+
+<P>The integer and floating-point values for section number <U>SectionNum</U>
+are returned in <U>IntValues</U> and <U>FloatValues</U>, respectively.
+Use <A HREF="#IMRtExHdrSize">IMRtExHdrSize</A> to determine the size
+requirements for <U>IntValues</U> and <U>FloatValues</U>. 
+
+<P>In most cases, <A HREF="#IMRtExHdrZWT">IMRtExHdrZWT</A> is a convenient
+alternative to IMRtExHdr.
+
+<HR>
+
+<H3><A NAME="IMRtExHdrSize">IMRtExHdrSize</A></H3>
+
+<P>Name 
+
+<P>IMRtExHdrSize - Return the number of integer and floating-point values
+stored for <STRONG>each</STRONG> section of the image.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtExHdrSize(int <U>StreamNum</U>, int *<U>NumInts</U>,
+int *<U>NumFloats</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtexhdr_size(<U>StreamNum</U>, <U>NumInts</U>, <U>NumFloats</U>)<BR>
+integer StreamNum,NumIntegers,NumFloats
+
+<H4>Description</H4>
+
+<P><U>NumInts</U> and <U>NumFloats</U> describe the structure of the <A HREF="#Image File Extended">extended
+header</A>. Use this function before attempting to access extended header
+information with functions such <A HREF="#IMRtExHdr">IMRtExHdr</A>.
+
+<HR>
+
+<H3><A NAME="IMRtExHdrType">IMRtExHdrType</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtExHdrType - Return the extended type.
+
+<H4>C Synopsis</H4>
+
+<P>int IMRtExHdrType(int <U>StreamNum</U>, int *<U>ExtHeaderType</U>, int
+*<U>NumInts</U>, int *<U>NumFloats</U>)
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtexthdrtype(<U>StreamNum</U>, <U>ExtHeaderType</U>, <U>NumInts</U>, <U>NumFloats</U>)<BR>
+integer StreamNum,ExtHeaderType,NumInts,NumFloats
+
+<H4>Description</H4>
+
+<P>There are five possible values of *<U>iExtHeaderType</U>.  The types are
+defined in IWApiConstants.h.
+
+<DL>
+  <DT>UNKNOWN_EXT_HEADER_TYPE<DD>The number of integer and floating-point
+    values per section does not match a known format for the extended header.
+  <DT>UCSF_EXT_HEADER_TYPE1<DD>Has one integer and one floating-point value
+    per section.  The integer value is the photosensor measurement and the
+    floating-point value is the time elapsed, in seconds, since the start of
+    the experiment.
+  <DT>API_EXT_HEADER_TYPE1<DD>From DeltaVision 1.20, has two floating-point
+    values per section.  The first is the photosensor measurement, and the
+    second is the time elapsed, in seconds, since the start of the
+    experiment.
+  <DT>API_EXT_HEADER_TYPE2<DD>From DeltaVision 2.00 and later, has 8 integer
+    values and 32 floating-point values per section.  Some of these are
+    reserved for future use; the ones currently used are:
+    <DL>
+      <DT>1st floating-point value<DD>photosensor measurement
+      <DT>2nd floating-point value<DD>time elapsed, in seconds, since start
+        of experiment
+      <DT>3rd floating-point value<DD>stage's x coordinate
+      <DT>4th floating-point value<DD>stage's y coordinate
+      <DT>5th floating-point value<DD>stage's z coordinate
+      <DT>6th floating-point value<DD>minimum intensity in image
+      <DT>7th floating-point value<DD>maximum intensity in image
+      <DT>8th floating-point value<DD>mean image intensity
+      <DT>9th floating-point value<DD>exposure time in seconds
+      <DT>10th floating-point value<DD>neutral density value
+      <DT>11th floating-point value<DD>excitation filter wavelength
+      <DT>12th floating-point value<DD>emission filter wavelength
+      <DT>13th floating-point value<DD>intensity scaling factor
+      <DT>14th floating-point value<DD>energy conversion factor
+    </DL>
+  <DT>UCSF_EXT_HEADER_TYPE2<DD>Has three integer values and one floating-point
+    value per section.  The first two integer values are the low and high
+    components, respectively, of a 64-bit measurement of the photosensor.  The
+    third integer values is the number of conversions that the photosensor
+    performed to obtain the measurement.  The floating-point value is
+    the time elapsed, in seconds, since the start of the experiment.
+</DL>
+
+<P>The function also returns the number of integer (*<U>NumInts</U>) and
+floating point (*<U>NumFloats</U>) values stored for each section of the
+image.
+
+<H4>Return Values</H4>
+
+<P>IMRtExHdrType returns TRUE when an error has occurred. For example, when
+there is no extended header. Otherwise the function returns FALSE.
+
+<HR>
+
+<H3><A NAME="IMRtExHdrValueZWT">IMRtExHdrValueZWT</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtExHdrValueZWT - Return a value from the extended header.
+
+<H4>C Synopsis</H4>
+
+<P>int IMRtExHdrValueZWT(int <U>StreamNum</U>, int <U>ZSecNum</U>, int
+<U>WaveNum</U>, int <U>TimeNum</U>, int <U>Field</U>, double *<U>Value</U>)
+
+<H4>Fortran Synopsis</H4>
+
+<P>irtexhdrvaluezwt(<U>StreamNum</U>, <U>ZSecNum</U>, <U>WaveNum</U>, <U>TimeNum</U>,
+<U>Field</U>, <U>Value</U>)<BR>
+integer StreamNum,ZSecNum,WaveNum,TimeNum, Field<BR>
+double Value
+
+<H4>Description</H4>
+
+<P>Return a <U>Field</U> from the extended header for a given Z section
+number (<U>ZSecNum</U>), wavelength number (<U>WaveNum</U>), and time point
+number (<U>TimeNum</U>). The fields are defined in IWApiConstants.h and are
+shown below for the different extended header types currently defined.
+
+<H5>API and UCSF Style 1</H5>
+<DL>
+  <DT>PHOTOSENSOR_READING<DD>photosensor reading in arbitrary units
+  <DT>TIME_STAMP_SECS<DD>time stamp in seconds since the experiment began
+</DL>
+
+<H5>UCSF Style 2</H5>
+<DL>
+  <DT>PHOTOSENSOR_READING<DD>photosensor reading in arbitrary units
+  <DT>TIME_STAMP_SECS<DD>time stamp in seconds since the experiment began
+  <DT>PHOTOSENSOR_NCONV<DD>number of conversions performed for photosensor
+    measurement
+</DL>
+
+<H5>API Style 2</H5>
+<DL>
+  <DT>PHOTOSENSOR_READING<DD>photosensor reading, typically in mV
+  <DT>TIME_STAMP_SECS<DD>time stamp in seconds since the experiment began
+  <DT>STAGE_X_COORD<DD>stage's x coordinate
+  <DT>STAGE_Y_COORD<DD>stage's y coordinate
+  <DT>STAGE_Z_COORD<DD>stage's z coordinate
+  <DT>MIN_INTEN<DD>minimum intensity
+  <DT>MAX_INTEN<DD>maximum intensity
+  <DT>MEAN_INTEN<DD>mean intensity
+  <DT>EXP_TIME<DD>exposure time in seconds
+  <DT>ND_FILTER<DD>neutral density value
+  <DT>EX_WAVELEN<DD>excitation filter wavelength
+  <DT>EM_WAVELEN<DD>emission filter wavelength
+  <DT>INTEN_SCALING<DD>intensity scaling factor, usually 1
+  <DT>ENERGY_CONV_FACTOR<DD>energy conversion factor, usually 1
+</DL>
+
+<H4>Return Values</H4>
+
+<P>IMRtExHdrValueZWT returns TRUE when it is unable to return the requested
+field. For example, if *<U>Field</U>=STAGE_X_COORD and the extended header
+type=API_EXT_HEADER_TYPE1 (see <A HREF="#IMRtExHdrType">IMRtExHdrType</A>).
+The function will also return TRUE if <U>ZSecNum</U>, <U>WaveNum</U>, or
+<U>TimeNum</U> are inappropriate for <U>StreamNum</U>. Also, if the extended
+header size is zero IMRtExHdrValueZWT will return TRUE. Otherwise the function
+returns FALSE.
+
+<HR>
+
+<H3><A NAME="IMRtExHdrZWT">IMRtExHdrZWT</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtExHdrZWT - Return extended header values for a particular Z section,
+wavelength, and time-point.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtExHdrZWT(int StreamNum, int ZSecNum, int WaveNum, int TimeNum,
+int *IntValues, float *FloatValues);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtexhdr_zwt( <U>StreamNum</U>, <U>ZSecNum</U>, <U>WaveNum</U>, <U>TimeNum</U>,
+<U>IntValues</U>, <U>FloatValues</U>)<BR>
+integer StreamNum,ZSecNum,WaveNum,TimeNum,IntValues(nint)<BR>
+real FloatValues(nreals)
+
+<H4>Description</H4>
+
+<P>The integer and floating-point values for the requested Z section (<U>ZSecNum</U>),
+wavelength (<U>WaveNum</U>), and time-point (<U>TimeNum</U>) are returned
+in <U>IntValues</U> and <U>FloatValues</U>, respectively. 
+
+<P>Use <A HREF="#IMRtExHdrSize">IMRtExHdrSize</A> to determine the size
+requirements for <U>IntValues</U> and <U>FloatValues</U>.
+
+<HR>
+
+<H3><A NAME="IMRtExt">IMRtExt</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtExt - Returns extra information stored in header.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtExt(int istream, void *extra, int istart, int nextra);
+
+<H4>Fortran Synopsis</H4>
+
+<P>irtext(<U>istream</U>, <U>extra</U>, <U>istart</U>, <U>nextra</U>)<BR>
+integer istream,istart,nextra<BR>
+char extra(nextra * 4)
+
+<H4>Description</H4>
+
+<P>There are unused parts of the header; the description for
+<A HREF="#IMAlExt">IMAlExt</A> specifies where they are.  IMRtExt can
+return what is in those portions (and the intervening segments that are in
+use).  IMRtExt will copy <U>nextra</U> chunks of four bytes starting at
+<U>istart</U> and store them in <U>extra</U>.  A value of one for
+<U>istart</U> corresponds to the four byte chunk at bytes 97 through 100 in
+the header.  <U>istart</U> must be between one and 22, inclusive.
+<U>nextra</U> must be between zero and 22, inclusive.  If either is outside
+of those ranges, IMRtExt does nothing.
+
+<HR>
+
+<H3><A NAME="IMRtFmt">IMRtFmt</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtFmt - Return the formatting assumed for an image file.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtFmt(int <U>StreamNum</U>, int *<U>iformat</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtfmt(<U>StreamNum</U>, <U>iformat</U>)<BR>
+integer StreamNum, iformat
+
+<H4>Description</H4>
+
+<P>Sets <U>iformat</U> to zero if the file is assumed to be in big-endian byte
+order or one if the file is assumed to be in little-endian byte order.  See
+the description of <A HREF="#IMAlFmt">IMAlFmt</A> for more information about
+byte ordering.
+
+<HR>
+
+<H3><A NAME="IMRtLab">IMRtLab</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtLab - Return the title strings and number of active titles.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtLab(int <U>StreamNum</U>, char <U>Titles</U>[10][80],
+int *<U>NumTitles</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtlab( <U>StreamNum</U>, <U>Titles</U>, <U>NumTitles</U>)<BR>
+integer StreamNum,NumTitles<BR>
+char Titles(80,NumTitles)
+
+<H4>Description</H4>
+
+<P>Return the title strings in a two dimensional character array (<U>Titles</U>).
+Space for as many as 10 titles, each of which is exactly 80 characters
+long, should be provided. <STRONG>Title strings are not necessarily null
+terminated</STRONG>.
+
+
+<P>The actual number of titles contained within the header is given by
+<U>NumTitles</U>. 
+
+<P><U>NumTitles</U> is between 0 and 10.  Future versions of the library,
+however, may limit the number of titles to 4 or 5.
+
+<HR>
+
+<H3><A NAME="IMRtMap">IMRtMap</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtMap - Return the column, row, section mapping info.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtMap(int <U>StreamNum</U>, int map[3]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtmap(<U>StreamNum</U>, <U>map</U>)<BR>
+integer StreamNum,map(3)
+
+<H4>Description</H4>
+
+<P>Pixel spacing for x y and z is determined by the unit cell size / sampling
+size for each direction. This call returns for x y and z which dimension will
+be assigned to columns, which to row and which to sections when reporting
+the pixel spacing for the different dimensions of the image data.
+
+<HR>
+
+<H3><A NAME="IMRtMode">IMRtMode</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtMode - Return the image data type.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtMode(int <U>StreamNum</U>, int *<U>PixelType</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtmod(<U>StreamNum</U>, <U>PixelType</U>)<BR>
+integer StreamNum, PixelType
+
+<H4>Description</H4>
+
+<P>Sets <U>PixelType</U> to indicate how the pixel values are stored for
+the given stream.  Possible values for <U>PixelType</U> are shown in
+<A HREF="#PixelDataTypes">pixel data types table</A>.
+
+<HR>
+
+<H3><A NAME="IMRtMst">IMRtMst</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtMst - Return the starting coordinates of the image array.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtMst(int <U>StreamNum</U>, int <U>StartCoordinates</U>[3]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtmst( <U>StreamNum</U>, <U>StartCoordinates</U>)<BR>
+integer StreamNum, StartCoordinates
+
+<H4>Description</H4>
+
+<P>Returns the xyz data coordinates of the starting position of the image
+file into <U>StartCoordinates</U> .
+
+<HR>
+
+<H3><A NAME="IMRtOrig">IMRtOrig</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtOrig - Return the coordinate origin, in microns.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtOrig(int StreamNum, float *<U>x0</U>, float *<U>y0</U>,
+float *<U>z0</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtorg( <U>StreamNum</U>, <U>x0</U>, <U>y0</U>, <U>z0</U>);<BR>
+integer StreamNum<BR>
+real x0,y0,z0
+
+<H4>Description</H4>
+
+<P>The coordinate origin, usually in microns, of the image stream is returned
+into (<U>x0</U>, <U>y0</U>, <U>z0</U>).
+
+<HR>
+
+<H3><A NAME="IMRtRes">IMRtRes</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtRes - Return multi-resolution information
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtRes(int <U>istream</U>, int *<U>mres</U>, int *<U>mzfact</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtres(<U>istream</U>, <U>mres</U>, <U>mzfact</U>)<BR>
+integer istream,mres,mzfact
+
+<H4>Description</H4>
+
+<P>Returns info that the file referenced by <U>istream</U> has <U>mres</U>
+resolution levels where the reduction factor is 2 for the x and y axis and
+<U>mzfact</U> for the z axis.
+
+<HR>
+
+<H3><A NAME="IMRtResInfo">IMRtResInfo</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtResInfo - Return absolute information about the current resolution
+setting.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtResInfo(int <U>istream</U>, int *<U>nx</U>, int *<U>ny</U>,
+int *<U>nz</U>, int *<U>mxyfact</U>, int *<U>mzfact</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtres_info( <U>istream</U>, <U>nx</U>, <U>ny</U>, <U>nz</U>, <U>mxyfact</U>,
+<U>mzfact</U>)<BR>
+integer istream,nx,ny,nz, mxyfact, mzfact
+
+<H4>Description</H4>
+
+<P>Given the <U>istream </U>of a multi-resolution image file, returns<BR>
+<U>nx</U>, <U>ny</U>, <U>nz</U>: absolute image size at current resolution<BR>
+<U>mxyfact</U>: current total reduction factor in X.Y<BR>
+<U>mzfact</U>: current total reduction factor in Z<BR>
+The current resolution setting is set using the call <A HREF="#IMPosnRes">IMPosnRes</A>.
+
+<HR>
+
+<H3><A NAME="IMRtRMS">IMRtRMS</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtRMS - Returns the root-mean-square deviation from the mean.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtRMS(int <U>StreamNum</U>, float* <U>p_rms</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtrms(<U>StreamNum</U>, <U>rms</U>)<BR>
+integer StreamNum<BR>
+real rms
+
+<H4>Description</H4>
+
+<P>If the header of the stream, <U>StreamNum</U>, is stored in the EM format,
+sets *<U>p_rms</U> (<U>rms</U> in Fortran) to root-mean-squared deviation from
+the mean stored in the header.  Otherwise, sets *<U>p_rms</U> to negative one.
+
+<HR>
+
+<H3><A NAME="IMRtSam">IMRtSam</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtSam - Return the sampling size.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtSam(int <U>StreamNum</U>, int <U>mxyz</U>[3]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtsam(<U>StreamNum</U>, <U>mxyz</U> )<BR>
+integer StreamNum, mxyz(3)
+
+<H4>Description</H4>
+
+<P>Sets the first element of <U>mxyz</U> equal to the number of divisions
+of the unit cell in the x direction.  Sets the second element of <U>mxyz</U>
+equal to the number of divisions of the unit cell in the y direction.  Sets
+the third element of <U>mxyz</U> equal to the number of divisions of the unit
+cell in the z direction.
+
+<HR>
+
+<H3><A NAME="IMRtSiz">IMRtSiz</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtSiz - Return size information about the image stream.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtSiz(int StreamNum, int <U>nxyz</U>[3], int <U>mxyz</U>[3],
+int <U>StartCoordinates</U>[3]); 
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtsiz( <U>StreamNum</U>, <U>nxyz</U>, <U>mxyz</U>, <U>StartCoordinates</U>)<BR>
+integer StreamNum,nxyz(3),mxyz(3),StartCoordinates(3)
+
+<H4>Description</H4>
+
+<P>Returns three size related arrays.  <U>nxyz</U> holds the dimensions for
+the images:  the first component is the number of elements in x, the second is
+the number of elements in y, and the third is the number of images.
+<U>mxyz</U> holds the number of divisions in x, y, and z per unit cell.  The
+values in <U>mxyz</U> usually follow one of the following conventions:
+
+<UL>
+  <LI>All three components are equal to one.  This is the common convention
+    for data from from optical microscopes.
+  <LI>The first two components are the same as the first two components of
+    <U>ixyz</U>.  The third component is equal to the number of z sections.
+    This is the common convention for 3D reconstructions from EM tomography.
+</UL>
+
+<P><U>StartCoordinates</U> contains the starting coordinates of the file.
+
+<HR>
+
+<H3><A NAME="IMRtSecNum">IMRtSecNum</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtSecNum - Return the section number for a given the Z, W, and T position.
+
+<H4>C Synopsis</H4>
+
+<P>int IMRtSecNum(int <U>StreamNum</U>,int <U>ZSecNum</U>, int <U>WaveNum</U>,
+int <U>TimeNum</U>, int *<U>SecNum</U>)
+
+<H4>Fortran Synopsis</H4>
+
+<P>irtsecnum(<U>StreamNum</U>, <U>ZSecNum</U>, <U>WaveNum</U>, <U>TimeNum</U>,<U>SecNum</U>)<BR>
+integer StreamNum, ZSecNum,WaveNum,TimeNum,SecNum
+
+<H4>Description</H4>
+
+<P>Calculate the section number *<U>SecNum</U> (between 0 and the total
+number of sections) for the given <U>ZSecNum</U>, <U>WaveNum</U>, <U>TimeNum</U>.
+The result depends on the image sequence: WZT, ZTW, or ZWT.
+
+<H4>Return Values</H4>
+
+<P>The function returns TRUE if <U>ZSecNum</U>, <U>WaveNum</U>, or <U>TimeNum</U>
+are inappropriate for StreamNum. Otherwise the function returns FALSE.
+
+<HR>
+
+<H3><A NAME="IMRtSpg">IMRtSpg</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtSpg - Return the crystallography space group information.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtSpg(int <U>StreamNum</U>, int *nspg, int *mbsym);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtspg( <U>StreamNum</U>, <U>nspg</U>, <U>mbsym</U>)<BR>
+integer StreamNum,nspg,mbsym
+
+<H4>Description</H4>
+
+<P>Returns the space group number into <U>nspg</U> (set to 0 for image
+data), and number of bytes in the extended header (symmetry info for crystallography
+data) to <U>mbsym.</U>
+
+<HR>
+
+<H3><A NAME="IMRtSym">IMRtSym</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtSym - Return the symmetry information.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtSym(int <U>StreamNum</U>, int *<U>NumSymBytes</U>, void *<U>SymmetryInfo</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtsym(<U>StreamNum</U>, <U>NumSymBytes</U>, <U>SymmetryInfo</U>)<BR>
+integer StreamNum,NumSymBytes<BR>
+char SymmetryInfo(numSymBytes)
+
+<H4>Description</H4>
+
+<P>Returns symmetry information (or extended header info) into <U>SymmetryInfo</U>.
+The size of <U>SymmetryInfo</U> should be determined in advance by calling
+<A HREF="#IMRtSpg">IMRtSpg</A>. <U>NumSymBytes</U> equals the size, in
+bytes of the <U>SymmetryInfo</U> string. <U>SymmetryInfo</U> may not be
+null terminated.
+
+<HR>
+
+<H3><A NAME="IMRtTlt">IMRtTlt</A></H3>
+
+<H4>Name</H4>
+
+<P>Return the tilt angles.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtTlt(int <U>StreamNum</U>, float <U>TiltAngles</U>[3]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irttlt( <U>StreamNum</U>, <U>TiltAngles</U>)<BR>
+integer StreamNum<BR>
+real TiltAngles(3)
+
+<H4>Description</H4>
+
+<P>Return the tilt angles about xyz into <U>TiltAngles</U>.
+
+<HR>
+
+<H3><A NAME="IMRtTSt">IMRtTSt</A></H3>
+
+<H4>Name</H4>
+
+<P>IMAlTSt-Return the time start field from the header of a data set
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtTSt(int <U>StreamNum</U>, int *<U>itst</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irttst(<U>StreamNum</U>, <U>itst</U>)<BR>
+integer StreamNum,itst
+
+<H4>Description</H4>
+
+<P>The starting time value for the image stream is returned in <U>itst</U>
+. 
+
+<HR>
+
+<H3><A NAME="IMRtWav">IMRtWav</A></H3>
+
+<H4>Name</H4>
+
+<P>Return information about the image stream's wavelengths.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtWav(int <U>StreamNum</U>, int *<U>NumWaves</U>, float
+<U>Wavelengths</U>[IW_MAX_WAVE]);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtwav(<U>StreamNum</U>, <U>NumWaves</U>, <U>Wavelengths</U>)<BR>
+integer StreamNum,NumWaves<BR>
+real Wavelengths(5)
+
+<H4>Description</H4>
+
+<P>The number of wavelengths within the image stream is returned in
+<U>NumWaves</U>.  The maximum number of wavelengths is 5 (IW_MAX_WAVE).
+<U>NumWave</U> should be at least 1. 
+
+<P>The wavelengths, usually in nanometers, are returned in <U>Wavelengths</U>,
+which should be of size IW_MAX_WAVE.
+
+<HR>
+
+<H3><A NAME="IMRtWavMM">IMRtWavMM</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtWavMM - Return the minimum and maximum intensity of a particular
+wavelength.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtWavMM(int <U>StreamNum</U>, int <U>WaveNum</U>,
+float *<U>MinIntensity</U>, float *<U>MaxIntensity</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtwav_mm(<U>StreamNum</U>, <U>WaveNum</U>, <U>MinIntensity</U>, <U>MaxIntensity</U>)<BR>
+integer StreamNum,WaveNum<BR>
+real MinInten, MaxInten
+
+<H4>Description</H4>
+
+<P>The desired wavelength is specified with <U>WaveNum</U>, which can range
+from 0 to (IW_MAX_WAVE-1). If the image has only 3 wavelengths, however,
+the valid range for <U>WaveNum</U> is 0 - 2.
+
+<HR>
+
+<H3><A NAME="IMRtZWT">IMRtZWT</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtZWT - Return the number of Z sections, wavelengths, and time-points.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRtZWT(int <U>StreamNum</U>, int *<U>NumZSec</U>, int *<U>NumWaves</U>,
+int *<U>NumTimes</U>, int *<U>ImgSequence</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irtzwt( <U>StreamNum</U>, <U>NumZSec</U>, <U>NumWaves</U>, <U>NumTimes</U>,
+<U>ImgSequence</U>)<BR>
+integer StreamNum, NumZSec,NumWaves,NumTimes,ImgSequence
+
+<H4>Description</H4>
+
+<P>The number of Z sections, wavelengths, and time-points are given by
+<U>NumZSec</U>, <U>NumWavelengths</U>, and <U>NumTimePoints</U>, respectively.
+
+
+<P>There are three possible image sequences for Imsubs images. See <A HREF="#ImageSequenceValues">Image
+Sequence Values</A>.
+
+<HR>
+
+<H3><A NAME="IMRtZWTNum">IMRtZWTNum</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRtZWTNum - Return the ZWT positions given the section number.
+
+<H4>C Synopsis</H4>
+
+<P>int IMRtZWTNum(int <U>iStream</U>,int *<U>iz</U>, int *<U>iw</U>, int
+*<U>it</U>, int <U>iSecNum</U>)
+
+<H4>Fortran Synopsis</H4>
+
+<P>irtzwtnum( iStream,iz, iw, it, iSecNum)<BR>
+integer iStream,iz,iw,it,iSecNum
+
+<H4>Description</H4>
+
+<P>Given the section number <U>iSecNum</U>, and based on the image sequence
+of the data file referenced by iStream, the current <U>iz</U>, <U>iw</U>, and
+<U>it</U> for the section is returned.
+
+<HR>
+
+<H3><A NAME="ReadImageInformation">Read Image Information - "Rd"</A></H3>
+
+<P>Read image content from the storage device. 
+
+<P><A HREF="#IMRdLin">IMRdLin</A> - Read the next line in the image stream.<BR>
+<A HREF="#IMRdPal">IMRdPal</A> - Read part of the next line.<BR>
+<A HREF="#IMRdPas">IMRdPas</A> - Read part of the next section.<BR>
+<A HREF="#IMRdSec">IMRdSec</A> - Read the next section.<BR>
+<A HREF="#IMRdSecl">IMRdSecl</A> - Read a number of lines from the next
+section.<BR>
+
+<HR>
+
+<H3><A NAME="IMRdLin">IMRdLin</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRdLin - Read the next line in the image stream.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRdLin(int <U>StreamNum</U>, void *<U>ImgBuffer</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irdlin(<U>StreamNum</U>, <U>ImgBuffer</U>, *line)<BR>
+integer StreamNum<BR>
+real ImgBuffer(size to read in)<BR>
+line: branch to Fortran line # on error
+
+<H4>Description</H4>
+
+<P>Reads the next line of the image stream into <U>ImgBuffer</U> and advances
+the file pointer by one line. If <VAR>ires</VAR> is the current resolution
+(0 is the highest), then the results of the read are undefined if
+<U>ImgBuffer</U> has less than (number of columns in image) /
+2^<VAR>ires</VAR> elements.
+
+<P>In most cases, <U>ImgBuffer</U> will contain floating-point data. When
+image conversion is off, however, the data type of <U>ImgBuffer</U> should
+correspond to whatever data type is actually stored. For example, if the
+image data are stored as 16-bit integers, then <U>ImgBuffer</U> should
+point to a 16-bit buffer. See <A HREF="#IMAlCon">IMAlCon</A>.
+
+<HR>
+
+<H3><A NAME="IMRdPal">IMRdPal</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRdPal - Read part of the next line.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRdPal(int <U>StreamNum</U>, void *<U>ImgBuffer</U>, int *<U>Column1</U>,
+int *<U>Column2</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irdpal( <U>StreamNum</U>, <U>ImgBuffer</U>, <U>Column1</U>, <U>Column2</U>,
+*line)<BR>
+integer StreamNum,Column1,Column2<BR>
+real ImgBuffer(size to read in)<BR>
+line: branch to Fortran line # on error
+
+<H4>Description</H4>
+
+<P>Reads part of the next line into <U>ImgBuffer</U> and advances the file
+pointer by one full line.  If the resolution index is <VAR>ires</VAR>
+(0 is the highest resolution), then the read starts at
+<U>Column1</U> / 2^<VAR>ires</VAR> and
+(<U>Column2</U> - <U>Column1</U> + 1) / 2^<VAR>ires</VAR> values are read.
+
+<P>In most cases, <U>ImgBuffer</U> will contain floating-point data. When
+image conversion is off, however, the data type of <U>ImgBuffer</U> should
+correspond to whatever data type is actually stored. For example, if the
+image data are stored as 16-bit integers, then <U>ImgBuffer</U> should
+point to a 16-bit buffer. See <A HREF="#IMAlCon">IMAlCon</A>.
+
+<HR>
+
+<H3><A NAME="IMRdPas">IMRdPas</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRdPas - Read part of the next section.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRdPas(int <U>StreamNum</U>, void *<U>ImgBuffer</U>, int <U>mx</U>,
+int <U>my</U>, int <U>Column1</U>, int <U>Column2</U>, int <U>Row1</U>,
+int <U>Row2</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irdpas(<U>StreamNum</U>, <U>ImgBuffer</U>, <U>mx</U>, <U>my</U>, <U>Column1</U>,
+<U>Column2</U>, <U>Row1</U>, <U>Row2</U>, *line)<BR>
+integer StreamNum,mx,my,Column1,Column2,Row1,Row2<BR>
+real ImgBuffer(size to read in)<BR>
+line: branch to Fortran line # on error
+
+<H4>Description</H4>
+
+<P>Reads part of the next section into <U>ImgBuffer</U> and advances the file
+pointer to the start of the section after that.  The result is undefined if
+the file pointer is not at the beginning of a section.  If the
+resolution index is <VAR>ires</VAR> (0 is the highest resolution), then
+the zero-based positions, (<VAR>i</VAR>, <VAR>j</VAR>), read from the section
+are those for which:
+<PRE>
+    <U>Column1</U> / 2^<VAR>ires</VAR> &lt;= <VAR>i</VAR> &lt; <U>Column1</U> / 2^<VAR>ires</VAR> + (<U>Column2</U> - <U>Column1</U> + 1) / 2^<VAR>ires</VAR>
+and
+    <U>Row1</U> / 2^<VAR>ires</VAR> &lt;= <VAR>j</VAR> &lt; <U>Row1</U> / 2^<VAR>ires</VAR> + (<U>Row2</U> - <U>Row1</U> + 1) / 2^<VAR>ires</VAR>
+</PRE>
+<P>The value read from (<VAR>i</VAR>, <VAR>j</VAR>) is stored at
+(<VAR>i</VAR> - <U>Column1</U> / 2^<VAR>ires</VAR>, <VAR>j</VAR> - <U>Column2</U> / 2^<VAR>ires</VAR>)
+in <U>ImgBuffer</U>.  If <U>mx</U> is less than
+(<U>Column2</U> - <U>Column1</U> + 1) / 2^<VAR>ires</VAR> or
+<U>ImgBuffer</U> has less than mx * (<U>Row2</U> - <U>Row1</U> + 1) /
+2^<VAR>ires</VAR> elements, the result is undefined.  When mx or my is larger
+than the dimensions of the partial section read, the additional elements in
+<U>ImgBuffer</U> are not modified.
+
+<P>In most cases, <U>ImgBuffer</U> will contain floating-point data. When
+image conversion is off, however, the data type of <U>ImgBuffer</U> should
+correspond to whatever data type is actually stored. For example, if the
+image data are stored as 16-bit integers, then <U>ImgBuffer</U> should
+point to a 16-bit buffer. See <A HREF="#IMAlCon">IMAlCon</A>.
+
+<HR>
+
+<H3><A NAME="IMRdSec">IMRdSec</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRdSec - Read the next section.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRdSec(int <U>StreamNum</U>, void *<U>ImgBuffer</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irdsec(<U>StreamNum</U>, <U>ImgBuffer</U>, *line)<BR>
+integer StreamNum<BR>
+real ImgBuffer(size to read in)<BR>
+line: branch to Fortran line # on error
+
+<H4>Description</H4>
+
+<P>Reads the next section into <U>ImgBuffer</U> and advances the file pointer
+to the section after that. The results are undefined if <U>ImgBuffer</U> does
+not have at least <U>nx</U> * <U>ny</U> elements or the file pointer does not
+point to the beginning of a section.
+
+<P>In most cases, <U>ImgBuffer</U> will contain floating-point data. When
+image conversion is off, however, the data type of <U>ImgBuffer</U> should
+correspond to whatever data type is actually stored. For example, if the
+image data are stored as 16-bit integers, then <U>ImgBuffer</U> should
+point to a 16-bit buffer. See <A HREF="#IMAlCon">IMAlCon</A>.
+
+<HR>
+
+<H3><A NAME="IMRdSecl">IMRdSecl</A></H3>
+
+<H4>Name</H4>
+
+<P>IMRdSecl - Read a number of lines from the next section.
+
+<H4>C Synopsis</H4>
+
+<P>void IMRdSecl(int <U>StreamNum</U>, void *<U>ImgBuffer</U>, int *<U>NumLines</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine irdsecl(<U>StreamNum</U>, <U>ImgBuffer</U>, <U>NumLines</U>, *line)<BR>
+integer StreamNum, NumLines<BR>
+real ImgBuffer(size to read in)<BR>
+line: branch to Fortran line # on error
+
+<H4>Description</H4>
+
+<P>If the current resolution index is <VAR>ires</VAR> (0 is the highest
+resolution, reads the next <U>NumLines</U> / 2^<VAR>ires</VAR> lines into
+<U>ImgBuffer</U> and advances the pointer by that many lines.  The results
+are undefined if <U>ImgBuffer</U> has less than <U>nx</U> * <U>NumLines</U> /
+2^<VAR>ires</VAR> elements or the read would span more than one section.
+
+<P>In most cases, <U>ImgBuffer</U> will contain floating-point data. When
+image conversion is off, however, the data type of <U>ImgBuffer</U> should
+correspond to whatever data type is actually stored. For example, if the
+image data are stored as 16-bit integers, then <U>ImgBuffer</U> should
+point to a 16-bit buffer. See <A HREF="#IMAlCon">IMAlCon</A>.
+
+<HR>
+
+<H3><A NAME="WriteImageInformation">Write Image Information - "Wr"</A></H3>
+
+<P>Write image data to the storage device. 
+
+<P><A HREF="#IMWrLin">IMWrLin</A> - Write a line of image data.<BR>
+<A HREF="#IMWrPal">IMWrPal</A> - Write part of an image line to the storage
+device.<BR>
+<A HREF="#IMWrPas">IMWrPas</A> - Write part of the next section to the
+storage device.<BR>
+<A HREF="#IMWrSec">IMWrSec</A> - Write the next section to the storage
+device.<BR>
+<A HREF="#IMWrSecl">IMWrSecl</A> - Write a number of lines to the next
+section.<BR>
+
+<HR>
+
+<H3><A NAME="IMWrLin">IMWrLin</A></H3>
+
+<P>Name 
+
+<P>IMWrLin - Write a line of image data.
+
+<H4>C Synopsis</H4>
+
+<P>void IMWrLin(int <U>StreamNum</U>, const void *<U>ImgBuffer</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine iwrlin( <U>StreamNum</U>, <U>ImgBuffer</U>)<BR>
+integer StreamNum<BR>
+real ImgBuffer(size of data to write)
+
+<H4>Description</H4>
+
+<P>Writes a line of data from <U>ImgBuffer</U> to the storage device and
+advances the file pointer by one line.  The values written are drawn
+sequentially from the start of <U>ImgBuffer</U>.  If <VAR>ires</VAR> is the
+current resolution (0 is the highest), then the results of the write are
+undefined if <U>ImgBuffer</U> has less than (number of columns in image) /
+2^<VAR>ires</VAR> elements. 
+
+<P>In most cases, <U>ImgBuffer</U> will contain floating-point data. When
+image conversion is off, however, the data type of <U>ImgBuffer</U> should
+be whatever data type is actually stored. For example, if <U>PixelType</U>
+indicates that the image data should be stored as 16-bit integers, then
+<U>ImgBuffer</U> should also contain 16-bit integer data. See <A HREF="#IMAlCon">IMAlCon</A>.
+
+<HR>
+
+<H3><A NAME="IMWrPal">IMWrPal</A></H3>
+
+<H4>Name</H4>
+
+<P>IMWrPal - Write part of an image line to the storage device.
+
+<H4>C Synopsis</H4>
+
+<P>void IMWrPal(int <U>StreamNum</U>, const void *<U>ImgBuffer</U>,
+int <U>Column1</U>, int <U>Column2</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine iwrpal( <U>StreamNum</U>, <U>ImgBuffer</U>, <U>Column1</U>, <U>Column2</U>)<BR>
+integer StreamNum,Column1,Column2<BR>
+real ImgBuffer(size of data to write)
+
+<H4>Description</H4>
+
+<P>Writes part of the next line and advances the file pointer by one full
+line.  If the resolution index is <VAR>ires</VAR> (0 is the highest
+resolution), then the write starts at <U>Column1</U> / 2^<VAR>ires</VAR> and
+(<U>Column2</U> - <U>Column1</U> + 1) / 2^<VAR>ires</VAR> values are written.
+The values are drawn sequentially from the start of <U>ImgBuffer</U>
+
+<P>In most cases, <U>ImgBuffer</U> will contain floating-point data. When
+image conversion is off, however, the data type of <U>ImgBuffer</U> should
+be whatever data type is actually stored. For example, if <U>PixelType</U>
+indicates that the image data should be stored as 16-bit integers, then
+<U>ImgBuffer</U> should also contain 16-bit integer data. See <A HREF="#IMAlCon">IMAlCon</A>.
+
+<HR>
+
+<H3><A NAME="IMWrPas">IMWrPas</A></H3>
+
+<H4>Name</H4>
+
+<P>IMWrPas - Write part of the next section to the storage device.
+
+<H4>C Synopsis</H4>
+
+<P>void IMWrPas(int <U>StreamNum</U>, const void *<U>ImgBuffer</U>,
+int <U>mx</U>, int <U>my</U>, int <U>Column1</U>, int <U>Column2</U>,
+int <U>Row1</U>, int <U>Row2</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine iwrpas( <U>StreamNum</U>, <U>ImgBuffer</U>, <U>mx</U>, <U>my</U>, <U>Column1</U>,
+<U>Column2</U>, <U>Row1</U>, <U>Row2</U>)<BR>
+integer StreamNum,mx,my,Column1,Column2,Row1,Row2<BR>
+real ImgBuffer(size of data to write)
+
+<H4>Description</H4>
+
+<P>Writes part of the next section using data from <U>ImgBuffer</U> and
+advances the file pointer to the start of the section after that.  The result
+is undefined if the file pointer is not at the beginning of a section.  If the
+resolution index is <VAR>ires</VAR> (0 is the highest resolution), then
+the zero-based positions, (<VAR>i</VAR>, <VAR>j</VAR>), whose values are
+changed are those for which:
+<PRE>
+    <U>Column1</U> / 2^<VAR>ires</VAR> &lt;= <VAR>i</VAR> &lt; <U>Column1</U> / 2^<VAR>ires</VAR> + (<U>Column2</U> - <U>Column1</U> + 1) / 2^<VAR>ires</VAR>
+and
+    <U>Row1</U> / 2^<VAR>ires</VAR> &lt;= <VAR>j</VAR> &lt; <U>Row1</U> / 2^<VAR>ires</VAR> + (<U>Row2</U> - <U>Row1</U> + 1) / 2^<VAR>ires</VAR>
+</PRE>
+<P>The value written to (<VAR>i</VAR>, <VAR>j</VAR>) is drawn from
+(<VAR>i</VAR> - <U>Column1</U> / 2^<VAR>ires</VAR>, <VAR>j</VAR> - <U>Column2</U> / 2^<VAR>ires</VAR>)
+in <U>ImgBuffer</U>.  If <U>mx</U> is less than
+(<U>Column2</U> - <U>Column1</U> + 1) / 2^<VAR>ires</VAR> or
+<U>ImgBuffer</U> has less than mx * (<U>Row2</U> - <U>Row1</U> + 1) /
+2^<VAR>ires</VAR> elements, the result is undefined.
+
+<P>In most cases, <U>ImgBuffer</U> will contain floating-point data. When
+image conversion is off, however, the data type of <U>ImgBuffer</U> should
+be whatever data type is actually stored. For example, if <U>PixelType</U>
+indicates that the image data should be stored as 16-bit integers, then
+<U>ImgBuffer</U> should also contain 16-bit integer data. See <A HREF="#IMAlCon">IMAlCon</A>.
+
+<HR>
+
+<H3><A NAME="IMWrSec">IMWrSec</A></H3>
+
+<H4>Name</H4>
+
+<P>IMWrSec - Write the next section to the storage device.
+
+<H4>C Synopsis</H4>
+
+<P>void IMWrSec(int <U>StreamNum</U>, const void *<U>ImgBuffer</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine iwrsec(<U>StreamNum</U>, <U>ImgBuffer</U>)<BR>
+integer StreamNum<BR>
+real ImgBuffer(size of data to write)
+
+<H4>Description</H4>
+
+<P>Writes the next section using data from <U>ImgBuffer</U> and advances the
+file pointer to the section after that.  The results are undefined if
+<U>ImgBuffer</U> does not have at least <U>nx</U> * <U>ny</U> elements or
+the file pointer does not point to the beginning of a section.
+
+<P>In most cases, <U>ImgBuffer</U> will contain floating-point data. When
+image conversion is off, however, the data type of <U>ImgBuffer</U> should
+be whatever data type is actually stored. For example, if <U>PixelType</U>
+indicates that the image data should be stored as 16-bit integers, then
+<U>ImgBuffer</U> should also contain 16-bit integer data. See <A HREF="#IMAlCon">IMAlCon</A>.
+
+<HR>
+
+<H3><A NAME="IMWrSecl">IMWrSecl</A></H3>
+
+<H4>Name</H4>
+
+<P>IMWrSecl - Write a number of lines to the next section.
+
+<H4>C Synopsis</H4>
+
+<P>void IMWrSecl(int <U>StreamNum</U>, const void *<U>ImgBuffer</U>, int
+<U>NumLines</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine iwrsecl(<U>StreamNum</U>, <U>ImgBuffer</U>, <U>NumLines</U>)<BR>
+integer StreamNum, NumLines<BR>
+real ImgBuffer(size of data to write)
+
+<H4>Description</H4>
+
+<P>If the current resolution index is <VAR>ires</VAR> (0 is the highest
+resolution, writes <U>NumLines</U> / 2^<VAR>ires</VAR> lines starting from
+the current pointer position and advances the pointer by that many lines.
+The size of <U>ImgBuffer</U> should be <U>nx</U>*<U>NumLines</U> elements.
+
+<P>In most cases, <U>ImgBuffer</U> will contain floating-point data. When
+image conversion is off, however, the data type of <U>ImgBuffer</U> should
+be whatever data type is actually stored. For example, if <U>PixelType</U>
+indicates that the image data should be stored as 16-bit integers, then
+<U>ImgBuffer</U> should also contain 16-bit integer data. See <A HREF="#IMAlCon">IMAlCon</A>.
+
+<HR>
+
+<H3><A NAME="StreamPointerFunctions">Stream Pointer Functions</A></H3>
+
+<P>When reading and writing to and from streams, the underlying stream
+pointer is automatically repositioned either to the next section, or the
+next line of the same section, depending on the call used. For more random
+access to the image data, it is necessary to reposition the pointer using
+one of these calls.
+
+<P><A HREF="#IMPosn">IMPosn</A> - Position the read/write pointer of a
+stream to a particular section and row number.<BR>
+<A HREF="#IMPosnRes">IMPosnRes</A> - Position the read/write pointer at
+the start of a particular resolution data set.<BR>
+<A HREF="#IMPosnZWT">IMPosnZWT</A> - Position the read/write point at a
+particular Z, W, T section.
+
+<HR>
+
+<H3><A NAME="IMPosn">IMPosn</A></H3>
+
+<H4>Name</H4>
+
+<P>IMPosn - Position the read/write pointer of a stream to a particular
+section and row number.
+
+<H4>C Synopsis</H4>
+
+<P>int IMPosn(int <U>StreamNum</U>, int <U>SecNum</U>, int <U>Row</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>integer function imposn( <U>StreamNum</U>, <U>SecNum</U>, <U>Row</U>)<BR>
+integer StreamNum,SecNum,Row
+
+<H4>Description</H4>
+
+<P>Position the read/write pointer of <U>StreamNum</U> to section number
+<U>SecNum</U>, row number <U>Row</U>. As usual, row numbers start at 0.
+In most cases <U>Row</U>=0.  If the stream points to a scratch window,
+IMPosn can only change the destination wavelength.
+
+<H4>Return Values</H4>
+
+<P>IMPosn returns 0 if successful and 1 if not.
+
+<HR>
+
+<H3><A NAME="IMPosnRes">IMPosnRes</A></H3>
+
+<H4>Name</H4>
+
+<P>IMPosnRes - Position the read/write pointer at the start of a particular
+resolution data set.
+
+<H4>C Synopsis</H4>
+
+<P>int IMPosnRes(int <U>StreamNum</U>, int <U>ResolutionNum</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>subroutine imposn_res( <U>StreamNum</U>, <U>ResolutionNum</U>)<BR>
+integer StreamNum, ResolutionNum
+
+<H4>Description</H4>
+
+<P>Some images contain sub-resolution images. To position the read/write
+pointer at the beginning of a particular resolution, use this function
+with the appropriate value of <U>ResolutionNum</U>. 
+
+<HR>
+
+<H3><A NAME="IMPosnZWT">IMPosnZWT</A></H3>
+
+<H4>Name</H4>
+
+<P>IMPosnZWT - Position the read/write point at a particular Z, W, T section.
+
+<H4>C Synopsis</H4>
+
+<P>int IMPosnZWT(int <U>StreamNum</U>, int <U>ZSecNum</U>, int <U>WaveNum</U>,
+int <U>TimeNum</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>integer function imposn_zwt( <U>StreamNum</U>, <U>ZSecNum</U>, <U>WaveNum</U>, <U>TimeNum</U>)<BR>
+integer StreamNum,ZSecNum,WaveNum,TimeNum
+
+<H4>Description</H4>
+
+<P>Position the read/write pointer of <U>StreamNum</U> to Z section number
+<U>ZSecNum</U>, wavelength number <U>WaveNum</U>, and time-point number
+<U>TimeNum</U>.  If the stream points to a scratch window, IMPosnZWT can
+only change the destination wavelength.
+
+<H4>Return Values</H4>
+
+<P>IMPosnZWT returns 0 if successful and 1 if not.
+
+<HR>
+
+<H3><A NAME="StreamIdentification">Stream Identification</A></H3>
+
+<P>In some instances, it is useful to determine if a stream is attached
+to a file or a window or which stream corresponds to a given window number.
+These functions assist with those tasks.
+
+<P><A HREF="#IMUnit">IMUnit</A> - Returns the Unix file descriptor for a stream.<BR>
+<A HREF="#IMRtWID">IMRtWID</A> - Returns the window number for a stream.<BR>
+<A HREF="#IMRtStream">IMRtStream</A> - Returns the stream number attached to a window.<BR>
+
+<HR>
+
+<H3><A NAME="IMUnit">IMUnit</A></H3>
+
+<H4>Name</H4>
+
+<P>IMUnit -  Returns the Unix file descriptor for a stream.
+
+<H4>C Synopsis</H4>
+
+<P>int IMUnit(int <U>StreamNum</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>integer function imunit(<U>StreamNum</U>)<BR>
+integer StreamNum
+
+<H4>Description</H4>
+<P>Returns -1 if the given stream is not open or is not attached to a file;
+otherwise the Unix file descriptor value is returned (this is the number used
+with the Unix system calls open, close, read, write, lseek, ...).
+
+<HR>
+
+<H3><A NAME="IMRtWID">IMRtWID</A></H3>
+
+<P>IMRtWID -  Returns the window number for a stream.
+
+<H4>C Synopsis</H4>
+
+<P>int IMRtWID(int <U>StreamNum</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>integer function irtwid(<U>StreamNum</U>)<BR>
+integer StreamNum
+
+<H4>Description</H4>
+<P>Returns 0 if the stream is not open or is not attached to a window;
+otherwise, returns the number of the window to which the stream is attached.
+
+<HR>
+
+<H3><A NAME="IMRtStream">IMRtStream</A></H3>
+
+<P>IMRtStream -  Returns the stream number attached to a window.
+
+<H4>C Synopsis</H4>
+
+<P>int IMRtWID(int <U>WindowNumber</U>);
+
+<H4>Fortran Synopsis</H4>
+
+<P>integer function irtstream(<U>WindowNumber</U>)<BR>
+integer WindowNumber
+
+<H4>Description</H4>
+<P>Returns 0 if the given window number is not attached to any stream that
+the application currently has open; otherwise, the smallest stream number
+which is attached to the given window is returned.
+
+<HR>
+
+</BODY>
+</HTML>

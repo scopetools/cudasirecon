@@ -1,0 +1,293 @@
+KEYWORD
+        HeaderFormat ByteOrder RGB AutoScl Restore W_SCL Conversions
+
+DESCRIPTION
+        CopyRegion copies (with an optional conversion of data
+        types, change of the byte order, or change of the header
+        format) all or part of a data set to a new data set.
+        CopyRegion's user interface uses the same set of controls
+        for selecting and processing a region as other Priism
+        applications (see Region.hlp for more information).
+        Besides the controls for the header format or byte order,
+        the other controls are used when the new data set is written
+        to a window.  The RGB toggle selects whether multiple
+        wavelengths are displayed simultaneously as different
+        color components in a single image or if images contain
+        a single wavelength in pseudocolor.  The AutoScl and
+        Restore buttons as well as the fields for the scaling
+        on each wave select how the data is mapped to the pixel
+        values displayed in the image.
+
+        When used to open a complete data set in an image window,
+        CopyRegion is very similar to ViewFile.  The difference
+        is that CopyRegion makes a copy of the data in memory (and
+        scratch space on the local file system) while ViewFile only
+        loads the data as needed and does not have to keep a copy
+        (though it may do so while space is available).  The effect
+        of these differences is that ViewFile returns control to the
+        user more quickly, but once control is returned, the initial
+        access to the data and images is faster when CopyRegion is
+        used.  Using CopyRegion instead of ViewFile also increases
+        the amount of memory and disk space that Priism uses.
+
+        By default, the data type of the output from CopyRegion is the
+        same as the data type of the input.  If the output data type
+        (selected with the Mode control) is not the default, then a
+        conversion is done.  There are three cases where the
+        conversion can be lossy:
+
+             When converting data to bytes, the wave scale values
+             are used to map the data into a range representable
+             by a byte.
+
+             When converting complex data to any of the pure real
+             formats, only real part is converted; the imaginary
+             part is discarded.
+
+             When converting floating-point data to short integers,
+             the largest integer less than or equal to the floating
+             point value is returned.
+
+        For the conversion of a pure real format to a complex one,
+        the imaginary part of the result is set to zero and the real
+        part is set to the converted value.
+
+        CopyRegion accepts the command-line arguments described in
+        Region.hlp.  In addition, it has the following options (parts
+        in brackets are optional):
+
+             -autoscale
+                  If this option is present and the output is an
+                  image window, each section will be scaled
+                  separately as described in the AutoScl topic.
+
+             -endian=format
+                  Sets the byte order for the output when not
+                  appending to an existing data set.  format
+                  must be of the following:
+
+                  machine
+                       Uses the computer's native byte order.
+                       That is what will get if you do not use
+                       the -endian option.
+
+                  input
+                       Uses the byte order of the input.
+
+                  big
+                       Uses big-endian byte order.
+      
+                  little
+                       Uses little-endian byte order.
+
+             -header=format
+                  Sets the header format for the output when
+                  not appending to an existing data set.
+                  format must be one of the following:
+
+                  input
+                       Uses the header format from the input.
+                       This is what you will get if you do
+                       not use the -header option.
+
+                  priism
+                       Uses Priism's header format.
+
+                  image2000
+                       Uses the Image2000 format.  If the output
+                       would has multiple wavelengths, CopyRegion
+                       will ignore this and use Priism's header
+                       format.
+
+             -restore_scale
+                  If the this option is present, CopyRegion will
+                  look up the scaling values for the input in the
+                  recently saved parameters from the image window's
+                  scale function.  If scaling values for the input
+                  are found, then those are used and any -scl
+                  options (see below) are ignored.
+
+             -rgb
+                  If this option is present and the output is an
+                  image window, the data will be displayed with
+                  multiple wavelengths superimposed as different
+                  color components in the same image.
+
+             -scl1=bound1[:bound2[:exp[:flag]]]
+                  Sets the scaling parameters for the output drawn
+                  from the first wavelength of the input.  Takes
+                  one to four parameters; parameters not specified
+                  take on their default values (see the W_SCL
+                  topic for what the default values are).  The
+                  first two parameters are the intensity bounds
+                  for scaling, the third is the exponent, and the
+                  fourth sets what happens to data values outside
+                  of the intensity bounds.  The documentation for
+                  the image window's Scale function describes the
+                  parameters in more detail.  The scaling
+                  parameters set by this option will have no
+                  effect if you also use -autoscale; they may
+                  also be overrided when you use -restore_scale.
+                  There are similar options (-scl2, -scl3, -scl4,
+                  and -scl5) to set the scaling for the output from
+                  other input wavelengths.
+
+        As an example, the following copies the first two wave-
+        lengths from fish.dat into window 3 using a reversed
+        scaling between 500 and 2500 for the first wavelength
+        and a scaling between 700 and 3000 with a gamma correction
+        factor of 0.5 for the second wavelength:
+
+             CopyRegion fish.dat 3 -w=0:1 -scl1=2500:500 \
+                  -scl2=700:3000:0.5
+
+HeaderFormat
+        Priism's native file format is a variant of the MRC file
+        format used in x-ray crystallography.  Priism supports
+        two different header formats for those files.  One is
+        intended to be compatible with the Image2000 format.
+        The other is particular to Priism. The documentation
+        for Priism's IM library describes the header formats in
+        more detail.
+
+        When writing a new data set or overwriting an existing
+        data set, CopyRegion can change the header format used
+        if the output has a single wavelength (only Priism's
+        header format directly handles multiple wavelengths and
+        CopyRegion will always use it when the output has
+        multiple wavelengths).  You would normally only do this
+        to import or export data from Priism.  By default,
+        CopyRegion's output will have the same header format
+        as the input does.  To change the header format that
+        will be used, change the menu next to the button
+        labeled "Header" in CopyRegion's main dialog.  The
+        choices in the menu are:
+
+        input or input (Priism) or input (Image2000)
+             Use the header format from the input.  CopyRegion
+             will change the choice to "input (Priism)" or
+             "input (Image2000)" to indicate the header format
+             of the input.
+  
+        Priism
+             Use the header format particular to Priism.
+  
+        Image2000
+             Use Image2000's header format with the additional
+             fields from Priism's format that do not conflict
+             with those in the Image2000 format.
+
+        You can get results similar to using CopyRegion with
+        the header format set to "Image2000" by running
+        mrc2image2000 or mrc2ccp4.  CopyRegion will retain
+        any portions of the header that do not overlap with
+        portions specified by the Image2000 format and will
+        also carry over Priism's extended header and lower
+        resolution data.  mrc2image2000 and mrc2ccp4 will
+        only use the header fields defined by those formats
+        (all the rest of the header will be set to zero),
+        will convert the image samples to floating-point or
+        complex-valued floating-point, and strip any
+        Priism-style extended header or lower resolution
+        information.
+
+ByteOrder
+        When writing a new data set or overwriting an
+        existing data set, CopyRegion can change the
+        byte order used for the data.  Since Priism's
+        applications accept both byte orders (big- and
+        little-endian), changing the byte order is
+        usually only useful when exporting data.  By
+        default, CopyRegion will write data in the
+        computer's native byte order.  You can force
+        CopyRegion to use a different order by changing
+        the menu next to the button labeled "Byte order"
+        in CopyRegion's main dialog.  The choices in the
+        menu are:
+
+        machine (big) or machine (little)
+             Use the computer's native order.  If the
+             computer is big endian, the choice in the
+             menu is "machine (big)"; otherwise, the
+             choice in the menu is "machine (little)".
+
+        input or input (big) or input (little)
+             Use the byte order of the input.  CopyRegion
+             will change the choice to "input (big)" or
+             "input (little)" to indicate whether the input
+             is big- or little- endian.
+
+        big-endian
+             Use big-endian order for the output.
+
+        little-endian
+             Use little-endian order for the output.
+
+RGB
+        When the output of CopyRegion is written to an image
+        window, select this toggle to have the data displayed
+        with multiple wavelengths combined to form a single
+        image.  Up to three wavelengths can be displayed
+        simultaneously with each wavelength assigned a
+        different primary color (red, green, or blue).  If
+        the toggle is not selected, wavelengths are not
+        superimposed and the image is shown in pseudocolor
+        (typically shades of grey).  The RGB toggle only
+        affects how the data is displayed initially; use
+        the controls on the image window to switch between
+        the display modes after CopyRegion has written
+        the data.
+
+AutoScl
+        Select this toggle when you want each section, when
+        copied to an image window, to be displayed in such a way
+        that the range of data values in the section maps to
+        the full range of image values.  The default scaling
+        parameters for each wave will still be those set from
+        the wave scaling controls, but each section will have
+        its own scaling parameters set and those defaults won't
+        take effect.
+
+Restore
+        Use this button to load the wave scaling values that
+        had been used previously with the input data set and
+        had been saved from the image window's Scale function.
+
+W_SCL
+        When CopyRegion writes its output to a window and the
+        AutoScl toggle is not on, these values set how the
+        data is mapped to the quantities shown in the image.
+        For details about how this mapping is done, see the
+        "Scaling Values" topic in the documentation for the
+        image window's Scale application.
+
+        If CopyRegion's input is a window, the default scale
+        values are those for that window.  When the input is
+        a file, the default scale values are drawn from the
+        minimum and maximum values recorded in the file's
+        header.  If you have looked at a file before and
+        saved the scale parameters used (the documentation
+        for Scale describes how to do this), you can use
+        the Restore button to load those scale parameters.
+
+Conversions
+        By default, the data type of the output from CopyRegion
+        is the same as the data type of the input.  If the
+        output data type (selected with the Mode control) is
+        not the default, then a conversion is done.  There
+        are three special cases for the conversion process:
+
+        1) When converting data to bytes, the wave scale
+           values are used to map the data to values between
+           0 and 255.  The case where the first two scaling
+           values are zero is treated like any other for this
+           conversion.
+
+        2) When converting complex data to any of the purely
+           real formats, only the real part is converted;
+           the imaginary part is discarded.
+
+        3) For the conversion of a purely real format to a
+           complex one, the imaginary part of the result is
+           set to zero and the real part is set to the
+           converted value.

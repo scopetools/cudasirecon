@@ -1,0 +1,306 @@
+KEYWORD
+    SwapZT Background Window Edges
+
+DESCRIPTION 3D Preprocessing
+    This program can subtract the background, pad, and taper
+    each 3D volume of a data set.  Essentially, these are
+    the same options as are available in the 3D Fourier
+    filtering application but without the filtering step.
+    The controls in the user interface include a standard
+    set of controls for selecting the input file, output
+    file, and region of interest and for starting and
+    interrupting processing.  The other controls are organized
+    as follows:
+
+      1) When the toggle button labeled "Swap z/time" is
+         off, the filter works on th ex, y, and z dimensions.
+         When that toggle button is on, the filter works
+         on the x, y, and time dimensions.
+      2) Use the button labeled "Set background handling" to
+         display and change the parameters which control how
+         the background is estimated and subtracted from the
+         data.  By default, no background is subtracted from
+         the input data.
+      3) Use the button labeled "Set window/taper" to select
+         a function used to smooth out discontinuities at the
+         edges of the data after background subtraction and
+         before padding the data.  By default, no smoothing
+         is done.
+      4) Use the button labeled "Set edge handling" to control
+         the number and values of the elements that are appended
+         to the input region.  By default, the input data is
+         not padded.
+
+     Preprocess3D accepts the command-line arguments described
+     in Region.hlp.  In addition, Preprocess3D accepts the
+     options shown below (optional parts are shown in brackets).
+     If mutually exclusive options (i.e. for selection of the
+     type of background subtraction), the last option that
+     appears on the command line takes precedence.  The defaults
+     are to use no background subtraction, no tapering, and no
+     padding.
+
+     -3d=z or -3d=t
+         Selects which dimension to use as the third dimension
+         for processing.  The first form selects the z
+         dimension as the third dimension; the second form
+         selects the time dimension as the third dimension.
+         If you do not specify either form, the program uses
+         the z dimension as the third dimension when the input
+         file has multiple z sections per time point or only
+         one time point.  Otherwise, the program uses the
+         time dimension as the third dimension.
+
+     -subtract=value or -subtract=mean
+         Specifies that the input data should be preprocessed
+         by subtracting value or the mean.
+
+     -linear_detrend
+         Specifies that the input data should be preprocessed
+         by subtracting the linear trend which corresponds
+         to the estimated average slope.
+
+     -polyfit=n
+         Specifies that the input data should be preprocessed
+         by subtracting the least-squares fit polynomial of
+         order n.  Valid values of n range from one to 10.
+
+     -rectangular=x_coverage:y_coverage:z_coverage
+         Selects a rectangular windowing function that
+         attenuates 200 times x_coverage percent of the
+         data in x, 200 times y_coverage percent of the
+         data in y, and 200 times the z_coverage percent
+         of the data in z (or time).  Valid values for
+         x_coverage, y_coverage, and z_coverage are
+         between 0 and 0.5.
+
+     -triangular=x_coverage:y_coverage:z_coverage
+         Selects a triangular windowing function that
+         attenuates 200 times x_coverage percent of the
+         data in x, 200 times y_coverage percent of the
+         data in y, and 200 times the z_coverage percent
+         of the data in z (or time).  Valid values for
+         x_coverage, y_coverage, and z_coverage are between
+         0 and 0.5.
+
+     -halfsine=x_coverage:y_coverage:z_coverage
+         Selects a half-sine windowing function (consult
+         the Window topic for details) that attenuates 200
+         times x_coverage percent of the data in x, 200 times
+         y_coverage percent of the data in y, and 200 times
+         z_coverage percent of the data in z (or time).
+         Valid values for x_coverage, y_coverage, and
+         z_coverage are between 0 and 0.5.  Use
+        -halfsine_power to set the exponent, which
+        controls the sharpness of the window edges.
+
+     -halfsine_power=p
+         Sets the exponent for the half-sine windowing
+         function.  This option is ignored when other
+         windowing functions are used.  If this option is
+         not explicitly specified when the half-sine windowing
+         function is used, the exponent used is one.
+
+     -hamming=x_coverage:y_coverage:z_coverage
+         Selects a Hamming window function (consult the
+         Window topic for details) that attenuates 200
+         times x_coverage percent of the data in x, 200 times
+         y_coverage percent of the data in y, and 200 times
+         the z_coverage percent of the data in z (or time).
+         Valid values for x_coverage, y_coverage, and
+         z_coverage are between 0 and 0.5.
+
+     -blackman=x_coverage:y_coverage:z_coverage
+         Selects a Blackman window function (consult the
+         Window topic for details) that attenuates 200
+         x_coverage percent of the data in x, 200 times
+         y_coverage percent of the data in y, and 200 times
+         the z_coverage percent of the data in z (or time).
+         Valid values for x_coverage, y_coverage, and
+         z_coverage are between 0 and 0.5.
+
+     -xpad=default or -xpad=n
+         Specifies that the x dimension should be padded by
+         the default amount (to a size which is efficient
+         for FFT calculations) or by n pixels, where n is a
+         non-negative integer.
+
+     -xpad_value=mean or -xpad_value=ramp or -xpad_value=rv[:iv]
+         Specifies what values to use when padding the x
+         dimension.  -xpad_value=mean causes the data to be
+         padded with the mean value.  -xpad_value=ramp causes
+         the data to be padded with values which range linearly
+         from the value at one boundary to the value at the
+         other boundary.  The last form causes the data to be
+         padded with a constant value whose real component is
+         rv and whose imaginary component is iv.  If the
+         imaginary component is omitted, it is assumed to be
+         zero.
+
+     -ypad=default or -ypad=n
+         Is similar to -xpad but specifies the amount of
+         padding in the y dimension.
+
+     -ypad_value=mean or -ypad_value=ramp or -ypad_value=rv[:iv]
+         Is similar to -xpad_value but specifies the padding
+         values for the y dimension.
+
+     -zpad=default or -zpad=n
+         Is similar to -xpad but specifies the amount of
+         padding in the z dimension.
+
+     -zpad_value=mean or -zpad_value=ramp or -zpad_value=rv[:iv]
+         Is similar to -xpad_value but specifies the padding
+         values for the z dimension.
+
+
+    As an example, the following command line a second-order
+    polynomial fit from the input data and pads that result
+    with 512 elements of zeros in each dimension:
+
+      Preprocess3D raw.dat out.dat -polyfit=2 -xpad=512 \
+          -xpad_value=0 -ypad=512 -ypad_value=0 -zpad=512 \
+          -zpad_value=0
+
+SwapZT
+     The three dimensions used for processing can either be
+     x, y, and z or x, y, and time.  When the toggle button
+     labeled "Swap z/time" is off, the program works with
+     chunks that cover the selected range in x, y, and z.
+     When that toggle button is on, the program works with
+     chunks that cover the selected range in x, y, and time.
+     When you select a new input file, the program will
+     automatically select the dimension to use as the third
+     dimension.  If the file has more than one z section or
+     only one time point, the program will use the z
+     dimension as the third dimension; otherwise, it will
+     use the time dimension as the third dimension.
+
+
+Background
+    The input region can be processed to remove an offset
+    or trend before the data is padded.  To display the
+    controls for this processing, press the button labeled
+    "Set background handling" in the main dialog.  There
+    are five types of processing that can be done; select
+    one by pressing the appropriate toggle in the dialog.
+    The processing options are:
+
+      1) None.  The input is not modified.
+      2) Subtract offset.  The specified value is subtracted
+         from all the input values.
+      3) Subtract mean.  For each 3D input region, the
+         mean of the region is subtracted from all values
+         in the region.
+      4) Remove linear trend.  An average slope for each 3D
+         input region is estimated by averaging values from
+         the first and last third of each dimension; the
+         linear trend corresponding to that average slope and
+         the mean of the region is subtracted from the input
+         data.  The algorithm used is the average slope method
+         extended to three dimensions (Digital data analysis
+         procedures, Bendat and Piersol, 1st Edition, 1971,
+         page 288).
+      5) Remove trends up to order.  A polynomial of the
+         given order is fit to each 3D input region.  That
+         polynomial evaluated at each input point is then
+         subtracted from the input.
+
+Window
+    Applying a windowing function, also called tapering,
+    multiplies the data by a function which goes to zero
+    (or near zero) at the edges of the data.  This is done
+    to remove discontinuities at the edges; the disadvantage
+    of applying a window is that it essentially throws away
+    parts of the input.
+
+    The windowing functions used are separable, i.e, the
+    windowing function, W(x,y,z), can be written as the
+    product of WX(x), WY(y), and WZ(z).  WX, WY, and WZ are
+    calculated from the same formula but with different
+    inputs for the number of pixels, n, and the fraction,
+    f, of the dimension that is attenuated by the windowing
+    function.  The three values in the "Coverage" field are
+    the values of f divided by two for the x, y, and z (or
+    time) directions, respectively.  Commonly used values
+    for the coverage are 0.5 (a "full taper") and 0.1
+    (a 10% taper).  The power, x, is used by half-sine
+    windowing function.
+
+    The functions used to calculate the windowing functions
+    are shown below.  i is the pixel index and runs from 0 to
+    n minus 1, and e is given by
+
+          { floor(0.5 + f / 2.0 * n)          n even
+      e = {
+          { floor(0.5 + f / 2.0 * (n - 1))    n odd
+
+    Rectangular
+
+             { 0     i < e
+      w(i) = { 1     e <= i <= n - e
+             { 0     i > n - e
+
+    Because of the sharp cutoffs of the rectangular window,
+    it is not particularly useful; it's provided for
+    completeness.
+
+    Triangular
+
+             { i / e           i < e
+      w(i) = { 1               e <= i <= n - e
+             { (n - i) / e     i > n - e
+
+    Half-sine^power
+
+             { (sin(pi * i / (2 * e)))^x           i < e
+      w(i) = { 1                                   e <= i <= n - e
+             { (sin(pi * (n - i) / (2 * e)))^x     i > n - e
+
+    Hamming
+
+             { 0.54 - 0.46 * cos(pi * i / e)           i < e
+      w(i) = { 1                                       e <= i <= n - e
+             { 0.54 - 0.46 * cos(pi * (n - i) / e)     i > n - e
+
+    Blackman
+
+             { cos(pi * i / e)           i < e
+      a(i) = { -1                        e <= i <= n - e
+             { cos(pi * (n - i) / e)     i > n - e
+
+      w(i) = 0.34 - a(i) * (0.5 - a(i) * 0.16)
+
+Edges
+    The dimensions of the input region can be extended by
+    adding elements at the end of each dimension.  This is
+    typically done for two reasons:
+
+      1) Adding the extra elements gives a size that is
+         efficiently handled by Fourier transforms.
+      2) Adding the extra elements reduces the blending
+         of opposite edges of the data which might be
+         troublesome if the values at the opposite edges
+        are very different.
+
+    To display the controls for the amount of padding and
+    the values of the elements added, press the button
+    labeled "Set edge handling in the main dialog.  For
+    each dimension the Width field sets the number of
+    elements that will be added.  When the toggle labeled
+    "Use default width" is on, the Width field will
+    automatically be set so the padded size can be efficiently
+    handled.  There are three ways in which the values of
+    the added elements are set.  These are:
+
+      1) Pad with value.  Use the given value for all the
+         elements added to a dimension.  The imaginary
+         component of the value is only used if the
+         input data is complex.
+      2) Pad with mean.  Use the mean of the 3D input
+         region being processed when padding the
+         dimension.
+      3) Pad with linear ramp.  For each line in x,
+         y, or z (or time), the padding elements added
+         to the line are a linear combination of the
+         first and last element of that input line.

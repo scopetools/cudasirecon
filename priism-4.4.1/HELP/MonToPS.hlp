@@ -1,0 +1,87 @@
+KEYWORD
+    Title Orientation Margin Background AutoCenter Outline
+    ImageLabel PrintToFile Preview Print
+
+DESCRIPTION MonToPS
+    MonToPS renders what is current displayed in an image
+    window as PostScript. The result may be saved to a file
+    or sent to a printer.
+
+Title
+    Text entered in the field adjacent to the "Title"
+    button will be used as the title that is centered at
+    the top of the page.
+
+Orientation
+    The menu next to the "Orientation" button controls
+    whether the Postscript output is generated with the
+    top of the page as the narrow side (portrait option)
+    or the top of the base as the long side (landscape
+    option).
+
+Margin
+    If the AutoCenter option is off, you can adjust the
+    margins by editing the values in the field adjacent
+    to the "Margin L/R/T/B" button.  The first value is
+    the left margin, the second is the right margin, the
+    third is the top margin, and the fourth is the bottom
+    margin.  All values are in inches.
+
+Background
+    The three entries in the field next to the "Background
+    Color: R/G/B" button set the color used for the
+    background of the image window (the method for
+    rendering the background is controlled by the "Window
+    Outline" toggle button.  The three values in the field
+    are the red, green, and blue components, respectively,
+    of the color. The range for each component is 0 to 255.
+
+AutoCenter
+    When the "AutoCenter" toggle button is on, the image
+    will be centered on the page and the margin control
+    will have no effect.
+
+Outline
+    The "Window Outline" toggle button controls how the
+    background of the image window (the parts beyond the
+    image boundaries but not including the image window
+    controls) is rendered.  If the toggle button is on,
+    no background is drawn and the boundary of the image
+    window is indicated with a line drawn in the background
+    color.  If the toggle button is off, the background is
+    rendered as a solidly filled rectangle in the background
+    color.
+
+ImageLabel
+    If the "Image Label" toggle button is on, a label is
+    included in the output to indicate the current z value,
+    wavelength index, and time point for each image
+    displayed.  If the toggle is off, the labels are not
+    drawn.  This toggle button is independent of whether
+    or not the current section index is shown on top of
+    the images in the image window: the section label,
+    if any, shown in the image window will not appear in
+    the PostScript rendering.
+
+PrintToFile
+    If the "Print To File" toggle button is on, pressing
+    the "Print" button will generate a PostScript file
+    rather than send the PostScript result directly to a
+    printer.  On Linux and Mac OS X, this toggle button
+    is always on:  MonToPS has not been fixed to interact
+    with the printing mechanisms for those operating
+    systems.
+
+Preview
+    Pressing the "Preview" button will display on the
+    monitor what the printed output would look like.  On
+    Linux and Mac OS X, this button is always disable
+    since MonToPS has not been fixed to recognize the
+    native PostScript viewer.
+
+Print
+    If the "Print To File" toggle button is off, pressing
+    the "Print" button opens a dialog to send the rendered
+    PostScript directly to a printer; otherwise, a file
+    selection dialog is displayed to choose the name of
+    the file in which to store the PostScript output.

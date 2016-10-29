@@ -1,0 +1,807 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: 3DModel</TITLE>
+  <META NAME="Description" CONTENT="On-line help for 3DModel.">
+  <META NAME="Keywords" CONTENT="Priism,modeling,interactive segmentation">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+<H1><A NAME="3DModel">3DModel</A></H1>
+<H2>Overview</H2>
+<P>3DModel lets you create models of the structures in your image data.
+Objects can be rotated around interactively, and object attributes such
+as color, radius, display, solid/wire, etc can be changed at any time. 
+Five dimensions are actually handled in that you can create a 3DModel
+model for each wave and time set. If you have live data, you can model 
+each time set and then watch the model move through time. The model program
+interacts with multiple image windows allowing the user to build the model
+and view it on the image from different angles and on rotation projections.
+Models are stored in real space coordinates and are written out to an ascii
+file.  The models created here are the input for the
+<A HREF="Strait.html">Straight program</A> which creates a straitened 3D data
+volume of the tubular data.  Straight can connect directly to the model if
+3DModel is running and is attached to the input window or run alone using the
+saved model file. Several different types of objects can be created in 3DModel
+and several more are created using other programs and then are displayed in
+3DModel.
+
+<P>Types of models that may be created within 3DModel are 
+<DL>
+  <DT>a connected string of points, possibly branched
+  <DD>This type of object can have sphere or cube markers at any or all points
+    on the model. This type of model can be given a radius so that it appears
+    as a cylinder or branched cylinder.  When creating this type of object,
+    points can be added, deleted and inserted as needed.
+  <DT>a set of points
+  <DD>This type of object is displayed as pixel-sized dots without connections
+    between the points.
+</DL>
+
+<P>Another type of object supported in the program is made by creating
+a set of 2D polygons with <A HREF="EditPolygon.html">EditPolygon</A> or
+<A HREF="2DObjFinder.html">2DObjFinder</A> and putting them
+together into a 3D object in <A HREF="VolumeBuilder.html">Volume Builder</A>.
+The model can then be viewed in wire frame or as a solid object here.
+
+<H3>Topics</H3>
+<P>
+  Overview |
+  <A HREF="#Selecting_Windows">Selecting windows</A> |
+  <A HREF="#File">File</A> |
+  <A HREF="#Movie">Movie</A> |
+  <A HREF="#Object_Pulldown">Object menu</A> |
+  <A HREF="#Markers_Pulldown">Markers menu</A> |
+  <A HREF="#Rotation-Position">Rotation/position</A> |
+  <A HREF="#Scalebar">Scale bar</A> |
+  <A HREF="#Animation">Animation</A> |
+  <A HREF="#Clipping">Clipping</A> |
+  <A HREF="#Display_Options">Display options</A> |
+  <A HREF="#Lighting">Lighting</A> |
+  <A HREF="#Automatic_Modeling">Automatic modeling</A> |
+  <A HREF="#Wire_Frame/Solid">Wire frame/solid</A> |
+  <A HREF="#Measurements">Measurements</A> |
+  <A HREF="#Color">Color</A> |
+  <A HREF="#Stereo">Stereo</A> |
+  <A HREF="#Picking">Picking</A> |
+  <A HREF="#Current_Object_Info">Current object</A> |
+  <A HREF="#Global_Model">Global model</A> |
+  <A HREF="#WT_Display_Options">WT display options</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="3DModelStrategies.html">Modeling strategies</A> |
+  <A HREF="Tracer.html">Tracer</A> |
+  <A HREF="Strait.html">Straight</A> |
+  <A HREF="VolumeBuilder.html">Volume Builder</A> |
+  <A HREF="PickToModel.html">Pick to Model</A> |
+  <A HREF="SurfHarmMod.html">SurfHarmMod</A> |
+  <A HREF="VolumeViewer.html">Volume Viewer</A> |
+  <A HREF="Priism.html">Priism</A>
+<HR>
+    
+<H2><A NAME="Selecting_Windows">Selecting windows</A></H2>
+<P>When you first start 3DModel, it will automatically attach to all the
+image windows that are currently displayed. Any window that was iconified 
+when 3DModel was started or was opened after 3DModel was started can be
+attached to the model at any time by selecting the "select windows" entry
+from 3DModel's "options" menu.   This causes a dialog to be displayed with
+toggles for each window number (up to window 19).  When a toggle is on
+that window will be considered by 3D Model.  Otherwise it will not be used.
+You can use any of the attached windows to create your model by clicking on
+the image at the point where you want to add a point.  All of the image
+windows will update to the section that contains the current focus point of
+the model, and the model will be clipped to show the part of the model that
+falls in the currently displayed section.  The reason for using multiple
+windows is that by rotating your image data into several orientations you can
+see where the model falls in each orientation making it much easier to tell
+that you've modeled your structure correctly in 3 dimensions.  In addition,
+3DModel will work with the output of
+<A HREF="VolumeViewer.html">Volume Viewer</A>'s interactive or movie options.
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="File">File</A></H2>
+<P>The functions available from the File menu are:
+<DL>
+  <DT>save<DD>Presents a file selection dialog to choose where to save the
+    current model as a file.
+  <DT>load<DD>Presents a file selection dialog to select a model file.
+  <DT>new model<DD>Clears all objects.
+  <DT>autosave<DD>By default, the current model is periodically saved so
+    that if the program crashes most of your work can be retrieved.  Selecting
+    autosave causes a dialog to be displayed in which you can choose whether
+    or not the periodic saves should be performed and how often they should be
+    performed.  In the case of a crash, the model from the last periodic
+    save will be in the directory /var/tmp under the name
+    <VAR>user name</VAR>_SAVE.MOD.
+  <DT>movie<DD>Animates the model display and saves each frame shown.  For
+    more information see the <A HREF="#Movie">Movie topic</A>.
+</DL>
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Movie">Movie</A></H2>
+<P>To animate the model and save the result as a movie or sequence of
+image files, use the "movie" option in 3DModel's "file" menu.  That option
+will open a dialog with the following controls:
+
+<DL>
+  <DT>File format<DD>Use this menu to select the format used to store the
+    captured images.  To view and edit the parameters specific to the currently
+    selected format, press the "options..." button.  Supported file formats
+    include:
+    <UL>
+      <LI><A HREF="JFIF_Save.html">JPEG compressed images stored as JFIF
+        files</A>
+      <LI><A HREF="PGM_PPM_Save.html">PGM and PPM</A> image files
+      <LI><A HREF="TIFF_Save.html">TIFF</A> image files
+      <LI>QuickTime movies:  available on <A HREF="AppleQT.html">Mac OS X via
+        the native libraries</A> and on
+        <A HREF="LQT.html">Linux via libquicktime</A>
+    </UL>
+    Images from 3D Model are not well suited to JPEG compression so the
+    JFIF format and JPEG compression schemes for QuickTime are not
+    particularly useful.
+  <DT>Spin axis<DD>Use this menu to control which axis is used as the
+    axis of rotation.
+  <DT>Time order<DD>If the animation follows the model through time
+    points in the data, this menu controls what happens when the animation
+    reaches the last time point.  With the "Loop" option the animation will
+    start over again at the first time point.  With the "Back and forth"
+    option, the animation will proceed to go through the time points in
+    reverse order.
+  <DT>Angle increment<DD>Use this slider or the field immediately to
+    its left to set the amount of rotation about the spin axis between
+    frames.  The value shown in the field has units of degrees.
+  <DT>Time increment<DD>Use this slider or the field immediately
+    adjacent to it to set the amount by which the time point coordinate
+    changes between frames.
+  <DT>Frame count<DD>Enter the number of frames to generate in this field.
+  <DT>File prefix<DD>Use this field to enter the name (including directories
+    if desired) that you want to use for the output file or files.  If the
+    file format you selected stores each frame in a separate file,  3D Model
+    will generate the actual file names by append the frame number and default
+    file format extension to what you have entered in the "File prefix"
+    field.  If the file format you selected stores the frames in a single
+    files, 3D Model will generate the output file name by appending the
+    default file format extension to what you have entered in the "File prefix"
+    field.
+  <DT>Create<DD>Press this button to start generating the movie.
+  <DT>Interrupt<DD>Press this button to stop recording a movie that is
+    still in progress.
+  <DT>Close<DD>Closes the movie dialog.  If 3D Model is currently recording
+    a movie, closing the dialog will stop the recording.
+</DL>
+
+<P>The images saved are read back from the computer's video system; for best
+results the 3D Model display window should be fully on the screen and not
+obscured by any other window.
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Object_Pulldown">Object menu</A></H2>
+<P>The functions in this menu apply only to the current object or to all
+the objects. There are different types of objects so some functions may only
+apply to certain types.  Unless specific types are stated below you can
+assume it applies to all types of objects. Please see the
+<A HREF="#WT_Display_Options">WT display options</A> topic for detailed
+information on the different object types. 
+
+<DL>
+  <DT>create new<DD>Starts a new object.  Every time you want to start
+    a separate object you will need to use this menu entry.
+  <DT>delete obj<DD>Deletes the current object.
+  <DT>del pt list<DD>Deletes the list of points from the object but does
+    not delete the object itself.  Only applies to objects of types 1 and 2.
+  <DT>delete dots<DD>Deletes the list of dots from the object but does not
+    delete the object itself.   A dot list is a special extra list of points
+    that can be added onto any object type.
+  <DT>undisplay all<DD>Turns off the drawing of all objects.  Once
+    this is done, any of the objects can be independently turned back on for
+    drawing. If there are a large number of objects, drawing all the objects
+    could be slow, so when picking new objects, turning all other objects off
+    could increase speed.
+  <DT>redisplay all<DD>Turns on the drawing of all objects.
+  <DT>undisplay cur<DD>Turns off the drawing of the current object.
+  <DT>redisplay cur<DD>Turns on the drawing of the current object.
+  <DT>connect two<DD>Opens a dialog to allow you to select two objects to
+    paste together.  You will need to enter the object numbers and have the
+    current point of each object set to the points that you want to connect.
+  <DT>cut in two<DD>Cuts the current object into two objects.  The cut will be
+    made at the current point.  Only applies to objects of types 1 and 2.
+  <DT>reverse pts<DD>Reverses the order of the points in the object so that
+    the last point becomes the first point and vice versa.  Only applies to
+    objects of types 1 and 2.
+  <DT>radius<DD>Display a dialog in which you select the radius of tubular
+    objects.  You can choose to set the radius of the current object or all
+    objects; the radius may be entered directly or adjusted using the
+    slider.  Only applies to objects of types 1 and 2.
+  <DT>wire-solid<DD>If the current object is displayed as a wire frame causes
+    it to be displayed with sold surfaces; if it is displayed with solid
+    surfaces, causes it to be displayed as a wire frame.  This applies
+    to model types 1 and 2 if they have a nonzero radius (i.e. they are
+    shown as tubes) or have spherical or cubic markers for the points.
+    It also applies to objects of types 3 and 4 imported from
+    <A HREF="VolumeBuilder.html">Volume Builder</A>.
+  <DT>name object<DD>Displays a dialog to allow you to enter a name for the
+    current object.  This name will be shown next to the first point on the
+    object in the 3DModel display if "object labels" are turned on from
+    the <A HREF="#Display_Options">options-&gt;display options</A> menu.
+    Also, the <A HREF="#WT_Display_Options">WT display options dialog</A>
+    will display the name of each object.
+</DL>
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Markers_Pulldown">Markers menu</A></H2>
+<P>All of these functions affect the current point or all the points in the
+current object.
+<DL>
+  <DT>label point<DD>Displays a dialog to allow you to enter a label for the
+    current point.  Press ok to cause the new label to be displayed next
+    to the point.
+  <DT>remove label<DD>Removes the label, if any, for the current point.
+  <DT>sphere curr. pt.<DD>Causes a spherically-shaped marker to be used for
+    the position of the current point.
+  <DT>sphere curr. obj.<DD>Causes spherically-shaped markers to be used for
+    the positions of all points in the current object.
+  <DT>sphere marker all<DD>Causes spherically-shaped markers to be used
+    for the positions of all points in all the objects.
+  <DT>cube curr. pt.<DD>Causes a cube-shaped marker to be used for the position
+    of the current point.
+  <DT>cube curr. obj.<DD>Causes a cube-shaped marker to be used for the
+    positions of all points in the current object.
+  <DT>cube marker all<DD>Causes cube-shaped markers to be used for the
+    positions of all points in all the objects.
+  <DT>remove marker<DD>Removes the marker, if any, used for the current point.
+  <DT>rm mkrs curr. obj.<DD>Removes all markers in the current object.
+  <DT>rm mkrs all obj.<DD>Removes all markers from all objects.
+  <DT>resize markers<DD>Opens a dialog to allow you to choose the size
+    of the marker for the current point, the size of all markers in the
+    current object, or the size of all markers.  The radius is shown in
+    the "current radius" field and may be entered directly or adjusted with
+    the slider.
+</DL>
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Rotation-Position">Rotation/position</A></H2>
+<P>The positioning of the model in the "3DModel: display" window can be
+adjusted with the mouse.  Exactly how the mouse buttons are used is
+set from the "mouse control" entry in the "options" menu.  The default
+is: pressing the left mouse button picks a point from one of the models,
+pressing the middle mouse button and dragging the mouse rotates the model
+display, and pressing the right mouse button and dragging the mouse zooms in
+and out.  The available functions that a mouse button could perform are:
+<DL>
+  <DT>pick<DD>Causes the nearest object to the point selected to become the
+    current object.  The last point in that object is the new current point.
+  <DT>rotate<DD>Dragging the mouse while the button is down rotates the model
+    display.
+  <DT>zoom<DD>Dragging the mouse upward while the button is pressed zooms in
+    on the model; dragging it downward zooms out.
+  <DT>translate<DD>Dragging the mouse while the button is pressed translates
+    the model relative to the axes.
+  <DT>time<DD>Dragging the mouse vertically while the button is pressed moves
+    the model through time.
+</DL>
+
+<P>The rotation applied to the model display can be adjusted directly by
+selected "specify rotation" from the "options" menu and entering the angles
+in the dialog that appears.
+
+<P>To restore the model to its default orientation and zoom, select
+"reset 3D-model" from the "options" menu.
+
+<P>The point used as the center of rotation when rotating and the size of the
+bounding box shown can be selected using the dialog opened by the
+"rotation center" entry in the "options" menu.  The available options are:
+<DL>
+  <DT>From window <VAR>x</VAR><DD>Use the size of the data volume in the
+    window <VAR>x</VAR> to set the size of the bounding box.  The geometric
+    center of that box is used as the center of rotation.
+  <DT>From model file<DD>Use the center information stored in the model file.
+  <DT>From all points<DD>Use the mean position of all points in the model
+    as the center of rotation.  The bounding box is chosen to be the smallest
+    such box that contains all the points.
+  <DT>Pick center<DD>Select a position in an image window with the mouse
+    to set the center of rotation.  The size of the data volume in that
+    window sets the dimensions of the bounding box.
+</DL>
+ 
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Scalebar">Scale bar</A></H2>
+<P>To display a scale bar with the model or to alter the positioning of the
+currently displayed scale bar, select "scale bar" from the "options" menu.
+In the dialog that appears, there is a menu at the top that controls whether
+no scale bar is show, a scale bar is shown but without a label indicating its
+length, or if the scale bar is shown with a label.  The remaining controls
+are:
+
+<DL>
+  <DT>x y pos<DD>The entries in this field are the position of the bottom
+    left of the scale bar relative to the bottom left corner of the display
+    window.  (0, 0) is the lower left corner, (100, 0) is the lower right
+    corner, (0, 100) is the upper left corner, and (100, 100) is the upper
+    right.
+  <DT>size<DD>Specifies the length of the scale bar in the units used
+    for the pixel spacing (typically microns for data from optical microscopes
+    and Angstroms from electron microscopes).
+  <DT>thickness<DD>Specifies the thickness of the scale bar in pixels.
+  <DT>vertical<DD>If this toggle is off, the scale bar is horizontal;
+    if it is on the scale bar is shown vertical.
+</DL>
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Animation">Animation</A></H2>
+<P>To create an animation of the model display select "animation" from the
+"options" menu.  During the animation, the model display will automatically
+spin about the x, y, or z axis and / or follow the model through the time
+points in the data.  While the animation is in progress, you can still use
+the mouse to  reposition your model so you can have it spinning in any
+orientation.
+
+<P>The controls in the animation dialog are:
+<DL>
+  <DT>Spin axis<DD>Use this menu to control which axis is used as the
+    axis of rotation.
+  <DT>Time order<DD>If the animation follows the model through time
+    points in the data, this menu controls what happens when the animation
+    reaches the last time point.  With the "Loop" option the animation will
+    start over again at the first time point.  With the "Back and forth"
+    option, the animation will proceed to go through the time points in
+    reverse order.
+  <DT>Angle increment<DD>Use the top slider or the field immediately to
+    its left to set the amount of rotation about the spin axis between
+    frames.  The value shown in the field has units of degrees.
+  <DT>Time increment<DD>Use the middle slider or the field immediately
+    adjacent to its left to set the amount by which the time point coordinate
+    changes between frames.
+  <DT>Redraw delay<DD>Use the bottom slider or the field immediately adjacent
+    to its left to set the amount of time the animation waits before
+    drawing the next frame.  The value shown in the field has units of
+    milliseconds.
+  <DT>Pause<DD>While this toggle is off and the animation menu is open, the
+    animation will proceed; when this toggle is on the animation will not run.
+  <DT>Close<DD>Closes the animation dialog and stops the animation.
+</DL>
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Clipping">Clipping</A></H2>
+<P>Select "clipping" from the options menu to display a dialog that lets you
+cut off a portion of the image.  Moving a slider farther to the left
+cuts out more of the image from one of the sides. You can cut off from the
+top, bottom, left, right, far, and most useful, near. Each slider
+ranges from showing the whole volume to cutting to the middle of the model. 
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Display_Options">Display options</A></H2>
+<P>There are various attributes that apply to the whole model in the model
+display window.  These attributes can be modified by selecting
+"display options" from the "options" menu.  Doing so opens a dialog.  At
+the top are toggles for the 5 possible waves that a data set can have.  Use
+these toggles to turn on and off display of the objects made in the individual
+waves.   The other controls are:
+
+<DL>
+  <DT>obj labels<DD>If this toggle is on, the name of the object (or
+    just its number if it has no name) is shown next to its first point.
+  <DT>cur pt mkr<DD>If this toggle is on, a red dot is shown where the
+    current point is.
+  <DT>display all<DD>If this toggle is on, all objects are displayed regardless
+    of whether or not they are individually marked to not be displayed.
+  <DT>mirror<DD>Since the data may be collected in two different directions,
+    there is a question of whether to place the zero point in z at the
+    front or back of the volume.  If this toggle is off (the default), the
+    zero point is in front; if it is on, the zero point is in back.
+  <DT>show box<DD>If this toggle is on, the bounding box is shown in the
+    model display.
+  <DT>show ticks<DD>If this toggle is on, the tick marks on the sides of the
+    bounding box are shown when the bounding box is shown.
+  <DT>antialiasing<DD>If this toggle is on, an effect is applied to reduce
+    pixelation artifacts ("jaggies") in lines.  Doing so generally increases
+    the time needed to redraw the model.
+  <DT>flat shading<DD>When lighting is on and this toggle is off, smooth
+    shading is used (this is the default).  When lighting is on and this
+    toggle is on, flat shading is used.
+</DL>
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Lighting">Lighting</A></H2>
+<P>Lighting enhances the three-dimensional feel of the model when the objects
+are wire or solid cylinders or objects from
+<A HREF="VolumeBuilder.html">Volume Builder</A>.  To set the lighting
+parameters, select the "lighting" entry from the "options" menu.  This opens
+a dialog that has a toggle to turn lighting on and off, sliders to vary the
+components of the light, and sliders to adjust the position of the light.
+In the <A HREF="#Display_Options">display options</A> dialog there is a
+control to set what type of shading is done when lighting is on.
+         
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Automatic_Modeling">Automatic modeling</A></H2>
+<P>A semiautomatic searching tool to trace the axis of a tubular structure
+is available.  To use it, select the "automodel" entry from the "options"
+menu.  That will open a dialog to control the search.  For more information
+about the search parameters consult <A HREF="Tracer.html">Tracer.html</A>.
+         
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Wire_Frame/Solid">Wire_Frame/Solid</A></H2>
+<P>Some types of objects can either be viewed as wire frames (only the
+lines defining the edges of surfaces are drawn) or with the surfaces filled
+in.  In the "options" menu, you can select "all obj wire" to change all
+objects to be displayed as wire frames or "all obj solid" to change all
+objects to be displayed with the surfaces filled in.  To modify whether
+a wire frame or solid shading is used for an individual object use
+the <A HREF="#Object_Pulldown">wire-solid entry</A> in the "object" menu
+or change the object type in the
+<A HREF="#WT_Display_Options">WT display options</A> dialog.
+         
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Measurements">Measurements</A></H2>
+<P>3DModel can make some simple measurements from the objects in the model.
+The measurements that can be performed are all available from the
+"measurements" menu in the main dialog and are:
+
+<DL>
+  <DT>2D angle at cur pt<DD>If a point has both a point previous to it
+    (one step along the axis of the object towards the first point in an
+    object) and one after it (one step towards the end of the branch containing
+    the current point), reports the angle (possible range is 0 to 180
+    degrees) between the vector from the current point to the previous point
+    and the vector from the current point to the next point.  The calculation
+    ignores the z coordinates for the three points.
+  <DT>3D angle at cur pt<DD>Is the same as "2D angle at cur pt", but the
+    z coordinates of the points involved are included.
+  <DT>printout lengths<DD>Displays a dialog to select an output file.  The
+    total lengths for each object will be computed and saved to this file
+    in a text format.  The objects from the same wavelength and time point
+    are grouped together; each such grouping begins with a line of the
+    form<BR>
+    <CODE>wave</CODE> <VAR>wavelength index</VAR> <CODE>time</CODE> <VAR>time point index</VAR><BR>
+    For each object one line is printed with the object index followed by
+    the total length measurement.  The total length measurements are in
+    the units used for the pixel spacing (typically microns for optical
+    microscope data and Angstroms for electron microscope data) and do
+    not include the lengths of branches.
+</DL>
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Color">Color</A></H2>
+<P>Colors for model features can be chosen from a palette of twelve colors
+where the twelfth color renders the feature invisible.  By default, as
+objects are created, they are assigned one of the 11 visible colors.  To
+change the color of an object, marker, or other model feature first change
+the menu below the "Set Color for" button to be the type of feature you
+want to modify; then select the new color from the "colors" menu.  The
+aspects of the model whose color can be changed are:
+
+<DL>
+  <DT>current object<DD>All lines in the object are affected but associated
+    markers and point labels are not.  You can make an object current by
+    clicking on it with the left mouse in the model window, or by entering the
+    wavelength index, time point number, and object number in the 3DModel
+    main dialog.
+  <DT>all objects<DD>Has the same affect as "current object" but is applied
+    to all objects in the model.
+  <DT>new markers<DD>Affects the initial color for new markers added to the
+    model.
+  <DT>current marker<DD>Affects the color for the marker at the current
+    point in the current object.
+  <DT>all markers<DD>Affects the colors for all markers.
+  <DT>markers curr obj<DD>Affects the colors for all markers in the current
+    object.
+  <DT>xyz display<DD>Affects the color of the bounding box, tick marks,
+    and axes labels.  If you want to hide these, rather than changing their
+    color to be invisible, you can turn them off completely from the
+    <A HREF="#Display_Options">display options dialog</A>.
+  <DT>scale bar<DD>Affects the color of the scale bar displayed along
+    side of the model.  To control other aspects of the scale bar,
+    use the <A HREF="#Scalebar">scale bar</A> entry in the "options" menu.
+  <DT>background<DD>Affects the background against which the model is drawn.
+    Selecting "invisible" as the color causes a black background to be used.
+</DL>
+
+<P>Initially, the colors in the palette are the same as the colors used for
+graphics in the image windows.  If you change the image window colors with
+<A HREF="ChangeColors.html">ChangeColors</A> in the
+<A HREF="Priism.html">Priism menu</A> and want the colors used within 3DModel
+to be the same, select "priism colors" from the "options" menu to cause
+3DModel to adjust its colors.
+
+<P>If you want to change the model colors without changing the image window
+colors, select "change colors" from 3DModel's "options" menu.  That opens up
+two dialogs.  One, the palette dialog, displays the red, blue, green color
+values for each of the eleven visible colors and the name given to each of
+those colors.  You can directly modify these values, and the changes will
+instantly take effect.  The toggle button next to each color indicates which
+color is modified when the "apply color" button is pressed in the color wheel
+dialog.  That palette dialog also has buttons to save or restore the set of
+colors from file.  The other dialog contains a color wheel.  Clicking in
+the color wheel selects a color and the band below the color wheel is filled
+with that color.  The "shade" slider may be used to adjust the brightness of
+the colors.  When the "apply color" button is pressed, the RGB color values
+for the selected color are copied to the palette element selected in
+the palette dialog.
+         
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Stereo">Stereo</A></H2>
+<P>A stereoscopic view of the model will be displayed if the menu
+below the "Stereo" button in 3DModel main dialog is set to something other
+than "off".  The available options are:
+
+<DL>
+  <DT>cross eyed<DD>A side-by-side stereo mode in which the view on the
+    left is rotated by 6 degrees about the y axis relative to the view on
+    the right.
+  <DT>wall eyed<DD>A side-by-side stereo mode in which the view on the
+    left is rotated by -6 degrees about the y axis relative to the view on
+    the right.
+  <DT>per-window<DD>This option is only available if the graphics hardware
+    claims to support quad-buffered OpenGL stereo.  When you select this
+    option, 3D Model draws left- and right-eye views of the model and relies
+    on the hardware to generate the stereoscopic effect.
+  <DT>fullscreen<DD>This option is only available on SGI IRIX systems.  When
+    you select this option, 3D Model draws left- and right-eye views of the
+    model and relies on the hardware to generate the stereoscopic effect.
+    Because of the limitations of this hardware stereo mode, the model view
+    takes up the full screen; to restore the system to its normal display mode,
+    press the space bar while the model view has input focus.
+</DL>
+
+<P>To have a stereoscopic view of the image data with the model superimposed
+upon it, you can use <A HREF="VolumeViewer.html">Volume Viewer</A>'s
+interactive mode to generate a stereo projection of the image data which can
+be updated on the fly.  You can also use Volume Viewer's movie mode to
+generate a sequence of projections where the rotation is solely about the y
+axis; load the generated movie into an image window and use the image window's
+"2 x 1" montage option (or, additionally, the hardware stereo option on SGIs)
+to get a stereoscopic view.  In either case, add the window(s) with the
+Volume Viewer results to 3DModel's list of
+<A HREF="#Selecting_Windows">selected windows</A>.  3DModel will display
+the model on top of the projection data.  Picking from the projections
+is also handled via a "3D cursor" which is displayed while the mouse
+cursor is over a window with projection data.  In normal mode, moving
+the mouse simply moves the position of the 3D cursor in a plane perpendicular
+to line of sight; to move the cursor along the line of sight press and
+release the z key on the keyboard, move the mouse vertically to move the
+cursor along the line of sight, and then press and release the z key again
+to restore normal operation (it you have dial box, knob 1 (bottom right)
+will move the cursor along the line of sight regardless of whether or not
+the z key has been pressed).
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Picking">Picking</A></H2>
+<P>Whenever you click with the left mouse button in one of the image
+<A HREF="#Selecting_Windows">windows that 3DModel monitors</A>, something
+will be done with the point selected.  That behavior can be changed by
+selecting one of the following from the menu below the "Picking" button
+in the 3DModel main dialog:
+
+<DL>
+  <DT>normal<DD>The picked point is appended after the current point of the
+    current object.  If the current point is not the last point in the
+    object, the new point will start a branch off of the current point.
+  <DT>obj + spheres<DD>Picking functions the same as in the "normal"
+    mode, but each new point automatically has a spherical marker drawn
+    with it.  This is useful for grouping a set of markers together.
+  <DT>obj + cubes<DD>Picking functions the same as in the "normal"
+    mode, but each new point automatically has a cube-shaped marker drawn
+    with it.
+  <DT>just dots<DD>The picked point is added as a pixel-sized dot in
+    the model window.  These dots are not connected and do not affect
+    the traversal and branching of the regular points in the model.  Many
+    of these together can give the effect of density without substantially
+    obscuring parts of the model.
+  <DT>add to top<DD>The picked point is added to the front of the point
+    list for the current object.
+  <DT>preview<DD>The picked point is shown as a yellow dot or sphere
+    (depending on the current marker size), but is not added to the current
+    object as a point.
+  <DT>insert pt<DD>The picked point is inserted after the current point
+    in the current object.  Unlike the "normal" mode, no new branch will
+    created.  If the current point has one or more branches off of it,
+    the inserted point is added on the main trunk.
+  <DT>move pt<DD>If the left button is pressed and held down in the
+    image window, the point in the current object which is closest to the
+    selected point becomes the current point and will be dragged as the
+    mouse is moved.  Releasing the mouse button causes the final mouse
+    position to be used as the new position of the point.
+</DL>
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Current_Object_Info">Current object</A></H2>
+<P>Information about the current object is displayed in the center of
+3DModel's main dialog.  The wavelength and time point which contain
+the object are shown.  These may be changed to perform modeling in a different
+wavelength and time point.  The number of the current object is also shown
+This value may be changed to treat another object as the current object
+(the current object can also be changed by picking in the model display
+window; consult the <A HREF="#Rotation-Position">Rotation/position</A>
+topic for details).  For models which are strings of points, the
+length of the main trunk (in the same units as the pixel spacing) is
+shown as well as the total number of points in the main trunk and any
+branches (these values are also shown for surface models but are not likely
+to be useful).  The width of lines, in pixels, used for drawing the current
+object is shown in the "Line width" field.  Changing this value will change
+the width of the lines used; and if the "set width all objects" toggle is on,
+this change will affect all other objects as well.
+
+<P>For the current object, 3DModel has the notion of a current point
+which is important when <A HREF="#Picking">adding points to a model</A>,
+<A HREF="#Measurements">performing measurements</A>,
+<A HREF="#Markers_Pulldown">altering markers</A>, or
+<A HREF="#Object_Pulldown">connecting or splitting objects</A>.  The current
+point is usually shown with a red marker in the model display window and
+image windows, though this can be turned off from the
+<A HREF="#Display_Options">display options</A> dialog.  The index of the
+current point is shown in the "Current point" field in the main dialog.  It
+can also be changed from that field.  Other methods for changing the
+current point are by <A HREF="#Picking">picking in the image windows</A>
+and using the following buttons from the 3DModel's main dialog:
+
+<DL>
+  <DT>first<DD>Makes the first point in the current object the current point.
+  <DT>last<DD>Makes the last point in the current object the current point.
+  <DT>previous<DD>The new current point is the point one step backward
+    along the axis of the object where backward is towards the first point
+    in the model if the current point is in the main trunk or towards the
+    origin of the branch if the current point is in a branch.
+  <DT>next<DD>The new current point is the point one step forward
+    along the axis of the object where forward is towards the end point
+    of the main trunk if the current point is in the main trunk or
+    toward the end point of the branch if the point is in a branch.  This
+    implies that the "next" button can not be used to step into a branch
+    or between branches.  Use "previous branch" and "next branch" for that.
+  <DT>previous branch<DD>Changes the current point to be the first point in
+    a sister branch, if available.  A sister branch is one that starts at the
+    point previous to the current point.
+  <DT>next branch<DD>Functions the same as "previous branch", but cycles
+    through the sister branches in the opposite order.
+  <DT>delete current point<DD>Deletes the current point.  Deleting a
+    point which is the origin of one or more branches will cause those
+    branches, except the main trunk, to be deleted.  If the current point
+    lies between two points, the object will remain linked with a line
+    directly between those points.  The new current point is the previous
+    point, if current point was not the first point in the object, or the
+    second point, if the current point was the first point and there is a
+    second point.
+</DL>
+         
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="Global_Model">Global model</A></H2>
+<P>There is a toggle on the main dialog labeled "global model".  By default, a
+separate object list is kept for each wavelength and time set, where the first
+object in each set is object 1.  This lets you view any of the wavelength
+objects separately or all at once. It also means that you can watch your model
+move through time, as the same object appears on each list in a different
+orientation at each time.
+
+<P>When the "global model" toggle is on, all the objects from every wave 
+are stored in one list so that they will all be displayed at once and will
+all be numbered uniquely. This makes the most sense to use with multiple
+wavelength (not time) data in that you may have all unique objects throughout
+all the waves and do not want any two objects to have the same number.
+         
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+<H2><A NAME="WT_Display_Options">WT display options</A></H2>
+<P>To directly view and the display attributes of individual objects,
+press the "wt display options" button to open a dialog which will present
+the attributes of the objects in the current wave and time (or all objects
+if the <A HREF="#Global_Model">global model toggle</A> is on) in a tabular
+format.  The attributes that are shown are:
+<DL>
+  <DT>on<DD>If this toggle is on, the object will be displayed; if it
+    is not, the object is not displayed.  This attribute may be overridden
+    by the "display all" toggle in the
+    <A HREF="#Display_Options">display options</A> dialog.
+  <DT>obj<DD>Shows the object number.
+  <DT>color<DD>Displays the color used for lines in the object and the
+    object's name; choose a new selection from the menu to change the color.
+    This color does not affect the color of markers or their labels
+    associated with points in the object.
+  <DT>thick<DD>Is the thickness, in pixels, of the lines used to display
+    the object.
+  <DT>opac<DD>If this toggle is off, the object is opaque and completely
+    obscures the objects behind it.  If the toggle is on, the object is
+    somewhat transparent.
+  <DT>type<DD>The object types are:
+    <DL>
+      <DT>type 1<DD>The axis of the structure is string of points which
+        may be branched or unbranched.  The object is drawn as a solidly shaded
+        cylinder of a fixed radius; if the radius is zero, it is simply drawn
+        as a line along the object's axis.  This type is freely interchangeable
+        with types 2 and 7.
+      <DT>type 2<DD>Is the same as type 1, but surfaces are drawn as wire
+        frames.  type 2 is freely interchangeable with types 1 and 7.
+      <DT>type 3<DD>Is a surface mesh imported from
+        <A HREF="VolumeBuilder.html">Volume Builder</A>.  The surfaces
+        are solidly shaded.  This type is freely interchangeable with type 4.
+      <DT>type 4<DD>Is the same as type 3 but rendered as a wire frame.  It
+        is freely interchangeable with type 3.
+      <DT>type 5<DD>Is a connected string of points tracing a surface
+        from Volume Builder (the "string no cross" model).  If drawn with
+        a nonzero radius, the surfaces are shaded solidly.  This type is
+        freely interchangeable with type 6.
+      <DT>type 6<DD>Is the same as type 5 but surfaces are rendered as a
+        wire frame.  It is freely interchangeable with type 5.
+      <DT>type 7<DD>Is a string of points like types 1 and 2 but
+        lines are only shown between the first and second point, third
+        and fourth point, and so on.  Branches are not shown.  This
+        type may be used to depict the motion of points through time.  It
+        is freely interchangeable with types 1 and 2.
+      <DT>type 9<DD>Is a surface mesh imported from
+        <A HREF="SurfHarmMod.html">SurfHarmMod</A>.  Surfaces are solidly
+        shaded.  This type if freely interchangeable with type 10.
+      <DT>type 10<DD>Is the same as type 9 but is rendered as a wire frame.
+        This type is freely interchangeable with type 9.
+    </DL>
+</DL>
+
+<P>The "update scene" and "update image windows" toggle buttons near the
+bottom of the dialog control what happens when you change an object's
+attributes in the dialog.  The intended use for those buttons is when you want
+to make a number of changes to the objects.  Normally each change causes the
+displayed objects to be redrawn.  For complicated object displays or many
+image windows, that may take too long.  To have just one redraw for a set of
+changes, you would turn off the "update image windows" toggle button and
+perhaps the "update scene" toggle button as well, make your changes, and then
+press the "Update all" button next to the "update image windows" toggle button.
+When the "update scene" toggle button is on, any change to an object's
+attributes in the dialog immediately cause a redraw of the 3D object view.
+When that toggle button is off, changes do not cause the view to be redrawn and
+the view will only be redrawn if something else causes a redraw or you press
+the "Update all" button.  When the "update image windows" toggle button is on,
+any change to an object's attributes in the dialog immediately causes a redraw
+of all image windows attached to the model.  When that toggle button is off,
+changes do not cause the image windows to be redrawn; to force a redraw, press
+the "Update all" button.
+
+<P>Use the controls in the lower right or the dialog to change which
+objects' attributes are shown.  The leftmost arrow causes the start of
+the object list to be displayed; the rightmost arrow causes the end of the
+object list to be displayed.  The inner left-pointing arrow causes the
+15 objects before the current set to be displayed; the inner right-pointing
+arrow causes the 15 objects after the current set to be displayed.  To jump
+to a particular object, enter its number in the text field between the
+arrows.
+
+<P><A HREF="#3DModel">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

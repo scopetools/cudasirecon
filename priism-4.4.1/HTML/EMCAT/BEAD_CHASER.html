@@ -1,0 +1,369 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: BEAD_CHASER</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the application to automatically fill in missing positions in the results BEAD_FINDER and BEAD_MATCHER.">
+  <META NAME="Keywords" CONTENT="Priism,EM,tomography,alignment,gold beads">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="BEAD_CHASER">BEAD_CHASER</A></H1>
+<H2>Overview</H2>
+<P>This is the third step in automatic/interactive bead alignment.  This
+program attempts to dig out missing bead positions in the bead list
+file created by <A HREF="BEAD_MATCHER.html">BEAD_MATCHER</A>.
+
+<P>The algorithm is to first calculate the shifts between projections.
+Starting with the projection whose tilt is closest to zero, for each
+projection i the shift parameters are derived from common bead
+positions from the input .sl bead list between projection i and some
+other projection in the searching range of <A HREF="#*nRange">n0</A>,
+or, if a <A HREF="#IsblFile">.sbl file</A> or <A
+HREF="#*IprmFile">alignment parameter file</A> has been provided,
+those are used to obtain the shift parameters.  If the shift
+parameters for certain projections cannot be achieved with one of
+these three methods, the program will stop and ask to pick (extra)
+single bead positions on these sections for a .sbl file.
+
+<P>Once the rough alignment parameters are available for the whole
+data stack, start from the section whose tilt is closest to zero
+and for section i with missing bead, Bij:
+<OL>
+  <LI>Find the corresponding position (Bkj) on the closest
+    neighboring section k among the adjacent <A HREF="#*nRange">n0</A>
+    projections.  If Bkj is not found, Bij will not be searched.
+    It is optional to add the newly found positions to the .sl bead
+    list pool in searching Bkj for predicting Bij (this is controlled
+    by the <A HREF="#new_bp">new_bp toggle</A>.
+  <LI>Find the missing bead position Bij by searching a range
+    (set by the <A HREF="#rad_search">search range input parameter</A>)
+    around the predicted position.  The search procedure either uses the
+    local cross-correlation peak  combined with other criteria on the
+    original projection or an adaptive threshold on the amplitude as used
+    in <A HREF="BEAD_FINDER.html">BEAD_FINDER</A>.  The reference bead
+    for the search can be a model bead or a region around corresponding
+    bead position in a previous projection (the program takes the first
+    found bead-like feature around the predicted position in digging each
+    bead position).
+  <LI>With the list of features found in the previous step,
+    <OL>
+      <LI>Rank each bead-like feature by feature area minus expected
+        area.
+      <LI>Rank each bead-like feature by its shape factor (the
+        ratio of its area to its circumference squared).
+      <LI>Score each bead-like feature on the basis of the two calculated
+        ranks.  The score is the simple sum of the area rank and the
+        shape factor rank.
+      <LI>Choose the feature with the highest score.
+    </OL>
+   <LI>Merge the newly found positions with the existing list.  If
+     any pair of positions is the same (or very close when the
+     reference bead is from Bkj), reject both.
+</OL>
+
+<P>Here's an example command file for BEAD_CHASER:
+<PRE>
+     (time bead_chaser \
+     /mama/weiping/test/cent5r.stk \
+     /mama/weiping/test/cent5r.sl \
+     /mama/weiping/test/cent5r.sl2 -beadrad=3.5 \
+     -rot0=78:-1 -area_lub=.4:6 -shape lb=.4 \
+     -barea_pct_mult=2 -rad_search=8 -isblfile=none \
+     -xc_aat=0 -nO=10 -iv=0:22 -iref=-1
+     -iprmfile=none ) &gt; /mama/weiping/BALIGN.log
+</PRE>
+
+<H3><A NAME="Parameters">Parameters</A></H3>
+<P>
+   <A HREF="#IdatFile">IdatFile</A> |
+   <A HREF="#IslFile">IslFile</A> |
+   <A HREF="#OslFile">OslFile</A> |
+   <A HREF="#NX:NY:NV">NX:NY:NV</A> |
+   <A HREF="#bead_radius">bead_radius</A> |
+   <A HREF="#rot0">rot0</A> |
+   <A HREF="#area_lub">area: lb,ub</A> |
+   <A HREF="#shape_lb">shape: lb</A> |
+   <A HREF="#barea_pct_mult">bArea: mult_pct</A> |
+   <A HREF="#rad_search">search range</A> |
+   <A HREF="#IsblFile">IsblFile</A> |
+   <A HREF="#xc_aat">chasing method</A> |
+   <A HREF="#new_bp">new_bp</A> |
+   <A HREF="#*nRange">nRange</A> |
+   <A HREF="#*iv">iv</A> |
+   <A HREF="#*iRef">iRef</A> |
+   <A HREF="#*res">res</A> |
+   <A HREF="#*ppmin">ppmin</A> |
+   <A HREF="#*IprmFile">IprmFile</A> |
+
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="../Priism.html">Priism</A> |
+   <A HREF="BALIGN.html">Alignment</A> |
+   <A HREF="BEAD_FINDER.html">Bead finder</A> |
+   <A HREF="BEAD_MATCHER.html">Bead matcher</A> |
+   <A HREF="BEAD_ALIGN.html">Bead align</A> |
+   <A HREF="BEAD_ALIGN_INTERACTIVE.html">Bead align (interactive)</A> |
+   <A HREF="PEdit.html">Bead list editor</A> |
+   <A HREF="EMTAR.html">Reconstruction</A>
+
+<HR>
+
+<H2><A NAME="IdatFile">IdatFile</A></H2>
+<P>This is the name of the file containing the raw projection data stack
+from the CCD (i.e. measured in terms of electron counts; data stacks with
+the contrast inverted can not be handled).
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="IslFile">IslFile</A></H2>
+<P>IslFile is the name of the input point list file which has the
+sorted and matched bead coordinates from
+<A HREF="BEAD_MATCHER.html">BEAD_MATCHER</A>.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="OslFile">OslFile</A></H2>
+<P>OslFile is the name of the file which BEAD_CHASER should create
+to store its output (the input sorted and matched bead coordinates with
+the additional beads that were found).
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="NX:NY:NV">NX:NY:NV</A></H2>
+<P>The first two values are, respectively, the x and y dimension of the
+projections.  The third value is the number of projections in the data
+stack.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="bead_radius">bead_radius</A></H2>
+<P>This is the average bead radius in pixel units.  It sets the expected bead
+area, area0, which is used to identify bead-like features.  To specify this
+parameter from the command line, use <CODE>-beadrad=</CODE><VAR>r</VAR>;
+the default value is 3.5 pixels.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="rot0">rot0</A></H2>
+<P>Let the orientation angle be the smallest, in absolute value, rotation
+  angle needed to rotate the image so that the tilt axis is parallel to the
+  y axis (the y axis is vertical when images are displayed in Priism).  The
+  orientation angle is positive if the corresponding rotation is clockwise
+  and is negative if the corresponding rotation is counterclockwise.<BR>
+  <IMG SRC="rot0.jpg" ALT="Orientation angle sign convention" WIDTH=373 HEIGHT=189><BR>
+  The first value in the <EM>rot0</EM> field is the estimated orientation
+  angle, in degrees, at a tilt angle of zero.  The second value is the
+  estimated difference, in degrees, between the orientation angle at a tilt
+  angle of sixty degrees and the orientation angle at a tilt angle of minus
+  sixty degrees.  To specify these parameters from the command line, use
+  <CODE>-rot0=</CODE><VAR>o0</VAR><CODE>:</CODE><VAR>ochange</VAR>.  The
+  default value for <VAR>o0</VAR> is 78 degrees; the default value for
+  <VAR>ochange</VAR> is -1 degrees.  You should substitute values that
+  more accurately reflect what happens at the magnification used when
+  collecting the tilt series.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="area_lub">area: lb,ub</A></H2>
+<P>Sets the range on the area for a bead-like feature. The first value,
+<VAR>arealb</VAR> in the field is the lower bound on the area;
+the second value, <VAR>areaub</VAR> is the upper bound.  Both are expressed
+as multiples of the expected area, area0, which is set by
+<A HREF="#bead_radius">bead_radius</A>. Thus, a bead-like feature will
+have an area in square pixels between arealb*PI*bead_radius^2 and
+areaub*PI*bead_radius^2.
+
+<P>These parameters are set on the command line with
+<CODE>-area_lub=</CODE><VAR>arealb</VAR><CODE>:</CODE><VAR>areaub</VAR>.
+The default values are 0.4 for the lower bound and 3 for the upper bound.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="shape_lb">shape: lb</A></H2>
+<P>The second criteria that bead-like features must meet is that the
+quantity (the shape factor), 4*PI*(feature area)/(feature circumference)^2,
+must exceed a threshold.  This parameter sets that threshold.  By its
+definition, the shape factor falls in the range [0, 1], and a circle has
+a shape factor of 1.
+
+<P>On the command line, The threshold for the shape factor is set by
+<CODE>-shape_lb=</CODE><VAR>lb</VAR>.  The default value for <VAR>lb</VAR>
+is 0.4.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="barea_pct_mult">bArea: mult_pct</A></H2>
+<P>This parameter set the upper limit on the area which is non-zero in
+the binary image.  If the limit, <VAR>u</VAR> is greater than one,
+then the limit imposed on the area is <VAR>u</VAR>*(# of beads)*<A
+HREF="#bead_radius">area0</A>.  If the <VAR>u</VAR> is less than one,
+then it is used directly as the fraction of each projection which can
+be non-zero.
+
+<P>The option <CODE>-barea_pct_mult=</CODE><VAR>u</VAR> sets the limit from
+the command line.  The default value of <VAR>u</VAR> is two.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="rad_search">search range</A></H2>
+<P>This parameter sets the radius, in pixels, of the region about a
+predicted bead position that is searched for a missing bead.
+
+<P>Use <CODE>-rad_sr=</CODE><VAR>search_radius</VAR>
+to specify this parameters on the command line.  If not set, the default
+is to use three times the <A HREF="#bead_radius">expected bead radius</A>
+for the search range.  Internally, the search radius is coerced to be
+larger than two times the bead radius.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="IsblFile">IsblFile</A></H2>
+<P>This parameter gives the name of a file that contains the coordinates
+of a single reference bead on all projections.  These coordinates are used
+to enable better prediction of bead positions in the matching step and can be
+used to work around the problems created by large image shifts between
+adjacent projections.  Specifying rough alignment parameters with
+<A HREF="#*IprmFile">IprmFile</A> is another way to do this, but keep
+in mind that the translational parameters from IsblFile have
+priority over those from the alignment parameters file.
+
+<P>The typical way to generate IsblFile is to use
+<A HREF="PEdit.html">the bead list editor</A> to interactively select
+the positions.
+
+<P>This parameter is specified on the command line with
+<CODE>-isblfile=</CODE><VAR>file_name</VAR>.  The default value is "none"
+which indicates that no IsblFile is available.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="xc_aat">chasing method</A></H2>
+<P>There are two options for the algorithm used to search for beads.
+The first, <EM>chasing method: x-c</EM>, looks for peaks in the
+cross-correlation of the projection data with the expected bead shape.
+The second, <EM>chasing method: at</EM>, uses an adaptive thresholding
+approach.  By default, the cross-correlation algorithm is used.
+
+<P>On the command line, use <CODE>-xc_aat=0</CODE> to select the
+cross-correlation algorithm and <CODE>-xc_aat=1</CODE> to select
+adaptive thresholding.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="new_bp">new_bp</A></H2>
+<P>When this toggle is not set, only those locations present in the input
+bead list are used when searching adjacent projections for known bead
+positions in order to predict the position of a bead in a projection
+where it was not found.  This implies that, if a bead was only found
+in projections i0 through i1 in the input list, that largest range
+of projections where it will be found by BEAD_CHASER is
+i0 - <A HREF="#*nRange">n0</A>/2 to i1 + n0/2.
+
+<P>When the toggle on, the locations that have been found so far by
+BEAD_CHASER are also considered which avoids the limitation on extending
+the range of projections where a bead is found but increases the chance
+the program will follow an erroneous prediction and misidentify bead locations.
+
+<P>On the command line, use <CODE>-new_bp</CODE> to use locations found
+by BEAD_CHASER in addition to those present in the input list when predicting
+missing bead positions.  The default is not to include the newly found
+locations.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="*nRange">nRange</A></H2>
+<P>This is the number of adjacent projections to search when finding
+common beads between projection to determine the shift parameters and
+when finding a bead position in one projection to predict the missing
+bead position in another.
+
+<P>The command line switch to set the number of projections searched,
+<VAR>n</VAR>, is <CODE>-n0=</CODE><VAR>n</VAR>.  The default value for
+<VAR>n</VAR> is ten.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="*iv">iv</A></H2>
+<P>These two values, which are the index of the first projection to use
+and the maximum index to use, can be used to limit which projections
+BEAD_CHASER processes.  This is frequently useful when experimenting with
+different thresholds or bead feature criteria.  The default is to process
+all the projections so the index of the first projection is zero and the
+maximum index is the number of projections minus one.
+
+<P>The range of projections to use is set from the command line with
+<CODE>-iv=</CODE><VAR>first</VAR><CODE>:</CODE><VAR>last</VAR>.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="*iRef">iRef</A></H2>
+<P>This parameter sets the starting section for the algorithms to calculate
+the shift parameters and locate missing beads.  The default is to use the
+section whose tilt angle is closest to zero.
+
+<P>The starting section, <VAR>v</VAR>, is specified on the command line with
+<CODE>-iref=</CODE><VAR>v</VAR>.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="*res">res</A></H2>
+<P>This parameter sets which resolution to use from the input tilt series
+if the input tilt series has multiple resolutions available.  The resolutions
+are numbered from zero with zero as the highest resolution and increasing
+values correspond to decreasing resolution.  The resolution to use is set
+on the command line with <CODE>-res=</CODE><VAR>ires</VAR>.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="*ppmin">ppmin</A></H2>
+<P>This parameter sets a lower bound on intensity values included in the
+calculation of the background statistics for the adaptive threshold search
+method; it has no effect at all if you use the local cross-correlation
+search method.  The default value is 100 to match what previous versions
+implicitly used.  The command line parameter to set the lower bound is
+<CODE>-ppmin=</CODE><VAR>bound</VAR>.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="*IprmFile">IprmFile</A></H2>
+<P>IprmFile is the name of an optional file which has the rough
+alignment parameters is standard format.  It can be from EM
+calibration and stretched cross-correlation alignment.  The alignment
+parameters are used to predict the missing bead positions when
+no common bead positions in the input .sl file are found in adjacent
+projections and when no <A HREF="#IsblFile">.sbl file</A> is available
+or it does not have beads to relate the position of the section of interest
+to the previous one.  If all three of these methods fail,
+the program will stop and ask to pick (extra) single bead
+positions on these sections for a .sbl file.
+
+<P>The rough alignment parameter file is set on the command line
+with <CODE>-iprmfile=</CODE><VAR>file</VAR>.  The default is "none"
+which specified that a parameter file is not available.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+</BODY>
+</HTML>

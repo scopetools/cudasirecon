@@ -1,0 +1,44 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Measure FPS</TITLE>
+  <META NAME="Description" CONTENT="On-line help for measuring redraw rates.">
+  <META NAME="Keywords" CONTENT="Priism,frames per second,timing">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="MeasureFPS">Measure FPS</A></H1>
+<H2>Overview</H2>
+<P>As a diagnostic or performance measure, you may want to determine how
+often an image window redraws its contents.  Measure FPS is an interactive
+application to measure the rate of redraws; it is available from the
+Image menu on the image windows.
+
+<P>Measure FPS provides two forms of measurement:
+<DL>
+<DT>Manual<DD>If the Continuous toggle is off, Measure FPS will start
+counting the number of redraws when the Start button is pressed.  When the
+Stop button is pressed, it will report the elapsed time and the number of
+draws per second over that interval.  Pressing the Start button again
+before stopping the previous measurement will restart the measurement.
+<DT>Continuous<DD>If the Continuous toggle is on, pressing the Start button
+will cause Measure FPS to make a redraw rate measurement every <VAR>x</VAR>
+seconds where <VAR>x</VAR> is the value show in the "Update interval" field.
+Running results for the average frame rate, minimum frame rate, maximum
+frame rate, and number of measurements will be displayed.  Pressing the Stop
+button will stop the measurements.  Pressing the Start button again before
+the measurement has stopped will reset the running results.  The update
+interval may be modified while measurements are in progress but the running
+results are not reset when the update interval is changed.
+</DL>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="Priism.html">Priism</A> |
+  <A HREF="Monitor.html">Image Windows</A>
+<HR>
+
+</BODY>
+</HTML>

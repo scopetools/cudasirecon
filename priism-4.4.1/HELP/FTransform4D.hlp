@@ -1,0 +1,585 @@
+KEYWORD
+    Shift Preprocessing Window Edges OutputSize
+
+DESCRIPTION 4D Fourier Transform
+    This program will perform a 4D Fourier transform to each
+    wavelength (x, y, z, and time block) in the input with
+    the option to process the data beforehand to remove trends
+    and smooth discontinuities at the edges.
+
+    The controls in the user interface include a standard set
+    of controls for selecting the input file, output file,
+    and region of interest and for starting and interrupting
+    processing.  For more information on these controls,
+    consult Region.hlp.  The other controls are organized as
+    follows:
+
+      1) The direction of the transform and form of the output
+         is controlled by the three toggles just below the
+         the standard output mode and region selection
+         controls.  When the input data is real, the
+         direction of the transform is always forward,
+         but the output can be fully complex and have
+         both positive and negative x frequencies present
+         in the output or just have non-negative frequencies
+         present.  In the latter case there is no loss
+         of information, since the dropped data at
+         (kx,ky,kz,kt) is just the complex conjugate of
+         the  data at (-kx,-ky,-kz,-kt).  When the input
+         data is complex there are more options:
+
+         a) When the "Fully complex" toggle is off, a
+            reverse transform is performed to get a purely
+            real result.  There is however an ambiguity about
+            whether the result should have an even or odd
+            number of pixels in x.  If the input data after
+            padding which was supplied to the forward transform
+            had an even number of pixels in x, turn on the
+            "Even X" toggle; otherwise, turn it off.
+         b) When the "Fully complex" toggle is on, the transform
+            direction can be either forward or reverse depending
+            on how the "Forward" toggle is set.
+
+      2) Use the "Zero frequency centered" toggle button to
+         control the convention for the location of the zero
+         frequency.  If the toggle button is off, the zero
+         frequency is at (0,0,0,0) (if a reverse transform,
+         this is relative to the selected input region);
+         otherwise the zero frequency is at
+         (0, (ny - 1) / 2, (nz - 1) / 2, (nt - 1) / 2) for
+         real to complex or complex to real transforms and at
+         ((nx - 1) / 2, (ny - 1) / 2, (nz - 1) / 2,
+         (nt - 1) / 2) for complex to complex transforms.
+         For a forward transform, nx, ny, nz, and nt are
+         the input dimensions after padding; for a reverse
+         transform, nx, ny, nz, and nt are the input dimensions.
+
+      3) If the "Convert units" toggle button is off,
+         FTransform4D converts the units of the pixel
+         spacing (i.e. from spatial units to frequency
+         units during a forward transform and vice versa
+         during a reverse transform) and sets the origin
+         in the same units (on a reverse transform, the
+         information about the spatial origin is not longer
+         available and FTransform4D sets the origin to zero).
+         If the "Convert units" toggle button is on,
+         FTransform4D does not modify the pixel spacing values
+         and only modifies the origin values to reflect region
+         selection during a forward transform.
+
+      4) Use the Shift field to specify a translation that
+         is applied in conjunction with the transformation.
+         For a forward transform, a shift of (x, y, z, t) will
+         cause pixel (x, y, z, t) to be shifted to the origin,
+         (0,0,0,0).  For a reverse transform, the same shift
+         will place what would appear at the origin, (0,0,0,0),
+         at pixel (x, y, z, t).
+
+      5) Use the button labeled "Set preprocessing" to display
+         and change the parameters which control the processing
+         of the data before it is padded and transformed.
+         Preprocessing can only be done before forward transforms.
+         By default, no preprocessing is done.
+
+      6) Use the button labeled "Set window/taper" to select a
+         function used to smooth out discontinuities at the
+         edges of the data after preprocessing and before
+         padding and transforming the data.  This option is
+         only available if a forward transform is done.  By
+         default, no smoothing is done.
+
+      7) Use the button labeled "Set edge handling" to control
+         the number and values of the elements that are appended
+         to the input region before the transform.  By default,
+         for a forward transform the input data is padded with
+         zeroes so that it is a size which can be efficiently
+         processed and on the reverse transform the data is not
+         padded.
+
+      8) Use the button labeled "Set output size" to open a
+         dialog with the controls for trimming the output region.
+         Trimming can only be done when a reverse transform is
+         applied.  By default, no trimming is done.
+
+    Because of the nature of the Fourier transform, the handling
+    of the data header is different than most other Priism
+    applications:
+
+      1) The pixel format for the output is always complex when
+         a forward transform is used, and may be complex or real
+         when the reverse transform is used.
+      2) When the "Convert units" toggle button is on, the pixel
+         spacing, origin, and start indices are modified as
+         follows:
+         a) The pixel spacing is 1 / (nx * dx), 1 / (ny * dy),
+            and 1 / (nz * dz).  dx, dy, and dz are the input
+            pixel spacing.  For a forward transform, nx, ny,
+            and nz are the dimensions, in pixels, of the input
+            region plus any padding.  For a reverse transform,
+            nx, ny, and nz are the dimensions, in pixels, after
+            the transform but before the output is trimmed.
+            When time rather than z is used as the third
+            dimension, the z pixel spacing from the input is
+            retained.
+         b) The coordinates for the origin are set to zero for
+            reverse transforms or for forward transforms when
+            the zero frequency is not centered.  For forward
+            transforms where the zero frequency is centered,
+            the coordinates for the for the origin are set to
+            the most negative frequencies present, in units
+            of the output pixel spacing.
+         c) The start indices in the header are set to zero.
+      3) When the "Convert units" toggle button if off, the
+         spacing does not change.  For a forward transform,
+         the origin and start indices are adjusted to account
+         for the region selected for processing.  For a reverse
+         transform, the origin and start indices are not
+         modified.
+
+    The Fourier transforms calculated have these properties
+    (when using time rather than z as the third dimension
+    treat all references to nz as the number of time points
+    after padding):
+
+      1) If the "Zero frequency centered" toggle button is
+         off, the zero frequency component is at (0,0,0,0)
+         (the lower left corner of the first section) after
+         a forward transform, and the component at positive
+         Nyquist in all three directions
+         is at (nx / 2, ny / 2, nz / 2, nt / 2) where nx,
+         ny, nz, and nt are the input dimensions after padding.
+         If the "Zero frequency centered" toggle button is
+         on and the transform is real to complex, the zero
+         frequency component is at (0, (ny - 1) / 2,
+         (nz - 1) / 2, (nt - 1) / 2), and the component at
+         positive Nyquist in all three directions is at
+         (nx / 2, ny - 1, nz - 1, nt - 1).  If the "Zero
+         frequency centered" toggle button is on and the
+         transform is complex to complex in the forward
+         direction, the zero frequency component is at
+         ((nx - 1) / 2, (ny - 1) / 2, (nz - 1) / 2,
+         (nt - 1) / 2), and the component at positive Nyquist
+         in all three directions is at (nx - 1, ny - 1,
+         nz - 1, nt - 1).
+      2) When the forward transform is applied, the result is
+         divided by the number of pixels in the region.  If the
+         data was tapered it is also further scaled by a factor
+         such that, if the input had on average a zero mean, the
+         tapering operation would, on average, not change the
+         variance of the data.
+      3) The sign used in the complex exponential is negative
+         for the forward transform and positive for the reverse
+         transform.
+
+    FTransform4D accepts the command-line arguments described
+    in Region.hlp.  In addition, FTransform4D accepts the
+    options shown below (optional parts are shown in brackets).
+    If mutually exclusive options (i.e. for selection of the
+    transform direction or windowing function), the last
+    option that appears on the command line takes precedence.
+    The exception to this is if you specify both a transform
+    type and an output pixel format: then, if the output pixel
+    format is inconsistent with the transform type, the
+    transform type takes precedence and the output pixel
+    format will be the default for that transform type.
+    The defaults for real-valued data are to compute a
+    forward transform where the negative x frequencies are
+    not retained, no preprocessing or windowing is done,
+    the data is padded with zeros to an efficient size,
+    and the output pixel format is complex stored as
+    floating-point.  The defaults for complex-valued data
+    are to compute a reverse complex-to-real transform with
+    a result whose x size is even before trimming, no
+    padding before the transform or trimming after the
+    transform is done, and the output pixel format is
+    floating-point.
+
+    -complex_forward
+        Causes a forward transform of complex data to be
+        computed.  The default output pixel format is the
+        same as the input pixel format.
+
+    -real_complex
+        Causes a forward transform of real-valued data to be
+        computed; the negative x frequencies (redundant because
+        of conjugate symmetry) are not retained.  The default
+        output pixel format is complex stored as floating-point.
+
+    -real_complex_full
+        Causes a forward transform of real-valued data to be
+        computed; the negative x frequencies are retained.
+        The default output pixel format is complex stored
+        as floating point.
+
+    -complex_reverse
+        Causes a reverse transform of complex data to be
+        computed.  The default output pixel format is the
+        same as the input pixel format.
+
+    -complex_real
+        Causes a reverse complex-to-real reverse transform
+        to be computed.  Assumes that the padded size for
+        the forward transform was even.  The default output
+        pixel format is floating-point.
+
+    -complex_real_odd
+        Causes a reverse complex-to-real reverse transform
+        to be computed.  Assumes that the padded size for
+        the forward transform was odd.  The default output
+        pixel format is floating-point.
+
+    -center_zero
+        Specifies that the zero frequency is at
+        (0, (ny - 1) / 2, (nz - 1) / 2, (nt - 1) / 2)
+        for real to complex or complex to real transforms
+        and at ((nx - 1) / 2, (ny - 1) / 2, (nz - 1) / 2,
+        (nt - 1) / 2) for complex to complex transforms.
+        If not present on the command line, the zero
+        frequency is at (0,0,0,0).
+
+    -same_units
+        If specified, the pixel spacing units are
+        preserved and the origin and start indices are
+        modified only for region selection during forward
+        transforms.  Otherwise, the pixel spacing units
+        are converted (to frequency units during a
+        forward transform and to spatial units during a
+        reverse transform), the origin is expressed in the
+        same units, and the start indices are set to zero.
+
+    -shift=x_shift:y_shift:z_shift:t_shift
+        Specifies that, in conjunction with the transform,
+        the data should be shifted by x_shift pixels in x,
+        y_shift pixels in y, z_shift pixels in z, and
+        t_shift pixels in time.  For a forward transform,
+        a positive shift, s, moves pixel s to the origin.
+        For a reverse transform, a positive shift, s, moves
+        the origin to pixel s.  The default shift values are
+        zero pixels in all directions.
+
+    -subtract=value or -subtract=mean
+        Specifies that the input data should be preprocessed
+        by subtracting value or the mean.  This option is
+        ignored for reverse transforms.
+
+    -linear_detrend
+        Specifies that the input data should be preprocessed
+        by subtracting the linear trend which corresponds to
+        the estimated average slope.
+
+    -polyfit=n
+        Specifies that the input data should be preprocessed
+        by subtracting the least-squares fit polynomial of
+        order n.  Valid values of n range from one to 10.
+        This option is ignored for reverse transforms.
+
+    -rectangular=x_coverage:y_coverage:z_coverage:t_coverage
+        Selects a rectangular windowing function that
+        attenuates 200 times x_coverage percent of the
+        data in x, 200 times y_coverage percent of the
+        data in y, 200 times z_coverage percent of the
+        data in z, and 200 times t_coverage percent of
+        the data in time .  Valid values for x_coverage,
+        y_coverage, z_coverage, and t_coverage are
+        between 0 and 0.5.
+
+    -triangular=x_coverage:y_coverage:z_coverage:t_coverage
+        Selects a triangular windowing function that
+        attenuates 200 times x_coverage percent of the
+        data in x, 200 times y_coverage percent of the
+        data in y, 200 times z_coverage percent of the
+        data in z, and 200 times t_coverage percent of
+        the data in time .  Valid values for x_coverage,
+        y_coverage, z_coverage, and t_coverage are
+        between 0 and 0.5.
+
+    -halfsine=x_coverage:y_coverage:z_coverage:t_coverage
+        Selects a half-sine windowing function (consult
+        the Window topic for details) that attenuates 200
+        times x_coverage percent of the data in x, 200
+        times y_coverage percent of the data in y, 200
+        times z_coverage percent of the data in z, and
+        200 time t_coverage percent of the data in time.
+        Valid values for x_coverage, y_coverage,
+        z_coverage, and t_coverage are between 0 and 0.5.
+        Use -halfsine_power to set the exponent, which
+        controls the sharpness of the window edges.
+
+    -halfsine_power=p
+        Sets the exponent for the half-sine windowing
+        function.  This option is ignored when other
+        windowing functions are used.  If this option is
+        not explicitly specified when the half-sine windowing
+        function is used, the exponent used is one.
+
+    -hamming=x_coverage:y_coverage:z_coverage:t_coverage
+        Selects a Hamming window function (consult the
+        Window topic for details) that attenuates 200
+        times x_coverage percent of the data in x, 200
+        times y_coverage percent of the data in y, 200
+        times z_coverage percent of the data in z, and
+        200 time t_coverage percent of the data in time.
+        Valid values for x_coverage, y_coverage,
+        z_coverage, and t_coverage are between 0 and 0.5.
+
+    -blackman=x_coverage:y_coverage:z_coverage:t_coverage
+        Selects a Blackman window function (consult the
+        Window topic for details) that attenuates 200
+        times x_coverage percent of the data in x, 200
+        times y_coverage percent of the data in y, 200
+        times z_coverage percent of the data in z, and
+        200 time t_coverage percent of the data in time.
+        Valid values for x_coverage, y_coverage,
+        z_coverage, and t_coverage are between 0 and 0.5.
+
+    -xpad=default or -xpad=n
+        Specifies that the x dimension should be padded by
+        the default amount or by n pixels, where n is a
+        non-negative integer.
+
+    -xpad_value=mean or -xpad_value=ramp or -xpad_value=rv[:iv]
+        Specifies what values to use when padding the x
+        dimension. -xpad_value=mean causes the data to be
+        padded with the mean value.  -xpad_value=ramp
+        causes the data to be padded with values which
+        range linearly from the value at one boundary to
+        the value at the other boundary.  The last form
+        causes the data to be padded with a constant value
+        whose real component is rv and whose imaginary
+        component is iv.  If the imaginary component is
+        omitted, it is assumed to be zero.
+
+    -ypad=default or -ypad=n
+        Is similar to -xpad but specifies the amount of
+        padding in the y dimension.
+
+    -ypad_value=mean or -ypad_value=ramp or -ypad_value=rv[:iv]
+        Is similar to -xpad_value but specifies the padding
+        values for the y dimension.
+
+    -zpad=default or -zpad=n
+        Is similar to -xpad but specifies the amount of
+        padding in the z dimension.
+
+    -zpad_value=mean or -zpad_value=ramp or -zpad_value=rv[:iv]
+        Is similar to -xpad_value but specifies the padding
+        values for the z dimension.
+
+    -tpad=default or -tpad=n
+        Is similar to -xpad but specifies the amount of
+        padding in the time dimension.
+
+    -tpad_value=mean or -tpad_value=ramp or -tpad_value=rv[:iv]
+        Is similar to -xpad_value but specifies the padding
+        values for the time dimension.
+
+    -xtrim=n
+        Trims n pixels from the x dimension before output;
+        n must be a non-negative integer.  Trimming is only
+        done on reverse transforms, and is ignored for
+        forward transforms.
+
+    -ytrim=n
+        Is similar to -xtrim but controls the amount trimmed
+        from the y dimension before output.
+
+    -ztrim=n
+        Is similar to -xtrim but controls the amount trimmed
+        from the z dimension before output.
+
+    -ttrim=n
+        Is similar to -xtrim but controls the amount trimmed
+        from the time dimension before output.
+
+
+    As an example, if fft.dat is the result of a complex-to-
+    complex forward transform, then
+
+        FTransform4D fft.dat out.dat \
+            -complex_reverse -shift=-3.1:-7.3:5.0:0
+
+    computes the reverse transform, applies a shift that moves
+    what was at (3.1, 7.3, 5.0, 0) prior to the forward
+    transform to the origin, and writes the result in out.dat.
+
+Shift
+    The Shift field specifies a translation, measured in pixels,
+    that is applied in conjunction with the transform.  The
+    translation is circular in the sense that something which
+    is pushed off one side wraps around to the opposite side.
+
+    When a forward transform is performed, a shift of
+    (x, y, z, t) moves pixel (x, y, z, t) to the origin,
+    (0,0,0,0).  For a reverse transform, the same shift will
+    place what would appear at the origin, (0,0,0,0), at pixel
+    (x, y, z, t).
+
+    There is a potential problem using non-integral shifts
+    and transforms performed with the "Fully complex"
+    button turned off.  If a shift along a coordinate axis
+    is non-integral and that dimension has an even number
+    of samples in the real domain after padding (but
+    before stripping padding on the reverse transform),
+    the matrix of the phase shifts will not correspond to
+    the Fourier transform of a real-valued function (i.e.
+    it will not be Hermitian).  If your data does not have
+    power in the frequency components at Nyquist in that
+    direction (or all the other dimensions have a size of
+    one), then that does not matter.  Otherwise, the
+    result of applying the shift will deviate from the
+    expected result, the Fourier series evaluated at the
+    shifted coordinate values.  One solution is to apply
+    the shifts in combination with a fully complex
+    transform, and then extract the real component
+    (Copy Region can do that if you tell it to convert
+    the copied data to floating-point) after the data
+    is reverse transformed.  Another solution is to
+    ensure that all the dimensions have an odd number
+    of samples in the real domain after padding.
+
+Preprocessing
+    The input region can be processed to remove an offset or
+    trend before the data is tapered, padded, and transformed.
+    To display the controls for this processing, press the
+    button labeled "Set preprocessing" in the main dialog.
+    There are five types of processing that can be done; select
+    one by pressing the appropriate toggle in the dialog.  The
+    processing options are:
+
+    1) None.  The input is not modified before padding and
+       transforming the data.
+    2) Subtract offset.  The specified value is subtracted
+       from all the input values.
+    3) Subtract mean.  For the selected region in each
+       wavelength, the mean of the selected region is
+       subtracted from all values.
+    4) Remove linear trend.  An average slope for each
+       wavelength is estimated by averaging values from the
+       first and last third of each dimension; the linear trend
+       corresponding to that average slope and the mean of the
+       region is subtracted from the input data.  The algorithm
+       used is the average slope method extended to four
+       dimensions (Digital data analysis procedures, Bendat
+       and Piersol, 1st Edition, 1971, page 288).
+    5) Remove trends up to order.  A polynomial of the given
+       order is fit to each wavelength.  That polynomial
+       evaluated at each input point is then subtracted from
+       the input before padding and transforming the data.
+
+    If you are intending to taper the data and the data does not
+    already have a zero mean, you should consider using the mean
+    subtraction, linear trend removal, or polynomial fit options.
+
+Window
+    Applying a windowing function, also called tapering,
+    multiplies the data by a function which goes to zero (or
+    near zero) at the edges of the data.  This is done before
+    the forward transform to remove discontinuities at the
+    edges which can complicate the interpretation of frequency
+    spectra; the disadvantage of applying a window is that
+    it essentially throws away parts of the input and it
+    broadens features in the spectra.
+
+    The windowing functions used are separable, i.e, the
+    windowing function, W(x,y,z,t), can be written as the
+    product of WX(x), WY(y), WZ(z), and WT(t).  WX, WY,
+    WZ, and WT are calculated from the same formula but
+    with different inputs for the number of pixels, n, and
+    the fraction, f, of the dimension that is attenuated by
+    the windowing function.  The four values in the "Coverage"
+    field are the values of f divided by two for the x, y,
+    z, and time directions, respectively.  Commonly used
+    values for the coverage are 0.5 (a "full taper") and
+    0.1 (a 10% taper).  The power, x, is used by half-sine
+    windowing function.
+
+    The functions used to calculate the windowing functions
+    are shown below.  i is the pixel index and runs from 0 to
+    n minus 1, and e is given by
+
+          { floor(0.5 + f / 2.0 * n)          n even
+      e = {
+          { floor(0.5 + f / 2.0 * (n - 1))    n odd
+
+    Rectangular
+
+             { 0     i < e
+      w(i) = { 1     e <= i <= n - e
+             { 0     i > n - e
+
+    Because of the sharp cutoffs of the rectangular window,
+    it is not particularly useful; it's provided for
+    completeness.
+
+    Triangular
+
+             { i / e           i < e
+      w(i) = { 1               e <= i <= n - e
+             { (n - i) / e     i > n - e
+
+    Half-sine^power
+
+             { (sin(pi * i / (2 * e)))^x           i < e
+      w(i) = { 1                                   e <= i <= n - e
+             { (sin(pi * (n - i) / (2 * e)))^x     i > n - e
+
+    Hamming
+
+             { 0.54 - 0.46 * cos(pi * i / e)           i < e
+      w(i) = { 1                                       e <= i <= n - e
+             { 0.54 - 0.46 * cos(pi * (n - i) / e)     i > n - e
+
+    Blackman
+
+             { cos(pi * i / e)           i < e
+      a(i) = { -1                        e <= i <= n - e
+             { cos(pi * (n - i) / e)     i > n - e
+
+      w(i) = 0.34 - a(i) * (0.5 - a(i) * 0.16)
+
+
+Edges
+    The dimensions of the input region can be extended by
+    adding elements at the end of each dimension.  This is
+    typically done for two reasons:
+
+      1) Adding the extra elements gives a size that is
+         efficiently handled by Fourier transforms.
+      2) Adding the extra elements reduces the blending of
+         opposite edges of the data when filtering or
+         cross-correlations are being performed.
+
+    To display the controls for the amount of padding and
+    the values of the elements added, press the button labeled
+    "Set edge handling" in the main dialog.  For each dimension
+    the Width field sets the number of elements that will be
+    added.  When the toggle labeled "Use default width" is on,
+    the Width field will automatically be set so the padded size
+    can be efficiently handled.  There are three ways in which
+    the values of the added elements are set.  These are:
+
+      1) Pad with value.  Use the given value for all the elements
+         added to a dimension.  The imaginary component of the
+         value is only used if the input data is complex.
+      2) Pad with mean.  Use the mean of the input region for
+         the wavelength being processed when padding the
+         dimension.
+      3) Pad with linear ramp.  For each line in x, y, z, or
+         time, the padding elements added to the line are a
+         linear combination of the first and last element of
+         that input line.
+
+    If a forward transform is being done and the data was tapered,
+    than padding with zeroes is the best choice.  Padding with zeroes
+    is also appropriate if a reverse transform is being done
+    and you want the grid sampled on a finer grid using Fourier
+    interpolation.
+
+OutputSize
+    When a reverse transform is performed, the size of the region
+    written to the output file may be smaller than that of the
+    straight Fourier transform of the input after padding.  Press
+    the button labeled "Set output size" to open a dialog with
+    controls for trimming the data.  For each dimension, there
+    is a display of the size of the transformed data.  The amount
+    of trimming for each dimension is listed in an editable field.

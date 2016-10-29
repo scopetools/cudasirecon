@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: JFIF (JPEG) Plugin</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the Priism plugin to write JFIF (JPEG) format files.">
+  <META NAME="Keywords" CONTENT="Priism,JFIF,JPEG">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="JFIF">JFIF (JPEG) Plugin</A></H1>
+<H2>Overview</H2>
+<P>The JFIF (JPEG) plugin uses software from the Independent JPEG Group to
+apply the standard JPEG lossy compression algorithm to each image and write
+each image in a separate JFIF file.  JFIF is the de facto standard for
+interchange of JPEG compressed images.
+
+<H3>Topics</H3>
+<P>
+    Overview |
+    <A HREF="#Quality">Quality</A> |
+    <A HREF="#Progressive">Progressive</A> |
+    <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+    <A HREF="ImageCapture.html">Image Capture</A> |
+    <A HREF="3DModel.html">3D Model</A> |
+    <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="Quality">Quality</A></H2>
+<P>The quality parameter sets the image quality of the compressed images;
+valid values range from 0 (low quality) to 100 (high quality).  In most cases,
+you want the smallest compressed image which still decompresses to something
+that is visually indistinguishable from the original:  quality values between
+50 and 95 are generally appropriate for achieving that end.  Quality values
+above 95 can dramatically increase the compressed size with little gain in
+image quality.  Quality values below 50 produce very small files which
+decompress to low quality images.
+
+<P><A HREF="#JFIF">Return to overview</A>
+<HR>
+
+<H2><A NAME="Progressive">Progressive</A></H2>
+<P>Turning on the "Progressive" toggle button causes the output to be
+compressed with the progressive JPEG algorithm rather than the standard JPEG
+algorithm.  Progressive JPEG is intended for transmission over a slow
+communications link:  the receiver is able to generate a low quality image
+after receiving part of the data and can gradually improve the image quality
+as more data arrives.  Not all JPEG decoders support progressive JPEG and such
+decoders may not be able to view a progressive JPEG at all.
+
+<P><A HREF="#JFIF">Return to overview</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>When Image Capture is run from the command line, you can use
+
+<PRE>
+    -format=jfif
+</PRE>
+
+<P>as an option to Image Capture to have it generate JPEG compressed images
+stored as JFIF files.  To control the
+<A HREF="#Quality">quality of the compression</A>, append
+<CODE>,qual=</CODE><VAR>quality_factor</VAR> to <CODE>-format=jfif</CODE>,
+i.e. to get a quality of 90 you could use
+
+<PRE>
+    -format=jfif,qual=90
+</PRE>
+
+<P>If you do not explicitly set the quality, a quality of 75 will be used.  To
+use the <A HREF="#Progressive">progressive JPEG compression algorithm</A>,
+append <CODE>,progressive</CODE> to the option beginning with
+<CODE>-format=jfif</CODE>, i.e. use
+
+<PRE>
+    -format=jfif,progressive
+</PRE>
+
+<P>if you wanted to use the default quality or
+
+<PRE>
+    -format=jfif,qual=90,progressive
+</PRE>
+
+<P>if you wanted a quality of 90.
+
+<P><A HREF="#JFIF">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

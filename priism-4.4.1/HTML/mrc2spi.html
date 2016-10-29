@@ -1,0 +1,171 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: mrc2spi</TITLE>
+  <META NAME="Description" CONTENT="On-line help for converter from Priism's native file format to Spider's native format.">
+  <META NAME="Keywords" CONTENT="Priism,convert,Spider">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="mrc2spi">Convert from Priism's Native Format to Spider's Native Format</A></H1>
+<H2>Overview</H2>
+<P>This application takes a Priism file and converts it into one or more
+files in <A HREF="http://www.wadsworth.org/spider_doc/spider/docs/" TARGET="_top">Spider</A>'s
+ native format.  The conversion is direct: no scaling or transformation of the
+data values occurs.
+
+<P>mrc2spi has the <A HREF="Region.html">standard set of Priism controls</A>
+for selecting a subset of the Priism file to convert.  For the conversion,
+the key choice that has to be made is whether to convert each section in
+the input into a separate file or to place the sections one after the other
+in one file.  When you want to generate multiple output files, the
+<A HREF="#prefix">"Prefix"</A> and <A HREF="#extension">"Extension"</A> fields
+control the output file names.  When you want to generate a single output file,
+the name in the <A HREF="#output_file">"Output file"</A> field will be the name
+of the file generated.  By default, mrc2spi will generate a file using the
+native byte ordering for the operating system and machine where you run
+mrc2spi.  To generate a file with the non-native byte ordering, turn on
+the <A HREF="#swap_bytes">"swap bytes"</A> toggle button.
+
+<P>The current version of mrc2spi has several limitations:
+
+<UL>
+  <LI>mrc2spi will not convert complex-valued data, for instance the result
+    of a forward Fourier transform.
+  <LI>mrc2spi will only convert the first wavelength and time point that
+    you select.  It ignores all other wavelengths and time points.
+  <LI>For EM tomographic series, mrc2spi does not write the tilt angles from
+    the extended header to the Spider file.
+  <LI>mrc2spi does not carry over the origin and tilt angles in the Priism
+    header to the Spider file.
+  <LI>Because Web uses a different convention than Priism does when
+    displaying images, the display in Web of a file converted with mrc2spi
+    is flipped in y compared to the original file displayed in Priism.
+</UL>
+
+<H3>Topics</H3>
+<P>
+    Overview |
+    <A HREF="Region.html">Region processing</A> |
+    <A HREF="#single_file">Single file</A> |
+    <A HREF="#swap_bytes">Swap bytes</A> |
+    <A HREF="#output_file">Output file</A> |
+    <A HREF="#prefix">Prefix</A> |
+    <A HREF="#extension">Extension</A> |
+    <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+    <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="single_file">Single File</A></H2>
+<P>The output of mrc2spi can be a single file with the sections appearing
+one after the other or multiple files with one section per file.  To
+generate one file with mrc2spi, turn on the "Single file" toggle button
+and enter the name of the file to generate in the
+<A HREF="#output_file">"Output file"</A> field.  To generate multiple files,
+turn off the "Single file" toggle button, enter the file name prefix
+(the directory name and leading part of the file name) in the
+<A HREF="#prefix">"Prefix"</A> field, and enter the file name extension
+(by default it is .spi) in the <A HREF="#extension">"Extension"</A> field.
+The names of the files will consist of the prefix followed by the section
+number written as a base ten integer with a fixed number of digits and then the
+extension.  The section numbers will range from one to the number of sections
+selected.  If the number of sections selected is less than 1000, the section
+number will be written as three digits.  If the number of sections selected is
+greater than or equal to 1000, the section number will be written as
+<VAR>n</VAR> digits where <VAR>n</VAR> is the number of digits necessary to
+express the number of selected sections as a base 10 integer.
+
+<P><A HREF="#mrc2spi">Return to overview</A>
+<HR>
+
+<H2><A NAME="swap_bytes">Swap Bytes</A></H2>
+<P>By default, mrc2spi generates Spider files in the native byte ordering
+for the machine and operating system where you run mrc2spi.  To generate
+a file with the non-native byte ordering, turn on the "swap bytes" toggle
+button.
+
+<P><A HREF="#mrc2spi">Return to overview</A>
+<HR>
+
+<H2><A NAME="output_file">Output File</A></H2>
+<P>When the <A HREF="#single_file">"Single file"</A> toggle button is on,
+mrc2spi converts the input file to a single Spider file whose name is shown
+in the "Output file" field.
+
+<P><A HREF="#mrc2spi">Return to overview</A>
+<HR>
+
+<H2><A NAME="prefix">Prefix</A></H2>
+<P>When the <A HREF="#single_file">"Single file"</A> toggle button is off,
+mrc2spi converts the input file to a numbered series of Spider files.  The
+file names for the numbered series will all start with whatever is entered in
+the "Prefix" field.  Normally, the prefix would be something like
+<SAMP>/home/eric/data/cent_2005_10_12_a_</SAMP>:  it would contain the
+directory where the files would be written, <SAMP>/home/eric/data/</SAMP>,
+followed by something to identify the data set, <SAMP>cent_2005_10_12_a</SAMP>.
+
+<P><A HREF="#mrc2spi">Return to overview</A>
+<HR>
+
+<H2><A NAME="extension">Extension</A></H2>
+<P>When the <A HREF="#single_file">"Single file"</A> toggle button is off,
+mrc2spi converts the input file to a numbered series of Spider files.  The
+file names for the number series will all end with whatever is entered in
+the "Extension" field.  By default, the extension is <SAMP>.spi</SAMP>.
+
+<P><A HREF="#mrc2spi">Return to overview</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>mrc2spi accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, it has
+the following options:
+
+<DL>
+  <DT><CODE>-out=</CODE><VAR>n</VAR>
+  <DD>Causes mrc2spi to generate a single Spider file named <VAR>n</VAR>.
+    If you specify both <CODE>-out</CODE> and <CODE>-prefix</CODE> options
+    on the command line, whichever such option that appears last takes
+    precedence.
+
+  <DT><CODE>-prefix=</CODE><VAR>p</VAR>
+  <DD>Causes mrc2spi to generate a numbered series of Spider files.  The
+    file names for the numbered series will all start with the prefix,
+    <VAR>p</VAR>.    If you specify both <CODE>-out</CODE> and
+    <CODE>-prefix</CODE> options on the command line, whichever such option
+    that appears last takes precedence.
+
+  <DT><CODE>-ext=</CODE><VAR>e</VAR>
+  <DD>Sets the extension mrc2spi will use when generating file names in a
+    numbered series.  By default, mrc2spi uses .spi as the extension.
+
+  <DT><CODE>-swab</CODE>
+  <DD>Causes mrc2spi to generate files with the non-native byte ordering.
+    By default, mrc2spi generates files with the native byte ordering.
+</DL>
+
+<P>The example below extracts a 160 x 160 x 160 region from a.dat
+and writes it to a.spi in the non-native byte ordering.
+
+<PRE>
+    mrc2spi a.dat -x=0:159 -y=0:159 -z=0:159 -out=a.spi -swab
+</PRE>
+
+<P>The example below saves the data from b.dat as a numbered series of
+Spider files.
+
+<PRE>
+    mrc2spi /home/eric/data/b.dat -prefix=/home/eric/data/b_ -ext=.spi
+</PRE>
+
+<P><A HREF="#mrc2spi">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

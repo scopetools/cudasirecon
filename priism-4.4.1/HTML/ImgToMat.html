@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: ImgToMat</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to convert from an MRC file to a MATLAB workspace (MAT format).">
+  <META NAME="Keywords" CONTENT="Priism,conversion,MATLAB">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="ImgToMat">ImgToMat</A></H1>
+<H2>Overview</H2>
+
+<P>ImgToMat writes the sections of a Priism data stack as separate matrices
+in a MATLAB workspace file.  This file can be read from MATLAB using the
+<EM>load</EM> command.  The user interface uses
+<A HREF="Region.html">the typical set of controls</A> for selecting an input
+file, selecting a region from that file, and stopping or starting the
+conversion.  Besides <EM>MAT file</EM> for specifying the name of the
+generated work file, the controls specific to ImgToMat are
+<EM><A HREF="#Scale">Scale to 255</A></EM>,
+<EM><A HREF="#Matlab4">MATLAB 4 format</A></EM>,
+<EM><A HREF="#MatlabType">MATLAB type</A></EM>, and
+<EM><A HREF="#ComplexValues">Complex values</A></EM>.
+
+<P>Each variable, of the form <EM>A#</EM> in the created workspace
+references the data from one section in the input (the one exception is the
+<A HREF="#ComplexValues">option to split complex data</A> into real and
+imaginary parts).  The numbering of the variable names is the numbering of the
+sections as they would appear when interleaved as z, time, and wave (i.e. the
+contiguous z sections for the first time point and first wave have the lowest
+numbers (0, ...) followed by the z sections for the second time point and
+first wave and so on).
+
+<P>ImgToMat uses the MATLAB shared libraries and those will have to present
+on your computer for ImgToMat to be able to convert files.  The easiest way to
+configure ImgToMat so that it finds the shared libraries is to rerun the
+<A HREF="PriismInstallation.html#Step2">post-installation script for Priism</A>;
+that script will ask you the location of the directory that contains MATLAB.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="Region.html">Dialog</A> |
+   <A HREF="#Scale">Scaling</A> |
+   <A HREF="#Matlab4">MATLAB 4</A> |
+   <A HREF="#MatlabType">MATLAB type</A> |
+   <A HREF="#ComplexValues">Complex values</A> |
+   <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="MatToImg.html">MatToImg</A>
+<HR>
+
+<H2><A NAME="Scale">Scaling</A></H2>
+
+<P>When <EM>Scale to 255</EM> is selected, the data values in the output
+are linearly scaled to lie in the range of 0 to 255 inclusive.  The
+range of input values in each wave mapped is specified by the first
+two scaling parameters for that wave if a window is used as input or
+the minimum and maximum for the wave recorded in the Priism header.  Points
+outside the range are mapped to the endpoints.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ImgToMat">Overview</A> |
+   <A HREF="Region.html">Dialog</A> |
+   Scaling |
+   <A HREF="#Matlab4">MATLAB 4</A> |
+   <A HREF="#MatlabType">MATLAB type</A> |
+   <A HREF="#ComplexValues">Complex values</A> |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Matlab4">MATLAB 4</A></H2>
+
+<P>When <EM>MATLAB 4 format</EM> is selected, the workspace files generated
+are readable by MATLAB version 4; otherwise, the workspaces are for MATLAB
+5 or 6.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ImgToMat">Overview</A> |
+   <A HREF="Region.html">Dialog</A> |
+   <A HREF="#Scale">Scaling</A> |
+   MATLAB 4 |
+   <A HREF="#MatlabType">MATLAB type</A> |
+   <A HREF="#ComplexValues">Complex values</A> |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="MatlabType">MATLAB Type</A></H2>
+<P>You can specify the encoding for values in the workspace file.  By default,
+values will be encoded as 64-bit floating-point values.  The other choices are
+32-bit floating-point values, 8-bit signed integers, 16-bit signed integers,
+32-bit signed integers, 8-bit unsigned integers, 16-bit unsigned integers, and
+32-bit signed integers.  The conversion will round to the nearest integer when
+converting floating-point types to integral ones.  Values beyond the range of
+the destination type are changed to the closest value that the destination type
+can represent.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ImgToMat">Overview</A> |
+   <A HREF="Region.html">Dialog</A> |
+   <A HREF="#Scale">Scaling</A> |
+   <A HREF="#Matlab4">MATLAB 4</A> |
+   MATLAB type |
+   <A HREF="#ComplexValues">Complex values</A> |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="ComplexValues">Complex Values</A></H2>
+
+<P>When working with complex valued input data, you can select the
+"interleaved" option in the "Complex values" menu to write the sections as
+complex-valued matrices, or you can select the "planar" option in the
+"Complex values" menu to write a section of complex-valued data with one
+real-valued matrix  for the real components and another real-valued matrix for
+the imaginary components.  When written as complex numbers, the matrices in the
+output follow the naming convention described in the
+<A HREF="#ImgToMat">overview</A>.  When the components are split, <EM>I</EM>
+is used in place of the initial <EM>A</EM> in matrix names for the matrices
+holding the imaginary components.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ImgToMat">Overview</A> |
+   <A HREF="Region.html">Dialog</A> |
+   <A HREF="#Scale">Scaling</A> |
+   <A HREF="#Matlab4">MATLAB 4</A> |
+   <A HREF="#MatlabType">MATLAB type</A> |
+   Complex data output |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>ImgToMat accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, ImgToMat
+has the following options:
+
+<DL>
+  <DT><CODE>-format=</CODE><VAR>fmt</VAR><DD>Sets the type used to store valeus
+    in the MATLAB workspace file.  <VAR>fmt</VAR> may be i8 (for signed 8-bit
+    integer), i16 (for signed 16-bit integers), i32 (for signed 32-bit
+    integers), u8 (for unsigned 8-bit integers), u16 (for unsigned 16-bit
+    integers), u32 (for unsigned 32-bit integers), f32 (for 32-bit
+    floating-point values), or f64 (for 64-bit floating-point values).  By
+    default, 64-bit floating-point values are used.
+  <DT><CODE>-matlab4</CODE><DD>Causes the output to be a MATLAB workspace
+    compatible with MATLAB 4.  The default behavior is to generate workspaces
+    compatible with MATLAB 5 or 6.
+  <DT><CODE>-noscale</CODE><DD>Disables the scaling the input data values to
+    a range of 0 to 255 (as described in the
+    <A HREF="#Scale">Scaling topic</A>) before writing the values to the
+    output file.
+  <DT><CODE>-out=</CODE><VAR>filename</VAR><DD>Sets the name of the output
+    file to be <VAR>filename</VAR>.
+  <DT><CODE>-split</CODE><DD>If the input data is complex-valued, causes
+    ImgToMat to generate separate real matrices for the real and imaginary
+    components.  The default behavior is to store complex-valued data as
+    complex-valued matrices.
+</DL>
+
+<P>As an example, the command-line below stores all the sections from
+a.dat as matrices in the MATLAB workspace file, a.mat.  The data values
+are not scaled to the range of 0 to 255.
+<PRE>
+    ImgToMat a.dat -out=a.mat -noscale
+</PRE>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ImgToMat">Overview</A> |
+   <A HREF="Region.html">Dialog</A> |
+   <A HREF="#Scale">Scaling</A> |
+   <A HREF="#Matlab4">MATLAB 4</A> |
+   <A HREF="#MatlabType">MATLAB type</A> |
+   <A HREF="#ComplexValues">Complex values</A> |
+   Command line
+
+</BODY>
+</HTML>

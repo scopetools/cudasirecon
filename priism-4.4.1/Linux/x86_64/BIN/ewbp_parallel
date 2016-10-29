@@ -1,0 +1,649 @@
+#!/bin/sh
+
+# A shell script wrapper to implement a parallel weighted backprojection.
+#
+# Usage:
+#      ewbp_parallel aligned_tilt_series output_recon \
+#          -ompiexec=mpiexec_path [-np=n] [-tmpdir=dir] [-no_nodecheck]
+#          [ewbp_options]
+# or
+#     ewbp_parallel aligned_tilt_series output_recon -machinefile=file \
+#         [-np=n] [-rshcmd=cmd] [-bkgopt=opt] [-tmpdir=dir] [-no_nodecheck] \
+#         [-checkcmd=cmd] [ewbp options]
+# or
+#     ewbp_parallel aligned_tilt_series output_recon [-np=n] \
+#         [-tmpdir=dir] [ewbp options]
+#
+# The first form is for use with OpenMPI 1.3 or later where OpenMPI's mpiexec
+# or mpirun will be used to start the parallel tasks on one or more hosts.
+# The second form is for a cluster of machines where the machines to use
+# are listed in a MPICH-style machines file.  The third form is for a
+# single machine with multiple processors (by default the script assumes 2).
+# If you have both -ompiexec and -machinefile options, the former takes
+# precedence.
+#
+# Writes files (the pieces of the reconstruction) to a temporary
+# directory.  You can specify that directory explicitly with the -tmpdir
+# option; otherwise, it will be a directory named tmp in your home directory.
+# When used with a cluster, the temporary directory must be visible to all
+# the compute nodes.  The directory will be created if it does not already
+# exist.
+#
+# When using a cluster, it is easiest to avoid trouble if the paths for all
+# input files (with the exception of the machines file) specified on the
+# command line are absolute.  You may use a relative path for the aligned tilt
+# series but that leaves a greater possibility of false positives when checks
+# are performed to see if the cluster nodes can see the file.
+#
+# Expects the standard Unix commands, awk, cat, chmod, cp, cut, dirname, echo,
+# expr, grep, kill, mkdir, pwd, rm, sed, test, time, and xargs to be in the
+# search path.
+#
+# Expects the Priism commands AppendRes, count_processors, ewbp, header,
+# mergemrc, and print_ith_processor to be in the search path.  Relies on the
+# environment variable IVE_ENV_SETUP being set to the commands to set the
+# environment on the remote machines or that the current setting for the
+# environment variable IVE_BASE can be used on the remote machines as well.
+
+# Since the script never uses pathname expansion, disable it.
+set -f
+
+status=0
+
+# Extract required arguments.
+if test $# -lt 2; then
+    echo "usage: ewbp_parallel aligned_tilt_series output_recon [options]" 1>&2
+    exit 1
+fi
+tilt_series="$1"
+shift
+output_recon="$1"
+# Because the merge step uses the temporary directory as the current
+# working directory, ensure that a relative path to the output
+# reconstruction is restated as an absolute path.
+if `echo X$output_recon | grep -q -v ^X/` ; then
+    output_recon=`pwd`/"$output_recon"
+fi
+shift
+
+# Set up default values for options.
+ompiexec=""
+ompiexec_np=""
+machinefile=""
+nproc_used=-1
+rshcmd="ssh -x"
+bkgopt=-n
+checkcmd=""
+outdir=`dirname "$output_recon"`
+tmpdir="$HOME"/tmp
+nodecheck="yes"
+iystart=0
+yendset=""
+irsc=""
+mxyfacti=1
+multir=""
+# ewbp_options will collect options to be passed on to ewbp.  Newlines will
+# be used to separate the options collected (that means that options which
+# include newlines will not be handled correctly).
+ewbp_options=""
+
+# Parse command line options.
+while test $# -gt 0; do
+    case "$1" in
+        -bkgopt=*)
+            # When distributing the work, this is not quoted so the
+            # appropriate quoting is up to the caller.
+            bkgopt=`echo " $1" | sed -e 's/ -bkgopt=//'`
+            ;;
+
+        -checkcmd=*)
+            checkcmd=`echo " $1" | sed -e 's/ -checkcmd=//'`
+            ;;
+
+        -machinefile=*)
+            machinefile=`echo " $1" | sed -e 's/ -machinefile=//'`
+            ;;
+
+        -no_nodecheck)
+            nodecheck=""
+            ;;
+
+        -np=*)
+            # Ignore -np= if NSLOTS is set.
+            if test -z NSLOTS ; then
+		nproc_used=`echo " $1" | sed -e 's/ -np=//'`
+                # Structure the test this way (empty then clause) to handle
+                # the case where the value is not an integer.
+		if test "$nproc_used" -gt 0; then
+                    :
+		else
+                    status=1
+                    echo "ewbp_parallel: invalid number of processors" 1>&2
+		fi
+		ompiexec_np="$1"
+            fi
+            ;;
+
+        -ompiexec=*)
+            ompiexec=`echo " $1" | sed -e 's/ -ompiexec=//'`
+            ;;
+
+        -rshcmd=*)
+            # When distributing the work, the command specified with this
+            # option is not quoted, so appropriate quoting is up to the
+            # caller.
+            rshcmd=`echo " $1" | sed -e 's/ -rshcmd=//'`
+            ;;
+
+        -tmpdir=*)
+            tmpdir=`echo " $1" | sed -e 's/ -tmpdir=//'`
+            ;;
+
+        -iy=*)
+	    iystart=`echo " $1" | sed -e 's/ -iy=//' | cut -d : -f 1`
+            i=`echo " $1" | sed -e 's/ -iy=//' | cut -s -d : -f 2`
+            if test \! -z "$i"; then
+                iyend="$i"
+                yendset="yes"
+            fi
+            ;;
+
+        -res=*)
+            ires=`echo " $1" | sed -e 's/ -res=//'`
+            # Also pass it through to ewbp.
+            ewbp_options="$ewbp_options
+$1"
+            # Structure the test this way to handle the case where the value
+            # is not an integer.
+            if test "$ires" -ge 0; then
+                while test "$ires" -gt 0; do
+                    mxyfacti=`expr $mxyfacti \* 2`
+                    ires=`expr "$ires" - 1`
+                done
+            else
+                status=1
+                echo "ewbp_parallel: invalid resolution with -res"
+            fi
+            ;;
+
+        -rscale=*)
+            irsc=`echo " $1" | sed -e 's/ -rscale=//'`
+            # Also pass it through to ewbp.
+            ewbp_options="$ewbp_options
+$1"
+            ;;
+          
+        -multires)
+            multir="yes"
+            ;;
+
+        *)
+            # Pass anything else to ewbp.
+            ewbp_options="$ewbp_options
+$1"
+            ;;
+    esac
+    shift
+done
+
+if test -z "$irsc"; then
+    irsc="$mxyfacti"
+fi
+# Structure the test this way to handle the case where the value is not
+# an integer.
+if test "$irsc" -ge 1; then
+    :
+else
+    status=1
+    echo "ewbp_parallel: value specified with -rscale is not positive" 1>&2
+fi
+
+if test -z "$yendset"; then
+    iyend=`echo 0 0 | header "$tilt_series" | sed -n -e '/Image Size (X,Y,Sections)\.\.*/ s/Image Size (X,Y,Sections)\.\.*//p' | awk '{print $2}'`
+    # Structure the test this way to handle the case where the value is not an
+    # integer.
+    if test "$iyend" -gt 0; then
+        iyend=`expr \( "$iyend" / "$mxyfacti" - 1 \) \* "$irsc"`
+    else
+        iyend=0
+        status=1
+        echo "ewbp_parallel: could not determine the number of lines" 1>&2
+    fi
+fi
+
+# Structure the test this way to handle the case where one or more of the
+# values is not an integer.
+if test "$iystart" -ge 0 -a "$iyend" -ge "$iystart"; then
+    if test `expr \( "$iyend" - "$iystart" + 1 \) / "$irsc"` -le 0; then    
+        status=1
+        echo "ewbp_parallel: y size not positive after factoring in resolution" 1>&2
+    fi
+else
+    status=1
+    echo "ewbp_parallel: invalid y start or end" 1>&2
+fi
+
+if test -e "$tmpdir"; then
+    if test \! -d "$tmpdir"; then
+        echo "ewbp_parallel: $tmpdir is not a directory" 1>&2
+        status=1
+    elif test \! -w "$tmpdir"; then
+        echo "ewbp_parallel: $tmpdir exists but is not writable" 1>&2
+        status=1
+    fi
+else
+    mkdir -p "$tmpdir" || status=1
+fi
+
+if test \! -w "$outdir"; then
+    echo "ewbp_parallel: $outdir either does not exist or is not writable" 1>&2
+    status=1
+fi
+
+if test -z "$ompiexec" -a -n "$machinefile" ; then
+    if test $nproc_used -lt 0; then
+        if test -z "$NSLOTS" ; then
+            nproc_used=`count_processors "$machinefile"`
+            if test $? -eq 0; then
+		if test $nproc_used -eq 0; then
+                    echo "ewbp_parallel: zero processors in $machinefile" 1>&2
+                    status=1
+		fi
+            else
+		status=1
+            fi
+	else
+            nproc_used="$NSLOTS"
+            if test "$nproc_used" -gt 0; then
+                :
+            else
+                status=1
+                echo "ewbp_parallel: NSLOTS is not a positive integer" 1>&2
+            fi
+        fi
+    fi
+elif test -z "$ompiexec" ; then
+    if test $nproc_used -lt 0; then
+        nproc_used="${NSLOTS:-1}"
+        if test "$nproc_used" -gt 0; then
+            :
+        else
+            status=1
+            echo "ewbp_parallel: NSLOTS is not a positive integer" 1>&2
+        fi
+    fi
+fi
+
+if test $status -ne 0; then
+    exit 1
+fi
+
+# The number of processors used can not exceed the number of lines in the
+# reconstruction.
+ny=`expr \( "$iyend" - "$iystart" + 1 \) / "$irsc"`
+if test -z "$ompiexec" ; then
+    if test $nproc_used -gt "$ny"; then
+        nproc_used="$ny"
+    fi
+    iy_part_inc=`expr \( "$ny" / "$nproc_used" \) \* "$irsc"`
+    iy_part_rem=`expr \( "$ny" \* "$irsc" - "$nproc_used" \* "$iy_part_inc" \) / "$irsc"`
+fi
+recon_part_base=$$.xzy
+temp_part_list="$tmpdir"/$$.parts
+log_part_base=$$.log
+temp_log_list="$tmpdir"/$$.log_parts
+proc_list="$tmpdir"/$$.ids
+
+# If using a cluster, probe each node to verify that it can see the temporary
+# directory and check whether or not it can see the input tilt series.
+series_copy="$tilt_series"
+if test -n "$nodecheck" ; then
+    if test -n "$ompiexec" ; then
+        temp_script="$tmpdir"/$$.sh
+        trap 'rm "$temp_script" ; exit 1' INT QUIT TERM
+        cat >"$temp_script" <<EOF
+#!/bin/sh
+status=
+test \! -r "$temp_script" && status=1\$status
+test \! -r "$tilt_series" && status=2\$status
+echo \$status
+exit 0
+EOF
+        if test $? -eq 0 ; then
+            chmod a+x "$temp_script"
+            if test $? -ne 0 ; then
+                echo "ewbp_parallel: could not make $temp_script executable" 1>&2
+                status=1
+            fi
+        else
+            echo "ewbp_parallel: could not create $temp_script" 1>&2
+            status=1
+        fi
+        if test $status -eq 0 ; then
+            echo "*** Checking nodes..."
+            result=`$ompiexec ${ompiexec_np:+"$ompiexec_np"} "$temp_script"`
+            if test $? -ne 0 ; then
+                echo "ewbp_parallel: OpenMPI's mpiexec, ${ompiexec}, failed" 1>&2
+                status=1
+            fi
+            echo " $result" | grep -q 1
+            if test $? -eq 0 ; then
+                echo "ewbp_parallel: one or more nodes can not see the directory, $tmpdir, or that directory is not shared by all the nodes" 1>&2
+                status=1
+            fi
+            echo " $result" | grep -q 2
+            if test $? -eq 0 ; then
+                # One or more nodes can not see the tilt series.  Make a copy.
+		series_copy="$tmpdir"/$$.copy
+            fi
+	fi
+        rm "$temp_script"
+        trap INT QUIT TERM
+    elif test -n "$machinefile" ; then
+        iproc=0
+        while test $iproc -lt $nproc_used; do
+            machine=`print_ith_processor $iproc "$machinefile"`
+            if test $? -ne 0; then
+                exit 1
+            elif test -n "$machine"; then
+                echo "*** Checking node, $machine, ..."
+
+                $rshcmd "$machine" /bin/sh -s <<EOF
+test \! -d "$tmpdir" && exit 1
+test \! -r "$tilt_series" && exit 2
+exit 0
+EOF
+
+                case $? in
+                    0)
+                        # Child node can see the temporary directory and
+			# tilt series.  Nothing special needs to be done. 
+                        ;;
+
+                    1)
+                        # Child node can not see the temporary directory.  Can
+                        # not proceed.
+                        echo "ewbp_parallel: the machine, $machine," \
+                            " can not see the directory, $tmpdir" 1>&2
+                        exit 1
+                        ;;
+
+                    2)
+                        # Child node can not see the input tilt series.  Will
+                        # have to make a copy in the temporary directory.
+                        series_copy="$tmpdir"/$$.copy
+                        ;;
+
+                    *)
+                        # Presumably the rshcmd failed.
+                        echo "ewbp_parallel: could not connect to the " \
+                            "machine, $machine, with the command, $rshcmd" 1>&2
+                        exit 1
+                        ;;
+                esac
+            fi
+            iproc=`expr $iproc + 1`
+        done
+    fi
+fi
+
+if test $status -ne 0 ; then
+    exit 1
+fi
+
+# Set the handler in case of unexpected termination.
+trap 'test X"$tilt_series" != X"$series_copy" && rm "$series_copy"; exit 1' INT QUIT TERM
+
+# Copy over the input file if necessary.
+if test X"$tilt_series" != X"$series_copy"; then
+    echo "*** Copying input tilt series to $series_copy"
+    cp "$tilt_series" "$series_copy"
+    if test $? -ne 0; then
+        status=1
+    fi
+fi
+
+# Reset the positional arguments to be the ones that are passed through to
+# ewbp.
+old_ifs="$IFS"
+# Just a newline.
+IFS='
+'
+set -- $ewbp_options
+IFS="$old_ifs"
+
+# So the quoting of arguments can all be done on the local machine, set up
+# a script to do the Priism setup and execute ewbp.
+temp_script="$tmpdir"/$$.sh
+if test -n "$ompiexec" ; then
+    if test -z "$IVE_ENV_SETUP"; then
+        cat >"$temp_script" <<EOF
+#!/bin/sh
+. "$IVE_BASE"/Priism_setup.sh
+EOF
+    else
+        cat >"$temp_script" <<EOF
+#!/bin/sh
+$IVE_ENV_SETUP
+EOF
+    fi
+    if test $? -ne 0 ; then
+        echo "ewbp_parallel: could not create $temp_script" 1>&2
+        status=1
+    fi
+    cat >>"$temp_script" <<EOF
+nproc_used=\$OMPI_COMM_WORLD_SIZE
+if test \$nproc_used -gt "$ny" ; then
+    nproc_used=$ny
+fi
+iy_part_inc=\`expr \\( "$ny" / "\$nproc_used" \) \\* "$irsc"\`
+iy_part_rem=\`expr \\( "$ny" \\* "$irsc" - "\$nproc_used" \\* "\$iy_part_inc" \\) / "$irsc"\`
+iproc=\$OMPI_COMM_WORLD_RANK
+if test \$iproc -lt \$nproc_used ; then
+    if test \$iproc -eq 0 ; then
+        echo ${recon_part_base}_0 > "$temp_part_list"
+        echo ${log_part_base}_0 > "$temp_log_list"
+        jproc=1
+        while test \$jproc -lt \$nproc_used ; do
+            echo ${recon_part_base}_\$jproc >> "$temp_part_list"
+            echo ${log_part_base}_\$jproc >> "$temp_log_list"
+            jproc=\`expr \$jproc + 1\`
+        done
+    fi
+    if test \$iproc -lt "\$iy_part_rem" ; then
+        iy_part_start=\`expr "$iystart" + \$iproc \\* \\( "\$iy_part_inc" + "$irsc" \\)\`
+        iy_part_end=\`expr "\$iy_part_start" + "\$iy_part_inc" + "$irsc" - 1\`
+    else
+        iy_part_start=\`expr "$iystart" + \$iproc \\* "\$iy_part_inc" + "\$iy_part_rem" \\* "$irsc"\`
+        iy_part_end=\`expr "\$iy_part_start" + "\$iy_part_inc" - 1\`
+    fi
+else
+    exit 0
+fi
+time ewbp "$series_copy" "$tmpdir"/${recon_part_base}_\$iproc -istrfile="$guess_coy" -iy="\$iy_part_start":"\$iy_part_end" -sumfile="$tmpdir"/${sum_part_base}_\$iproc "\$@" >"$tmpdir"/${log_part_base}_\$iproc 2>&1
+EOF
+    if test $? -ne 0 ; then
+        echo "ewbp_parallel: could not append to $temp_script" 1>&2
+        status=1
+    fi
+else
+    if test -z "$IVE_ENV_SETUP"; then
+        cat >"$temp_script" <<EOF
+#!/bin/sh
+. "$IVE_BASE"/Priism_setup.sh
+ewbp "\$@"
+EOF
+    else
+        cat >"$temp_script" <<EOF
+#!/bin/sh
+$IVE_ENV_SETUP
+ewbp "\$@"
+EOF
+    fi
+    if test $? -ne 0; then
+        echo "ewbp_parallel: could not create $temp_script" 1>&2
+        status=1
+    fi
+fi
+if test $status -eq 0; then
+    chmod a+x "$temp_script"
+    if test $? -ne 0; then
+        echo "ewbp_parallel: could not make $temp_script executable" 1>&2
+        status=1
+    fi
+fi
+
+trap 'test -e "$proc_list" && cat "$proc_list" | xargs kill; cd "$tmpdir"; cat "$temp_part_list" "$temp_log_list" | xargs rm; rm "$temp_part_list" "$temp_log_list" "$temp_script" ; test -e "$proc_list" && rm "$proc_list" ; test X"$tilt_series" != X"$series_copy" && rm "$series_copy"; exit 1' INT QUIT TERM
+
+# Distribute the work.
+if test -n "$ompiexec" ; then
+    if test $status -eq 0 ; then
+        echo "*** Running $ompiexec" ${ompiexec_np:+{"$opmiexec_np"} \
+            "$temp_script" "$@"
+        $ompiexec ${ompiexec_np:+"$ompiexec_np"} "$temp_script" "$@"
+        if test $? -ne 0 ; then
+            echo "ewbp_parallel: OpenMPI's mpiexec, ${ompiexec}, failed" 1>&2
+            status=1
+	fi
+    fi
+else
+    iproc=0
+    jproc=0
+    while test $iproc -lt $nproc_used -a $status -eq 0; do
+	if test $iproc -eq 0; then
+            echo ${recon_part_base}_$iproc > "$temp_part_list"
+            if test $? -ne 0; then
+		echo "ewbp_parallel: unable to create $temp_part_list" 1>&2
+		status=1
+            fi
+	    echo ${log_part_base}_$iproc > "$temp_log_list"
+            if test $? -ne 0; then
+		echo "ewbp_parallel: unable to create $temp_log_list" 1>&2
+		status=1
+            fi
+            iy_part_start="$iystart"
+	else
+	    echo ${recon_part_base}_$iproc >> "$temp_part_list"
+            if test $? -ne 0; then
+		echo "ewbp_parallel: unable to append to $temp_part_list" 1>&2
+		status=1
+            fi
+	    echo ${log_part_base}_$iproc >> "$temp_log_list"
+            if test $? -ne 0; then
+		echo "ewbp_parallel: unable to append to $temp_log_list" 1>&2
+		status=1
+            fi
+	    iy_part_start=`expr "$iy_part_end" + 1`
+	fi
+	if test $iproc -lt "$iy_part_rem"; then
+	    iy_part_end=`expr "$iy_part_start" + "$iy_part_inc" + "$irsc" - 1`
+	else
+	    iy_part_end=`expr "$iy_part_start" + "$iy_part_inc" - 1`
+	fi
+
+	if test -z "$machinefile"; then
+            echo "*** Running: $temp_script" "$series_copy" \
+		"$tmpdir"/${recon_part_base}_$iproc \
+		-iy="$iy_part_start":"$iy_part_end" "$@"
+            time "$temp_script" "$series_copy" \
+		"$tmpdir"/${recon_part_base}_$iproc \
+		-iy="$iy_part_start":"$iy_part_end" "$@" \
+		>"$tmpdir"/${log_part_base}_$iproc 2>&1 &
+            if test $iproc -eq 0; then
+		echo $! > "$proc_list"
+            else
+		echo $! >> "$proc_list"
+            fi
+            if test $? -ne 0; then
+		echo "ewbp_parallel: unable to write to $proc_list" 1>&2
+		status=1
+            fi
+	else
+            machine=`print_ith_processor $jproc "$machinefile"`
+            if test $? -eq 0; then
+		if test -z "$machine"; then
+                    jproc=0
+                    machine=`print_ith_processor $jproc "$machinefile"`
+                    if test $? -ne 0; then
+			status=1
+                    fi
+		fi
+            else
+		status=1
+            fi
+            if test $status -eq 0; then
+		if test -n "$checkcmd"; then
+                    eval $checkcmd
+		fi
+		echo "*** Running: $rshcmd $bkgopt $machine $temp_script" \
+                    "$series_copy" "$tmpdir"/${recon_part_base}_$iproc \
+                    -iy="$iy_part_start":"$iy_part_end" "$@"
+                # Escape quotes for where the quoting must be done on the
+		# remote side.  This does not work for the quoting of $@ which
+		# places limits on the characters that can be included in the
+		# other options.
+		$rshcmd $bkgopt "$machine" time \"$temp_script\" \
+		    \"$series_copy\" \"$tmpdir\"/${recon_part_base}_$iproc \
+                    -iy=\"$iy_part_start\":\"$iy_part_end\" "$@" \
+    	            >"$tmpdir"/${log_part_base}_$iproc 2>&1 &
+		if test $iproc -eq 0; then
+                    echo $! > "$proc_list"
+		else
+                    echo $! >> "$proc_list"
+		fi
+		if test $? -ne 0; then
+                    echo "ewbp_parallel: unable to write to $proc_list" 1>&2
+                    status=1
+		fi
+            fi
+	fi
+	iproc=`expr $iproc + 1`
+	jproc=`expr $jproc + 1`
+    done
+    wait
+    rm "$proc_list"
+fi
+
+if test X"$tilt_series" != X"$series_copy"; then
+    rm "$series_copy"
+fi
+trap 'cd "$tmpdir"; cat "$temp_part_list" "$temp_log_list" | xargs rm; rm "$temp_part_list" "$temp_log_list" "$temp_script" ; exit 1' INT QUIT TERM
+
+cd "$tmpdir"
+if test $? -ne 0; then
+    status=1
+fi
+
+# Merge the pieces.
+cat "$temp_log_list" | xargs cat
+if test $status -eq 0; then
+    echo "*** Running mergemrc $output_recon -f=$temp_part_list"
+    time mergemrc "$output_recon" -f="$temp_part_list"
+    if test $? -ne 0; then
+        echo "ewbp_parallel: failed to merge reconstruction pieces" 1>&2
+        status=1
+    fi
+fi
+
+cat "$temp_log_list" "$temp_part_list" | xargs rm
+rm "$temp_log_list" "$temp_part_list" "$temp_script"
+
+if test -n "$multir" -a $status -eq 0; then
+    nres=1
+    size=`echo 0 0 | header "$output_recon" | sed -n -e '/Image Size (X,Y,Sections)\.\.*/ s/Image Size (X,Y,Sections)\.\.*//p'`
+    nx=`echo " $size" | awk '{print $1}'`
+    ny=`echo " $size" | awk '{print $2}'`
+    nz=`echo " $size" | awk '{print $3}'`
+    while test \( "$nx" -gt 256 -o "$ny" -gt 256 \) -a "$nx" -gt 2 -a "$ny" -gt 2 -a "$nz" -gt 2; do
+	nx=`expr "$nx" / 2`
+	ny=`expr "$ny" / 2`
+	nz=`expr "$nz" / 2`
+	nres=`expr $nres + 1`
+    done
+    if test $nres -gt 1; then
+	echo "*** Running AppendRes $output_recon $nres 2"
+	time AppendRes "$output_recon" $nres 2
+    fi
+fi
+
+exit $status

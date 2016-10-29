@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Reverse</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Reverse.">
+  <META NAME="Keywords" CONTENT="Priism, rotation">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Reverse">Reverse</A></H1>
+<H2>Overview</H2>
+<P>Reverse reverses one or more of the x, y, and z axes of a data set to
+generate a new data set.  For instance, if the 3 x 3
+image on the left has its x (horizontal) axis reversed, the result is the
+middle image; if the y axis is reversed instead, the result is the image
+on the right.
+
+<PRE>
+    0  1  2      2  1  0      6  7  8
+    3  4  5      5  4  3      3  4  5
+    6  7  8      8  7  6      0  1  2
+</PRE>
+
+<P>To control which axes are reversed, turn on or off the "x", "y", and "z"
+toggles in the dialog.  Because a convention has not been established to
+relate the coordinates of the reversed data to original, Reverse will set the
+header fields for the origin, starting indices, and tilt angles to zero.
+
+<P>Some combinations of reversing the axes are equivalent to rotations (for
+instance reversing both the x and y is equivalent to a 180 degree rotation
+about z), for more general rotations (and preservation of the header coordinate
+information) use <A HREF="Resample2D.html">Resample2D</A> or
+<A HREF="Rotate3D.html">Rotate3D</A>.  To interchange two of the axes, use
+<A HREF="Flip.html">Flip</A>.  If you only want to reverse the order of the z
+sections, you could use <A HREF="mergemrc.html">Merge/Reorder</A> instead of
+Reverse.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="Region.html">Dialog</A> |
+   <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="Resample2D.html">Resample2D</A> |
+   <A HREF="Rotate3D.html">Rotate3D</A> |
+   <A HREF="Flip.html">Flip</A> |
+   <A HREF="mergemrc.html">Merge/Reorder</A>
+
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>Reverse accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  To set which axes are
+reversed from the command line, include one or more of the following options:
+
+<DL>
+  <DT><CODE>-rx</CODE><DD>Reverse the x axis.
+  <DT><CODE>-ry</CODE><DD>Reverse the y axis.
+  <DT><CODE>-rz</CODE><DD>Reverse the z axis.
+</DL>
+
+<P>If none of the above are specified, Reverse will pass the data through
+without reversing any of the axes.
+
+<P>As an example, the following command
+reverses the y axis of a.dat and puts the result in ra.dat:
+
+<PRE>
+     Reverse a.dat ra.dat -ry
+</PRE>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Reverse">Overview</A> |
+   <A HREF="Region.html">Dialog</A> |
+   Command line
+<HR>
+
+</BODY>
+</HTML>

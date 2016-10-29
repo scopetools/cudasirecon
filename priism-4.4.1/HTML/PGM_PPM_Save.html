@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: PGM/PPM Save Plugin</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the Priism plugin to write PGM or PPM image data.">
+  <META NAME="Keywords" CONTENT="Priism,PGM,PPM,conversion">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="PGM_PPM_Save">PGM/PPM Save Plugin</A></H1>
+<H2>Overview</H2>
+<P>PGM (portable greymap) is a lowest common denominator format for storing a
+single greyscale image and PPM (portable pixmap) is a lowest common
+denominator format for storing a single RGB image.  If you do not use the
+<A HREF="#Raw">raw variant</A> of these formats, PGM and PPM files are
+ASCII text and should be treated as text when transfered between computers.
+
+<P>Priism's PGM/PPM plugin can write 8, 16, or 32 bit deep images (only 8-bit
+data can be written if you use the raw variant of the PGM or PPM formats).
+
+<H3>Topics</H3>
+<P>
+    Overview |
+    <A HREF="#Raw">Raw formats</A> |
+    <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+    <A HREF="ImageCapture.html">Image Capture</A> |
+    <A HREF="3DModel.html">3D Model</A> |
+    <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="Raw">Raw Formats</A></H2>
+<P>The PGM and PPM formats have "raw" variants that encode the image data
+as binary rather than as ASCII text.  Using the "raw" formats significantly
+decreases the time to read and write an image file and reduces the size of
+the image file by roughly a factor of four.  The "raw" formats can only
+handle 8-bit data and must be treated as binary data when transfered between
+computers.
+
+<P><A HREF="#PGM_PPM_Save">Return to overview</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>When Image Capture is run from the command line, you can use
+
+<PRE>
+    -format=pgm_ppm
+</PRE>
+
+<P>or
+
+<PRE>
+    -format=pgm_ppm,raw
+</PRE>
+
+<P>as an option to Image Capture to have it generate PGM or PPM images.  The
+second form uses the <A HREF="#Raw">raw variant</A> of the PGM or PPM format.
+
+<P><A HREF="#PGM_PPM_Save">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

@@ -1,0 +1,63 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEThreadInitKey</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVEThreadInitKey.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEThreadInitKey</H1>
+<H2>Overview</H2>
+<P>IVEThreadInitKey creates a handle which all threads in the calling process
+may use to get (<A HREF="IVEThreadGetKeyValue.html">IVEThreadGetKeyValue</A>)
+and set (<A HREF="IVEThreadSetKeyValue.html">IVEThreadSetKeyValue</A>)
+thread-specific data.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_standards.h"</CODE>
+<BR><CODE>#include "ive_thread.h"</CODE>
+<BR><CODE>void IVEThreadInitKey(IVEThreadKey* p_key, int* p_status);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P>There is no Fortran interface.
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>p_key</VAR><DD><VAR>p_key</VAR> points to the key to be initialized.
+  <DT><VAR>p_status</VAR><DD>If the call fails, *<VAR>p_status</VAR> will
+    be set to one of the values below; otherwise its value is not modified.
+    <DL>
+      <DT>IVE_ERR_NO_MEM<DD>There was insufficient memory available to
+        complete the operation.
+      <DT>IVE_ERR_NO_RESOURCES<DD>There was insufficient system resources
+        available (other than memory) to complete the operation.
+      <DT>IVE_ERR_UNRECOGNIZED<DD>The operating system or system library
+        returned an error code that was not expected.
+    </DL>
+</DL>
+<H2>Side effects</H2>
+<P>Inclusion of ive_standards.h sets certain feature-set macros.  It is
+safest to include it before any other headers to avoid inconsistent
+definitions.
+<H2>Cross references</H2>
+<P><A HREF="IVEThreadDestroyKey.html">IVEThreadDestroyKey</A>,
+<A HREF="IVEThreadSetKeyValue.html">IVEThreadSetKeyValue</A>,
+<A HREF="IVEThreadGetKeyValue.html">IVEThreadGetKeyValue</A>, and
+<A HREF="IVEThreadKey.html">IVEThreadKey</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified May 7, 2002
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

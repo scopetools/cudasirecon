@@ -1,0 +1,229 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Distance</TITLE>
+  <META NAME="Description" CONTENT="On=line help for application to record distances between points..">
+  <META NAME="Keywords" CONTENT="Priism,measurement">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+<H1><A NAME="Distance">Distance</A></H1>
+<H2>Overview</H2>
+<P>The Distance tool helps you to measure distances and optionally record them
+to a file.  As an example, here is how you could measure the distance between
+two arbitrary points in a dataset:
+<OL>
+  <LI>Enter the number for the window of interest in the
+    <A HREF="#Window">Window</A> field.
+  <LI>From the menu next to the Window field, select "real space" if you
+    want the distances reported to factor in the pixel spacing; select
+    "data coords" if you want the distances reported to be in pixels.
+  <LI>Select "every two" from the <A HREF="#Method">second menu to the
+    right of the Window field</A>.
+  <LI>Move the mouse cursor to the first point of interest in the
+    window.  Click on the left mouse button.  The coordinates for the
+    point will be displayed in the scrolling window in the Distance tool.
+    Repeat for the second point.  Again the coordinates for the point will be
+    displayed in the scrolling window; the distance between the points will
+    also appear there.
+</OL>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#Window">Window</A> |
+  <A HREF="#Coordinates">Coordinates</A> |
+  <A HREF="#Method">Method</A> |
+  <A HREF="#MaximumIntensity">Maximum Intensity</A> |
+  <A HREF="#Box">Box</A> |
+  <A HREF="#Range">Range</A> |
+  <A HREF="#LastPoint">Last Point</A> |
+  <A HREF="#NextPoint">Next Point</A> |
+  <A HREF="#TotalPoints">Total Points</A> |
+  <A HREF="#DeleteGroup">Delete Group</A> |
+  <A HREF="#DeleteLast">Delete Last</A> |
+  <A HREF="#GetDistances">Get Distances</A> |
+  <A HREF="#OpenFile">Open File</A> |
+  <A HREF="#SingleColumn">Single Column</A> |
+  <A HREF="#AutoSave">Autosave</A> |
+  <A HREF="#AutoPurge">Autopurge</A> |
+  <A HREF="#SaveDistances">Save Distances</A> |
+  <A HREF="#DistancesSaved">Distances Saved</A> |
+  <A HREF="#InsertText">Insert Text</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H3><A NAME="Window">Window</A></H3>
+<P>Use this field to enter the number of the window in which you want
+measurements.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="Coordinates">Coordinates</A></H3>
+<P>The menu next to the Window field controls which coordinate system is
+used when determining the distances.  When the real coordinates are used,
+the coordinates of the points take into account the pixel spacing, origin,
+and tilt angles recorded in the image header, and the distances reported
+will have the same units as the pixel spacings (this is usually microns
+for optical microscope data).  When the data coordinates are used, the
+coordinates and distances reported are in pixels.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="Method">Method</A></H3>
+<P>The second menu to the right of the Window field controls how the distances
+are calculated from the points picked in a window:
+<DL>
+  <DT>compare any num<DD>Pick as many points as you want.  Then press the
+    <A HREF="#GetDistances">"get distances" button</A> to report the distances
+    for every pair of points in the set.
+  <DT>continuous<DD>Every time a point is selected, the distance between
+    it and the last point picked will be reported.  Pressing the "get
+    distances" button will report the distance between the last two points
+    selected.
+  <DT>every two<DD>For every two points selected, the distance between them
+    is reported so if you select four points, the distance between the first
+    and second and the third and fourth points is printed.  Pressing the get
+    distances button will report the distance between the last two selected
+    points if an even number of points have been selected so far; otherwise
+    it will generate a blank line.
+  <DT>manual<DD>Every time a point is selected, the point given in the
+    <A HREF="#NextPoint">Next Point field</A> is replaced and the distance
+    between the newly selected point and the other point (point one if the
+    next point was zero or point zero if the next point was one) is reported.
+</DL>
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="MaximumIntensity">Maximum Intensity</A> </H3>
+<P>When the "max intens" toggle is on, the program will do a local search for
+the maximum intensity and use that point for calculating distances rather than
+the point where the mouse was clicked.  The values in the
+<A HREF="#Box">Box</A> and <A HREF="#Range">Range</A> fields control how
+the search is done.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="Box">Box</A></H3>
+<P>If the <A HREF="#MaximumIntensity">max intens toggle</A> is on, the search
+for the maximum intensity is done in the image data after it has been
+smoothed with a two-dimensional mean filter whose width in pixels is given
+in the Box field.  No smoothing is done for box sizes less than three.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="Range">Range</A> </H3>
+<P>Let <VAR>r</VAR> be the value show in the Range field.  If the
+<A HREF="#MaximumIntensity">max intens toggle</A> is on, the point
+that is used for distance calculations will be at most <VAR>r</VAR> pixels in
+x and at most <VAR>r</VAR> pixels in y from the point of the mouse click.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="LastPoint">Last Point</A></H3>
+<P>The values in these fields are updated each time a point is selected.
+The first field displays the index of the point; this will be between zero
+and the <A HREF="#TotalPoints">total number of points</A> minus one.  The
+second field displays the coordinates of the point.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="NextPoint">Next Point</A> </H3>
+<P>This field displays the point number which will be updated when a point
+is picked.  If this value is equal to the
+<A HREF="#TotalPoints">total number of points</A>, a new point will be added;
+otherwise the newly selected point replaces the one with the given point
+number.  The next point can be changed by entering a value or using the
+arrow buttons next to the field.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="TotalPoints">Total Points</A></H3>
+<P>This field displays the total number of points that have been picked for
+the current group.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="DeleteGroup">Delete Group</A></H3>
+<P>Pressing "del group" button purges all the points currently picked and
+resets for the next group of points to be picked.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="DeleteLast">Delete Last</A></H3>
+<P>Pressing the "del last pt" button deletes the last point.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="GetDistances">Get Distances</A> </H3>
+<P>Pressing this button causes a measurement to be made between the currently
+selected points.  This is only necessary when using the "compare any num"
+method.  For the other methods the distance is measured automatically.
+
+<P>The result of the measurement is shown in the scrolled area, and if a
+<A HREF="#OpenFile">file is currently open</A> and the
+<A HREF="#AutoSave">autosave toggle</A> is on, the result will also be written
+to the file.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="OpenFile">Open File</A></H3>
+<P>To save distances to a file, open the file before you start taking
+measurements.  To do this, press the "Open File" button to select the file
+or enter the file name directly into into the field next to the "Open File"
+button.  When you are finished making the distance file, close it if you
+wish to continue using the distance program without adding any more to that
+file.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="SingleColumn">Single Column</A> </H3>
+<P>If you are going to generate more than about 10 distances in one
+measurement set, you probably want to send the output to a single column.  Do
+this by turning on the "single column" toggle before you begin to save
+measurements.  When the "single column" toggle is off, distances from
+one measurement are saved in separate columns on the same line.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="AutoSave">Autosave</A> </H3>
+<P>When the autosave toggle is on and a file is open, any measurement
+(whether it occurs automatically when using the continuous, "every two",
+or manual methods or is initiated by pressing the
+<A HREF="#GetDistances">"get distances" button</A>) is written to the file.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="AutoPurge">AutoPurge</A> </H3>
+<P>When the autopurge toggle is on and distances are written to a file,
+the current set of points will be purged so you can start on a new set.
+When this toggle is off, you must press the <A HREF="#DeleteGroup">"del group"
+button</A> to start a new set of points.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="SaveDistances">Save Distances</A></H3>
+<P>Pressing the "save distances button" while a file is open will
+append the distance measurement(s) for the currently selected points to
+that file
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="DistancesSaved">Distances Saved</A> </H3>
+<P>This field displays the number of distance measumrents that have been
+saved to the currently open file.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+<H3><A NAME="InsertText">Insert Text</A></H3>
+<P>Each time you click the Insert Text button, the characters in the adjacent
+field will be inserted in the output file.  This lets you separate sets of
+distances in one file if needed.
+<P><A HREF="#Distance">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

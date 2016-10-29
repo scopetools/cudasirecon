@@ -1,0 +1,271 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: BALIGN</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the graphical front-end to align EM tomography data using reference markers (gold beads).">
+  <META NAME="Keywords" CONTENT="Priism,EM,tomography,alignment,gold beads">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="BALIGN">BALIGN</A></H1>
+<H2>Overview</H2>
+
+<P>As the first step in EM tomographic image processing, BALIGN determines
+the alignment of projections in a single-axis tilt series.  It
+uses high density fiducial markers in the projections as reference
+points to register individual projections.
+
+<P>BALIGN is composed of four modules (programs):
+<DL>
+  <DT><A HREF="BEAD_FINDER.html">BEAD_FINDER</A>
+  <DD>Identifies bead-like features on each projection.
+
+  <DT><A HREF="BEAD_MATCHER.html">BEAD_MATCHER</A>
+  <DD>Traces individual beads through all projections.
+
+  <DT><A HREF="BEAD_CHASER.html">BEAD_CHASER</A>
+  <DD>Digs out missing bead positions BEAD_FINDER did not find.
+
+  <DT><A HREF="BEAD_ALIGN.html">BEAD_ALIGN</A>
+  <DD>Determines the alignment parameters by performing a least-squares
+    fit of the bead positions.  There is both an interactive
+    and automatic mode; the interactive mode allows you to
+    edit the bead positions between rounds of fitting to more
+    easily address problems that can occur.
+</DL>
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#GUI">User interface</A> |
+   <A HREF="#Recipe">Recipe for use</A> |
+   <A HREF="#Troubleshooting">Troubleshooting</A> |
+   <A HREF="#Parameters">Parameters</A>
+
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="../Priism.html">Priism</A> |
+   <A HREF="BEAD_FINDER.html">Bead finder</A> |
+   <A HREF="BEAD_MATCHER.html">Bead matcher</A> |
+   <A HREF="BEAD_CHASER.html">Bead chaser</A> |
+   <A HREF="BEAD_ALIGN.html">Bead align</A> |
+   <A HREF="BEAD_ALIGN_INTERACTIVE.html">Bead align (interactive)</A> |
+   <A HREF="PEdit.html">Bead list editor</A> |
+   <A HREF="EMTAR.html">Reconstruction</A>
+
+<HR>
+
+<H2><A NAME="GUI">User Interface Features</A></H2>
+<UL>
+<LI>Each module corresponds to an independent program.  So any
+  combination of the four modules can be run in a given execution (by
+  clicking the corresponding toggle buttons in the Master setup menu).
+<LI>When you change the content of a widget in a menu, the contents of
+  some other widgets in the menus downstream can change correspondingly.
+<LI>All the files will have the same base name as the IdatFile but use
+  their own standard extensions. For an optional file, there is a toggle
+  button on the right of the file name widget: with the toggle on, the
+  file is used and the name appears in the file name widget; with the
+  toggle off, the file is not used and 'none' appears in the file name
+  widget.
+<LI>The setup menu of each module has a submenu for special parameters.
+  The default values in this submenu are normally fine.
+<LI>When you click the DoIt button, a *.com file is created in the
+  same directory as the unaligned tilt series.  The *.com file is executed
+  and generates a *.log file in the same directory.  If you make the *.log
+  file name = 'none' in the Options submenu, the content of the *.log file
+  will be diverted to the screen.  You will find this convenient for monitoring
+  the execution when you do troubleshooting or run BEAD_ALIGN interactively.
+</UL>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#BALIGN">Overview</A> |
+   User interface |
+   <A HREF="#Recipe">Recipe for use</A> |
+   <A HREF="#Troubleshooting">Troubleshooting</A> |
+   <A HREF="#Parameters">Parameters</A>
+
+<HR>
+
+<H2><A NAME="Recipe">Suggested Recipe For Use</A></H2>
+<OL>
+<LI><STRONG>Choose bead feature criteria for BEAD_FINDER.</STRONG><BR>
+  The algorithm for finding beads is sensitive to the values for the
+  <A HREF="#bead_radius">average bead radius</A>,
+  <A HREF="BEAD_FINDER.html#area_lub">bounds on the area of a bead</A>,
+  <A HREF="BEAD_FINDER.html#nbd_minmax">the number of beads in a projection</A>,
+  and <A HREF="BEAD_FINDER.html#shape_lb">how close the beads are to appearing
+  circular</A>.  It is convenient to do several runs of BEAD_FINDER using
+  just a subset of the projections (the parameter which sets the
+  <A HREF="BEAD_FINDER.html#iv">projection index increment</A> is an
+  easy way to do this).
+<LI><STRONG>Create a list of bead-like features on potential reference
+  projections.</STRONG><BR>
+  The reference bead list is one way to provide a starting point for
+  BEAD_MATCHER (see the description of BEAD_MATCHER's
+  <A HREF="BEAD_MATCHER.html#iRefs">iRefs input parameter</A> for other
+  ways that can be used instead of or in combination with the reference
+  bead list).  The reference bead list has the location of each bead that
+  is to be traced on one or more projections; a restriction is that the
+  bead positions on the same projection must be adjacent in the file.
+  The reference bead list can be created with BEAD_FINDER (just limit its
+  output to those projections which will be used as reference projections
+  and save the results with an .rbl extension) and edited with the
+  <A HREF="PEdit.html">bead list editor</A>  (this is launched by selecting
+  <EM>Display: IrblFile</EM> from the pulldown in BALIGN's main menu) or
+  just created entirely by the bead list editor.
+<LI><STRONG>(optional) Make a single bead list file.</STRONG><BR>
+  If there are large shifts between neighboring projections or the
+  bead-like features chosen in step 2 are closely crowded so more
+  accurate shift parameters are needed when running BEAD_MATCHER,
+  create a *.sbl file by picking positions of a bead in all projections.
+  If there are only a few large shifts, it's only necessary to pick a
+  bead on projections around each large shift, and the beads for different
+  shifts do not have to be the same if the shifts are not adjacent.
+<LI><STRONG>Run BEAD_FINDER and BEAD_MATCHER.</STRONG>
+<LI><STRONG>Fix the results of BEAD_MATCHER for use in BEAD_ALIGN.</STRONG><BR>
+  To use BEAD_ALIGN, you need to have at least four matched beads on each
+  projection.  If the output of BEAD_MATCHER does not meet that criterion
+  (to see if this is the case, look at the BALIGN.log file or inspect
+  BEAD_MATCHER's result with the bead list editor by selecting
+  <EM>Display: slFile1</EM> from BALIGN's main menu), then you can use
+  the bead list editor or BEAD_CHASER to fix the problem.  In practice,
+  most users have done this interactively with the bead list editor rather than
+  with automated approach using BEAD_CHASER because they have not found
+  a set of parameters that prevents BEAD_CHASER from making several
+  mistakes in the positions it associates with each bead.  Oftentimes, using
+  a single bead list with BEAD_MATCHER gives a good enough result
+  so no fixes are necessary and you can skip this step.
+<LI><STRONG>Run BEAD_ALIGN.</STRONG><BR>
+  Most users use the <A HREF="BEAD_ALIGN_INTERACTIVE.html">interactive version</A>
+  of BEAD_ALIGN and adjust the found positions of the beads until an acceptable
+  fit is found.
+</OL>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#BALIGN">Overview</A> |
+   <A HREF="#GUI">User interface</A> |
+   Recipe for use |
+   <A HREF="#Troubleshooting">Troubleshooting</A> |
+   <A HREF="#Parameters">Parameters</A>
+
+<HR>
+
+<H2><A NAME="Troubleshooting">Troubleshooting</A></H2>
+<H3>BEAD_MATCHER does not match any beads on some projections</H3>
+<P>This problem frequently happens at high tilt angles.  One possible
+cause is that BEAD_FINDER did not find enough beads on the projection.
+In that case, rerun BEAD_FINDER with less stringent criteria on the
+affected projections and merge the results with the previous *.pl file
+by using the <A HREF="BEAD_FINDER.html#merge_plfile">Imerge_plfile option</A>.
+
+<P>Another possible cause is that BEAD_MATCHER made a mistaken prediction of
+the bead position or its criteria for assessing whether or not a bead matches
+the prediction were overly stringent.  For this, you can use more reference
+projections (these are set by the BEAD_MATCHERS's
+<A HREF="BEAD_MATCHER.html#iRefs">iRefs input parameter</A>; you will likely
+need to edit the *.pl file so the listed bead positions on the reference
+projections only include those beads you want to match).  If the projection
+in question is not included in the single bead list (see step 3 in the
+<A HREF="#Recipe">recipe for use</A> for more details), you can add to
+or create the single bead list so that it included bead positions on the
+problem projection and the projections adjacent to it.  To relax the matching
+criteria, adjust BEAD_MATCHER's <A HREF="BEAD_MATCHER.html#slop">slop</A> and
+<A HREF="BEAD_MATCHER.html#xyCrit">xyCrit</A> input parameters.
+
+<H3>BEAD_ALIGN has insufficient bead positions to continue</H3>
+<P>This can be either due to not enough beads on a section (4 is
+the minimum) or not enough beads that are common to two different
+sections.  Using interactive BEAD_ALIGN to add bead positions is
+the recommended solution.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#BALIGN">Overview</A> |
+   <A HREF="#GUI">User interface</A> |
+   <A HREF="#Recipe">Recipe for use</A> |
+   Troubleshooting |
+   <A HREF="#Parameters">Parameters</A>
+
+<HR>
+
+<H2><A NAME="Parameters">Parameters</A></H2>
+<P>The following parameters are set in BALIGN's main menu.  The majority
+of them are used in all of the alignment stages.
+
+<DL>
+<DT><A NAME="IdatFile">IdatFile</A>
+<DD>This is the name of the file containing the raw projection data stack
+  from the CCD (i.e. measured in terms of electron counts; data stacks
+  with the contrast inverted can not be handled).
+
+<DT><A NAME="NX:NY:NV">NX:NY:NV</A>
+<DD>The first two values are, respectively, the x and y dimension of the
+  projections.  The third value is the number of projections in the data
+  stack.
+
+<DT><A NAME="interactive">interactive</A>
+<DD>Selects the interactive mode of BEAD_ALIGN when on.  The interactive
+  version has a graphical user interface to monitor the alignment and
+  can be used to add, correct, or delete bead positions by selecting
+  the beads in an image window.
+
+<DT><A NAME="bead_radius">bead_radius</A>
+<DD>This is the expected bead radius in pixels and is used for
+  finding bead-like features in BEAD_FINDER and BEAD_CHASER.  To
+  specify this parameter from the command line use
+  <CODE>-beadrad=</CODE><VAR>r</VAR>; the default value is 3.5 pixels.
+
+<DT><A NAME="rot0">rot0</A>
+<DD>Let the orientation angle be the smallest, in absolute value, rotation
+  angle needed to rotate the image so that the tilt axis is parallel to the
+  y axis (the y axis is vertical when images are displayed in Priism).  The
+  orientation angle is positive if the corresponding rotation is clockwise
+  and is negative if the corresponding rotation is counterclockwise.<BR>
+  <IMG SRC="rot0.jpg" ALT="Orientation angle sign convention" WIDTH=373 HEIGHT=189><BR>
+  The first value in the <EM>rot0</EM> field is the estimated orientation
+  angle, in degrees, at a tilt angle of zero.  The second value is the
+  estimated difference, in degrees, between the orientation angle at a tilt
+  angle of sixty degrees and the orientation angle at a tilt angle of minus
+  sixty degrees.  To specify these parameters from the command line, use
+  <CODE>-rot0=</CODE><VAR>o0</VAR><CODE>:</CODE><VAR>ochange</VAR>.  The
+  default value for <VAR>o0</VAR> is 78 degrees; the default value for
+  <VAR>ochange</VAR> is -1 degrees.  You should substitute values that
+  more accurately reflect what happens at the magnification used when
+  collecting the tilt series.
+
+<DT><A NAME="res">resolution</A>
+<DD>If the <A HREF="#IdatFile">input data set</A> has lower resolution versions
+of the data available, you can use the resolution field to set which resolution
+BEAD_FINDER and BEAD_CHASER use in their calculations.  The resolutions are
+numbered from zero with zero as the highest resolution and increasing values
+correspond to decreasing resolution.  You may want to use a lower resolution
+for two reasons:  for data with low signal-to-noise ratios using a lower
+resolution may be necessary for BEAD_FINDER and BEAD_MATCHER to successfully
+identify beads and using a lower resolution reduces that amount of computation
+time needed.  If your data set does not already have lower resolutions
+available, you can append lower resolutions with
+<A HREF="../AppendRes.html">AppendRes</A> (in AppendRes use one for the z scaling
+since you do not want the lower resolutions to average different tilt angles).
+To specify the resolution to use on the command line, use
+<CODE>-res=</CODE><VAR>ires</VAR>.
+
+</DL>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#BALIGN">Overview</A> |
+   <A HREF="#GUI">User interface</A> |
+   <A HREF="#Recipe">Recipe for use</A> |
+   <A HREF="#Troubleshooting">Troubleshooting</A> |
+   <A HREF="#Parameters">Parameters</A>
+
+<HR>
+
+</BODY>
+</HTML>
