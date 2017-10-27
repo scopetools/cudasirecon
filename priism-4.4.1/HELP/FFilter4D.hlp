@@ -1,0 +1,717 @@
+KEYWORD
+    Filter Butterworth Gabor Gaussian (1-Gauss)Gauss
+    Inverse Preprocessing Window Edges OutputSize
+
+DESCRIPTION 4D Filter (Frequency domain)
+    This program will apply a Butterworth, Gabor, or weighted
+    combination of Gaussian filters to each wavelength (x, y,
+    z, and time block) in the input.  These filters are
+    applied in the frequency domain; the advantages or
+    disadvantages of this technique as opposed to the
+    filtering in the spatial domain that is done with 3D
+    Filter are
+
+      1) For a filter which has a large spatial extent, the
+         frequency domain techniques will be generally faster.
+         For an input with N elements and a filter with M
+         elements where M is less than or equal to N, the
+         spatial domain techniques generally perform on the
+         order of N*M calculations and the frequency domain
+         techniques perform N*log(N) calculations.
+      2) With the frequency domain techniques, care needs
+         to be taken in choosing the size of the input region:
+         certain sizes (those that have small prime factors)
+         are handled much more efficiently.  By default, this
+         is done automatically for you by adding additional
+         elements so that the input can be handled efficiently
+         and then stripping these additional elements off
+         before writing the result.  To change this behavior,
+         modify the edge handling and output size inputs.
+      3) Frequency domain techniques treat the right edge
+         (after padding) as contiguous with the left edge;
+         the top and bottom are handled similarly.  This can
+         be problematic when the values along the edges are
+         very different.  Preprocessing the data to remove
+         background trends which cause the edges to be
+         different, windowing the data to reduce the
+         variations at the edges, or padding the data with
+         additional elements so that the number of elements
+         added is greater than the approximate spatial extent
+         of the filter are possible approaches to mitigate
+         this problem.
+
+    Also of practical note is that the types of filters offered
+    by this application and by the applications that filter in
+    the spatial domain are quite different, and the availability
+    of the filter you want will frequently limit your choice to
+    one or the other.
+
+    The controls in the user interface include a standard set
+    of controls for selecting the input file, output file, and
+    region of interest and for starting and interrupting
+    processing.  For more information about these controls see
+    Region.hlp.  The other controls are organized as follows:
+
+      1) The type of filter is selected by the option menu
+         just below the control for the output mode.  To
+         display and change the parameters for the current
+         filter type, press the button labeled "Set
+         parameters" which is next to the option menu.  If
+         you want to apply the inverse of the filter, turn
+         on the "inverse" toggle button; otherwise, turn
+         it off.  The inverse filter is implemented as a
+         simplified Wiener filter, to edit the parameters
+         for the Wiener filter, press the button labeled
+         "Set Wiener parameters".
+      2) Some of the filters are radially symmetric.  To
+         generate a radial profile of the filter function
+         which can be displayed with 2D Plot, press the button
+         labeled "Create filter profile" to select the output
+         file and write the result.
+      3) Use the button labeled "Set preprocessing" to
+         display and change the parameters which control
+         the processing of the data before it is padded and
+         filtered.  By default, no preprocessing is done.
+      4) Use the button labeled "Set window/taper" to select
+         a function used to smooth out discontinuities at the
+         edges of the data after preprocessing and before
+         padding and transforming the data.  By default, no
+         smoothing is done.
+      5) Use the button labeled "Set edge handling" to control
+         the number and values of the elements that are appended
+         to the input region before filtering.  By default, the
+         input data is padded with zeroes so that it is a
+         size which can be efficiently processed.
+      6) Use the button labeled "Set output size" to open a
+         dialog with the controls for trimming the output region.
+         By default the output region is the same size as the input
+         region and any padding that was added is stripped off
+         after filtering.
+
+     FFilter4D accepts the command-line arguments described in
+     Region.hlp.  In addition, FFilter4D accepts the options
+     shown below (optional parts are shown in brackets).  If
+     mutually exclusive options (i.e. for selection of the
+     type of filter or preprocessing), the last option that
+     appears on the command line takes precedence.  The defaults
+     are to use a 2nd order Butterworth lowpass filter with
+     a cutoff frequency of half of Nyquist, no preprocessing,
+     padding with zeros to an efficient size in all directions,
+     and to trim the output, if necessary, so that it is the
+     same size as the selected input region.
+
+     -butterworth_bandpass=filter_order:c0:c1
+         Selects the Butterworth bandpass filter.  Requires
+         three parameters.  The first, filter_order, is the
+         order of the filter (valid values are integers
+         between 1 and 16, inclusive).  The second and third
+         parameters, c0 and c1 are the cutoff frequencies as
+         a fraction of the Nyquist frequency (valid values
+         are between 0 and 10).  Reversing the order of c0
+         and c1 will not affect the behavior of the filter.
+
+     -butterworth_bandstop=filter_order:c0:c1
+         Selects the Butterworth bandstop filter.  Requires
+         three parameters.  The first, filter_order, is the
+         order of the filter (valid values are integers
+         between 1 and 16, inclusive).  The second and third
+         parameters, c0 and c1 are the cutoff frequencies as
+         a fraction of the Nyquist frequency (valid values
+         are between 0 and 10).  Reversing the order of c0
+         and c1 will not affect the behavior of the filter.
+
+     -butterworth_smooth=filter_order:cutoff_freq
+         Selects the Butterworth smoothing (lowpass) filter.
+         Requires two parameters.  The first, filter_order,
+         is the order of the filter (valid values are integers
+         between 1 and 16, inclusive), and the second is the
+         cutoff frequency as a fraction of the Nyquist
+         frequency (valid values are between 0 and 10).
+
+     -butterworth_sharpen=filter_order:cutoff_freq
+         Selects the Butterworth sharpening (highpass) filter.
+         Requires two parameters.  The first, filter_order,
+         is the order of the filter (valid values are integers
+         between 1 and 16, inclusive), and the second is the
+         cutoff frequency as a fraction of the Nyquist
+         frequency (valid values are between 0 and 10).
+
+     -fenhance=center_freq1:sigma1 or
+     -fenhance=center_freq1:sigma1:center_freq2:sigma2
+         Selects the (1-Gauss)Gauss filter.  The first two
+         parameters are the central frequency as fraction
+         of the Nyquist frequency and sigma as a fraction
+         of the Nyquist frequency for the Gaussian in the
+         (1-Gaussian) term.  If you supply the third and
+         fourth parameters, the second Gaussian is
+         included.  The third parameter is the central
+         frequency as fraction of the Nyquist frequency
+         for the second Gaussian.  The fourth parameter
+         is the sigma of the second Gaussian as a fraction
+         of the Nyquist frequency.  Valid values for the
+         central frequencies are values between zero and
+         ten.  Valid values for the sigmas are values between
+         0.0001 and 10000.
+
+     -gabor=freq_mag:freq_a1:freq_a2:freq_a3:sigma_radial:sigma_a1:sigma_a2:sigma_a3
+     -gabor_neg=freq_mag:freq_a1:freq_a2:freq_a3:sigma_radial:sigma_a1:sigma_a2:sigma_a3
+     -gabor_pos=freq_mag:freq_a1:freq_a2:freq_a3:sigma_radial:sigma_a1:sigma_a2:sigma_a3
+
+         Selects the Gabor filter.  Requires eight
+         parameters.  The first is the magnitude of
+         the central frequency as fraction of the
+         Nyquist frequency (valid values are between
+         0 and 10).  The next three are the angles,
+         in degrees, to the central frequency.  The
+         valid range for each angle is zero to 180
+         degrees.  The first angle is the angle
+         between the kx axis and the projection of
+         the central frequency vector to the kx/ky
+         plane.  The second angle is the angle
+         between the kz axis and the central
+         frequency vector with its kt component
+         set to zero.  The final angle angle is
+         the angle between the kt axis and the
+         central frequency vector.  The fifth
+         parameter is the value of sigma in the
+         radial direction as a fraction of
+         the Nyquist frequency.  The remaining
+         three parameters are the values of sigma,
+         as fractions of the Nyquist frequency, in
+         the directions tangential to changes,
+         respectively, of the three angles.  Valid
+         values for the sigmas are greater than zero
+         and less than or equal to ten.  The first
+         form selects a filter with frequency
+         components about freq_mag * (cos(a1) *
+         sin(a2) * sin(a3), sin(a1) * sin(a2) *
+         sin(a3), cos(a2) * sin(a3), cos(a3)) and
+         -freq_mag * (cos(a1) * sin(a2) * sin(a3),
+         sin(a1) * sin(a2) * sin(a3), cos(a2) *
+         sin(a3), cos(a3)).  The second form selects
+         a filter with frequency components about
+         -freq_mag * (cos(a1) * sin(a2) * sin(a3),
+         sin(a1) * sin(a2) * sin(a3), cos(a2) *
+         sin(a3), cos(a3)).  The third form selects
+         a filter with frequency components about
+         freq_mag * (cos(a1) * sin(a2) * sin(a3),
+         sin(a1) * sin(a2) * sin(a3), cos(a2) *
+         sin(a3), cos(a3)).
+
+     -gaussian_bank=filter_count
+         Selects the bank of Gaussian filters with filter_count
+         in the bank.  Valid values of filter_count range from
+         one to four.
+
+     -gauss1=center_freq:sigma:amplitude
+         Sets the attributes for the first filter in the bank
+         of Gaussian filters.  Requires three parameters.  The
+         first is the central frequency as a fraction of the
+         Nyquist frequency (valid values are between 0 and 10).
+         The second is the sigma for the filter as a fraction
+         of the Nyquist frequency (valid values are greater
+         than zero and less than or equal to ten thousand).
+         The third is the amplitude.
+
+     -gauss2=center_freq:sigma:amplitude
+         Is similar to -gauss1 but sets the attributes for the
+         second filter in the bank of Gaussian filters.
+
+     -gauss3=center_freq:sigma:amplitude
+         Is similar to -gauss1 but sets the attributes for the
+         third filter in the bank of Gaussian filters.
+
+     -gauss4=center_freq:sigma:amplitude
+         Is similar to -gauss1 but sets the attributes for the
+         fourth filter in the bank of Gaussian filters.
+
+     -inverse
+         If you specify this option, the inverse of the filter
+         is applied using a simplified Wiener filter.
+
+     -subtract=value or -subtract=mean
+         Specifies that the input data should be preprocessed
+         by subtracting value or the mean.
+
+     -linear_detrend
+         Specifies that the input data should be preprocessed
+         by subtracting the linear trend which corresponds
+         to the estimated average slope.
+
+     -polyfit=n
+         Specifies that the input data should be preprocessed
+         by subtracting the least-squares fit polynomial of
+         order n.  Valid values of n range from one to 10.
+
+     -wiener=w
+         Specifies the noise suppression factor for the
+         Wiener filter.  If you do not also specify a
+         -wiener_cut option, this parameter is used directly;
+         otherwise, it is used as a multiplier for the
+         average amplitude of the high frequency components
+         of the input volume divided by the average amplitude
+         for all frequency components in the input volume.
+         The default value is ten.  The specified value must
+         not be negative.
+
+    -wiener_cut=k or -wiener_cut=kx:ky:kz:kt
+        If you specify this option, the noise suppression
+        factor for the Wiener filter is interpreted as a
+        multiplier for the average amplitude of the high
+        frequency components of the input volume divided
+        by the average amplitude for all frequency
+        components in the input volume.  In the first
+        form, a high frequency is any frequency where
+        the absolute value of the x, y, z, or time
+        frequency component is greater than or equal
+        to k.  k is assumed to have units of cycles per
+        pixel; i.e., the Nyquist frequency is 0.5.
+        In the second form, a high frequency is any
+        frequency where the absolute value of the x
+        frequency component is greater than or equal
+        to kx, the absolute value of the y frequency
+        component is greater than or equal to ky, the
+        absolute value of the z frequency component
+        is greater than or equal to kz, or the absolute
+        value of the time frequency component is greater
+        than or equal to kt.  kx, ky, and kz must be
+        non-negative and are assumed to have units
+        of cycles per pixel.
+
+    -rectangular=x_coverage:y_coverage:z_coverage:t_coverage
+        Selects a rectangular windowing function that
+        attenuates 200 times x_coverage percent of the
+        data in x, 200 times y_coverage percent of the
+        data in y, 200 times z_coverage percent of the
+        data in z, and 200 times t_coverage percent of
+        the data in time .  Valid values for x_coverage,
+        y_coverage, z_coverage, and t_coverage are
+        between 0 and 0.5.
+
+    -triangular=x_coverage:y_coverage:z_coverage:t_coverage
+        Selects a triangular windowing function that
+        attenuates 200 times x_coverage percent of the
+        data in x, 200 times y_coverage percent of the
+        data in y, 200 times z_coverage percent of the
+        data in z, and 200 times t_coverage percent of
+        the data in time .  Valid values for x_coverage,
+        y_coverage, z_coverage, and t_coverage are
+        between 0 and 0.5.
+
+    -halfsine=x_coverage:y_coverage:z_coverage:t_coverage
+        Selects a half-sine windowing function (consult
+        the Window topic for details) that attenuates 200
+        times x_coverage percent of the data in x, 200
+        times y_coverage percent of the data in y, 200
+        times z_coverage percent of the data in z, and
+        200 time t_coverage percent of the data in time.
+        Valid values for x_coverage, y_coverage,
+        z_coverage, and t_coverage are between 0 and 0.5.
+        Use -halfsine_power to set the exponent, which
+        controls the sharpness of the window edges.
+
+    -halfsine_power=p
+        Sets the exponent for the half-sine windowing
+        function.  This option is ignored when other
+        windowing functions are used.  If this option is
+        not explicitly specified when the half-sine windowing
+        function is used, the exponent used is one.
+
+    -hamming=x_coverage:y_coverage:z_coverage:t_coverage
+        Selects a Hamming window function (consult the
+        Window topic for details) that attenuates 200
+        times x_coverage percent of the data in x, 200
+        times y_coverage percent of the data in y, 200
+        times z_coverage percent of the data in z, and
+        200 time t_coverage percent of the data in time.
+        Valid values for x_coverage, y_coverage,
+        z_coverage, and t_coverage are between 0 and 0.5.
+
+    -blackman=x_coverage:y_coverage:z_coverage:t_coverage
+        Selects a Blackman window function (consult the
+        Window topic for details) that attenuates 200
+        times x_coverage percent of the data in x, 200
+        times y_coverage percent of the data in y, 200
+        times z_coverage percent of the data in z, and
+        200 time t_coverage percent of the data in time.
+        Valid values for x_coverage, y_coverage,
+        z_coverage, and t_coverage are between 0 and 0.5.
+
+     -xpad=default or -xpad=n
+         Specifies that the x dimension should be padded by
+         the default amount or by n pixels, where n is a
+         non-negative integer.
+
+     -xpad_value=mean or -xpad_value=ramp or -xpad_value=rv[:iv]
+         Specifies what values to use when padding the x
+         dimension.  -xpad_value=mean causes the data to be
+         padded with the mean value.  -xpad_value=ramp causes
+         the data to be padded with values which range linearly
+         from the value at one boundary to the value at the
+         other boundary.  The last form causes the data to be
+         padded with a constant value whose real component is
+         rv and whose imaginary component is iv.  If the
+         imaginary component is omitted, it is assumed to be
+         zero.
+
+     -ypad=default or -ypad=n
+         Is similar to -xpad but specifies the amount of
+         padding in the y dimension.
+
+     -ypad_value=mean or -ypad_value=ramp or -ypad_value=rv[:iv]
+         Is similar to -xpad_value but specifies the padding
+         values for the y dimension.
+
+     -zpad=default or -zpad=n
+         Is similar to -xpad but specifies the amount of
+         padding in the z dimension.
+
+     -zpad_value=mean or -zpad_value=ramp or -zpad_value=rv[:iv]
+         Is similar to -xpad_value but specifies the padding
+         values for the z dimension.
+
+     -tpad=default or -tpad=n
+         Is similar to -xpad but specifies the amount of
+         padding in the time dimension.
+
+     -tpad_value=mean or -tpad_value=ramp or -tpad_value=rv[:iv]
+         Is similar to -xpad_value but specifies the padding
+         values for the time dimension.
+
+     -xtrim=default or -xtrim=n
+         The first form specifies that the x dimension of
+         the result (including padding) should be trimmed to
+         have the same size as the x dimension of the selected
+         input region.  The second form trims n pixels from
+         the x dimension before output; n must be a
+         non-negative integer.
+
+     -ytrim=default or -ytrim=n
+         Is similar to -xtrim but controls the amount trimmed
+         from the y dimension before output.
+
+     -ztrim=default or -ztrim=n
+         Is similar to -ztrim but controls the amount trimmed
+         from the z dimension before output.
+
+     -ttrim=default or -ttrim=n
+         Is similar to -ttrim but controls the amount trimmed
+         from the time dimension before output.
+
+
+     As an example, the following command line removes a
+     linear trend from the data in raw.dat, applies a
+     lowpass Butterworth filter, and places the result
+     in out.dat:
+
+         FFilter4D raw.dat out.dat -linear_detrend \
+            -butterworth_smooth=2:0.4
+
+Filter
+    Four different types of filters are currently supported:
+    Butterworth, Gabor, weighted combination of Gaussians
+    and one minus Gaussian times another Gaussian.  Descriptions
+    of the forms of these filters and the input parameters
+    specific to each are given in the Butterworth, Gabor,
+    Gaussian, and (1-Gauss)Gauss topics.
+
+Butterworth
+    The filter labeled as "Butterworth" is not the analog
+    filter of that name but is a digital filter whose
+    frequency response is the amplitude squared of the
+    analog Butterworth filter's gain.  Unlike the analog
+    Butterworth filter, the digital filter does not modify
+    the phases of data passed through the filter.
+
+    Four variants of Butterworth filters are provided.
+    The first is a smoothing filter which passes low
+    frequencies and attenuates the high frequency
+    components of the input.  The second is a sharpening
+    filter which attenuates the low frequency components.
+    The third is a bandpass filter, whose gain drops
+    outside a given frequency range.  The fourth is a
+    bandstop filter whose gain is lower inside a given
+    frequency range than outside that range.  The cutoff
+    frequencies mark the transition from regions where
+    the frequency components are not as strongly
+    attenuated to regions where the frequency components
+    are more strongly attenuated.  The cutoff frequencies
+    are specified as fractions of the Nyquist frequency.
+    For the lowpass and highpass filters, there's one
+    cutoff frequency, and the signal is attenuated by
+    one half at that frequency.  For the bandpass and
+    bandstop filters, there are two cutoff frequencies,
+    and the order in which you provide them does not
+    matter.  For the bandpass filter, the attenuation
+    at the cutoff frequencies, c0 and c1, is
+
+        1 / (1 + ((c0 + c1) / (c0 - c1))^(2 * order))
+
+    .  For the bandstop filter, the attenuation at the
+    cutoff frequencies is
+
+        1 / (1 + ((c0 - c1) / (c0 + c1))^(2 * order))
+
+    .  The order of the filter controls how rapidly the
+    filter's gain decreases outside of the frequency
+    ranges passed by the filter.  A higher order gives
+    a more rapid decline in the filter's response outside
+    of the frequency ranges passed by the filter.
+
+Gabor
+    A Gabor filter is a good choice for selecting the
+    components of an image that contribute to a limited
+    range of frequencies.  If the components selected
+    in the dialog are "both" or "positive only", the
+    range has a contribution from frequencies about
+   
+        cf * (cos(a) * sin(b) * sin(c),
+              sin(a) * sin(b) * sin(c),
+              cos(b) * sin(c),
+              cos(c))
+
+    where cf is the central frequency magnitude specified
+    in the dialog, a is the central frequency angle 1, b
+    is the central frequency angle 2, and c is the central
+    frequency angle 3.  If the components selected in the
+    dialog are "both" or "negative only", the range has
+    a contribution from frequencies about
+
+        -cf * (cos(a) * sin(b) * sin(c),
+              sin(a) * sin(b) * sin(c),
+              cos(b) * sin(c),
+              cos(c))
+
+    Both components are limited by an elliptical Gaussian
+    envelope.  One axis of the envelope is oriented along
+    the radial direction from the zero frequency to the
+    central frequency.  Another axis (the "angle 1
+    direction") is parallel to the plane kz = 0 and
+    perpendicular to the radial axis.  The third axis
+    (the "angle 2 direction") is parallel to the plane
+    kt = 0 and is perpendicular to the radial and
+    "angle 1" axes.  The remaining axis is perpendicular
+    to the other three.  The width of the envelope along
+    the axes is given in terms of the sigma for the
+    Gaussian.
+
+    With the "positive only" or "negative only" options
+    for the components, you should usually force the
+    output to be complex-valued because the filters are
+    not, in general, conjugate symmetric.
+
+Gaussian
+    The frequency response of this filter is radially
+    symmetric about the zero frequency and is the weighted
+    sum of up to four Gaussian envelopes.  The number of
+    Gaussians summed to give the filter is controlled by
+    the field labeled "Number of filters to combine".
+    For each Gaussian there is a central frequency, a
+    width specified in terms of the Gaussian's sigma, and
+    the amplitude at the central frequency.  One common
+    choice for the amplitudes of the Gaussians ensures
+    that the frequency response at zero frequency is one.
+    This generates a filter that does not change the mean
+    of the data.
+
+(1-Gauss)Gauss
+    The frequency response of this filter is radially
+    symmetric about the zero frequency and is one minus
+    a Gaussian envelope multiplied by another, optional,
+    Gaussian.  For each Gaussian, there is a central
+    frequency and a width, specified in terms of the
+    Gaussian's sigma.
+
+Inverse
+    Instead of applying the filter, you can apply it's
+    inverse by turning on the "inverse" toggle button.
+    The inverse filter is computed as a simplified Wiener
+    filter:
+
+        H*(k) / (H(k) H*(k) + C)
+
+    where H(k) is the frequency response of the filter
+    to be inverted, H*(k) is complex conjugate of H(k),
+    and C is a non-negative constant.  The application
+    allows C to be set in two ways:
+
+    1) You can directly specify the value of C.
+
+    2) You can specify a non-negative multiplicative
+       constant.  The value of C will be the value of
+       that constant divided by the average amplitude
+       for all frequency components in the input volume
+       and then multiplied by the average amplitude for
+       input volume frequency components whose x frequency
+       component has an absolute value of greater than
+       or equal to kxl, whose y frequency component has
+       an absolute value of greater than or equal to kyl,
+       whose z frequency component has an absolute value
+       of greater than or equal to kzl, or whose time
+       frequency component has an absolute value greater
+       than or equal to ktl.
+
+    To set the value of C, "Set Wiener parameters" button
+    in the main dialog to open the dialog with the controls
+    for modifying C.  If the "absolute" toggle button is on
+    in that dialog, the value in the "Wiener factor" field
+    is the value of C.  If the "absolute" toggle button is
+    off, the value in the "Wiener factor" field is the value
+    of the multiplicative constant, and the four values in
+    the "Cutoff frequencies" field are, respectively, the
+    values of kxl, kyl, kzl, and ktl in units of cycles per
+    pixel (i.e. the Nyquist frequency has a value of 0.5).
+
+Preprocessing
+    The input region can be processed to remove an offset
+    or trend before the data is padded and filtered.  To
+    display the controls for this processing, press the
+    button labeled "Set preprocessing" in the main dialog.
+    There are five types of processing that can be done;
+    select one by pressing the appropriate toggle in the
+    dialog.  The processing options are:
+
+      1) None.  The input is not modified before filtering
+         and padding.
+      2) Subtract offset.  The specified value is subtracted
+         from all the input values.
+      3) Subtract mean.  For the selected region in each
+         wavelength, the mean of the selected region is
+         subtracted from all values.
+      4) Remove linear trend.  An average slope for each
+         wavelength is estimated by averaging values from
+         the first and last third of each dimension; the
+         linear trend corresponding to that average slope and
+         the mean of the region is subtracted from the input
+         data.  The algorithm used is the average slope method
+         extended to four dimensions (Digital data analysis
+         procedures, Bendat and Piersol, 1st Edition, 1971,
+         page 288).
+      5) Remove trends up to order.  A polynomial of the
+         given order is fit to each wavelength.  That
+         polynomial evaluated at each input point is then
+         subtracted from the input before padding and
+         filtering.
+
+Window
+    Applying a windowing function, also called tapering,
+    multiplies the data by a function which goes to zero (or
+    near zero) at the edges of the data.  This is done before
+    the forward transform to remove discontinuities at the
+    edges; the disadvantage of applying a window is that
+    it essentially throws away parts of the input.
+
+    The windowing functions used are separable, i.e, the
+    windowing function, W(x,y,z,t), can be written as the
+    product of WX(x), WY(y), WZ(z), and WT(t).  WX, WY,
+    WZ, and WT are calculated from the same formula but
+    with different inputs for the number of pixels, n, and
+    the fraction, f, of the dimension that is attenuated by
+    the windowing function.  The four values in the "Coverage"
+    field are the values of f divided by two for the x, y,
+    z, and time directions, respectively.  Commonly used
+    values for the coverage are 0.5 (a "full taper") and
+    0.1 (a 10% taper).  The power, x, is used by half-sine
+    windowing function.
+
+    The functions used to calculate the windowing functions
+    are shown below.  i is the pixel index and runs from 0 to
+    n minus 1, and e is given by
+
+          { floor(0.5 + f / 2.0 * n)          n even
+      e = {
+          { floor(0.5 + f / 2.0 * (n - 1))    n odd
+
+    Rectangular
+
+             { 0     i < e
+      w(i) = { 1     e <= i <= n - e
+             { 0     i > n - e
+
+    Because of the sharp cutoffs of the rectangular window,
+    it is not particularly useful; it's provided for
+    completeness.
+
+    Triangular
+
+             { i / e           i < e
+      w(i) = { 1               e <= i <= n - e
+             { (n - i) / e     i > n - e
+
+    Half-sine^power
+
+             { (sin(pi * i / (2 * e)))^x           i < e
+      w(i) = { 1                                   e <= i <= n - e
+             { (sin(pi * (n - i) / (2 * e)))^x     i > n - e
+
+    Hamming
+
+             { 0.54 - 0.46 * cos(pi * i / e)           i < e
+      w(i) = { 1                                       e <= i <= n - e
+             { 0.54 - 0.46 * cos(pi * (n - i) / e)     i > n - e
+
+    Blackman
+
+             { cos(pi * i / e)           i < e
+      a(i) = { -1                        e <= i <= n - e
+             { cos(pi * (n - i) / e)     i > n - e
+
+      w(i) = 0.34 - a(i) * (0.5 - a(i) * 0.16)
+
+Edges
+    The dimensions of the input region can be extended by
+    adding elements at the end of each dimension.  This is
+    typically done for two reasons:
+
+      1) Adding the extra elements gives a size that is
+         efficiently handled by Fourier transforms.
+      2) Adding the extra elements reduces the blending
+         of opposite edges of the data which might be
+         troublesome if the values at the opposite edges
+        are very different.
+
+    To display the controls for the amount of padding and
+    the values of the elements added, press the button
+    labeled "Set edge handling in the main dialog.  For
+    each dimension the Width field sets the number of
+    elements that will be added.  When the toggle labeled
+    "Use default width" is on, the Width field will
+    automatically be set so the padded size can be efficiently
+    handled.  There are three ways in which the values of
+    the added elements are set.  These are:
+
+      1) Pad with value.  Use the given value for all the
+         elements added to a dimension.  The imaginary
+         component of the value is only used if the
+         input data is complex.
+      2) Pad with mean.  Use the mean of the 3D input
+         region being processed when padding the
+         dimension.
+      3) Pad with linear ramp.  For each line in x,
+         y, z, or time, the padding elements added
+         to the line are a linear combination of the
+         first and last element of that input line.
+
+OutputSize
+    The size of the region written to the output file may
+    be different than the input size.  The size is
+    influenced by the controls to pad the input data before
+    filtering, and the controls, described here, to trim
+    the filtered result before saving it.  To display the
+    trimming controls, press the button labeled "Set output
+    size" in the main dialog.  This will open a dialog in
+    which there is a set of controls for each dimension
+    filtered.  First the input size and the padded size of
+    the region are listed.  Below that are the toggles
+    which control how the size in that dimension is trimmed.
+    There are two mutually exclusive options for trimming:
+
+      1) Same as input size.  Trim the dimension (if
+         necessary) so the output has the same size in
+         that dimension as the input region.
+      2) Trim padded size by.  Removes the specified
+         non-negative number of elements from the dimension.
+         The removed elements are from the end of the
+         dimension so elements added by padding are removed
+         first and then, if necessary, elements that
+         correspond to positions in the input region.

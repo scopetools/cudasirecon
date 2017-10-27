@@ -1,0 +1,411 @@
+KEYWORD
+      IdatFile IslFile OdocFile OprmFile NX:NY:NV rot0 dMax1 dMax2 *shXYZ
+      *OdatFile *IprmFile *dimxy *iv *iRef *nBead *nSkip *cycles *open_comp
+      *fix_z *fix_mag *fix_rot *fix_ref_rot *zero_tilts *only_bead
+
+DESCRIPTION
+      BEAD_ALIGN is the fourth and last step of automatic /
+      interactive bead alignment.  This program gives alignment
+      parameters by least-squares (LS) fitting the bead positions.
+      There are normally four alignment parameters for each
+      projection: x shift, y shift, in-plane rotation, and
+      magnification.  There are two modes in BEAD_ALIGN:
+
+        1.  The first is an automatic mode (this is used when
+            the interactive toggle in BALIGN's main menu is off)
+            in which the program does an initial least-squares fit
+            and then does two more rounds of fitting where at the
+            beginning of each round badly fit locations are
+            excluded from consideration (this exclusion is also
+            referred to as purification).
+        2.  The second is an interactive mode in which the program
+            does an initial round of fitting and displays the
+            results graphically.  The user can then add, change,
+            or delete bead positions to alter the data that is
+            to be fit and do one or more passes where each pass
+            starts by excluding badly fit positions from the
+            previous round and refitting the data.
+
+      In either case, the L-BFGS-B software is used to perform
+      the least-squares fit.  That software is described in
+
+          R. H. Byrd, P. Lu, and J. Nocedal.  A Limited Memory
+          Algorithm for Bound Constrained Optimization.  (1995).
+          SIAM Journal on Scientific and Statistical Computing.
+          16.  5.  pp. 1190-1208.
+
+      and
+
+          C. Zhu, R. H. Byrd, and J. Nocedal.  L-BFGS-B:
+          Algorithm 778: LBFGS-B.  FORTRAN routines for large
+          scale bound constrained optimization (1997).  ACM
+          Transactions on Mathematical Software.  Vol 23.  Num 4.
+          pp. 550-560.
+
+      For more information on using the interactive mode once
+      it is started, see BEAD_ALIGN_interactive.hlp.  The
+      rest of this document describes the input parameters for
+      both modes.
+
+IdatFile
+      IdatFile is the raw projection data stack from CCD; it is
+      used for the tilt angles stored in its header.
+
+IslFile
+      IslFile is the input point list file that stores sorted
+      and matched bead coordinates from BEAD_MATCHER and/or
+      BEAD_CHASER.
+
+OdocFile
+      OdocFile is the name of the file that will be used to
+      store diagnostic information on the bead alignment process
+      including initial and final alignment parameters, fitted
+      3D locations for the beads, the R-factor (sum of the
+      squares of the differences between the fitted locations and
+      those in IslFile, and the input and fitted bead locations.
+
+OprmFile
+      OprmFile is the name of the file in which the alignment
+      parameters in standard format are written.  These parameters
+      are used as an input to the reconstruction procedure.
+
+NX:NY:NV
+      The first two values are, respectively, the x and y
+      dimension of the projections.  The third value is the
+      number of projections in the data stack.
+
+rot0
+      Let the orientation angle be the smallest, in absolute
+      value, rotation angle needed to rotate the image so
+      that the tilt axis is parallel to the y axis (the y
+      axis is vertical when images are displayed in Priism).
+      The orientation angle is positive if the corresponding
+      rotation is clockwise and is negative if the corres-
+      ponding rotation is counterclockwise.  The first value
+      in the rot0 field is the estimated orientation angle,
+      in degrees, at a tilt angle of zero.  The second value
+      is the estimated difference, in degrees, between the
+      orientation angle at a tilt angle of sixty degrees and
+      the orientation angle at a tilt angle of minus sixty
+      degrees.  To specify these parameters from the command
+      line, use
+
+        -rot0=<o0>:<ochange>
+
+      The default value for o0 is 78 degrees; the default
+      value for ochange is -1 degrees.  You should substitute
+      values that more accurately reflect what happens at
+      the magnification used when  collecting the tilt series.
+
+dMax1
+      These two values control which bead locations are excluded
+      from the second round of fitting done in the automatic
+      mode.  For the interactive mode, they set the initial
+      values for the criteria to exclude beads from rounds of
+      fitting after the first one; the user is free to change
+      these criteria from the interactive alignment dialog.
+
+      The first of the two parameters set a threshold on the
+      distance in pixels between the fitted location and the
+      input location; locations at which this threshold is
+      exceeded are excluded from the second round of fitting.
+      The second of the parameters sets a threshold on the
+      maximum number of locations which can be excluded for a
+      single bead; if more than that number would be excluded
+      based on the distance threshold, that bead is not included
+      in the second round of fitting.
+
+      To specify these parameters on the command line use
+
+        -dt_max1=<d_threshold>:<max_excluded_threshold>:<min_locations>
+
+      The third parameter, min_locations, can not be entered
+      in the graphical interface but can be provided on the
+      command line.  If a bead appears in fewer than
+      min_locations sections, it is excluded from the second
+      round of fitting.
+
+      The default values used when one or more of these
+      parameters is not specified depend on whether the
+      interactive or automatic mode is used.  With the
+      interactive mode the default value for d_threshold
+      is three pixels; the default for max_excluded_threshold
+      is fifty locations;and the default for min_locations is
+      two locations.  For the automatic mode, if -dt_max1
+      does not appear on the command  line, only one round of
+      fitting without exclusion of badly fit positions is
+      done.  When it is specified but one or more of the
+      parameters are not, then the default values are three
+      pixels for d_threshold, ten locations for
+      max_excluded_threshold, and two locations for
+      min_locations.
+
+dMax2
+      These parameters function similarly to those for dMax1,
+      but they apply to the third round of fitting in the
+      automatic mode.  They are not used in the interactive mode.
+
+      To specify these parameters on the command line, use
+
+        -dt_max2=<d_threshold>:<max_excluded_threshold>:<min_locations>
+
+      When -dt_max2 does not appear on the command line, a third
+      round of fitting is not done.  Otherwise, the default values
+      for values not specified on the command line are the same as
+      the ones used for dMax1.
+
+*shXYZ
+      These three parameters specify how to shift the 3D tilt
+      axis from its default location.  This is done by
+      transforming the fitted alignment parameters; the final
+      result is saved in OprmFile.  The default position of
+      the tilt axis is such that the origin in x and y
+      is the center of the unaligned reference projection
+      image and the origin in z is the z position of the center
+      of mass of the 3D bead locations.
+
+      This switch is not normally used since the same operation
+      can be done with APPL_PRM as part of the reconstruction step.
+
+      To specify the shifts on the command line, use
+
+        -shxyz=<shift_x>:<shift_y>:<shift_z>
+
+      The default shift in each dimension is zero.
+
+*OdatFile
+      OdatFile is the name of the file to which an aligned tilt
+      series will be written.  This file is usually not created
+      here (using "none" for the name of the file); instead,
+      the aligned data stack is created with APPL_PRM as part
+      of the reconstruction process.
+
+      On the command line, the name of the file for the aligned
+      tilt series is set with
+
+        -odatfile=<file_name>
+
+      If file_name is "none", an aligned data stack is not
+      written.  The default value is "none".
+
+*IprmFile
+      IprmFile is the name of an alignment parameter file,
+      either in the format normally generated by the bead
+      alignment programs or in the augmented format written
+      by massnorm, to use as an initial guess for all the
+      alignment parameters with the exception of the
+      translations of each projection.  The alignment output
+      will carry over the parameters that are not fit from
+      the input parameter file.
+
+      On the command line, set the name of the input parameter
+      file with
+
+        -iprmfil=<file_name>
+
+      If file_name is "none", BEAD_ALIGN determines its own
+      initial guess for the alignment parameters and, in the
+      output parameter file, uses default values for the
+      parameters that are not fit.  If you do not specify an
+      input parameter file on the command line, the default
+      value assumed is "none".
+
+*dimxy
+      These parameters are the x and y dimensions of the aligned
+      data stack when it is output (see OdatFile).  From the
+      command line, set the dimensions with
+
+        -dimxy=<nx>:<ny>
+
+      The default values are the dimensions of the input data
+      stack, IdatFile.
+
+*iv
+      These two values set the range of projection indexes for
+      which BEAD_ALIGN fits alignment parameters.  For projections
+      outside of the range, BEAD_ALIGN will substitute plausible
+      values or, if an input parameter file has been specified
+      (see the *IprmFile topic), carry over the values from that
+      parameter file.
+
+      On the command line, set the range of projections with
+
+        -iv=<first_projection>:<last_projection>
+
+      The default value for <first_projection> is zero, the
+      first projection in the stack; the default value for
+      <last_projection> is the number of projections minus one,
+      the last projection in the stack.
+
+*iRef
+      This parameter specifies the index of the projection
+      which is used as a reference projection when calculating
+      initial estimates of the image shifts.  This projection
+      also has its alignment parameters fixed during the fit
+      so shifts, magnification, and compression are measured
+      relative to those for the reference projection.
+
+      On the command line, set the index of the reference
+      projection with
+
+        -iref=<index>
+
+      If index is less than zero or is not specified, the
+      projection whose tilt angle is closest to zero is used
+      as the reference projection.
+
+*nBead
+      This parameter sets the number of beads to read from
+      IslFile.  Any additional beads in that file are ignored.
+      On the command line, set the number of beads to read with
+
+        -nbead=<number>
+
+      If not specified or the value of number is less than zero,
+      all the beads in the input file are used.
+
+*nSkip
+      When calculating initial estimates of image shifts, a
+      range of projections adjacent to a projection, iv, is
+      examined to determine which projection has the most beads
+      in common with iv.  This parameter sets the maximum number
+      of projections in the range of projections searched.
+
+      From the command line, the maximum number of projections
+      searched is set with
+
+        -nskip=<number>
+
+      The default value is five.
+
+*cycles
+      This parameter sets the maximum number of iterations
+      performed during each round of least-squares fitting.
+      If this number of iterations is exceeded, the last
+      estimate of the alignment parameters is used (though
+      these may not be close to giving the best fit).  The
+      maximum number of iterations is specified on the
+      command-line with
+
+        -cycles=<max_iterations>
+
+      The default value for max_iterations is 100.
+
+*open_comp
+      When this toggle is off, compression is not allowed
+      to vary during the fit process.  When on, the compression
+      is allowed to vary for all projections; this is used when
+      checking for shrinkage with a sample that has gold markers
+      on both surfaces of the specimen or embedded throughout
+      the specimen rather than just on one surface of the
+      specimen.
+
+      From the command line, use
+
+        -open_comp
+
+      to allow compression to vary during the fit.
+
+*fix_z
+      When this toggle is off, the z positions of the alignment
+      markers are allowed to vary during the fit.  When it is
+      off or when the range of tilts in the projection series
+      is less than one degree and the open compression option
+      is enabled, the z positions of the alignment markers are
+      fixed at zero for the fit.  There are a couple of
+      situations where the option to fix the z positions can
+      be useful:
+
+        1) For data sets where there are only a limited number
+           of tilt angles, there may be a benefit to fixing
+           the z positions in order to reduce the number of
+           free parameters.  For the alignment results to be
+           meaningful, the alignment markers will really have
+           to be nearly coplanar.
+        2) Data sets where each projection was collected at
+           the same angle.  Data sets like these are used for
+           EM calibration or for CTF correction from projections
+           of different defocus values.
+
+      In Priism versions prior to 4.2.1, the option to fix
+      the z positions had a number of side effects:
+
+        1) It forced the initial guess for the orientation
+           angle to be zero for all projections.
+        2) It did not allow the rotation of the reference
+           projection to vary.
+        3) It treated all the projections as if they were
+           collected at a tilt angle of zero.
+
+      In Priism versions from 4.2.2 and onward, the option
+      to fix the z positions has none of those side effects.
+      If you still want those side effects, adjust other
+      parameters  (rot0, fix_ref_rot and zero_tilts).
+
+      When this toggle is off, the z positions of the beads
+      are allowed to vary during the fit.  When it is off or
+      when the range of tilts in the projection series is
+      less than one degree, the z positions of the beads are
+      fixed at zero for the fit.  This option is used when
+      aligning a data stack consisting of projections with
+      the same tilt.  Data stacks like these are used for
+      EM calibration or for CTF correction from projections of
+      different defocus values.
+
+      From the command line, use
+
+        -fix_z
+
+      to fix the z positions of the alignment markers
+      during the fit.
+
+*fix_mag
+      When this toggle is on, the magnification is not allowed
+      to vary during the fit.  From the command line, this can
+      be specified with
+
+        -fix_mag
+
+*fix_rot
+      When this toggle is on, the tilt axis orientation is not
+      allowed to vary during the fit.  From the command line,
+      this can be specified with
+
+        -fix_rotall
+
+*fix_ref_rot
+      When this toggle is on, the tilt axis orientation is not
+      allowed to vary for the reference projection.  From the
+      command line, this can specified with
+
+        -fix_ref_rot
+
+      Fixing the rotation of the reference projection is most
+      useful for instances where the projections all have the
+      same tilt angle.  Normally you also want to turn on the
+      fix_z option in those situations as well.
+
+*zero_tilts
+      When this toggle is on, the projections are all treated
+      as if they had a tilt angle of zero.  From the command
+      line, you can turn on that behavior by specifying
+
+        -zero_tilts
+
+*only_bead
+      When this toggle is on, only the locations of the beads,
+      prior to projection, are fit:  the alignment parameters
+      will remain at their initial values.  One case where it
+      is useful to do that is when you want to assess how a
+      set of alignment parameters fit the marked bead locations
+      on the projections.  Fitting only the bead locations
+      overrides the settings for open_comp, fix_mag, fix_rot,
+      and fix_ref_rot.  When this toggle is off, the bead
+      locations and alignment parameters (subject to the limits
+      of the open_comp, fix_mag, fix_rot, and fix_ref_rot
+      settings) are fit.
+
+      From the command line, you can limit the fit to the bead
+      locations with
+
+        -only_bead

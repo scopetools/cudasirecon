@@ -1,0 +1,322 @@
+KEYWORD
+    Preprocessing Averaging/Smoothing Window OutputFormat
+
+DESCRIPTION 2D Power Spectrum
+    The program estimates the 2D power spectra for each input
+    section by performing one or more forward transforms,
+    finding their squared magnitudes, and averaging the
+    results.  This can then be smoothed if desired.  The
+    smoothed average is the expected power at each frequency;
+    the result written is the square root of that.
+
+    The controls in the user interface include a standard set
+    of controls for selecting the input file, output file,
+    and region of interest and for starting and interrupting
+    processing.  For more information on these controls,
+    consult Region.hlp.  The other controls are organized as
+    follows:
+
+    1) Use the button labeled "Set preprocessing" to display
+       and change the parameters which control the processing
+       of the data before it is split into blocks and
+       transformed.  By default, no preprocessing is done.
+    2) Use the button labeled "Set averaging/smoothing" to
+       open a dialog with the settings for how many blocks a
+       2D input region is broken into and how much smoothing
+       is applied to the average result.
+    3) Use the button labeled "Set window/taper" to select
+       a function used to smooth out discontinuities at the
+       edges of the data after it has been preprocessed and
+       split into blocks.  By default, no smoothing is done.
+    4) Use the button labeled "Set output format" to open
+       a dialog with controls for the form of the output:
+       whether or not the log of the square root of the
+       power is taken, and whether or not the result is
+       shifted to center the zero frequency component.
+
+    There are a couple things to note about this application:
+
+      1) The pixel format for the output is always
+         floating-point reals.
+      2) For the x and y dimensions, the pixel spacings are
+         nxs / (nx * dx) and nys / (ny * dy) where nx and ny
+         are the dimensions, in pixels, of the block
+         transformed, dx and dy are the input pixel spacings,
+         and nxs and nys are the dimensions of the smoothing
+         box in pixels.
+      3) The x and y start indices in the header are set to
+         zero.  The x and y coordinates for the origin are
+         set to zero if the zero frequency is not centered;
+         otherwise, they are set to the most negative
+         frequencies present, in units of the output pixel
+         spacing.  The z start index and z coordinate for
+         the origin are not modified.
+
+    FPwrSpec2D accepts the command-line arguments described
+    in Region.hlp.  In addition, FPwrSpec2D accepts the
+    options shown below (optional parts are shown in brackets).
+    If mutually exclusive options (i.e. for selection of the
+    windowing function), the last option that appears on the
+    command line takes precedence.  The default is to
+    calculate the power spectrum without any preprocessing,
+    no tapering of the data, and no averaging or smoothing.
+
+    -subtract=value or -subtract=mean
+        Specifies that the input data should be preprocessed
+        by subtracting value or the mean.
+
+    -linear_detrend
+        Specifies that the input data should be preprocessed
+        by subtracting the linear trend which corresponds
+        to the estimated average slope.
+
+    -polyfit=n
+        Specifies that the input data should be preprocessed
+        by subtracting the least-squares fit polynomial of
+        order n.  Valid values of n range from one to 10.
+
+    -block_size=nx:ny
+        Specifies the dimensions of the blocks which are
+        extracted from the preprocessed input region, used
+        as the source of the spectra calculation, and then
+        averaged.  The default is to use a block the size
+        of the input region.
+
+    -block_overlap=x_overlap:y_overlap
+        Specifies the overlap, in percent, of the blocks.
+        The default is to not overlap the blocks.
+
+    -block_count=nx:ny
+        Specifies the number of blocks in the various
+        dimensions.  The default is to use one block.
+
+    -smooth_size=nx:ny
+        Specifies the size of the smoothing filter
+        applied to the spectra after averaging over the
+        blocks.  nx and ny must be odd positive integers.
+        The default is to use a smoothing filter with
+        dimensions of one, equivalent to no smoothing at
+        all.
+
+    -rectangular=x_coverage:y_coverage
+        Selects a rectangular windowing function that
+        attenuates 200 times x_coverage percent of the
+        data in x and 200 times y_coverage percent of
+        the data in y.  Valid values for x_coverage and
+        y_coverage are between 0 and 0.5.
+
+    -triangular=x_coverage:y_coverage
+        Selects a triangular windowing function that
+        attenuates 200 times x_coverage percent of the
+        data in x and 200 times y_coverage percent of
+        the data in y.  Valid values for x_coverage and
+        y_coverage are between 0 and 0.5.
+
+    -halfsine=x_coverage:y_coverage
+        Selects a half-sine windowing function (consult
+        the Window topic for details) that attenuates 200
+        times x_coverage percent of the data in x and 200
+        times y_coverage percent of the data in y.  Valid
+        values for x_coverage and y_coverage are between
+        0 and 0.5.  Use -halfsine_power to set the exponent,
+        which controls the sharpness of the window edges.
+
+    -halfsine_power=p
+        Sets the exponent for the half-sine windowing
+        function.  This option is ignored when other
+        windowing functions are used.  If this option is
+        not explicitly specified when the half-sine
+        windowing function is used, the exponent used is
+        one.
+
+    -hamming=x_coverage:y_coverage
+        Selects a Hamming window function (consult the
+        Window topic for details) that attenuates 200
+        times x_coverage percent of the data in x and 200
+        times y_coverage percent of the data in y.  Valid
+        values for x_coverage and y_coverage are between 0
+        and 0.5.
+
+    -blackman=x_coverage:y_coverage
+        Selects a Blackman window function (consult the
+        Window topic for details) that attenuates 200
+        times x_coverage percent of the data in x and 200
+        times y_coverage percent of the data in y.  Valid
+        values for x_coverage and y_coverage are between
+        0 and 0.5.
+
+    -center_zero
+        Causes the output to be shifted so zero frequency
+        appears at the center of the image.
+
+    -log10
+        Causes the logarithm base 10 of the power spectrum
+        to be written as the result.
+
+
+    As an example, the following estimates the power
+    spectrum from noise.dat which is assumed to be at
+    least 512 x 512.  The input is broken into 9 blocks
+    of 256 x 256, the blocks are individually tapered
+    with a triangular windowing function, and the results
+    (after centering the spectra and taking the logarithm
+    base 10) are written to window 1.
+
+      FPwrSpec2D noise.dat 1 -block_size=256:256 \
+          -block_count=3:3 -block_overlap=50:50 \
+          -triangular=.5:.5 -log10 -center_zero
+
+Preprocessing
+    The input region can be processed to remove an offset or
+    trend before the data is broken into blocks, tapered, and
+    transformed.  To display the controls for this processing,
+    press the button labeled "Set preprocessing" in the main
+    dialog.  There are five types of processing that can be
+    done; select one by pressing the appropriate toggle in
+    the dialog.  The processing options are:
+
+      1) None.  The input is not modified before the data is
+        split into blocks, tapered, and transformed.
+      2) Subtract offset.  The specified value is subtracted
+         from all the input values.
+      3) Subtract mean.  For each 2D (xy) input region, the
+         mean of the region is subtracted from all values
+         in the region.
+      4) Remove linear trend.  An average slope for each 2D
+         (xy) input region is estimated by averaging values
+         from the first and last third of each dimension;
+         the linear trend corresponding to that average slope
+         and the mean of the region is subtracted from the input
+         data.  The algorithm used is the average slope method
+         extended to two dimensions (Digital data analysis
+         procedures, Bendat and Piersol, 1st Edition, 1971,
+         page 288).
+      5) Remove trends up to order.  A polynomial of the given
+         order is fit to each 2D (xy) input region.  That
+         polynomial evaluated at each input point is then
+         subtracted from the input before the data is split
+         into blocks, tapered and transformed.
+
+    If you are intending to taper the data and the data does
+    not already have a zero mean, you should consider using
+    the mean subtraction, linear trend removal, or polynomial
+    fit options.
+
+Averaging/Smoothing
+    This application provides two ways to reduce the variance
+    of the spectra estimate:  breaking the input region into
+    blocks which are handled separately and then averaged and
+    smoothing of the spectra.
+
+    Breaking the input into blocks is controlled by the
+    parameters of the top half of the dialog opened with the
+    "Set averaging/smoothing" button.  The inputs are the x
+    and y size in pixels for each block, the percent of the
+    block that overlaps with the block to the left and to
+    the bottom, and the number of blocks in x and y.  When the
+    "Automatically adjust for best coverage" toggle is on,
+    changing the overlap or size will cause the count to be
+    adjusted so there is as many blocks as possible, and
+    when the number of blocks is adjusted, the size will be
+    changed so that it is an efficiently handled size and as
+    much of the input region is covered as possible.  When
+    the toggle is off, the size, overlap, and count can be
+    varied independently within the constraint that the
+    blocks must all fit in the input region.  When breaking
+    the input into blocks, a common approach is to fully taper
+    each block and have a 50% overlap.
+
+    The amount of smoothing done is set in the Size field at
+    the bottom of the dialog.  Each output pixel is the summation
+    of the unsmoothed result over a rectangle of the size shown.
+    The size in each direction must be a positive odd integer.
+    To ensure that a purely real input results in a spectra with
+    the correct symmetry about the origin, choose the smoothing
+    size for a dimension such that
+
+      (floor(n / 2) - floor(s / 2) + s - 1) / s
+
+    is even where n is the block size in that dimension.
+
+Window
+    Applying a windowing function, also called tapering, multiplies
+    the data by a function which goes to zero (or near zero) at
+    the edges of the data.  This is done after preprocessing and
+    splitting the data into blocks to remove discontinuities
+    at the edges which can complicate the interpretation of
+    frequency spectra; the disadvantage of applying a window
+    is that it essentially throws away parts of the input and
+    it broadens features in the spectra.  The former problem
+    can be alleviated by overlapping the blocks that are
+    transformed.
+
+    The windowing functions used are separable, i.e, the
+    windowing function, W(x,y), can be written as the product
+    of WX(x) and WY(y).  WX and WY are calculated from the
+    same formula but with different inputs for the number
+    of pixels, n, and the fraction, f, of the dimension that
+    is attenuated by the windowing function.  The two values
+    in the "Coverage" field are the values of f divided by two
+    for the x and y directions respectively.  Commonly used
+    values for the coverage are 0.5 (a "full taper") and 0.1
+    (a 10% taper).  The power, x, is used by half-sine windowing
+    function.
+
+    The functions used to calculate the windowing functions
+    are shown below. i is the pixel index and runs from 0 to
+    n minus 1, and e is given by
+
+          { floor(0.5 + f / 2.0 * n)          n even
+      e = {
+          { floor(0.5 + f / 2.0 * (n - 1))    n odd
+
+    Rectangular
+
+             { 0     i < e
+      w(i) = { 1     e <= i <= n - e
+             { 0     i > n - e
+
+    Because of the sharp cutoffs of the rectangular window, it is
+    not particularly useful; it's provided for completeness.
+
+    Triangular
+             { i / e           i < e
+      w(i) = { 1               e <= i <= n - e
+             { (n - i) / e     i > n - e
+
+
+    Half-sine^power
+
+             { (sin(pi * i / (2 * e)))^x           i < e
+      w(i) = { 1                                   e <= i <= n - e
+             { (sin(pi * (n - i) / (2 * e)))^x     i > n - e
+
+    Hamming
+
+             { 0.54 - 0.46 * cos(pi * i / e)           i < e
+      w(i) = { 1                                       e <= i <= n - e
+             { 0.54 - 0.46 * cos(pi * (n - i) / e)     i > n - e
+
+    Blackman
+
+             { cos(pi * i / e)           i < e
+      a(i) = { -1                        e <= i <= n - e
+             { cos(pi * (n - i) / e)     i > n - e
+
+      w(i) = 0.34 - a(i) * (0.5 - a(i) * 0.16)
+
+OutputFormat
+    The output spectra is scaled so that summing over the
+    spectra gives an estimate of the variance of the input
+    data.  By default the frequencies are ordered so that
+    zero frequency is at (0, 0) and positive Nyquist frequency
+    in both directions is located at (nx/2, ny/2) where nx
+    and ny are the sizes of a block.  Use the button
+    labeled "Set output format" in the main dialog to
+    open a dialog with controls that allow modifications
+    to the default format.  The available options are:
+
+      1) Center zero frequency.  The output is shifted so zero
+         frequency is at ((nx-1)/2, (ny-1)/2).
+      2) Take log10 of result.  The logarithm base 10 of the
+         normally scaled result is reported.

@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: superimpose_psf</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to process PSF data taken with multiple exposures per z section.">
+  <META NAME="Keywords" CONTENT="Priism,superimpose_psf,PSF">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="superimpose_psf">superimpose_psf</A></H1>
+<P>superimpose_psf can handle several of the steps of turning an image of
+a single bead into an OTF file for deconvolution; consult the
+<A HREF="OTFAndPupil.html#measuring_otf">documentation on OTFs</A> for an
+outline of the procedure.
+
+<P>superimpose_psf performs the following actions:
+
+<OL>
+  <LI>Can sum adjacent z sections to give a single section in the output.  If
+    the extended header is one of the formats mentioned in the
+    <A HREF="IM_ref2.html#IMRtExHdrType">IM library documentation</A>, the
+    photosensor measurements are summed as well.
+  <LI>Determines the location of the peak intensity and interpolates the
+    position of the peak by a quadratic fit to the pixel and its six
+    immediately adjacent neighbors.  If the photosensor measurements are
+    available in the extended header, they are taken into account for the
+    interpolation of the peak's z coordinate.  The reported coordinates are
+    zero-based.
+  <LI>Can estimate the background (it does so by averaging the edge pixels
+    of the in-focus section and the section above and below the in-focus
+    section) and subtract that background estimate from the data.
+</OL>
+
+<P>To use superimpose_psf, invoke it from the command line.  The expected form
+of the command line is (optional parts are shown in brackets):
+
+<PRE>
+    superimpose_psf <VAR>input_dataset</VAR> <VAR>output_dataset</VAR> \
+        [-nrepeat=<VAR>n</VAR>] [-no_background]
+</PRE>
+
+<P>The meanings of the different entries on the command line are:
+<DL>
+  <DT><VAR>input_dataset</VAR>
+  <DD><VAR>input_dataset</VAR> is expected to be the name of a Priism image
+    stack.
+
+  <DT><VAR>output_dataset</VAR>
+  <DD><VAR>output_dataset</VAR> is the name of the Priism data set where the
+    output should be stored.  <VAR>output_dataset</VAR> may not be the same
+    as <VAR>input_dataset</VAR>.
+
+  <DT><CODE>-nrepeat=</CODE><VAR>n</VAR>
+  <DD>Specifies that <VAR>n</VAR> adjacent z sections should be summed to give
+    a single z section in the output.  <VAR>n</VAR> must be greater than zero
+    and less than the z size of the input data set.  If <VAR>n</VAR> does not
+    evenly divide the input's z size, the trailing sections are ignored.  If
+    <CODE>-nrepeat</CODE> is not specified on the command line, superimpose_psf
+    does not sum adjacent z sections.
+
+  <DT><CODE>-no_background</CODE>
+  <DD>If specified on the command line, <CODE>-no_background</CODE> suppresses
+    the estimation and subtraction of the background.
+</DL>
+
+<H2>Related Priism Topics</H2>
+<P>
+   <A HREF="OTFAndPupil.html">OTF documentation</A> |
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+
+</BODY>
+</HTML>

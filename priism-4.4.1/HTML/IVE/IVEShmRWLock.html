@@ -1,0 +1,49 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEShmRWLock</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the IVEShmRWLock type.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEShmRWLock</H1>
+<H2>Overview</H2>
+<P>An IVEShmRWLock represents a read-write lock which may be used to
+synchronize access to a resource shared by multiple threads in one or more
+processes.  A read-write lock provides two levels of access to the resource:
+non-exclusive (i.e. read-only) access and exclusive (read/write) access.
+An IVEShmRWLock may provide better performance than an
+<A HREF="IVEShmMutex.html">IVEShmMutex</A> in cases where a shared resource
+is more frequently read than modified.
+<P>Include ive_standards.h and ive_shm.h to declare IVEShmRWLock.  Beware
+that inclusion of ive_standards.h sets feature-set macros.  It is safest to
+include it before any other header.
+<H2>Cross references</H2>
+<P><A HREF="IVEShmInitRWLock.html">IVEShmInitRWLock</A>,
+<A HREF="IVEShmDestroyRWLock.html">IVEShmDestroyRWLock</A>,
+<A HREF="IVEShmAcquireReadLock.html">IVEShmAcquireReadLock</A>,
+<A HREF="IVEShmTryAcquireReadLock.html">IVEShmTryAcquireReadLock</A>, and
+<A HREF="IVEShmReleaseReadLock.html">IVEShmReleaseReadLock</A>
+<A HREF="IVEShmAcquireWriteLock.html">IVEShmAcquireWriteLock</A>,
+<A HREF="IVEShmTryAcquireWriteLock.html">IVEShmTryAcquireWriteLock</A>, and
+<A HREF="IVEShmReleaseWriteLock.html">IVEShmReleaseWriteLock</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified July 1, 2001
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

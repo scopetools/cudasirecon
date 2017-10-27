@@ -1,0 +1,413 @@
+#
+# Sets environment for the most recent release of Priism version 4 and
+# related programs (EMCAT).  Definitions that you shall need to modify are
+# IVE_BASE and IVE_ENV_SETUP.  There are heuristics to set IVE_WORKING_SET
+# and IVE_SIZE.  You can either modify those heuristics or set IVE_WORKING_SET
+# and IVE_SIZE after sourcing this file.  The defaults for IVE_OLD_LOOK,
+# IVE_WORKING_UNIT, IVE_PGTHRESH, and IVE_SHMDIR may also need to be modified.
+#
+# Setting any of the following environment variables prior to sourcing
+# this file affects the definitions set:
+#
+# IVE_NO_INTERNAL_LQT
+#     If set on x86 or x86_64 Linux systems or 64-bit Intel Mac systems when
+#     using the 64-bit version of Priism, the value of LIBQUICKTIME_PLUGIN_DIR
+#     is not set to point to the internal version of libquicktime.  If you do
+#     that, you may also want to make modifications so that the Priism
+#     executables pick up the alternate version of the libquicktime shared
+#     library.  On Linux, two ways to do that are to set the environment
+#     variable, LD_LIBRARY_PATH, to include the path to the alternate
+#     libquicktime library or to alter the links in Linux/x86/LIB and
+#     Linux/x86_64/LIB to point to that alternate library.  On the Mac,
+#     two ways to do that are to set DYLD_LIBRARY_PATH to include the path
+#     to the alternative libquicktime library or to alter the link in
+#     Darwin64/LIB to point to the alternative libquicktime library.
+#
+# IVE_PGTHRESH
+#     Overrides the default of 1024 pixels.
+#
+# IVE_PREFER_32
+#     If on systems where either 32-bit or 64-bit operation is possible
+#     (currently only x86_64 Linux systems or Intel Macs with 64-bit
+#     processors), use the 32-bit executables and libraries rather than
+#     the 64-bit ones.
+#
+# IVE_WORKING_UNIT
+#     Overrides the default value of the smaller of the value of
+#     IVE_WORKING_SET or 128 megabytes.
+#
+
+# This script either tests the value of the following variables or accesses
+# them multiple times under the assumption that the variables are environment
+# variables and modifications to the variable values will be passed to child
+# processes.  That will break if the variable is already defined as a local
+# shell variable.  Therefore clobber any local shell variables by those names
+# (if printenv was a standard Unix command it would be relatively easy to
+# hoist the local variable contents to the environment).  Could add additional
+# logic to restrict the amount of clobbering done since
+# DYLD_FALLBACK_LIBRARY_PATH is only used on Mac OS X.  The
+# "setenv >/dev/null &&" part is protection in case someone sources this
+# file from an sh shell.  Because setenv is built into csh and not to sh, the
+# part with setenv will fail from sh (unless there is a setenv in the path),
+# and the unset command will not execute.  That is desirable, since unset PATH
+# when run from sh clears out the path environment variable which renders the
+# shell unusable until the path is reset.
+setenv >/dev/null && unset PATH LD_LIBRARY_PATH LD_LIBRARYN32_PATH DYLD_FALLBACK_LIBRARY_PATH IVE_BASE IVE_WORKING_UNIT IVE_SIZE IVE_WORKING_SET IVE_PGTHRESH IVE_SHMDIR IVE_EXE
+
+if (-x /bin/sed) then
+  set xxx_sed = /bin/sed
+else if (-x /usr/bin/sed) then
+  set xxx_sed = /usr/bin/sed
+else
+  unset xxx_sed
+endif
+if (-x /bin/uname) then
+  set xxx_uname = /bin/uname
+else if (-x /usr/bin/uname) then
+  set xxx_uname = /usr/bin/uname
+else
+  unset xxx_uname
+endif
+if (-x /bin/expr) then
+  set xxx_expr = /bin/expr
+else if (-x /usr/bin/expr) then
+  set xxx_expr = /usr/bin/expr
+else
+  unset xxx_expr
+endif
+if (-x /bin/cat) then
+  set xxx_cat = /bin/cat
+else if (-x /usr/bin/cat) then
+  set xxx_cat = /usr/bin/cat
+else
+  unset xxx_cat
+endif
+
+# For OS dependent information, query the system type and version number.
+unset xxx_os_vers
+if ($?xxx_uname && $?xxx_sed) then
+  set xxx_systype = `$xxx_uname -s -m | $xxx_sed -e 's@^Linux ..86@Linux/x86@' -e 's@^Linux x86_64@Linux/x86_64@' -e 's@^Darwin .*@Darwin@' -e 'y@ @_@'`
+  set xxx_os_vers = (`$xxx_uname -r | $xxx_sed 'y/./ /'`)
+else
+  set xxx_systype = unknown
+endif
+
+# IVE_BASE points to the top level directory for the Priism distribution.
+setenv IVE_BASE "/home/tjl10/CUDA_SIMrecon/priism-4.4.1"
+
+if ($?prompt) then
+  if (-r "$IVE_BASE"/CONFIG/Version.def && $?xxx_cat) then
+    set xxx_vers_name = `$xxx_cat "$IVE_BASE"/CONFIG/Version.def`
+  else
+    set xxx_vers_name = 4.0
+  endif
+endif
+
+if ($xxx_systype == Linux/x86_64) then
+    if (! -d "$IVE_BASE/Linux/x86_64" || $?IVE_PREFER_32) then
+        set xxx_systype = Linux/x86
+    endif
+else if ($xxx_systype == Darwin && $?xxx_sed && $?xxx_uname) then
+    if ( x"`$xxx_uname -m`" == xi386 || x"`$xxx_uname -m`" == xx86_64 ) then
+        if (! $?IVE_PREFER_32 && \
+            x`sysctl -n hw.optional.x86_64 |& $xxx_sed -n '/^[0123456789]\{1,\}/p'` == x1 && \
+            x`sw_vers | $xxx_sed -n 's/^ProductVersion:[^0123456789]\{1,\}\([0123456789]\{1,\}\.[0123456789]\{1,\}\).\{1,\}/\1/p'` != x10.4) then
+           set xxx_systype = Darwin64
+        endif
+    endif
+endif
+
+if ($xxx_systype == Linux/x86 || \
+    $xxx_systype == Linux/x86_64 || \
+    $xxx_systype == Darwin || \
+    $xxx_systype == Darwin64) then
+
+    # If the environment in which batch jobs run differs from that for
+    # the interactive session, then you can set IVE_ENV_SETUP to hold a
+    # sh command to set the appropriate environment for the shell command.
+    # If the environments are the same, then you will have no need to set
+    # IVE_ENV_SETUP.  The example checks for a single configuration file and
+    # exits if it could not be found.
+    setenv IVE_ENV_SETUP "{ test -r '${IVE_BASE}/Priism_setup.sh' && . '${IVE_BASE}/Priism_setup.sh' ; } || exit 1"
+
+    # Setting this variable to yes (case insensitive) will cause IVE to
+    # mimic the old color and font scheme.
+    #setenv IVE_OLD_LOOK yes
+
+    # IVE_SIZE sets the maximum size of the shared memory file in megabytes
+    # (Priism begins to flail badly when this size is exceeded).  If not set,
+    # the default value is 300 megabytes.  On 32-bit or 64-bit systems with a
+    # Priism that has been compiled with 32-bit support, the absolute maximum
+    # possible is 4095; on 64-bit systems with a Priism that has been compiled
+    # with 64-bit support the absolute maximum possible is 1048575 (this limit
+    # was chosen because IRIX 64 limits the user address space to 2^40 bytes).
+    # On IRIX and Mac OS X, the Priism interface with 32-bit support will not
+    # start for values larger than 1000.  On a 32-bit Linux, the 32-bit Priism
+    # interface will not start for values larger than 2000.  Large values may
+    # unduly limit how much memory Priism applications are able to allocate
+    # from the heap.
+    #
+    # IVE_WORKING_SET is the amount of shared memory, in megabytes, to use
+    # before either discarding parts that can be recalculated or reread
+    # (scaled images, data available on disk) or writing out data to remove it
+    # from shared memory.  IVE_WORKING_SET must be less than IVE_SIZE to leave
+    # rooom for data not allocated out of the working set (bookkeeping
+    # information; image headers; scratch window data).  As a starting guess
+    # you could set IVE_WORKING_SET to be IVE_SIZE minus 64 megabytes though
+    # the minimum difference will depend on the kinds and amount of data
+    # loaded.
+    setenv IVE_WORKING_SET 96
+    unsetenv IVE_SIZE
+
+    unset xxx_memavailable
+    switch ($xxx_systype)
+    case Linux/x86:
+    case Linux/x86_64:
+      if (-r /proc/meminfo  && $?xxx_sed) then
+        set xxx_memavailable = `$xxx_sed -n 's/^MemTotal: *\([0123456789]\{1,\}\)[0123456789]\{3\} kB/\1/p' /proc/meminfo`
+      endif
+      breaksw
+
+    case Darwin:
+    case Darwin64:
+      if (-x /usr/bin/hostinfo && $?xxx_sed) then
+        # To avoid any more complexity, use 1000 (instead of the correct value,
+        # 1024) when converting from megabytes to gigabytes.
+        set xxx_memavailable = `/usr/bin/hostinfo | $xxx_sed -n -e 's/\.[0123456789]\{0,\} \{1,\}megabytes//' -e 's/\.\([0123456789]\{2,2\}\)[0123456789]* \{1,\}gigabytes/\10\./' -e 's/^Primary memory available: \{1,\}\([0123456789]\{1,\}\)\..*/\1/p'`
+      endif
+      breaksw
+
+    endsw
+
+    if ($?xxx_memavailable && $?xxx_expr) then
+      # These are just rough guesses to try to leave more memory to the system
+      # on machines with more memory since they are likely to be doing
+      # something else.
+      if (`$xxx_expr X$xxx_memavailable : 'X[0123456789][0123456789]*$'` > 1) then
+        if ($xxx_memavailable <= 64) then
+          setenv IVE_WORKING_SET `$xxx_expr $xxx_memavailable - 16`
+        else if ($xxx_memavailable <= 128) then
+          setenv IVE_WORKING_SET `$xxx_expr $xxx_memavailable - 32`
+        else if ($xxx_memavailable <= 320) then
+          setenv IVE_WORKING_SET `$xxx_expr $xxx_memavailable - 64`
+        else
+          if ($xxx_systype == Linux/x86_64 || $xxx_systype == Darwin64) then
+            setenv IVE_WORKING_SET `$xxx_expr $xxx_memavailable / 2 + $xxx_memavailable / 4`
+            setenv IVE_SIZE `$xxx_expr $IVE_WORKING_SET + $IVE_WORKING_SET / 8`
+            if ($IVE_SIZE > 1048575) then
+              setenv IVE_SIZE 1048575
+              setenv IVE_WORKING_SET 917500
+            endif
+          else
+            setenv IVE_WORKING_SET 256
+          endif
+        endif
+      endif
+      unset xxx_memavailable
+    endif
+
+    # IVE_WORKING_UNIT is the amount, in megabytes, that is allocated when
+    # the shared memory file must be extended to accomodate new images.  
+    # IVE_WORKING_UNIT should be at least as large as a single section of
+    # data (if not, Priism can fail to load new data whose section size is
+    # larger than the IVE_WORKING_UNIT when you have already filled the
+    # shared memory with data whose section size is less than or equal to
+    # the IVE_WORKING_UNIT).
+    if (! $?IVE_WORKING_UNIT) then
+      setenv IVE_WORKING_UNIT 128
+      if ($IVE_WORKING_UNIT > "$IVE_WORKING_SET") then
+        setenv IVE_WORKING_UNIT "$IVE_WORKING_SET"
+      endif
+    endif
+
+    # For reads from windows that involve less than IVE_PGTHRESH pixels
+    # and for which the data is not available in memory, reading back in
+    # a whole section will be bypassed and only the lines containing the
+    # needed data will be read.  This has been set so an application reading
+    # a single pixel or whole line for typical data sets will not cause
+    # a whole section to be read and so that reads on whole sections
+    # (bigger than 16 x 16) will cause the data to be swapped in as needed.
+    # A value of 0 for IVE_PGTHRESH disables this feature.
+    if (! $?IVE_PGTHRESH) then
+        setenv IVE_PGTHRESH 1024
+    endif
+
+    # This specifies the directory for the shared memory file.  Because it
+    # can be large (100s of megabytes), this directory should have plenty
+    # of space.  It is also beneficial if access to the directory is fast.
+    if (! $?IVE_SHMDIR) then
+      if ($?TMPDIR) then
+        setenv IVE_SHMDIR "$TMPDIR"
+      else
+        setenv IVE_SHMDIR /var/tmp
+      endif
+    endif
+
+    #
+    # Settings below this line are independent of the system.
+    #
+
+    setenv IVE_EXE "${IVE_BASE}/${xxx_systype}/BIN"
+
+    # $IVE_EXE as first in the path after taking them out if they are
+    # already present.
+    if ($?PATH) then
+      if ($?xxx_sed) then
+        setenv PATH "${IVE_EXE}"`echo ":${PATH}:" | $xxx_sed -e "s%:${IVE_EXE}:%:%g" -e 's%:$%%'`
+      else
+        setenv PATH "${IVE_EXE}:${PATH}"
+      endif
+    else
+      setenv PATH "${IVE_EXE}"
+    endif
+
+    # Set up path to the plugins in the internal version of libquicktime on
+    # x86 or x86_64 Linux systems unless IVE_NO_INTERNAL_LQT is set.
+    if (! $?IVE_NO_INTERNAL_LQT && ($xxx_systype == Linux/x86 || $xxx_systype == Linux/x86_64 || $xxx_systype == Darwin64)) then
+        if ($xxx_systype == Linux/x86) then
+          setenv LIBQUICKTIME_PLUGIN_DIR "${IVE_BASE}"/libquicktime/x86/lib/libquicktime
+        else if ($xxx_systype == Linux/x86_64) then
+          setenv LIBQUICKTIME_PLUGIN_DIR "${IVE_BASE}"/libquicktime/x86_64/lib/libquicktime
+        else
+          setenv LIBQUICKTIME_PLUGIN_DIR "${IVE_BASE}"/libquicktime/Darwin/lib/libquicktime
+        endif
+    endif
+
+    # Put $IVE_BASE/$xxx_systype/LIB first in the library search path after
+    # removing it if it is already there.
+    if ($xxx_systype == Darwin || $xxx_systype == Darwin64) then
+      # If DYLD_FALLBACK_LIBRARY_PATH is not set or is empty, set it to its
+      # default value ($HOME/lib:/usr/local/lib:/lib:/usr/lib according to
+      # the dyld man page).
+      if (! $?DYLD_FALLBACK_LIBRARY_PATH) then
+        setenv DYLD_FALLBACK_LIBRARY_PATH /usr/local/lib:/lib:/usr/lib
+        if ($?HOME) then
+          setenv DYLD_FALLBACK_LIBRARY_PATH "$HOME/lib:$DYLD_FALLBACK_LIBRARY_PATH"
+        endif
+      else if (X"$DYLD_FALLBACK_LIBRARY_PATH" == X) then
+        setenv DYLD_FALLBACK_LIBRARY_PATH /usr/local/lib:/lib:/usr/lib
+        if ($?HOME) then
+          setenv DYLD_FALLBACK_LIBRARY_PATH "$HOME/lib:$DYLD_FALLBACK_LIBRARY_PATH"
+        endif
+      endif
+      if ($?xxx_sed) then
+        # If available, include the 32-bit versions of the Priism libraries for
+        # backwards compatibility with programs not packaged with Priism which
+        # use the Priism libraries.
+        if ($xxx_systype == Darwin64) then
+          if (-d "${IVE_BASE}/Darwin/LIB") then
+            setenv DYLD_FALLBACK_LIBRARY_PATH "${IVE_BASE}/Darwin/LIB"`echo ":${DYLD_FALLBACK_LIBRARY_PATH}:" | $xxx_sed -e "s%:${IVE_BASE}/Darwin/LIB:%:%g" -e 's%:$%%'`
+          endif
+        endif
+        setenv DYLD_FALLBACK_LIBRARY_PATH "${IVE_BASE}/${xxx_systype}/LIB"`echo ":${DYLD_FALLBACK_LIBRARY_PATH}:" | $xxx_sed -e "s%:${IVE_BASE}/${xxx_systype}/LIB:%:%g" -e 's%:$%%'`
+      else
+        if ($xxx_systype == Darwin64) then
+          if (-d "${IVE_BASE}/Darwin/LIB") then
+            setenv DYLD_FALLBACK_LIBRARY_PATH "${IVE_BASE}/Darwin/LIB:${DYLD_FALLBACK_LIBRARY_PATH}"
+          endif
+        endif
+        setenv DYLD_FALLBACK_LIBRARY_PATH "${IVE_BASE}/${xxx_systype}/LIB:${DYLD_FALLBACK_LIBRARY_PATH}"
+      endif
+    else
+      set xxx_misc_tiff_lib = ""
+      set xxx_misc_vp1000_lib = ""
+      if ($?LD_LIBRARY_PATH) then
+        if ($?xxx_sed) then
+          if (X"$xxx_misc_tiff_lib" != X) then
+            setenv LD_LIBRARY_PATH "${xxx_misc_tiff_lib}"`echo ":${LD_LIBRARY_PATH}:" | $xxx_sed -e "s%:${xxx_misc_tiff_lib}:%:%g" -e 's%:$%%'`
+          endif
+          if (X"$xxx_misc_vp1000_lib" != X) then
+            setenv LD_LIBRARY_PATH "${xxx_misc_vp1000_lib}"`echo ":${LD_LIBRARY_PATH}:" | $xxx_sed -e "s%:${xxx_misc_vp1000_lib}:%:%g" -e 's%:$%%'`
+          endif
+          # If available, include the 32-bit versions of the Priism libraries
+          # for backwards compatibility with programs not packaged with Priism
+          # which use Priism libraries.
+          if ($xxx_systype == Linux/x86_64) then
+              if (-d "${IVE_BASE}/Linux/x86/LIB") then
+                  setenv LD_LIBRARY_PATH "${IVE_BASE}/Linux/x86/LIB"`echo ":${LD_LIBRARY_PATH}:" | $xxx_sed -e "s%:${IVE_BASE}/Linux/x86/LIB:%:%g" -e 's%:$%%'`
+              endif
+          endif
+          setenv LD_LIBRARY_PATH "${IVE_BASE}/${xxx_systype}/LIB"`echo ":${LD_LIBRARY_PATH}:" | $xxx_sed -e "s%:${IVE_BASE}/${xxx_systype}/LIB:%:%g" -e 's%:$%%'`
+        else
+          if (X"$xxx_misc_tiff_lib" != X) then
+            setenv LD_LIBRARY_PATH "${xxx_misc_tiff_lib}:${LD_LIBRARY_PATH}"
+          endif
+          if (X"$xxx_misc_vp1000_lib" != X) then
+            setenv LD_LIBRARY_PATH "${xxx_misc_vp1000_lib}:${LD_LIBRARY_PATH}"
+          endif
+          # If available, include the 32-bit versions of the Priism libraries
+          # for backwards compatibility with programs not packaged with Priism
+          # which use Priism libraries.
+          if ($xxx_systype == Linux/x86_64) then
+              if (-d "${IVE_BASE}/Linux/x86/LIB") then
+                  setenv LD_LIBRARY_PATH "${IVE_BASE}/Linux/x86/LIB:${LD_LIBRARY_PATH}"
+              endif
+          endif
+          setenv LD_LIBRARY_PATH "${IVE_BASE}/${xxx_systype}/LIB:${LD_LIBRARY_PATH}"
+        endif
+      else
+        setenv LD_LIBRARY_PATH "${IVE_BASE}/${xxx_systype}/LIB"
+        if (X"$xxx_misc_vp1000_lib" != X) then
+          setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${xxx_misc_vp1000_lib}"
+        endif
+        if (X"$xxx_misc_tiff_lib" != X) then
+          setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${xxx_misc_tiff_lib}"
+        endif
+        # If available, include the 32-bit versions of the Priism libraries
+        # for backwards compatibility with programs not packaged with Priism
+        # which use Priism libraries.
+        if ($xxx_systype == Linux/x86_64) then
+            if (-d "${IVE_BASE}/Linux/x86/LIB") then
+                setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${IVE_BASE}/Linux/x86/LIB"
+            endif
+        endif
+      endif
+      unset xxx_misc_tiff_lib
+      unset xxx_misc_vp1000_lib
+    endif
+
+    if ($xxx_systype == Darwin || $xxx_systype == Darwin64) then
+	# XFree86 4.2 includes a libXt.dylib linked as a two-level namespace
+	# That causes Motif-based applications to fail unless they are linked
+        # with -force_flat_namespace or -bind_at_load or run with 
+        # DYLD_FORCE_FLAT_NAMESPACE set.  Priism used the
+        # -force_flat_namespace hack for versions prior to 4.1.4, but that
+        # causes unacceptably slow startup times for image windows when used
+        # with Apple's X11.  Therefore, use the workaround below for XFree86
+        # 4.2.  XFree86 4.2.0.1 has libXt.dylib linked as a flat namespace.
+	if (-x "${IVE_EXE}/istwolevel") then
+            if ("X`"${IVE_EXE}/istwolevel" /usr/X11R6/lib/libXt.dylib`" == X1) then
+	        setenv DYLD_FORCE_FLAT_NAMESPACE
+            endif
+        endif
+    else if ($xxx_systype == Linux/x86) then
+        # This helps reduce the number of 1022 rendering errors from the
+        # Volume Viewer plugin which uses the Volume Pro 1000 board.
+        setenv VLIResizeImage true
+    endif
+
+    if ($?prompt) then
+      echo "Priism $xxx_vers_name set up; type Priism to run it"
+    endif
+
+else
+
+    if ($?prompt) then
+      if ($?xxx_uname) then
+	echo "Sorry, Priism $xxx_vers_name not known to run with" `$xxx_uname -sr`
+       else
+         echo "Sorry, unknown system type; can not run Priism $xxx_vers_name"
+       endif
+    endif
+
+endif
+
+unset xxx_sed
+unset xxx_uname
+unset xxx_cat
+unset xxx_expr
+unset xxx_systype
+unset xxx_os_vers
+if ($?prompt) then
+  unset xxx_vers_name
+endif

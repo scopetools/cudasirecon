@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: HisEqual</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to apply histogram equalization to an image.">
+  <META NAME="Keywords" CONTENT="Priism,histogram equilization">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="HisEqual">HisEqual</A></H1>
+<H2>Overview</H2>
+
+<P>Histogram equalization alters the input data to give the closest
+possible approximation to data that is uniformly distributed over
+a given range.  The alteration preserves the relationship between
+pixel values: a pixel whose input value is greater than another pixel's
+value will have its output value greater than or equal to the other pixel's
+output value.
+
+<P>HisEqual applies histogram equalization separately to each input
+section (so the preservation of the relationship between pixels only
+holds for pixels within the same section).  The controls for the
+range of sections to process and the x and y bounds of the region to process
+are similar to those in other applications and are described
+<A HREF="Region.html">elsewhere</A>.  The additional parameters that HisEqual
+uses are <A HREF="#Range">Range</A>, which sets the input and output range of
+values (input values outside of the range are mapped to one of the endpoints
+of the range), and <A HREF="#Ndiv">Ndiv</A>, which controls how finely the
+range in order to calculate the approximation to the uniform distribution.
+
+<H3>Topics</H3>
+<P>
+  Overview |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Range">Range</A> |
+  <A HREF="#Ndiv">Ndiv</A> |
+  <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="Range">Range</A></H2>
+<P>When HisEqual is applied to a section, it takes pixel values falling
+in a given range and maps them to the same range in the output; the mapping
+is nonlinear so that the output values are approximately uniformly distributed
+over the range.  Input values below the range's minimum are mapped to the
+minimum; input values above the range's maximum are mapped to the maximum.
+
+<P>The first value in the Range field set the lower bound of the range;
+the second value is the upper bound.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#HisEqual">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  Range |
+  <A HREF="#Ndiv">Ndiv</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Ndiv">Ndiv</A></H2>
+<P>To calculate the mapping between the input and output, the
+<A HREF="#Range">input and output ranges</A> are divided into Ndiv equally
+sized bins.  In general, using a larger amount of bins will improve how
+well the output approximates a uniform distribution though the discreteness
+and "clumpiness" (how many input pixels share the same value) of the
+input data are other limiting factors.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#HisEqual">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Range">Range</A> |
+  Ndiv |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>HisEqual accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, it also
+has the following options:
+
+<DL>
+  <DT><CODE>-range=</CODE><VAR>low</VAR><CODE>:</CODE><VAR>high</VAR>
+  <DD>Specifies the range of intensity values to histogram.  If not specified,
+    HisEqual will use a range of [0, 4096].
+
+  <DT><CODE>-ndiv=</CODE><VAR>n</VAR>
+  <DD>Specifies the number of divisions, <VAR>n</VAR>, in the histogram.
+    <VAR>n</VAR> must be greater than zero.  If not specified, HisEqual will
+    use 256 divisions.
+</DL>
+
+<P>As an example, the following computes the approximate histogram equalization
+of in.dat and stores the result in out.dat.  The options are equivalent to the
+values HisEqual would use by default.
+
+<PRE>
+    HisEqual in.dat out.dat -range=0:4096 -ndiv=256
+</PRE>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#HisEqual">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Range">Range</A> |
+  <A HREF="#Ndiv">Ndiv</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+</BODY>
+</HTML>

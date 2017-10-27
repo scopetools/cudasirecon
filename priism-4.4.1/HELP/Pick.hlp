@@ -1,0 +1,259 @@
+KEYWORD
+       Window PickingMode Wave Time List Npts Coordinates Color
+       Marker ShowAllWaves Show3DPointsAllSections CheckExisting
+       SearchMethod Box Range Load Save Format Copy Grid
+       KeyBindings
+
+DESCRIPTION Pick Points
+       The Pick Points tool is used to create lists of points.
+       Multiple lists may be created for each wavelength and time
+       point.
+
+Window
+       Use this field to enter the number of the image window
+       to be used for picking points.
+
+PickingMode
+       This option menu controls what happens when the left
+       mouse button is clicked in the image window.  The options
+       are:
+
+       Add Points
+            When the button is clicked, a point is added to the
+            current list at (or near if a neighborhood search is
+            done) the location of the click.
+
+       Delete Points
+            When the button is clicked near a point, that point
+            is deleted.  The current list, time point, and
+            wavelength are updated to correspond to the list that
+            held the point.  The coordinates of the deleted point
+            are displayed in the X, Y, and Z fields.
+
+       Select Points
+            When the button is clicked near a point, the current
+            list, time point, and wavelength are updated to
+            correspond to the list that holds the point.  The
+            coordinates of the point are displayed in the X, Y,
+            and Z fields.
+
+       Off
+            Nothing is done when the button is clicked; useful
+            if you want to do selections from the window using
+            another application while Pick Points is running.
+
+Wave
+       Displays the index of the wavelength for the current
+       list.  When the image window is in pseudocolor mode,
+       any change to the current wavelength will cause the
+       current list and the Wave field to be changed;
+       changing the Wave field in this case will cause the
+       image window to display that wavelength.  If the image
+       window is in RGB mode, the current list and Wave field
+       are not changed as wavelengths are mapped or unmapped;
+       in this case, changing the value in the Wave field is
+       necessary to switch between the lists in different
+       wavelengths.
+
+Time
+       Displays the index of the time point for the current
+       list.  When the current time point displayed in the
+       image window is changed, this field and the current
+       list will be changed as well.  You may change this
+       value to change to the current list in a different time
+       point and to cause the image window to display that
+       time point.
+
+List
+       The point lists for each combination of wavelength and
+       time point (i.e. each x, y, z volume) are numbered from
+       zero.  This field shows the number for the current list.
+       You may change this value to change to another one of
+       the lists at the current wavelength and current time
+       point or to create a new list.
+
+Npts
+       The number of points in the current list is reported
+       in this field.
+
+Coordinates
+       The x, y, and z coordinates for the last point chosen
+       are shown in the fields labeled X, Y, and Z, respectively.
+
+Name
+       Each point has an additional number, referred to as
+       the name, assigned to it.  This may be of interest if
+       you want to distinguish classes of points within the same
+       list: for instance if you choose to have Pick Points
+       color points by their names.  The value shown in this
+       field is the name that will be assigned to the next point
+       added by clicking in the image window.
+
+Color
+       When points are displayed in the image window, they are
+       either colored according to the wavelength they are in
+       or by the name assigned to each point.  Use the Color
+       option menu to choose between these two alternatives.
+       If you color points by name, there are twelve colors
+       available so the color of a point is the nth color
+       where n is the point's name modulo 12.
+
+Marker
+       All points in the same list are drawn using the same
+       marker to identify a point's position.  The marker for
+       the current list is shown on the list marker option menu
+       and may be changed using that menu.
+
+ShowAllWaves
+       If this toggle is on, points in all wavelengths are show
+       and not just the wavelengths whose images are currently
+       shown in the image window.
+
+Show3DPointsAllSections
+       If this toggle is on, the z coordinate for a point is
+       ignored for display purposes and the point is shown in
+       all sections in the same wavelength and time point.
+
+CheckExisting
+       If this toggle is on, then when selecting points
+       interactively, a new point will not be added if its
+       coordinates match those of another point in the same
+       list.
+
+SearchMethod
+       When points are added interactively, a local search and
+       average is done to refine the coordinates of the point
+       selected with the mouse.  This refinement is not done
+       if the search ranges are zero and the box size for
+       averaging is one.  For the local search, the Search
+       Method option menu selects whether a search for a minimum
+       or a maximum in the intensity (density) is done.
+
+Box
+       When selecting points interactively, a two step refinement
+       of the selected position is performed which involves a
+       search (see the topics SearchMethod and Range) and a
+       first moment calculation using the image intensities as
+       the weighting factors.  The moment calculation is done
+       over a region nx by ny by nz pixels where nx is the value
+       shown in the XBox field, ny is the value shown in the YBox
+       field, and nz is one-half of the value show in the ZRange
+       field.
+
+Range
+       When selecting points interactively, a two step refinement
+       of the selected position is performed which involves a
+       search and a first moment calculation using the image
+       intensities as the weighting factors.  The range of the
+       search covers a volume nxy by nxy by nz pixels where nxy
+       is one plus two times the value shown in the XYRange field
+       and nz is one plus two times the value shown in the ZRange
+       field.
+
+Load
+       Pressing the Load Points button will open a dialog for
+       selecting a previously created points list file.  The file
+       must be in the old pick points format.  If you already
+       have point lists, you have the option to either keep or
+       delete them when loading another points list file.
+
+Save
+       Pressing the Save Points button will open a dialog to
+       enter the file name and file format to use.  If the old
+       pick points format is used, then if the sort by z toggle
+       is on the points in each list will be sorted in order of
+       increasing z coordinate before it is saved; otherwise, the
+       order of the points is not modified.
+
+Format
+       Pick Points works with two file formats.  One, referred
+       to as the old pick points format, can be read and
+       written by Pick Points and is also used in many other
+       applications.  The other, referred to as the new object
+       library format, can be written by Pick Points and
+       is used in Clouds<.
+
+Copy
+       Pressing the Copy... button will open a dialog to specify
+       how to copy points which fall within a subset of the data
+       set to another subset of the data set.  The source and
+       destination are specified as ranges in z and time and a
+       set of selected wavelengths; the ranges appear in the
+       dialog as the minimum value, maximum value, and step size.
+       For the source, minimum and maximum values for the x and
+       y coordinate are also specified; points that fall outside
+       those bounds are not copied.
+
+       The number of z sections, wavelengths, and time points in
+       the source region must either match the respective value
+       for the destination region or must be one (in which case
+       it is replicated to fill the destination region).  As an
+       example, if the source region is as follows:
+
+            Z range: 0 0 1
+            Waves:   on off off off off
+            T range: 0 0 1
+
+       and the destination region is
+
+            Z range: 1 15 1
+            Waves:   on off off off off
+            T range: 0 0 1
+
+       all the points in the first z section of the first
+       wavelength and time point will be copied to the second
+       through sixteenth sections in that wavelength and time
+       point.
+
+       As another example, if the source region is
+
+            Z range: 0 0 1
+            Waves:   on on on on on
+            T range: 0 0 1
+
+       and a destination region defined as
+
+            Z range: 1 15 1
+            Waves:   on on on on on on
+            T range: 0 0 1
+
+       the points that fall in the first section of the first
+       wave will be copied to sections two through sixteen of
+       the first wave, the points that fall in the first
+       section of the second wave will be copied to sections
+       two through sixteen of the second wave, and so on.
+
+       The copy operation does not check if it generates points
+       at the same locations.  The copy operation does preserve
+       the ordering of points in a list (i.e. each destination
+       list generated will contain the points, in order, which
+       fall within the x, y, and z bounds for the source region
+       from a single source list).
+
+Grid
+       Occasionally, it is useful to generate points on a
+       rectangular grid (for instance, if you use FixBadPixel
+       to correct for bad lines in an image).  Pressing the
+       Grid... button opens a dialog where you enter the
+       parameters for a grid of points and have them added
+       to the current list when the Generate button in the
+       dialog is pressed.  If the number of points would
+       overflow the current list, new lists are created as
+       necessary.  No checking is done to see if the points
+       on the grid have the same coordinates as points already
+       present in the list.
+
+KeyBindings
+       The following keys may be used while the mouse pointer
+       is in the image window to change certain Pick Points
+       parameters:
+
+            F1   Toggles on and off graphics for wave 1.
+            F2   Toggles on and off graphics for wave 2.
+            F3   Toggles on and off graphics for wave 3.
+            F4   Toggles on and off graphics for wave 4.
+            F5   Toggles on and off graphics for wave 5.
+            F6   Turn on the graphics in all wavelengths.
+            F7   Decrements the current wave.
+            F8   Increments the current wave.
+            TAB  Cycles through the picking mode choices.

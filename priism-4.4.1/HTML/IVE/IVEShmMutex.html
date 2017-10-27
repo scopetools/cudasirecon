@@ -1,0 +1,53 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEShmMutex</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the IVEShmMutex type.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEShmMutex</H1>
+<H2>Overview</H2>
+<P>An IVEShmMutex is used to synchronize access to a resource shared
+by multiple threads which may be in different processes.  Only one thread can
+lock (via <A HREF="IVEShmAcquireMutex.html">IVEShmAcquireMutex</A> or
+<A HREF="IVEShmTryAcquireMutex.html">IVEShmTryAcquireMutex</A>) an
+IVEShmMutex at a time; other threads will wait.  A thread which has
+locked an IVEShmMutex unlocks it with
+<A HREF="IVEShmReleaseMutex.html">IVEShmReleaseMutex</A> at which point
+the same or another thread can lock it.  IVEShmMutex locks are not
+recursive; a thread which holds a lock on a IVEShmMutex can not it lock it
+again.
+<P>An IVEShmMutex can not be used interchangeably with an
+<A HREF="IVEThreadMutex.html">IVEThreadMutex</A>; the latter only guarantees
+synchronization between threads in the same process.
+<P>Include ive_standards.h and ive_shm.h to declare IVEShmMutex.  Beware
+that inclusion of ive_standards.h sets feature-set macros.  It is safest to
+include it before any other header.
+<H2>Cross references</H2>
+<P><A HREF="IVEShmInitMutex.html">IVEShmInitMutex</A>,
+<A HREF="IVEShmDestroyMutex.html">IVEShmDestroyMutex</A>,
+<A HREF="IVEShmAcquireMutex.html">IVEShmAcquireMutex</A>,
+<A HREF="IVEShmTryAcquireMutex.html">IVEShmTryAcquireMutex</A>,
+<A HREF="IVEShmReleaseMutex.html">IVEShmReleaseMutex</A>, and
+<A HREF="IVEThreadMutex.html">IVEThreadMutex</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified July 1, 2001
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

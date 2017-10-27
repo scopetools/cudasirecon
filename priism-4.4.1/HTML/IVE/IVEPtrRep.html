@@ -1,0 +1,43 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEPtrRep</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the IVEPtrRep type.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEPtrRep</H1>
+<H2>Overview</H2>
+<P>Because processes attached to an <A HREF="IVEArena.html">IVEArena</A> may
+not may map the shared memory segment to the same location, it is not safe
+to directly exchange pointer values among the processes.  In C, an IVEPtrRep
+is used to store an encoding of pointer value that may be safely exchanged.
+Use the function <A HREF="IVEPtrToRep.html">IVEPtrToRep</A> to convert a
+pointer to an IVEPtrRep and use the function
+<A HREF="IVERepToPtr.html">IVEPtrToRep</A> to convert an IVEPtrRep back into
+a pointer.  An IVEPtrRep is guaranteed to be an unsigned integral type.
+<P>Include ive_shm.h to declare IVEPtrRep.
+<H2>Cross references</H2>
+<P><A HREF="IVEPtrToRep.html">IVEPtrToRep</A>,
+<A HREF="IVERepToPtr.html">IVERepToPtr</A>, and
+<A HREF="IVEArena.html">IVEArena</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified July 1, 2001
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

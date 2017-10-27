@@ -1,0 +1,635 @@
+KEYWORD
+       x_size y_size z_size t_size wave size_display priority chain
+       skip_execution queue logfile comfile
+
+DESCRIPTION
+       Several Priism applications which use a command-line interface
+       also have a graphical interface to specify the command-line
+       arguments and some other aspects (priority, batch queue) of
+       how the application will be run.  The elements that these
+       graphical interfaces have in common and the corresponding
+       command-line options are described in this document; application
+       specific elements are described elsewhere.
+
+       At the top of the interface are entries for the input and output
+       files for the application.  For each file there is a button which
+       you can use to open a file selection dialog and a text field which
+       shows the current file selection.  You can change the selected
+       file by changing the name shown in the field.
+
+       Below the file selection items, some applications display a
+       series of controls to select a subset of the input to process.
+       These controls are further described in the x_size, y_size,
+       z_size, t_size, and wave topics.  Other applications simply
+       display the size of the input data.
+
+       The remainder of the dialog, with the exception of the buttons
+       at the bottom, contains items specific to the application.
+       The functions of the buttons at the bottom are:
+
+            Exit     Closes the dialog.
+
+            Save     Saves the current dialog settings to a file in
+                     your home directory.  You can reload these
+                     settings at a later time using the Restore button.
+
+            Restore  Loads the dialog entries that had been previously
+                     saved using the Save button.
+
+            Options  Opens a dialog which allows you to control
+                     how the application will be run including whether
+                     or not a batch queue should be used, what priority
+                     the job should have, names for the command and
+                     script files, and whether or not to chain multiple
+                     jobs together.  For more information see the priority,
+                     chain, queue, logfile, and comfile topics.
+
+            Do It    If the option to chain jobs is turned off (this
+                     is set from the dialog opened by the Options
+                     button), pressing this button causes the
+                     application to be run with the current settings.
+                     If the application is run on the current machine,
+                     the label on the button will be changed to Cancel
+                     while the job runs and pressing the button will
+                     terminate the job.
+
+                     The first time the "Do It" button is pressed after
+                     the option to chain jobs is turned on, nothing
+                     will be executed though the commands that would
+                     have been executed will be written to a command
+                     file.  The next time the "Do It" button is pressed,
+                     the commands to run the current job are written
+                     to a command file, a line is added to the previous
+                     command file to run the one with the commands
+                     for the current job, and the previous command file
+                     is executed.
+
+x_size
+       Next to the "X Range" label is a field which shows the full
+       x size of the input data in the form
+
+            <minimum x index>:<maximum x index>
+
+       Next to that field is another in which you can specify the
+       x range to process.  The first value in the field is the first
+       x index to process and the second value is the last x index to
+       process.
+
+       On the command-line, the x range to process is specified with
+       an option of the form (optional parts are listed in brackets)
+
+            -x=xstart[:xend]
+
+       If the option is not supplied, the entire x range of the input
+       is processed. When the last x index to process, xend, is
+       omitted, it is assumed to be the maximum x index in the input
+       file.
+
+y_size
+       Next to the "Y Range" label is a field which shows the full
+       y size of the input data in the form
+
+            <minimum x index>:<maximum x index>
+
+       Next to that field is another in which you can specify the
+       y range to process.  The first value in the field is the first
+       y index to process and the second value is the last y index to
+       process.
+
+       On the command-line, the y range to process is specified with
+       an option of the form (optional parts are listed in brackets)
+
+            -y=ystart[:yend] 
+       If the option is not supplied, the entire y range of the input
+       is processed. When the last y index to process, yend, is
+       omitted, it is assumed to be the maximum y index in the input
+       file.
+
+z_size
+       Next to the "Z Range" label is a field which shows the full
+       z size of the input data in the form
+
+            <minimum z index>:<maximum z index>
+
+       Next to that field is another in which you can specify the
+       z range to process.  The first value in the field is the first
+       z index to process and the second value is the last z index to
+       process.
+
+       On the command-line, the z range to process is specified with
+       an option of the form (optional parts are listed in brackets)
+
+            -z=zstart[:zend]
+
+       If the option is not supplied, the entire z range of the input
+       is processed. When the last z index to process, zend, is
+       omitted, it is assumed to be the maximum z index in the input
+       file.
+
+t_size
+       Next to the "T Range" label is a field which shows the full
+       time extent of the input data in the form
+
+            <minimum time index>:<maximum time index>:1
+
+       Next to that field is another in which you can specify the
+       time range to process.  The first value in the field is the first
+       time index to process, the second value is the last time index that
+       could be processed, and the last value is the index step between
+       times that are processed.
+
+       On the command-line, the time range to process is specified with
+       an option of the form (optional parts are listed in brackets)
+
+            -t=tstart[:tend[:tstep]]
+
+       If the option is not supplied, the entire time range of the
+       input is processed.  When the time index step, tstep is
+       omitted, it is assumed to be one.  When the last time to
+       process, tend is omitted, it is assumed to be the maximum
+       time index in the input file.
+
+wave
+       The wavelengths available in the input are shown next to the
+       Wave label.  Those wavelengths that will be included in the
+       processing have the toggle button next to them in the on state.
+
+       On the command line, the wavelengths to be processed are
+       specified with an option of the form (optional parts are
+       listed in brackets)
+
+            -w=wave1[:wave2[:wave3[:wave4[:wave5]]]]
+
+       When the option is not specified, all input wavelengths are
+       processed. A wavelength can either be listed by its wavelength
+       or by its index in the input file (a value between zero and
+       the number of input wavelengths minus one).
+
+size_display
+       Some applications do not display the range and wavelength
+       selection controls and the underlying command-line
+       application does not accept the corresponding command-line
+       arguments.  Instead, the application displays the size of
+       the current input file:  either as the number of points
+       along each of the five dimensions (x, y, z, wavelength,
+       and time) or as the number of points along the x and y
+       dimensions and the the number of sections.
+
+priority
+       When the "Lower priority" toggle is on, commands will be executed
+       at a lower priority for access to the computer's resources.  It
+       is equivalent to using the Unix nice command with the default
+       priority increment to decrease a command's priority.
+
+chain
+       When the "Chain option" toggle is off and the "Do It" button is
+       pressed, the application is immediately sent to a batch queue or
+       executed locally.  When the toggle is on, the needed commands
+       are written to the command file when the "Do It" button is
+       pressed but are not submitted or run until the next time the
+       "Do It" button is pressed.  To use this effectively to chain two
+       jobs together, do the following
+
+            1.  Turn the chain option toggle on.
+            2.  Set the parameters for the first job and press "Do It".
+            3.  Change the name of the command file; using the same
+                name as was used for the first job will cause the
+                first job to run in an infinite loop.
+            4.  Set the parameters for the second job and press "Do It".
+            5.  Turn the chain option toggle off.
+
+       Because submitting the second job turns the "Do It" button
+       into a button to cancel the currently running job, it is not
+       generally possible to chain more than two jobs together.
+
+skip_execution
+       When the "Skip execution" button is off, pressing the "Do It"
+       button generates a script of the commands to perform and,
+       depending on the queue selected, either immediately starts
+       executing the commands or submits the job to a queue.  Using
+       the chain option can modify that sequence of events slightly
+       to run two tasks in sequence.
+
+       When the "Skip execution" button on, pressing the "Do it"
+       button only generates a script of the commands to perform.
+       In this case, the selection of the queue to use generally
+       does not matter.  One exception to that rule is parallel
+       tasks since the default parallel execution parameters
+       are what has been configured for the currently selected
+       queue.
+
+queue
+       There is the option to run the application in a batch
+       queue.  Use the pulldown menu next to "Submit to queue"
+       to select the batch queue to use or use the "run locally"
+       option to run jobs on the current machine without using
+       a queue.
+
+       There are two ways to configure the queues listed in the
+       dialog: you can set up a configuration file or you can set
+       some environment variables.  The former is more flexible
+       and allows you to configure parallel execution settings
+       that can not be configured with the environment variables.
+       A configuration file, if present, takes precedence over
+       the environment variable settings.  Priism looks for
+       configuration files in four places and uses the first
+       it finds.  The locations, in the order Priism searches
+       them, are:
+
+           1) home/.iveprefs/host-queues.def
+           2) home/.iveprefs/queues.def
+           3) priism/CONFIG/host-queues.def
+           4) priism/CONFIG/queues.def
+
+       where home is the user's home directory, priism is the
+       Priism installation directory, and host is the name, as
+       reported by the command "uname -n", of the machine where
+       Priism is running.
+
+       EXAMPLE/queues.def in the Priism distribution is an
+       example of a queue configuration file.  You may want to
+       look at it first before plunging into the details below.
+
+       The configuration file consists of a series of entries
+       where each entry is separated from the previous one by
+       an end-of-line.  Entries can be preceded by white space
+       (spaces or horizontal tabs) and can be followed by
+       white space or a comment (a comment is introduced with
+       a # character and continues until the end of the line).
+       An entry is either a directive which controls how the
+       file is parsed or the definition of a property.
+
+       There are five directives available.  They are
+
+       HOST
+           Introduces a set of definitions for the machine
+           where Priism is running.  All properties up to the
+           next HOST directive, QUEUE directive, or the end
+           of the file are grouped together.
+
+       QUEUE
+           Introduces the definitions for a new destination
+           queue.  All properties up to the next HOST
+           directive, QUEUE directive, or the end of the
+           file are applied to that queue.
+
+       IFHOST
+           If the host name of the current machine is not
+           included in the list of hosts following the IFHOST
+           directive, all properties up to the matching
+           ENDIF directive are read but ignored.
+
+       IFNOTHOST
+           If the host name of the current machine is included
+           in the list of hosts following the IFHOST directive,
+           all properties up to the matching ENDIF directive
+           are read but ignored.
+
+       ENDIF
+           Terminates a previous IFHOST or IFNOTHOST directive.
+
+       As a consequence of the way the QUEUE and HOST directives
+       are defined, properties that are to be used for the entire
+       system must appear before the first QUEUE or HOST
+       directives.
+
+       The IFHOST and IFNOTHOST directives have an optional list
+       of host names.  The list of host names must be separated
+       from the IFHOST or IFNOTHOST directive by white space.
+       The list is introduced by a { character and terminated
+       by a } character (} characters within host names do not
+       terminate the list).  Each element in the list is enclosed
+       in double quotes and the elements may be separated from
+       each other by any combination of white space, comments
+       (which start with a # and continue till the end of the
+       line; the list will continue on the next line), or an
+       end-of-line (the list will continue on the next line).
+       If you want to include a literal double quote in a host
+       name, use a backslash followed by a double quote.  If
+       you want to include a literal backslash at the end of
+       a host name use two backslashes followed by the double
+       quote.  If an IFHOST directive does not have a list of
+       host names or the list is empty, the properties up to
+       the terminating ENDIF are always excluded.  If an
+       IFNOTHOST directive does not have a list of host names
+       or the list is empty, the properties up to the
+       terminating ENDIF are always included.
+
+       Properties consist of a name followed by an optional
+       value.  Names consist of a sequence of characters
+       (not including white space, # characters, or
+       end-of-lines) followed by white space, a # character,
+       or an end-of-line.  A name must not be the same as
+       one the of directives (if it is, it will be
+       processed as a directive).  There are four types of
+       values:
+
+       boolean
+           The value is either true or false.
+
+       integer
+           The value is a signed decimal integer (in other
+           words an optional plus or minus sign followed by
+           a sequence of digits).
+
+       character string
+           The value is introduced with a double quote
+           (which is not included in the value itself) and
+           continues until the next double quote (which
+           does not have to be on the same line).  If you
+           want to include a double quote in the value,
+           use a backslash followed by a double quote.  If
+           you want to include a backslash at the end of
+           the value use a pair of backslashes followed by
+           the double quote.
+
+       a list of character strings
+           The list is introduced by a { character and
+           terminates with a } character (} characters
+           within strings in the list do not terminate
+           the list).  Each element in the list is 
+           enclosed in double quotes and the elements
+           may be separated from each other by any
+           combination of white space, comments, or
+           end-of-lines.    If you want to include a
+           double quote in the value, use a backslash
+           followed by a double quote.  If you want to
+           include a backslash at the end of the value
+           use a pair of backslashes followed by the
+           double quote.
+
+       Properties without a value are treated as if an empty
+       character string had been supplied as the value.
+
+       Properties are distinguished by three attributes:
+       the name, the type of value, and the enclosing
+       context.  The enclosing context is introduced by
+       a HOST or QUEUE directive; any properties before
+       the first or HOST or QUEUE directive belong to
+       the same context and are used as the properties
+       of the overall system.  If the three attributes
+       are the same for two properties then one of the
+       following applies:
+
+       1) If the property's value is a boolean, integer,
+          or character string, the property that appears
+          later in the file takes precedence.
+       2) If the property's value is a list of character
+          strings, the lists are merged and the elements
+          in the combined list will appear in the
+          order they do in the file.
+
+       While any combination of the three attributes is
+       possible only a handful are recognized by the
+       software and affect the graphical user interfaces
+       or submission of jobs.  For the overall system
+       properties, two have special meanings (the name
+       of the property is show first followed by the
+       expected type in parentheses):
+
+       DefaultSerialQueue (character string)
+           Holds the name of the default destination
+           queue for serial (i.e. single processor) tasks.
+           If the character string is empty or there is no
+           queue with the given name, the default
+           destination for serial jobs is the local machine.
+
+       DefaultThreadedQueue (character string)
+           Holds the name of the default destintation
+           queue for parallel tasks that can only run
+           on something that is (or acts like) a single
+           host.  If the character string is empty or
+           there is no queue with the given name, the
+           default destination for parallel tasks that
+           use a single host is the local machine.
+
+       DefaultClusterQueue (character string)
+           Holds the name of the default destination
+           queue for parallel tasks that may run on
+           multiple hosts.  If the character string
+           is empty or there is no queue with the
+           given name, the default destination for
+           parallel jobs that may run on multiple
+           hosts is the local machine.
+
+       DefaultGPUQueue (character string)
+           Holds the name of the default destination
+           queue for GPU-accelerated tasks.  If the
+           character string is empty or there is no
+           queue with the given name, the default
+           destination for GPU-accelerated jobs is
+           the local machine.
+
+       For the host properties, the following have special
+       meanings:
+
+       DefaultBackgroundLoginOption (character string)
+           Holds the option to pass to the login command
+           when logging in to a node to run a task in the
+           background.  This property defaults to "-n"
+           if it is not set.
+
+       DefaultLoginCommand (character string)
+           Holds the command to use to login in to a node.
+           This property defaults to "ssh -x" if not set.
+
+       DefaultMachinesFile (character string)
+           This is only relevant for a queu or host where
+           ProcessControl is "mpich-machines".  Holds the
+           name of the MPICH-style machines file with the
+           list of processor names to use.
+
+       DefaultMPIRunCommand (character string)
+           Holds the command necessary for starting an MPI
+           job.  For systems or queues that set
+           ProcessControl to "openmpi", the command must
+           be OpenMPI's (version 1.3 or later) mpirun or
+           mpiexec.
+
+       DefaultNodeCheckCommand (character string)
+           Holds the command to be executed before attempting
+           to log in and run a task when ProcessControl
+           is "mpich-machines" or "openmpi".  The intent
+           of this is to work around problems with
+           intermittent failures.  For intance, on some of
+           of the clusters we had there were occasional NFS
+           mount failures as the parallel script runs;
+           using a non-empty DefaultNodeCheckCommand can
+           be used to insert a delay or a normal login to
+           the comput node to prevent those failures.
+
+       DefaultProcessorCount (integer)
+           Holds the default number of processors to use for
+           parallel jobs.
+
+       Description (character string)
+           Holds a longer description of the system for use
+           in the user interface.
+
+       GrecsrvBusyHosts (character string)
+           Holds a comma-separated list of device IDs to
+           ignore on each host.
+
+       GrecsrvExecutable (character string)
+           Holds the default path to GPU reconstruction
+           server software.
+
+       GrecsrvHosts (character string list)
+           Lists the host name or address for hosts to
+           use with the GPU reconstruction server
+           software.  This would usually be used when
+           the GrecsrvUseProcessControl property is
+           false.
+
+       GrecsrvMemoryPercentatge (integer)
+           Holds the percentage of each  device's
+           onboard memory that the GPU reconstruction
+           server will attempt to use.
+
+       GrecsrvPort (integer)
+           Holds the port number to use for GPU
+           reconstruction server hosts that do not
+           otherwise have a port number specified.
+
+       GrecsrvRunning (boolean)
+           If true, jobs will assume that the GPU
+           reconstruction server software is already
+           running.  Otherwise, jobs will start
+           and stop the GPU reconstruction server
+           software.  If not set, this property
+           defaults to be false.
+
+       GrecsrvUseProcessControl (boolean)
+           If true, jobs will use the mechanism
+           described by the ProcessControl property
+           to determine the hosts that will run the
+           GPU reconstruction server software and
+           the mechanism for starting the software.
+           If false, jobs will use the hosts listed
+           by the GrecsrvHosts property and will use
+           the login command set by the
+           DefaultLoginCommand property to start the
+           server on those hosts.  If not set, this
+           property defaults to be true.
+
+       ProcessControl
+           Defines how parallel jobs that start
+           their own child processes determine where
+           the processes should run and implement
+           the procedure of starting the child process.
+           Three values are currently understood:
+           "simple", "mpich-machines", and "openmpi".
+           "simple" means that all the processes
+           should be started on the same host as
+           the parent process.  "mpich-machines"
+           means that the job will be passed a text
+           file, in the same format as used by MPICH
+           for its machines files, listing the hosts
+           to use.  The job will also be passed the
+           command to use to log in to other hosts.
+           The DefaultBackgroundLoginOption,
+           DefaultLoginCommand, DefaultMachinesFiles,
+           and DefaultNodeCheckCommand properties are
+           useful for systems or queues that use
+           "mpich-machines" for ProcessControl.
+           "openmpi" means that the job will be passed
+           how to invoke OpenMPI's (version 1.3 or
+           later) mpirun or mpiexec and should use that
+           when starting processes.  The
+           DefaultMPIRunCommand is useful for systems
+           or queues that use "openmpi" for
+           ProcessControl.
+
+       StatusCommand (character string)
+           Holds the command line to query the system's
+           status for display in the graphical user interface.
+
+       The queue properties with special meaning include all
+       the host properties and the following properties:
+
+       AcceptsCluster (boolean)
+           Indicates whether or not the queue accepts
+           parallel jobs that may run on multiple hosts.
+           If this property is not set for a queue, the
+           default value is true.
+
+       AcceptsGPU (boolean)
+           Indicates whether or not the queue accepts
+           GPU-accelerated jobs.  If this property is
+           not set for a queue, the default value is
+           false.
+
+       AcceptsSerial (boolean)
+           Indicates whether or not the queue accepts serial
+           (single-processor) jobs.  If this property is not
+           set for a queue, the default value is true.
+
+       AcceptsTheaded (boolean)
+           Indicates whether or not the queue accepts parallel
+           jobs that run on a single host.  If this property
+           is not set for a queue, the default value is true.
+
+       Name (character string)
+           Holds the name of the queue as will appear in the
+           menus for selecting queues.
+
+       SetProcessorCountForApp (boolean)
+           If true the requested number of processors
+           is passed to the application.  If false,
+           the requested number of processors is only
+           passed to the command given by SubmissionCommand.
+           When not set, this property defaults to be true.
+
+       SubmissionCommand (character string)
+           Holds the command necessary for submitting a job to
+           the queue.  The command followed by white space
+           followed by the name of the script or executable to
+           run must work to start a job.  Occurrences of %p
+           in the command will be replaced by the number of
+           processors to use.  Occurrences of %% in the
+           command will be replaced by a single % character.
+
+       If you use environment variables rather than a
+       configuration file to specify the queues, the
+       environment variables QUE1, QUE2, ..., QUE10 set the
+       names of the batch queues.  The command to submit a
+       task to a queue can be set in one of two ways.  To
+       set a command specific to a single queue, use the
+       QUECOM1, ..., or QUECOM10 variables.  The command
+       combined with the name of the command file (for
+       instance,
+
+           $QUECOM1 script.com
+
+       is what is used when submitting a task.  Use the
+       QCOMMAND environment variable to set a command for
+       all queues that do not have a specific command set.
+       When QCOMMAND is used,
+
+           $QCOMMAND queue_name name_of_script
+
+       is what is used when submitting a task.
+
+       By default, jobs are run on the local machine.  If
+       you want one of the queues to be used by default for
+       single processor jobs, set the QDEFAULT environment
+       variable to the number of the queue which is to be
+       the default destination.  A value of QDEFAULT which
+       is not between one and ten will set the default
+       destination to the local machine.
+
+logfile
+       Anything that the application writes to standard output and
+       standard error will be stored in the file listed in the LogFile
+       field.  If the LogFile field is blank, standard output and
+       standard error are not redirected by the command file.
+
+comfile
+       The commands used to run the application are written to the file
+       listed in the ComFile field.  If you intend to run multiple jobs
+       at once (for instance if you are submitting multiple jobs to
+       batch queues), you should change the name of the command file
+       for each one so that you don't overwrite the commands for a
+       previous job that may not have completed.  It would also be a
+       good idea to change the name of the log file for each job as
+       well.

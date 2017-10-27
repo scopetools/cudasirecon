@@ -1,0 +1,366 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: TAPIR</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the application to perform a constrained iterative refinement of a reconstruction of a volume from a tilt series.">
+  <META NAME="Keywords" CONTENT="Priism,EM,tomography,reconstruction,constrained iterative method">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="TAPIR">TAPIR</A></H1>
+<H2>Overview</H2>
+<P>TAPIR (Tomographic Alternating Projecting Iterative Reconstruction)
+uses a constrained iterative reconstruction algorithm.  Its goal is to minimize
+the difference between the reconstruction and the tilted projections.
+The constraints are compact support, positivity and smoothness of the
+reconstruction.  In each cycle of refinement, this algorithm simply calculates
+the difference between the reprojection of the reconstruction and its
+corresponding projection, and the difference is applied to the reconstruction
+by backprojection.
+
+<P>The improvement of TAPIR over weighted backprojection (WBP) is dramatic if
+the object is sparsely distributed. It can remove the backprojection strips
+around isolated features with the positivity constraint being a strong
+information source (it is always applied in TAPIR).  The strip-like artifacts
+are mainly due to the missing wedge problem, i.e., we can only
+collect data up to tilt of +-75 degree (in contrast, a tilt range of +-90
+degree avoids the problem).
+
+<P>Here's a sample command file for TAPIR:
+<PRE>
+    (time tapir \
+     /mama/weiping/prog/junk.MnAln \
+     /mama/weiping/prog/junk.xzy \
+     -istrfile=/mama/weiping/prog/junk.xzyw \
+     -reconxz=128:150 -iy=0:127 -smooth=.9 \
+     -cycles=3 -moderec=2 -positivity=1 -proj_pos=1 ) \
+     &gt; /mama/weiping/emrecon.log
+</PRE>
+
+<H3><A NAME="Parameters">Parameters</A></H3>
+<P>
+   <A HREF="#AlignedSeries">Aligned series</A> |
+   <A HREF="#Reconstruction">Reconstruction</A> |
+   <A HREF="#NX:NY:NV">NX:NY:NV</A> |
+   <A HREF="#InitialGuess">Initial guess</A> |
+   <A HREF="#OutputXZSize">Output XZ size</A> |
+   <A HREF="#YRange">Y range</A> |
+   <A HREF="#Smooth">Smooth</A> |
+   <A HREF="#Cycles">Cycles</A> |
+   <A HREF="#OutputFormat">Output format</A> |
+   <A HREF="#Statistics">Statistics</A> |
+   <A HREF="#Positivity">Positivity</A> |
+   <A HREF="#CoerceInput">Coerce input</A> |
+   <A HREF="#Resolution">Resolution</A> |
+   <A HREF="#ResolutionScale">Resolution scale</A> |
+   <A HREF="#Multires">Add multires</A> |
+   <A HREF="#GuessResolution">Guess resolution</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="../Priism.html">Priism</A> |
+  <A HREF="ReconCoordSys.html">Reconstruction coordinate system</A> |
+  <A HREF="EMTAR.html">Alignment and reconstruction</A> |
+  <A HREF="MASSNORM.html">MASSNORM</A> |
+  <A HREF="APPL_PRM.html">APPL_PRM</A> |
+  <A HREF="EWBP.html">EWBP</A> |
+  <A HREF="GPURECON.html">GPURECON</A> |
+  <A HREF="Parallel.html">Parallel execution</A> |
+  <A HREF="BALIGN.html">Alignment with markers</A>
+
+<HR>
+
+<H2><A NAME="AlignedSeries">Aligned Series</A></H2>
+<P>This is the name of the input file which contains the mass normalized and
+aligned projection series created by <A HREF="APPL_PRM.html">APPL_PRM</A>.
+On the command line, the name of the file with mass-normalized and aligned
+data is the first argument.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="Reconstruction">Reconstruction</A></H2>
+<P>This is the name of the file that will contain the data for the
+reconstructed volume.  On the command line, the name of for the output image
+data is the second argument.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="NX:NY:NV">NX:NY:NV</A></H2>
+<P>The first two values are, respectively, the x and y dimensions of the
+data in <A HREF="#AlignedSeries">the input projection series</A>.  The last
+value is the number of projections in the series.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="InitialGuess">Initial Guess</A></H2>
+<P>This is the name of a file containing the initial reconstruction guess;
+the file could be created by <A HREF="EWBP.html">EWBP</A>.  The initial
+guess is optional; when <EM>none</EM> is used as the file name, it is
+assumed that there is no initial guess available.
+
+<P>If the initial guess is supplied, its dimensions must match the
+dimensions of the output reconstruction as set by the
+<A HREF="#OutputXZSize">output XZ size</A> and <A HREF="#YRange">y range</A>
+input parameters.
+
+<P>To set the file name for the initial guess on the command line, use
+<CODE>-istrfile=</CODE><VAR>filename</VAR>.  If the <CODE>-istrfile</CODE>
+option is not supplied, it is assumed that no initial guess is available.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="OutputXZSize">Output XZ Size</A></H2>
+<P>These two values set the x and z dimensions, in pixels, of the
+reconstructed volume (the volume is written as slices parallel to the
+xz plane so these values are the dimensions of a single slice).  If the
+initial reconstruction guess is supplied as an input (with the
+<A HREF="#InitialGuess">initial guess parameter</A>), then these dimensions
+should match the x and z dimensions of that file.  Other factors to consider
+when setting the reconstruction size are:
+<UL>
+  <LI>Does it cover the region of interest?
+  <LI>Are there areas of sharp contrast close but beyond the reconstruction
+    bounds which would increase the reconstruction artifacts if not included
+    in the reconstruction?
+  <LI>TAPIR compensates the projections to account for, in a rough way, the
+    contributions from the slab containing the reconstruction.  Let
+    <VAR>np</VAR> be the x dimension, in pixels, of the projections and
+    <VAR>nx</VAR> and <VAR>nz</VAR> be the dimensions, in pixels, of the
+    reconstruction.  When <VAR>np</VAR> is less than abs(<VAR>nx</VAR> *
+    abs(cos(<VAR>theta</VAR>)) - <VAR>nz</VAR> * abs(sin(<VAR>theta</VAR>)))
+    for a tilt angle, <VAR>theta</VAR>, the compensation will not affect the
+    projection at that tilt angle.  If that condition does not hold but
+    <VAR>np</VAR> is less then <VAR>nx</VAR> * abs(cos(<VAR>theta</VAR>)) +
+    <VAR>nz</VAR> * abs(sin(<VAR>theta</VAR>)), TAPIR will compensate the
+    rays intersecting the yz faces of the reconstruction.  The robustness of
+    that compensation will decrease as the ratio of <VAR>np</VAR> to
+    <VAR>nx</VAR> * abs(cos(<VAR>theta</VAR>)) + <VAR>nz</VAR> *
+    abs(sin(<VAR>theta</VAR>)) increases.
+</UL>
+
+<P>On the command line, the dimensions of the reconstruction are set with
+<CODE>-reconxz=</CODE><VAR>nx</VAR><CODE>:</CODE><VAR>nz</VAR>.  When
+<VAR>nx</VAR> is not set, the x dimension of the reconstructed volume is the
+same as the x dimension of the input data. When <VAR>nz</VAR> is not set,
+the z dimension of the reconstructed volume is one fourth of the x dimension
+of the input data.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="YRange">Y Range</A></H2>
+<P>These two values set the range of y pixels from the
+<A HREF="#AlignedSeries">aligned tilt series</A> to use in the reconstruction.
+The first is the first index (running from 0 to the number of y pixels minus
+one) to use, and the second is the last possible index to use.  If you supply
+an <A HREF="#InitialGuess">initial guess</A>, the y dimension of the guess
+must match that specified with these values.
+
+<P>The range of indices used is set on the command line with
+<CODE>-iy=</CODE><VAR>start_index</VAR><CODE>:</CODE><VAR>last_index</VAR>.
+If you do not specify a range, all y pixels are used:
+<VAR>start_index</VAR> is set to zero and <VAR>last_index</VAR> is set to
+the number of y pixels minus one.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="Smooth">Smooth</A></H2>
+<P>This parameter constrains how smooth the reconstruction should be.
+This is achieved by filtering the reconstruction after every each update.
+The filter is a convolution of each slice in the xz plane with the
+5 x 5 kernel, k(i,j).  If <VAR>s</VAR> is the value of the smoothing parameter
+and <VAR>n</VAR> is
+<PRE>
+    1 + 4 * exp(-2 * <VAR>s</VAR>^2) + 4 * exp(-2 * sqrt(2) * <VAR>s</VAR>^2) + 4 * exp(-4 * <VAR>s</VAR>^2) + 8 * exp(-2 * sqrt(5) * <VAR>s</VAR>^2) + 4 * exp(-4 * sqrt(2) * <VAR>s</VAR>^2)
+</PRE>
+<P>, k(i,j) is
+<PRE>
+    exp(-2 * <VAR>s</VAR>^2 * sqrt((i - 2) * (i - 2) + (j - 2) * (j - 2)) / <VAR>n</VAR>
+</PRE>
+
+<P>0.9 is a good choice for the value of <VAR>s</VAR>.
+
+<P>On the command line use <CODE>-smooth=</CODE><VAR>s</VAR> to
+set the smoothing constant.  If that option is not present, no smoothing is
+done.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="Cycles">Cycles</A></H2>
+<P>This parameter sets the maximum number of iterations that are performed.
+When asked to perform zero iterations, tapir will backproject the input
+tilt series to generate the reconstruction.
+
+<P>On the command line use <CODE>-cycles=</CODE><VAR>n</VAR> to set the
+number of iterations.  If <CODE>-cycles</CODE> is not supplied, tapir will
+perform one iteration.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="OutputFormat">Output Format</A></H2>
+<P>This parameter controls the data type used to represent values in the
+reconstructed volume.  You have the choice of using a four byte
+floating-point representation or a two byte signed integer representation.
+
+<P>To set the output data type from the command line, use
+<CODE>-moderec=2</CODE> for the floating-point representation or
+<CODE>-moderec=1</CODE> for the signed integer representation.  If neither
+is set, the floating-point representation is used.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="Statistics">Statistics</A></H2>
+<P>tapir can write summary results for reconstruction statistics as a function
+of iteration.  The resulting file is a text file which is compatible with
+<A HREF="../2d_plot.html">Priism's 2D Plot</A>.  It contains four
+quantities as a function of iteration:  the R-factor (sum of the absolute
+value of the differences between the input projections and the projections
+computed from the reconstruction divided by the sum of the absolute values of
+the input projections), Npos (the fraction of the volume where the positivity
+constraint caused a value to be coerced to zero), the correlation coefficient
+between the input projections and the projections computed from the
+reconstruction, and the statistic that tapir in versions of Priism prior to
+4.2.3 called the R-factor (sum of the absolue value of the differences between
+the input projections and the projections computed from the reconstruction
+divided by the sum of the absolute values in the input projections added to
+the sum of the absolute values in the projections from the reconstruction).
+To have tapir write these summary results, enter a file name that is not
+"none" in the "Statistics" field.  As a shortcut, you can turn on the toggle
+button adjacent to the "Statistics" field to insert the base name for the
+input tilt series plus a .tapir_stat extension.  From the command line, use
+
+<PRE>
+    -statfile=<VAR>name</VAR>
+</PRE>
+
+<P>to specify the file name for the summary statistics; if you do not use
+a <CODE>-statfile</CODE> option, tapir will assume <VAR>name</VAR> was "none"
+and will not write the summary statistics in a separate file.
+
+<P>The results in the summary statistics file reflect all xz slices through
+the reconstruction.  In its log file, tapir always includes the statistics
+for each xz slice followed by the combined result for all slices that were
+generated in that run of tapir.  For parallel runs of tapir, the log file
+will have a final set of summary statistics merging the results from the
+tapir runs used to generate the full reconstruction.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="Positivity">Positivity</A></H2>
+<P>When this toggle is on, the pixel values in the reconstruction are
+forced to be non-negative.  This a priori constraint is a powerful
+way to improve the reconstruction so it isn't generally useful to turn
+off the positivity constraint.
+
+<P>From the command line, the positivity constraint is turned on by specifying
+<CODE>-positivity=</CODE><VAR>any value</VAR>.  If this is omitted, no
+positivity constraint is applied.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="CoerceInput">Coerce input</A></H2>
+<P>When this toggle is on, the values from the
+<A HREF="#AlignedSeries">mass-normalized projection data</A> are forced
+to be non-negative (negative values are set to zero).  This is almost always
+the right thing to do.
+
+<P>From the command line, the positivity condition is imposed on the input
+data by specifying <CODE>-proj_pos=</CODE><VAR>any value</VAR>.
+If this is omitted, no positivity condition is applied.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="Resolution">Resolution</A></H2>
+<P>The resolution parameter selects which resolution to process from the
+input tilt series.  Normally, the tilt series has been preprocessed with
+<A HREF="APPL_PRM.html">apply parameters</A>, and the highest resolution
+in the tilt series corresponds to the resolution you want.  In those
+situations, you would set the resolution parameter to zero (the default value)
+to select the highest resolution from the tilt series.
+
+<P>On the command line, use
+<PRE>
+    <CODE>-res=</CODE><VAR>i</VAR>
+</PRE>
+<P>to have the reconstruction use the <VAR>i</VAR>th resolution from the
+tilt series.  When run from the command line and no resolution is selected,
+the reconstruction will use the highest resolution present in the input tilt
+series.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="ResolutionScale">Resolution Scale</A></H2>
+<P>The resolution scale parameter controls the scale factor applied to the
+reconstruction size and smoothing parameters.  In the typical case where you
+select a resolution level to process from the main dialog of
+<A HREF="EMTAR.html">EMTAR</A>, the graphical interface will automatically fill
+in the resolution scale correctly.  In the case where you are running the
+reconstruction directly on a downsampled tilt series but still specify the
+reconstruction size and smoothing in terms of the full resolution, you should
+set the resolution scale to be the same as the downsampling factor (if the
+data is scaled down by a factor of four set the resolution scale parameter to
+four).
+
+<P>On the command line, use
+<PRE>
+    <CODE>-rscale=</CODE><VAR>i</VAR>
+</PRE>
+<P>to set the resolution scale to be <VAR>i</VAR>.  When run from the
+command line without the -rscale option, tapir will use a scale factor equal to
+two raised to the power of the <A HREF="#Resolution">resolution level</A>
+selected with -res.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="Multires">Add Multires</A></H2>
+<P>Turn on the "Add multires" toggle button to cause tapir to add lower
+resolutions to the reconstruction if the x and y dimensions of the
+reconstruction are large enough.  Turn off the "Add multires" toggle button to
+cause tapir to generate a reconstruction with a single resolution.
+
+<P>On the command line, include
+<PRE>
+    <CODE>-multires</CODE>
+</PRE>
+<P>in the command-line options for tapir to cause tapir to add lower
+resolutions to the reconstruction if the x and y dimensions of the
+reconstruction are large enough.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="GuessResolution">Guess Resolution</A></H2>
+<P>The guess resolution parameter allows you to select which resolution
+to use from the <A HREF="#InitialGuess">file containing the initial guess</A>.
+The dimensions of the resolution you select must be compatible with the
+dimensions you've specified for the reconstruction.
+
+<P>On the command line, use
+<PRE>
+    <CODE>-gres=</CODE><VAR>i</VAR>
+</PRE>
+<P>in the command-line options for tapir to use the <VAR>i</VAR>th resolution
+from the initial guess file.  When run from the command line without the -gres
+option, tapir will use the highest resolution present in the initial guess
+file.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+</BODY>
+</HTML>

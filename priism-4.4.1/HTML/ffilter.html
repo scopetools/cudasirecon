@@ -1,0 +1,373 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: ffilter</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to apply a cylindrically symmetric filter to 2D or 3D data.">
+  <META NAME="Keywords" CONTENT="Priism,filter,otf">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="ffilter">ffilter</A></H1>
+<H2>Overview</H2>
+
+<P>ffilter applies a cylindrically symmetric filter to two-dimensional or
+three-dimensional data.  The filter can be one of the following:
+
+<UL>
+  <LI><A HREF="#otffile">a real-valued OTF</A> (optical transfer function)
+    read from a file with an option for an additional
+    <A HREF="#smoothing">Gaussian smoothing filter</A>
+  <LI>an inverse filter (with a Wiener noise-suppression term) based on
+    the real-valued OTF read from a file with an option for an additional
+    <A HREF="#smoothing">Gaussian smoothing filter</A>
+  <LI><A HREF="#bandpass">a bandpass filter</A>
+  <LI>the product of a <A HREF="#smoothing">Gaussian smoothing filter</A> with
+    an <A HREF="#enhancement">enhancement filter</A>
+</UL>
+
+<P>The program has a command line interface and a graphical front end.  The
+parameters needed for either are listed below under the Topics list.
+Certain operations, such as selecting a region to process and starting
+processing from the graphical interface, are described in
+<A HREF="BatchRegion.html">BatchRegion.html</A> since several applications
+use the same mechanism for those operations.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#otffile">OTF file</A> |
+   <A HREF="#bandpass">Bandpass</A> |
+   <A HREF="#enhancement">Enhancement</A> |
+   <A HREF="#smoothing">Smoothing</A> |
+   <A HREF="#fract">Mixing input/filtered</A> |
+   <A HREF="#twod">Two-dimensional</A> |
+   <A HREF="#apodize">Border rolloff</A> |
+   <A HREF="#nzpad">Z size</A> |
+   <A HREF="#norm">Normalize OTF</A> |
+   <A HREF="#orig">Preserve mean</A> |
+   <A HREF="#mode2">Output format</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="BatchRegion.html">Batch processing</A> |
+   <A HREF="OTFAndPupil.html">OTF and pupil function documentation</A> |
+   <A HREF="Filter2D.html">Filter2D (spatial)</A> |
+   <A HREF="Filter3D.html">Filter3D (spatial)</A> |
+   <A HREF="FFilter2D.html">Filter 2D (frequency)</A> |
+   <A HREF="FFilter3D.html">Filter 3D (frequency)</A> |
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="otffile">OTF file</A></H2>
+<P>When the OTF file name is <VAR>none</VAR>, then either a
+<A HREF="#bandpass">bandpass filter</A> or the product of a
+<A HREF="#smoothing">Gaussian smoothing filter</A> and an
+<A HREF="#enhancement">enhancing filter</A> is applied to the input.
+Otherwise, the OTF file is read to extract the transfer function (assumed
+to be cylindrically symmetric).  This transfer function is either inverted, if
+the <A HREF="#enhancement">enhancement factor</A> is non-zero, or taken as
+is.  It is then combined with the <A HREF="#smoothing">smoothing</A> filter
+and applied to input.
+
+<P>The OTF file should be in the format for radially symmetric OTFs described
+in <A HREF="OTFAndPupil.html#otf_format">OTFAndPupil.html#otf_format</A>, 
+i.e. it should be an image file with one or more wavelengths and one section
+per wavelength.  The x dimension of the section corresponds to the z frequency
+axis with the zero frequency term at an x index of zero, the positive Nyquist
+frequency at an x index of nx / 2, and the negative frequencies in increasing
+order after that.  The y axis corresponds to the radial frequency and only the
+positive frequency components are present.  The x and y pixel spacings in the
+header should be in units of cycles / u where u is the unit chosen for the x
+and y spacings in the input file (u is typically microns for OM data and
+nanometers for EM data).  If the input has a wavelength that does not
+match a wavelength in the OTF file, the OTF for the closest available
+wavelength is stretched by a factor of
+
+<PRE>
+     closest_wavelength / input_wavelength
+</PRE>
+
+<P>and then interpolated to the frequencies present in the input.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ffilter">Overview</A> |
+   OTF file |
+   <A HREF="#bandpass">Bandpass</A> |
+   <A HREF="#enhancement">Enhancement</A> |
+   <A HREF="#smoothing">Smoothing</A> |
+   <A HREF="#fract">Mixing input/filtered</A> |
+   <A HREF="#twod">Two-dimensional</A> |
+   <A HREF="#apodize">Border rolloff</A> |
+   <A HREF="#nzpad">Z size</A> |
+   <A HREF="#norm">Normalize OTF</A> |
+   <A HREF="#orig">Preserve mean</A> |
+   <A HREF="#mode2">Output format</A>
+<HR>
+
+<H2><A NAME="bandpass">Bandpass</A></H2>
+<P>One of the filter options is a bandpass filter with a flat frequency
+between the two cutoff frequencies, and a Gaussian rolloff with a sigma of
+one-tenth the range between the cutoff frequencies.  The cutoff frequencies
+are specified in terms of the spatial resolution limits, <VAR>res1</VAR> and
+<VAR>res2</VAR>.  Use the <EM>Bandpass (res min,max)</EM> field in the
+graphical interface or <CODE>-bandpass=</CODE><VAR>res1</VAR><CODE>:</CODE><VAR>res2</VAR>
+to set the resolution limits.  When both resolution limits are zero (which
+is the default), the bandpass filter is not used.
+
+<P>The bandpass parameters are ignored when an <A HREF="#otffile">OTF file</A>
+is specified.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ffilter">Overview</A> |
+   <A HREF="#otffile">OTF file</A> |
+   Bandpass |
+   <A HREF="#enhancement">Enhancement</A> |
+   <A HREF="#smoothing">Smoothing</A> |
+   <A HREF="#fract">Mixing input/filtered</A> |
+   <A HREF="#twod">Two-dimensional</A> |
+   <A HREF="#apodize">Border rolloff</A> |
+   <A HREF="#nzpad">Z size</A> |
+   <A HREF="#norm">Normalize OTF</A> |
+   <A HREF="#orig">Preserve mean</A> |
+   <A HREF="#mode2">Output format</A>
+<HR>
+
+<H2><A NAME="enhancement">Enhancement</A></H2>
+<P>When the <A HREF="#bandpass">bandpass filter</A> is not used and an
+<A HREF="#otffile">OTF</A> is not supplied, there is the option to apply
+an enhancement filter whose frequency response is
+
+<PRE>
+     1.0 - exp(r^2 / (2 * (1.001 - s)^2))
+</PRE>
+
+<P>where r is the magnitude of the frequency and s is the value supplied
+in the <EM>Enhancement</EM> field in the graphical user interface or with
+the <CODE>-enhance=</CODE><VAR>s</VAR> option on the command line.
+
+<P>When an <A HREF="#otffile">OTF</A> is supplied, a non-zero value
+for the enhancement factor signals that the filter should be the inverse
+filter with a frequency response at kr and kz of the form:
+
+<PRE>
+    1.0 / (OTF(kr, kz) + (1.001 - s))
+</PRE>
+
+<P>where s is the value supplied in the <EM>Enhancement</EM> field in
+the graphical interface or with the <CODE>-wiener=</CODE><VAR>s</VAR> option
+on the command line.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ffilter">Overview</A> |
+   <A HREF="#otffile">OTF file</A> |
+   <A HREF="#bandpass">Bandpass</A> |
+   Enhancement |
+   <A HREF="#smoothing">Smoothing</A> |
+   <A HREF="#fract">Mixing input/filtered</A> |
+   <A HREF="#twod">Two-dimensional</A> |
+   <A HREF="#apodize">Border rolloff</A> |
+   <A HREF="#nzpad">Z size</A> |
+   <A HREF="#norm">Normalize OTF</A> |
+   <A HREF="#orig">Preserve mean</A> |
+   <A HREF="#mode2">Output format</A>
+<HR>
+
+<H2><A NAME="smoothing">Smoothing</A></H2>
+<P>When the <A HREF="#bandpass">bandpass filter</A> is not used, there is
+the option to apply a Gaussian smoothing filter.  The sigma, in cycles per
+pixel, for the filter in the frequency domain is
+<PRE>
+     0.05 + .3 * (1 - s)
+</PRE>
+<P>where s is the value set in the <EM>Smoothing</EM> field in the graphical
+interface or by <CODE>-smooth=</CODE><VAR>s</VAR> on the command-line.  When
+<VAR>s</VAR> is zero, no smoothing filter is applied.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ffilter">Overview</A> |
+   <A HREF="#otffile">OTF file</A> |
+   <A HREF="#bandpass">Bandpass</A> |
+   <A HREF="#enhancement">Enhancement</A> |
+   Smoothing |
+   <A HREF="#fract">Mixing input/filtered</A> |
+   <A HREF="#twod">Two-dimensional</A> |
+   <A HREF="#apodize">Border rolloff</A> |
+   <A HREF="#nzpad">Z size</A> |
+   <A HREF="#norm">Normalize OTF</A> |
+   <A HREF="#orig">Preserve mean</A> |
+   <A HREF="#mode2">Output format</A>
+<HR>
+
+<H2><A NAME="fract">Mixing input/filtered</A></H2>
+<P>A constant term, c, can be added to each element of the filter in the
+frequency domain; the effect of this is to add the input data scaled by
+the constant to the filtered result.  In the graphical interface, set the
+constant by changing the value in the field labeled
+<EM>Fraction original image</EM>; on the command line set it with
+<CODE>-fraction=</CODE><VAR>c</VAR>.
+
+<P>Adding the constant to the filter takes place before the filter is
+<A HREF="#norm">normalized</A> or
+<A HREF="#orig">adjusted to preserve the mean</A>.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ffilter">Overview</A> |
+   <A HREF="#otffile">OTF file</A> |
+   <A HREF="#bandpass">Bandpass</A> |
+   <A HREF="#enhancement">Enhancement</A> |
+   <A HREF="#smoothing">Smoothing</A> |
+   <A HREF="#fract">Mixing input/filtered</A> |
+   <A HREF="#twod">Two-dimensional</A> |
+   <A HREF="#apodize">Border rolloff</A> |
+   <A HREF="#nzpad">Z size</A> |
+   <A HREF="#norm">Normalize OTF</A> |
+   <A HREF="#orig">Preserve mean</A> |
+   <A HREF="#mode2">Output format</A>
+<HR>
+
+<H2><A NAME="twod">Two-dimensional</A></H2>
+<P>To force the filtering to be done a section by section basis rather than
+on each 3D volume, turn on the <EM>Force Processing as 2D data</EM> toggle
+in the graphical interface or supply <CODE>-twod</CODE> on the command-line.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ffilter">Overview</A> |
+   <A HREF="#otffile">OTF file</A> |
+   <A HREF="#bandpass">Bandpass</A> |
+   <A HREF="#enhancement">Enhancement</A> |
+   <A HREF="#smoothing">Smoothing</A> |
+   <A HREF="#fract">Mixing input/filtered</A> |
+   Two-dimensional |
+   <A HREF="#apodize">Border rolloff</A> |
+   <A HREF="#nzpad">Z size</A> |
+   <A HREF="#norm">Normalize OTF</A> |
+   <A HREF="#orig">Preserve mean</A> |
+   <A HREF="#mode2">Output format</A>
+<HR>
+
+<H2><A NAME="apodize">Border rolloff</A></H2>
+<P>To smooth (taper) the data for each section to reduce the sharpness of
+the transitions at the edges of a section, there is the option to smooth
+<VAR>n</VAR> pixels along each edge.  The value of <VAR>n</VAR> is set from
+the <EM>Border rolloff</EM> field in the <EM>Special Parameters</EM> menu
+of the graphical interface or with <CODE>-apodize=</CODE><VAR>n</VAR> on
+the command-line.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ffilter">Overview</A> |
+   <A HREF="#otffile">OTF file</A> |
+   <A HREF="#bandpass">Bandpass</A> |
+   <A HREF="#enhancement">Enhancement</A> |
+   <A HREF="#smoothing">Smoothing</A> |
+   <A HREF="#fract">Mixing input/filtered</A> |
+   <A HREF="#twod">Two-dimensional</A> |
+   Border rolloff |
+   <A HREF="#nzpad">Z size</A> |
+   <A HREF="#norm">Normalize OTF</A> |
+   <A HREF="#orig">Preserve mean</A> |
+   <A HREF="#mode2">Output format</A>
+<HR>
+
+<H2><A NAME="nzpad">Z size</A></H2>
+<P>When performing 3D filtering, the data can be padded with additional
+sections to improve performance (z sizes which are divisible by small
+primes are more efficient) and to change edge effects. <VAR>n</VAR>, the
+total z size (stack plus padding) is set by the <EM>Size for Z transforms</EM>
+field in the graphical interface and by <CODE>-nzpad=</CODE><VAR>n</VAR> on
+the command-line.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ffilter">Overview</A> |
+   <A HREF="#otffile">OTF file</A> |
+   <A HREF="#bandpass">Bandpass</A> |
+   <A HREF="#enhancement">Enhancement</A> |
+   <A HREF="#smoothing">Smoothing</A> |
+   <A HREF="#fract">Mixing input/filtered</A> |
+   <A HREF="#twod">Two-dimensional</A> |
+   <A HREF="#apodize">Border rolloff</A> |
+   <A HREF="#nzpad">Z size</A> |
+   <A HREF="#norm">Normalize OTF</A> |
+   <A HREF="#orig">Preserve mean</A> |
+   <A HREF="#mode2">Output format</A>
+<HR>
+
+<H2><A NAME="norm">Normalize OTF</A></H2>
+<P>When the <EM>Normalize OTF</EM> toggle is on in the graphical interface
+or <CODE>-norm</CODE> is supplied as an option on the command-line, the
+filter is scaled so the average frequency response is one.  This is done
+before the filter is modified to <A HREF="#orig">preserve the mean</A>.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ffilter">Overview</A> |
+   <A HREF="#otffile">OTF file</A> |
+   <A HREF="#bandpass">Bandpass</A> |
+   <A HREF="#enhancement">Enhancement</A> |
+   <A HREF="#smoothing">Smoothing</A> |
+   <A HREF="#fract">Mixing input/filtered</A> |
+   <A HREF="#twod">Two-dimensional</A> |
+   <A HREF="#apodize">Border rolloff</A> |
+   <A HREF="#nzpad">Z size</A> |
+   <A HREF="#norm">Normalize OTF</A> |
+   <A HREF="#orig">Preserve mean</A> |
+   <A HREF="#mode2">Output format</A>
+<HR>
+
+<H2><A NAME="orig">Preserve mean</A></H2>
+<P>Turning on the <EM>Preserve mean</EM> toggle in the
+<EM>Special Parameters</EM> menu or supplying an <CODE>-orig</CODE> option
+on the command line will alter the filter so the mean of each 3D stack
+(or 2D section for two-dimensional processing) is unchanged by the
+filtering process.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ffilter">Overview</A> |
+   <A HREF="#otffile">OTF file</A> |
+   <A HREF="#bandpass">Bandpass</A> |
+   <A HREF="#enhancement">Enhancement</A> |
+   <A HREF="#smoothing">Smoothing</A> |
+   <A HREF="#fract">Mixing input/filtered</A> |
+   <A HREF="#twod">Two-dimensional</A> |
+   <A HREF="#apodize">Border rolloff</A> |
+   <A HREF="#nzpad">Z size</A> |
+   <A HREF="#norm">Normalize OTF</A> |
+   Preserve mean |
+   <A HREF="#mode2">Output format</A>
+<HR>
+
+<H2><A NAME="mode2">Output format</A></H2>
+<P>By default, the filter output is saved in the same pixel format as the
+input.  In the graphical interface, turn on the <EM>Force floating-point</EM>
+toggle in the <EM>Special Parameters</EM> menu to force the output to be
+written in a floating-point format.  On the command-line, add
+<CODE>-mode2</CODE> to the list of options.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#ffilter">Overview</A> |
+   <A HREF="#otffile">OTF file</A> |
+   <A HREF="#bandpass">Bandpass</A> |
+   <A HREF="#enhancement">Enhancement</A> |
+   <A HREF="#smoothing">Smoothing</A> |
+   <A HREF="#fract">Mixing input/filtered</A> |
+   <A HREF="#twod">Two-dimensional</A> |
+   <A HREF="#apodize">Border rolloff</A> |
+   <A HREF="#nzpad">Z size</A> |
+   <A HREF="#norm">Normalize OTF</A> |
+   <A HREF="#orig">Preserve mean</A> |
+   Output format
+<HR>
+
+</BODY>
+</HTML>

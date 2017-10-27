@@ -1,0 +1,60 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEShmAlloc</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVEShmAlloc.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEShmRealloc</H1>
+<H2>Overview</H2>
+<P>Changes the size of a block dynamically allocated from an
+<A HREF="IVEArena.html">IVEArena</A>.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_shm.h"</CODE>
+<BR><CODE>void* IVEShmRealloc(void* ptr, IVEArenaSize sz, IVEArena arena);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P>There is no Fortran interface.
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>ptr</VAR><DD><VAR>ptr</VAR> is a pointer returned by a previous
+    call to <A HREF="IVEShmAlloc.html">IVEShmAlloc</A>, 
+    <A HREF="IVEShmCalloc.html">IVEShmCalloc</A>, or IVEShmRealloc.
+  <DT><VAR>sz</VAR><DD><VAR>sz</VAR> is the new size in bytes for the block
+    of memory pointed to by <VAR>ptr</VAR>.
+  <DT><VAR>arena</VAR><DD><VAR>arena</VAR> is the arena on which to operate.
+</DL>
+<H2>Return value</H2>
+<P>If unsuccessful, returns zero; otherwise, returns a pointer to a region
+sufficient for storage of at least <VAR>sz</VAR> bytes.  The initial
+minimum(<VAR>sz</VAR>, previous size of block) bytes of the block
+retain their values.  The contents of the remainder of the block (if it
+was extended) are undefined.
+<P>When the allocated region is no longer needed, it may be recycled with
+<A HREF="IVEShmDealloc.html">IVEShmDealloc</A>.
+<H2>Cross references</H2>
+<P><A HREF="IVEShmAlloc.html">IVEShmAlloc</A>,
+<A HREF="IVEShmCalloc.html">IVEShmCalloc</A>,
+<A HREF="IVEShmDealloc.html">IVEShmDealloc</A>,
+<A HREF="IVEArena.html">IVEArena</A>, and
+<A HREF="IVEArenaSize.html">IVEArenaSize</A>.
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified July 5, 2001
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

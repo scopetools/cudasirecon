@@ -1,0 +1,337 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: BEAD_FINDER</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the application to locate reference markers (gold beads) in a tilt series.">
+  <META NAME="Keywords" CONTENT="Priism,EM,tomography,alignment,gold beads">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="BEAD_FINDER">BEAD_FINDER</A></H1>
+<H2>Overview</H2>
+
+<P>BEAD_FINDER is the first step in automatic/interactive bead alignment.
+This program finds and ranks bead-like features in a data stack, using
+an adaptive amplitude threshold approach:
+<OL>
+<LI>Compute the local background image from the local mean or local maximum.
+<LI>Compute relative height image weighted by a saturation factor.  The
+  relative height is wt * (1 - (raw data) / (local background))
+  where wt is one when the raw data value is greater than or equal to the
+  background mean otherwise wt is
+  wt = exp[-alpha * (mean_sec -local_ref) / mean_sec] where the constant
+  alpha is chosen such that wt equals the saturation factor when the raw
+  data value is the minimum of the background image.
+<LI>Find the threshold that gives the desired percentage of qualified pixels
+  when a binary image is created by applying an amplitude threshold to the
+  relative height image.
+  <OL>
+    <LI>Calculate the histogram of relative height image.
+    <LI>Find the threshold that gives a fraction, f, of the pixels greater
+      than the threshold percentage.  How f is controlled is determined
+      by the value of the <A HREF="#barea_pct_mult">bArea: mult_pct</A> input
+      parameter.
+  </OL>
+<LI>Calculate the binary thresholded image by assessing each pixel. If the
+  value in the relative height image is greater than the threshold and the
+  pixel has two or more neighbors whose values are above the threshold than
+  the binary image is set to one at that location; otherwise, it is set to
+  zero.
+<LI>Find bead-like features in the binary image.  A bead-like feature
+  satisfies:
+  <UL>
+    <LI>Its area divided by the expected bead area is within the bounds
+      set by the <A HREF="#area_lub">area: lb,ub input parameter</A>.
+    <LI>Its shape is close enough to circular.  For details on how
+      this is determined see the description of the
+      <A HREF="#shape_lb">shape: lb input</A>.
+  </UL>
+  Then, after a list of such features are found,
+  <OL>
+    <LI>If the number of bead-like features found is less than
+      minimum expected number, the two criteria will be loosened to find more.
+      Several such trials are repeated if needed.
+    <LI>If the number of beadk-like features found is greater than
+      the maximum expected number, the two criteria are tightened to find
+      fewer than the maximum.  Several such trials are repeated if needed.
+    <LI>Rank each bead-like feature according to its area minus the expected
+      area.
+    <LI>Rank each bead-like feature according to its shape factor.
+    <LI>Score each bead-like feature using these rankings by
+      score = area_rank + shape_rank
+    <LI>Rank the scores and choose up to the maximum expected number of
+      beads with the top scores.
+  </OL>
+</OL>
+
+<P>Here's an example command file for BEAD_FINDER:
+<PRE>
+     (time bead_finder /oahu1/weiping/cent-10k.stk \
+     /oahu1/weiping/cent-10k.pl_one -beadrad=3.5 -area_lub=.4:3 \
+     -shape_lb=.4 -nbd_minmax=4:50 -barea_pct_mult=3 -size_lbck=-1 \
+     -iv=58:58:1 -merge_plfile=none -lbckg_mm=0 -rsat=1 \
+     -othrfile=/oahu1/weiping/cent-10k.stk_thr \
+     -obinfile=/oahu1/weiping/cent-10k.stk_bin )
+</PRE>
+
+<H3><A NAME="Parameters">Parameters</A></H3>
+<P>
+   <A HREF="#IdatFile">IdatFile</A> |
+   <A HREF="#OplFile">OplFile</A> |
+   <A HREF="#NX:NY:NV">NX:NY:NV</A> |
+   <A HREF="#bead_radius">bead_radius</A> |
+   <A HREF="#area_lub">area: lb,ub</A> |
+   <A HREF="#shape_lb">shape: lb</A> |
+   <A HREF="#nbd_minmax">nbd_minmax</A> |
+   <A HREF="#barea_pct_mult">bArea: mult_pct</A> |
+   <A HREF="#size_lbck">lBckg: size</A> |
+   <A HREF="#iv">iv</A> |
+   <A HREF="#merge_plfile">Imerge_plFile</A> |
+   <A HREF="#*lbckg_mm">lbckg_mm</A> |
+   <A HREF="#*rsat">rsat</A> |
+   <A HREF="#*res">res</A> |
+   <A HREF="#*ppmin">ppmin</A> |
+   <A HREF="#*OthrFile">OthrFile</A> |
+   <A HREF="#*ObinFile">ObinFile</A>
+
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="../Priism.html">Priism</A> |
+   <A HREF="BALIGN.html">Alignment</A> |
+   <A HREF="BEAD_MATCHER.html">Bead matcher</A> |
+   <A HREF="BEAD_CHASER.html">Bead chaser</A> |
+   <A HREF="BEAD_ALIGN.html">Bead align</A> |
+   <A HREF="BEAD_ALIGN_INTERACTIVE.html">Bead align (interactive)</A> |
+   <A HREF="PEdit.html">Bead list editor</A> |
+   <A HREF="EMTAR.html">Reconstruction</A>
+
+<HR>
+
+<H2><A NAME="IdatFile">IdatFile</A></H2>
+<P>This is the name of the file containing the raw projection data stack
+from the CCD (i.e. measured in terms of electron counts; data stacks
+with the contrast inverted can not be handled).
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="OplFile">OplFile</A></H2>
+<P>OplFile is the point list file that stores the coordinates of
+found bead-like features on the projections and the corresponding ranking
+parameters.  7 parameters are saved for each feature:
+<UL>
+  <LI>x
+  <LI>y
+  <LI>section
+  <LI>area divided by the expected area
+  <LI>shape factor
+  <LI>ranking (relative to other peaks in the section) of the area divided
+    by the expected area (a value less than zero means the area is less than
+    the expected area)
+  <LI>ranking (relative to other peaks in the section) of the shape factor
+</UL>
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="NX:NY:NV">NX:NY:NV</A></H2>
+<P>The first two values are, respectively, the x and y dimension of the
+projections.  The third value is the number of projections in the data
+stack.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="bead_radius">bead_radius</A></H2>
+<P>This is the expected bead radius in pixels.  It sets the expected bead area,
+area0, which is used to identify bead-like features in binary images.
+To specify this parameter from the command line, use <CODE>-beadrad=</CODE><VAR>r</VAR>; the default value is 3.5 pixels.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="area_lub">area: lb,ub</A></H2>
+<P>Sets the range on the area for a bead-like feature. The first value,
+<VAR>arealb</VAR> in the field is the lower bound on the area;
+the second value, <VAR>areaub</VAR> is the upper bound.  Both are expressed
+as multiples of the expected area, area0, which is set by
+<A HREF="#bead_radius">bead_radius</A>. Thus, a bead-like feature will
+have an area in square pixels between arealb*PI*bead_radius^2 and
+areaub*PI*bead_radius^2.
+
+<P>These parameters are set on the command line with
+<CODE>-area_lub=</CODE><VAR>arealb</VAR><CODE>:</CODE><VAR>areaub</VAR>.
+The default values are 0.4 for the lower bound and 3 for the upper bound.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="shape_lb">shape: lb</A></H2>
+<P>The second criteria that bead-like features must meet is that the
+quantity (the shape factor), 4*PI*(feature area)/(feature circumference)^2,
+must exceed a threshold.  This parameter sets that threshold.  By its
+definition, the shape factor falls in the range [0, 1], and a circle has
+a shape factor of 1.
+
+<P>On the command line, the threshold for the shape factor is set by
+<CODE>-shape_lb=</CODE><VAR>lb</VAR>.  The default value
+for <VAR>lb</VAR> is 0.4.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="nbd_minmax">nbd_minmax</A></H2>
+<P>These two values are, respectively, the minimum and maximum number of beads
+that are expected on each section.  The program will attempt to find more
+beads if it locates less than the minimum number or reject possible
+bead-like features if it finds more than the maximum,  It does this by
+dynamically adjusting the two criteria for a bead, the
+<A HREF="#area_lub">area</A> and <A HREF="#shape_lb">shape factor</A>.
+
+<P>The bounds on the number of beads in each section are set from the
+command line with <CODE>-nbd_minmax=</CODE><VAR>min</VAR><CODE>:</CODE><VAR>max</VAR>.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="barea_pct_mult">bArea: mult_pct</A></H2>
+<P>This parameter set the upper limit on the area which is non-zero in the
+binary image.  If the limit, <VAR>u</VAR>, is greater than one, then the
+limit imposed on the area is <VAR>u</VAR>*(<A HREF="#nbd_minmax">maximum number of beads</A>)*(<A HREF="#bead_radius">expected bead area</A>).
+If <VAR>u</VAR> is less than one, then it is used directly as the fraction of
+each projection which can be non-zero.
+
+<P>The option <CODE>-barea_pct_mult=</CODE><VAR>u</VAR> sets the limit from
+the command line.  The default value of <VAR>u</VAR> is two.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="size_lbck">lBckg: size</A></H2>
+<P>This parameter sets the length (in pixels) of one side of a square
+region about each pixel which is used to estimate the local background
+(the difference between the raw projections and the local background
+gives the relative height image used for locating beads).
+
+<P>The default value, which is the larger of 3 or eight times the bead radius,
+is used whenever this parameter is less than 3 or is not specified.  On the
+command line, the box size is set by <CODE>-size_lbck=</CODE><VAR>box_size</VAR>.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="iv">iv</A></H2>
+<P>These three values, which are the index of the first projection to use, the
+maximum index which can be used, and the index increment, can be used to
+limit which projections BEAD_FINDER processes.  This is frequently useful
+when experimenting with different thresholds.  The default is to process
+all the projections so the index of the first projection is zero, the maximum
+index is the number of projections minus one, and the increment is one.
+
+<P>The range of projections to use is set from the command line with
+<CODE>-iv=</CODE><VAR>first</VAR><CODE>:</CODE><VAR>max</VAR><CODE>:</CODE><VAR>step</VAR>.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="merge_plfile">Imerge_plFile</A></H2>
+<P>The beads found in a run of BEAD_FINDER will be merged with those stored
+in this file.  That is, for the bead list of any section, if BEAD_FINDER
+is run on that section, the corresponding bead list is saved to the output
+.pl file; if BEAD_FINDER is not run on that section, the results for
+that section (if any) are copied from the file specified by merge_plfile.
+
+<P>Merging is normally done when the bead feature criterion are good
+for most sections, but a few sections need special handling with different
+parameters.
+
+<P>On the command line, the file with which to merge the results is
+specified with <CODE>-merge_plfile=</CODE><VAR>file_name</VAR>.
+If <EM>none</EM> is used as the file name (this is the default), no merging
+is done.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="*lbckg_mm">lbckg_mm</A></H2>
+<P>With the <EM>local bckg: mean</EM> option, a mean over a local region
+is used to estimate the background value.  This is the default.  With the
+<EM>local bckg: max</EM> option, the maximum value in a local region is used
+to estimate the background.  The size of the local
+region is set by <A HREF="#size_lbck">lBckg: size</A>.
+
+<P>On the command line, use <CODE>-lbckg_mm=0</CODE> to use the local mean
+and use <CODE>-lbckg_mm=1</CODE> to use the local maximum.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="*rsat">rsat</A></H2>
+<P>This parameter is the saturation value used to weight the difference of
+pixel value and the estimate of the background level.  The weighted differences
+at each pixel form the relative height image in which beads are located.
+In detail, the relative height image at a point is wt * (1 - (raw pixel value) / (local background)).  Where the weighting factor, wt, is one when
+the raw data value is greater than the mean of the projection and is
+exp[-alpha*((projection mean)-(raw value))/(projection mean)] where alpha
+is set such that wt is equal to rsat when the raw pixel value is equal to the
+smallest value in the estimated background image.  When rsat is 1 (the
+default) no weighting is applied.
+
+<P>The saturation level is set on the command line with
+<CODE>-rsat=</CODE><VAR>level</VAR>.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="*res">res</A></H2>
+<P>This parameter sets which resolution to use from the input tilt series
+if the input tilt series has multiple resolutions available.  The resolutions
+are numbered from zero with zero as the highest resolution and increasing
+values correspond to decreasing resolution.  The resolution to use is set
+on the command line with <CODE>-res=</CODE><VAR>ires</VAR>.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="*ppmin">ppmin</A></H2>
+<P>This parameter sets a lower bound on intensity values included in the
+calculation of the background statistics.  The default value is 100 to
+match what previous versions implicitly used.  The command line parameter
+to set the lower bound is <CODE>-ppmin=</CODE><VAR>bound</VAR>.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="*OthrFile">OthrFile</A></H2>
+<P>This parameter sets the name of the image file which will be filled
+with the relative height data (the weighted difference of the input data
+and local estimates of the background).
+
+<P>The file name is set from the command line with
+<CODE>-othrfile=</CODE><VAR>file_name</VAR>.  If not specified, the
+relative height data are written to a file with the same name as the input
+data stack but with ".stk_thr" appended.  Use "none" for <VAR>file_name</VAR>
+if you do not want the relative height data.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+<H2><A NAME="*ObinFile">ObinFile</A></H2>
+<P>This parameter sets the name of the image file which will be filled
+with the binary images resulting from applying a threshold to the
+relative height data.
+
+<P>The file name is set from the command line with
+<CODE>-obinfile=</CODE><VAR>file_name</VAR>.  If not specified, the
+binary images are written to a file with the same name as the input
+data stack but with ".stk_bin" appended.  Use "none" for <VAR>file_name</VAR>
+if you do not want the binary image data.
+
+<P><A HREF="#Parameters">Return to the list of parameters</A>
+<HR>
+
+</BODY>
+</HTML>

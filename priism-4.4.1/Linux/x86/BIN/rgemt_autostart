@@ -1,0 +1,321 @@
+#!/bin/sh
+
+# Usage
+# -----
+# rgemt_autostart [client_options] -rgemt_client=client_exec \
+#     [-ompiexec=mpiexec_path] [-machinefile=filename] [-np=n] [-rshcmd=cmd] \
+#     [-rgemt_noauto] [-rgemt_exe=exepath] [-rgemt_port=p] [-rgemt_mem=f] \
+#     [-rgemt_busy=i1...]
+#
+# Starts the Gpurecon server on all the requested machines and then starts
+# the requested executable which requires the server(s).  When that executable
+# exits, shuts down the started servers.
+#
+# If you use -ompiexec= and the path you supply with that option isn't empty,
+# rgemt_autostart assumes that the path is to OpenMPI's mpiexec or mpirun.
+# rgemt_autostart will use that command to determine which hosts are in use
+# and start the servers.  This requires OpenMPI 1.3 or later.  If you use
+# -np= and the NSLOTS environment variable is not set, rgemt_autostart will
+# pass that to mpiexec.  Any -machinefile= or -rshcmd= options will have no
+# effect.  Any -server= options in the client options will also be ignored.
+#
+# If you use -machinefile= (and -ompiexec isn't in effect) and the path you
+# supply for -machinefile isn't empty, rgemt_autostart will assume that the
+# file is a list, in MPICH's format for a machines file, of the hosts to use.
+# If the NSLOTS environment variable is set or you use -np= and the NSLOTS
+# environment variable is not set, rgemt_autostart will use that as a limit on
+# the hosts used from the machines file.  To start and stop the servers on
+# hosts, that are not the current host, rgemt_autostart will use the command
+# given by -rshcmd= (the default is ssh -x).  That command will have to work
+# without prompting for a user name or password.  Any -server= options in the
+# client options will be ignored.
+#
+# If you do not use -ompiexec= and -machinefile=, rgemt_autostart will
+# determine which hosts to use from any -server= options in the client options.
+# If there are no -server= options, rgemt_autostart will look at the value
+# of the RGEMT_SERVER_LIST to determine the hosts to use.  If there are no
+# -server= options and RGEMT_SERVER_LIST is not set or empty, rgemt_autostart
+# will use the current host as the server.  To start and stop the servers on
+# the hosts, rgemt_autostart will use the command given by -rshcmd= (the
+# default is ssh -x).  That command will have to work without prompting
+# for a user name or password.
+#
+# If you include -rgemt_noauto in the options, rgemt_autostart does not start
+# the server software (it must already be running on the hosts).
+#
+# If you include -rgemt_exe=exepath in the options, rgemt_autostart will assume
+# that exepath is the script or executable for the server software.  If you
+# do not specify the server executable, rgemt_autostart will use ${RGEMT_EXEC}
+# if set, ${IVE_BASE}/grecsrv/bin/grecsrv if ${IVE_BASE} is set and
+# ${RGEMT_EXEC} is not, or
+# /net/daa5.ucsf.edu/Volumes/home2/lehua/grecsrv/curr/bin/grecsrv otherwise.
+# The evaluation of the enviroment variables happens on the host where
+# rgemt_autostart runs.
+#
+# If you include -rgemt_port=p in the options, any servers that rgemt_autostart
+# starts which did not have a port specified will have GRECSRV_PORT set to p
+# in the environment.  Those servers should then listen on the port, p (the
+# server configuration file, config.gpu could override that).  rgemt_autostart
+# will also instruct the client software to contact the servers that do not
+# have a port specified on port p.
+#
+# If you include -rgemt_mem= or -rgemt_busy= in the options, any servers that
+# rgemt_autostart starts will be passed (via the environment variables,
+# GRECSRV_MEM_FRAC and GRECSRV_BUSY_GPUS) the configurations settings set by
+# those options.
+#
+# Limitations
+# -----------
+# Does not provide a way to handle a heterogeneous environment where whether
+# or not to run the server or the path to server executable vary from host to
+# host.
+#
+# Dependencies
+# ------------
+# Expects the Unix utilities, cut, expr, grep, hostname, kill, sed, test, and
+# tr to be in the search path.
+#
+# Expects the Priism utilities, count_processors and print_ith_processor to be
+# in the search path.
+
+# Since the script never uses pathname expansion, disable it.
+set -f
+
+status=1
+client_exec=""
+# client_options will collect options to be passed on to the client
+# application.  Newlines will be used to separate the options collected (that
+# means that options which include newlines will not be handled correctly).
+client_options=""
+server_options=""
+ompiexec=""
+ompiexec_np=""
+machinefile=""
+nproc_used=-1
+rshcmd="ssh -x"
+# servers will collect the names of the hosts.  newlines will be used to
+# separate the names.
+servers=""
+unset noauto
+server_exec="${RGEMT_EXEC:-${IVE_BASE:+${IVE_BASE}/grecsrv/bin/grecsrv}}"
+if test -z "$server_exec" ; then
+    server_exec=/net/daa5.ucsf.edu/Volumes/home2/lehua/grecsrv/curr/bin/grecsrv
+fi
+unset portnum
+unset memfrac
+unset busygpus
+# Parse the command-line options.
+while test $# -gt 0 ; do
+    case "$1" in
+	-machinefile=*)
+            machinefile=`echo " $1" | sed -e 's/ -machinefile=//'`
+            ;;
+
+        -np=*)
+            # Ignore -np= if NSLOTS is set.
+            if test -z "$NSLOTS" ; then
+		nproc_used=`echo " $1" | sed -e 's/ -np=//'`
+                # Structure the test this way (empty then clause) to handle
+                # the case where the value is not an integer.
+		if test "$nproc_used" -gt 0; then
+                    :
+		else
+                    echo "rgemt_autostart: invalid number of processors" 1>&2
+                    exit 1
+		fi
+		ompiexec_np="$1"
+            fi
+	    ;;
+
+        -ompiexec=*)
+            ompiexec=`echo " $1" | sed -e 's/ -ompiexec=//'`
+            ;;
+
+        -rgemt_busy=*)
+            busygpus=`echo " $1" | sed -e 's/ -rgemt_busy=//'`
+	    ;;
+
+	-rgemt_client=*)
+	    client_exec=`echo " $1" | sed -e 's/ -rgemt_client=//'`
+	    ;;
+
+	-rgemt_exe=*)
+            value=`echo " $1" | sed -e 's/ -rgemt_exe=//'`
+            if test -n "$value" ; then
+                server_exec="$value"
+            fi
+	    ;;
+
+        -rgemt_mem=*)
+            memfrac=`echo " $1" | sed -e 's/ -rgemt_mem=//'`
+	    ;;
+
+	-rgemt_noauto)
+	    noauto=1
+	    ;;
+
+        -rgemt_port=*)
+            portnum=`echo " $1" | sed -e 's/ -rgemt_port=//'`
+	    ;;
+
+	-rshcmd=*)
+	    rshcmd=`echo " $1" | sed -e 's/ -rshcmd=//'`
+	    ;;
+
+        -server=*)
+	    server_options="$server_options
+$1"
+	    server=`echo " $1" | sed -e 's/ -server=//'`
+            servers="$servers
+$server"
+	    ;;
+
+        *)
+            # Include everything else in the client options.
+	    client_options="$client_options
+$1"
+            ;;
+    esac
+    shift
+done
+
+if test -z "$client_exec" ; then
+    echo "rgemt_autostart: no client executable set with -rgemt_client=" 2>&1
+    exit 1
+fi
+
+if test -n "$ompiexec" ; then
+    servers=`$ompiexec ${ompiexec_np:+"$ompiexec_np"} sh -c 'test $OMPI_COMM_WORLD_LOCAL_RANK -eq 0 && hostname ; exit 0'`
+    if test $? -ne 0 ; then
+        echo "rgemt_autostart: OpenMPI's mpiexec, ${ompiexec}, failed" 1>&2
+        exit 1
+    fi
+    server_options=""
+    for server in $servers ; do
+        server_options="$server_options
+-server=${server}${portnum:+:$portnum}"
+    done
+elif test -n "$machinefile" ; then
+    if test -z "$NSLOTS" ; then
+        np=`count_processors "$machinefile"`
+	if test $? -eq 0; then
+            if test $np -eq 0; then
+		echo "rgemt_autostart: zero processors in $machinefile" 1>&2
+		exit 1
+            fi
+	else
+            exit 1
+	fi
+	if test $nproc_used -lt 0 -o $nproc_used -gt $np ; then
+            nproc_used=$np
+	fi
+    else
+        nproc_used="$NSLOTS"
+        if test "$nproc_used" -gt 0; then
+            :
+        else
+            echo "rgemt_autostart: NSLOTS is not a positive integer" 1>&2
+	    exit 1
+        fi
+    fi
+    server_options=""
+    servers=""
+    ip=0
+    while test $ip -lt $nproc_used ; do
+	server=`print_ith_processor -h $ip "$machinefile"`"${portnum:+:$portnum}"
+	if test $? -ne 0 ; then
+	    echo "rgemt_autostart: could not read processor $ip from the machines file, $machinefile" 2>&1
+	    exit 1
+	fi
+	server_options="$server_options
+-server=$server"
+	servers="$servers
+$server"
+	ip=`expr $ip + 1`
+    done
+else
+    if test -z "$servers" ; then
+        for server in `echo "$RGEMT_SERVER_LIST" | tr ',' '\n'` ; do
+            echo "$server" | grep -E -q ':[0123456789]+$'
+            if test $? -ne 0 ; then
+                server="${server}${portnum:+:$portnum}"
+            fi
+            server_options="$server_options
+-server=$server"
+            servers="$servers
+$server"
+        done
+        if test -z "$servers" ; then
+            server="127.0.0.1${portnum:+:$portnum}"
+            server_options="-server=$server"
+            servers="$server"
+        fi
+    fi
+fi
+
+client_options="$client_options
+$server_options"
+
+if test -n "$noauto" ; then
+    old_ifs="$IFS"
+    # Set IFS to be a newline.
+    IFS='
+'
+    set -- $client_options
+    IFS="$old_ifs"
+    exec $client_exec "$@"
+fi
+
+# Kill the started servers in case of unexpected termination.
+servers_and_ids=""
+mpiexec_id=""
+curr_shell=$$
+trap 'test -n "$mpiexec_id" && kill -TERM "$mpiexec_id" && kill -INT "$mpiexec_id" ; old_ifs="$IFS"'" ; IFS='
+'"' ; set -- $servers_and_ids ; IFS="$old_ifs" ; while test $# -gt 0 ; do server=`echo $1 | cut -d, -f1` ; id=`echo $1 | cut -d, -f2` ; shift ; test localhost = "$server" && kill -KILL $id ; test localhost != "$server" && $rshcmd "$server" "kill -KILL $id" ; done ; exit $status' INT QUIT TERM
+
+if test -n "$ompiexec" ; then
+    $ompiexec ${ompiexec_np:+"$ompiexec_np"} sh -c "test \$OMPI_COMM_WORLD_LOCAL_RANK -ne 0 && exit 0 ; export ${portnum:+GRECSRV_PORT=\"$portnum\"} ${memfrac:+GRECSRV_MEM_PCT=\"$memfrac\"} ${busygpus:+GRECSRV_BUSY_GPUS=\"$busygpus\"} >/dev/null 2>&1 ; \"$server_exec\" </dev/null >/dev/null 2>&1" &
+    mpiexec_id=$!
+else
+    old_ifs="$IFS"
+    # IFS is a newline character.
+    IFS='
+    '
+    set -- $servers
+    IFS="$old_ifs"
+
+    while test $# -gt 0 ; do
+	# Strip off the optional protocol (rgemt1://) and optional port
+        # number.
+        server=`echo " $1" | sed -e 'sx^ rgemt1://xx' -e 'sx^ xx' -e 's/:[0123456789][0123456789]*$//'`
+        port=`echo " $1" | sed -e 'sx^ rgemt1://xx' | cut -d: -f2`
+        if test -z "$port" ; then
+            port="$portnum"
+        fi
+        if test Xlocalhost = X"$server" -o X127.0.0.1 = X"$server" -o X`hostname` = X"$server" ; then
+            export ${port:+GRECSRV_PORT="$port"} ${memfrac:+GRECSRV_MEM_PCT="$memfrac"} ${busygpus:+GRECSRV_BUSY_GPUS="$busygpus"} >/dev/null 2>&1
+            "$server_exec" </dev/null >/dev/null 2>&1 &
+            servers_and_ids="$servers_and_ids
+localhost,$!"
+        else
+            id=`$rshcmd "$server" "sh -c 'export ${port:+GRECSRV_PORT=\"$port\"} ${memfrac:+GRECSRV_MEM_PCT=\"$memfrac\"} ${busygpus:+GRECSRV_BUSY_GPUS=\"$busygpus\"} >/dev/null 2>&1 ; \"$server_exec\" </dev/null >/dev/null 2>&1 & ; echo \$\!'"`
+	    servers_and_ids="$servers_and_ids
+$1,$id"
+        fi
+        shift
+    done
+fi
+
+# Wait for server to reach a state where it is ready for connections.
+sleep 10
+
+old_ifs="$IFS"
+# Set IFS to be a newline.
+IFS='
+'
+set -- $client_options
+IFS="$old_ifs"
+$client_exec "$@"
+
+status=$?
+kill -INT $curr_shell

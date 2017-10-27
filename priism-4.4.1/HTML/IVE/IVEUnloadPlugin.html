@@ -1,0 +1,47 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEUnloadPlugin</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVEUnloadPlugin.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEUnloadPlugin</H1>
+<H2>Overview</H2>
+<P>Unloads a plugin loaded with <A HREF="IVELoadPlugin.html">IVELoadPlugin</A>
+and frees any resources allocated when the plugin was loaded.  When the
+function returns, the handle to the plugin and any references to the plugin's
+attributes are no longer valid.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_plugin.h"</CODE>
+<BR><CODE>void IVEUnloadPlugin(IVEPlugin plugin);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P>There is no Fortran interface.
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>plugin</VAR><DD>(in) Is the handle, returned by
+    <A HREF="IVELoadPlugin.html">IVELoadPlugin</A>, for the plugin to unload.
+</DL>
+<H2>Cross references</H2>
+<P><A HREF="IVELoadPlugin.html">IVELoadPlugin</A>,
+<A HREF="IVEGetPluginAttr.html">IVEGetPluginAttr</A>, and
+<A HREF="IVEPlugin.html">IVEPlugin</A>
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified December 16, 2002
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

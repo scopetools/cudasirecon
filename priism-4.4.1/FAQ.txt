@@ -1,0 +1,410 @@
+From: ive@msg.ucsf.edu
+Subject: Priism-IVE-4:  Frequently Asked Questions (FAQ)
+Reply-To: ive@msg.ucsf.edu
+Organization: Macromolecular Structure Group, UC San Francisco
+
+Archive-name: priism-ive-4
+Last-modified: Fri May  3  18:00:00 PST 2002
+URL: http://msg.ucsf.edu/IVE/IVE4_HTML/FAQ/index.html
+
+     Priism-IVE-4:  Frequently Asked Questions (FAQ)
+
+Topics covered in this FAQ:
+---------------------------
+   -1- CONFIGURATION
+   -2- How do I change where the shared memory file is stored?
+   -3- How do I change the user interface's colors?
+   -4- How do I change the user interface's fonts?
+   -5- TROUBLESHOOTING
+   -6- Priism won't start; what can I do?
+   -7- Priism won't exit; what can I do?
+   -8- My decon job is taking forever.  What's wrong?
+   -9- Priism starts but does not open windows; what can I do?
+   -10- I use Mac OS X 10.5 or 10.6 and my screen goes wonky when I run Priism.  How can I fix that?
+
+------------------------------
+
+Subject:    -1- CONFIGURATION
+Date: 20 May 1999 18:00:00 PDT
+
+  The answers to these questions discuss how to configure Priism.
+
+------------------------------
+
+Subject:    -2- How do I change where the shared memory file is stored?
+Date: 20 May 1999 18:00:00 PDT
+
+  Set the environment variable IVE_SHMDIR to the name of the directory
+  where you want to store the file and restart Priism.  You'll need
+  write access to the directory; it's also preferable that you have
+  fast access to the directory and plenty of space (the shared memory
+  file and temporary files can be hundreds of megabytes for typical
+  sessions).
+
+------------------------------
+
+Subject:    -3- How do I change the user interface's colors?
+Date:  3 May 2002 18:00:00 PDT
+
+  On IRIX, Priism uses the color scheme that's been selected
+  for the SGI desktop.  You can change this scheme by selecting
+  Desktop->Customize->Color Schemes from the Toolchest menu.
+  (If you don't know where that is you should consult the SGI
+  Desktop User's Guide at
+
+    <http://techpubs.sgi.com/library/tpl/cgi-bin/getdoc.cgi?coll=0650&db=bks&srch=&fname=/SGI_EndUser/Desktop_UG>
+
+  Chapter 11 in particular has information on changing the desktop).
+  Not all of the color schemes work equally well with Priism; typical
+  problems are:  help buttons and function buttons have the same or
+  similar colors, read-only text is not distinguishable from editable
+  text, or the small arrows on pulldown menus to indicate a nested
+  pulldown are not visible.  Predefined schemes that avoid all of these
+  problems are Arizona, IndigoMagic, Inverness, Milan, RedGreenSafe, and
+  Vancouver.
+
+
+  On Linux and MacOSX or for changes on IRIX beyond what is possible
+  by changing the desktop scheme, changes to the colors require
+  editing X resources files.  Changes for an individual user can be
+  stored in the .Xdefaults file in his or her home directory; changes
+  for all users of a system can be stored in 
+
+    /usr/X11R6/lib/X11/app-defaults/IVE
+
+  (/usr/lib/X11/app-defaults/IVE on IRIX).  Either for the personal
+  or the system-wide ones, you would need to create the file if it
+  was not already there.
+
+
+  Below are listed the default colors resources used on Linux and
+  MacOS X (these emulate the SGI IndigoMagic scheme with a gamma
+  of 1.7).  As a brute force approach to modifying the colors,
+  you could copy some or all of these resources specifications
+  to the resource file and experiment with different values.
+  Below all of the colors are colors are given with their RGB
+  values in hexadecimal.  Colors can be set by name as well and
+  /usr/X11R6/lib/X11/rgb.txt (/usr/lib/X11/rgb.txt on IRIX) lists
+  names that are allowed.
+
+    IVE*foreground: #000000
+    IVE*background: #c1c1c1
+    IVE*XmList.background: #999999
+    IVE*XmPushButton.background: #999999
+    IVE*XmDrawnButton.background: #999999
+    IVE*XmRowColumn*OptionButton.background: #999999
+    IVE*XmArrowButton.background: #c1c1c1
+    IVE*XmText.background: #b98e8e
+    IVE*XmScrolledWindow.XmText.background: #000000
+    IVE*XmTextField.background: #b98e8e
+    IVE*XmScrollBar.background: #999999
+    IVE*XmScrollBar.foreground: #999999
+    IVE*XmScale*foreground: #000000
+    IVE*XmMenuShell*background: #c1c1c1
+    IVE*XmMenuShell*XmToggleButton.selectColor: #000000
+    IVE*highlightColor: #000000
+    IVE*form*statusBar*foreground: #c1c1c1
+    IVE*form*statusBar*troughColor: #b98e8e
+    IVE*form*helpButton*background: #9f8484
+    IVE*form*textLabel*background: #999999
+
+
+  On IRIX, there are three other resources that can be used to
+  modify the color scheme without working at the level of the
+  colors for types of dialog items.  The first is IVE*useSchemes
+  which you can use to tell Priism that it should not rely on the
+  color schemes.  To do this you would enter
+
+    IVE*useSchemes: none
+
+  in the resource file.  The second is IVE*scheme which you can use
+  to have Priism use a specific scheme without affecting the scheme
+  used by other applications.  For instance, if you wanted to use
+  the scheme defined in /usr/lib/X11/schemes/Milan for Priism but
+  not for other applications, you would put
+
+    IVE*scheme: /usr/lib/X11/schemes/Milan
+
+  in the resource file.  The third resource controls which color
+  from the color scheme is used on help buttons.  By default, Priism
+  acts as if
+
+    IVE*form*helpButton*background: SGI_DYNAMIC AlternateBackground1
+
+  was specified in a resource file.  If you like a scheme but not how
+  the help buttons are colored, you might experiment with the other
+  possible background colors; a scheme provides six different choices
+  (AlternateBackground1 to AlternateBackground6).
+
+
+  On all systems, a way to cause Priism to use the IVE 3 color scheme
+  is to set the environment variable IVE_OLD_LOOK to yes before running
+  Priism.
+
+------------------------------
+
+Subject:    -4- How do I change the user interface's fonts?
+Date:  14 Mar 2003 18:00:00 PST
+
+  To do this you will need to change an X resource file:  either
+  .Xdefaults in a user's home directory or
+
+    /usr/X11R6/lib/X11/app-defaults/IVE
+
+  (/usr/lib/X11/app-defaults/IVE on IRIX) to make the change for
+  all users of the system.
+
+
+  The following resources set all the fonts used in the
+  user interface:  IVE*form.?.fontList, IVE*form*slide*fontList,
+  IVE*form*onoffLabel*fontlist, IVE*form*textLabel*fontList,
+  IVE*form*menuBar*fontList, IVE*form*optionPane*fontList,
+  IVE*form*optionMenu*fontList, IVE*confirm*fontList,
+  IVE*error*fontList, IVE*info*fontList, IVE*file*buttonFontList,
+  IVE*file*textFontList, IVE*file*XmList.fontlist, and
+  IVE*file*labelFontList.  The first four set the fonts for
+  buttons, fields, labels, and sliders in normal dialogs; the
+  next three set the fonts for pulldown and option menus; the
+  next three set the fonts used in simple popup message dialogs;
+  and the last set control the fonts used for file selection
+  dialogs (these are new in 4.0.7 and will have no effect for
+  earlier versions).  The defaults on Linux and Mac OS X
+  systems are:
+
+    IVE*form.?.fontList: -adobe-courier-medium-r-normal--14-*-*-*-*-*-iso8859-1
+    IVE*form*slide*fontList: -adobe-courier-medium-r-normal--14-*-*-*-*-*-iso8859-1
+    IVE*form*onoffLabel*fontList: -adobe-courier-medium-r-normal--14-*-*-*-*-*-iso8859-1
+    IVE*form*textLabel*fontList: -adobe-courier-medium-r-normal--14-*-*-*-*-*-iso8859-1
+    IVE*form*menuBar*fontList: -*-helvetica-bold-o-normal-*-14-*-*-*-*-*-iso8859-1
+    IVE*form*optionPane*fontList: -*-helvetica-bold-o-normal-*-14-*-*-*-*-*-iso8859-1
+    IVE*form*optionMenu*fontList: -*-helvetica-bold-o-normal-*-14-*-*-*-*-*-iso8859-1
+    IVE*confirm*fontList: -*-helvetica-medium-r-normal--14-*-*-*-*-*-iso8859-1
+    IVE*error*fontList: -*-helvetica-medium-r-normal--14-*-*-*-*-*-iso8859-1
+    IVE*info*fontList: -*-helvetica-medium-r-normal--14-*-*-*-*-*-iso8859-1
+    IVE*file*buttonFontList: -*-helvetica-medium-r-normal--14-*-*-*-*-*-iso8859-1
+    IVE*file*textFontList: -*-helvetica-medium-r-normal--14-*-*-*-*-*-iso8859-1
+    IVE*file*XmList.fontList: -*-helvetica-medium-r-normal--14-*-*-*-*-*-iso8859-1
+    IVE*file*labelFontList: -*-helvetica-bold-r-normal--14-*-*-*-*-*-iso8859-1
+
+  (on IRIX, the defaults are the same except
+
+    -*-screen-medium-r-normal--15-*-*-*-*-*-iso8859-1
+
+  is used in place of the -adobe-courier font; the defaults on IRIX are
+  the FixedWidthFont, ObliqueLabelFont, and PlainLabelFont definitions
+  for large fonts from /usr/lib/X11/schemes/Base/FontPalette; the small
+  fonts are two points smaller)
+
+
+  The xlsfonts command can generate a list of the available font types
+  on the system that can be used in lieu of the defaults.
+
+------------------------------
+
+Subject:    -5- TROUBLESHOOTING
+Date: 21 May 1999 18:00:00 PDT
+
+  These questions discuss what to do when Priism crashes, burns, or
+  misbehaves in less drastic ways.
+
+------------------------------
+
+Subject:    -6- Priism won't start; what can I do?
+Date:  6 Jun 2003 18:00:00 PDT
+
+  There are a number of things to check depending on whether or not
+  the system has told you anything about why it failed.  The paragraphs
+  that follow cover the more easily handled situations.
+
+
+  If you see a message like "Priism: Command not found" or
+  "IWStart: error starting monitor 0: No such file or directory",
+  the environment (specifically the PATH environment variable) is
+  not correctly set so Priism executables can be found.  A message like
+
+    rld: Fatal Error: Cannot Successfully map soname libIWL.so ...
+
+  on IRIX or
+
+    Priism: error in loading shared libraries: libIWL.so ...
+
+  on Linux is also a likely indicator that your environment (the 
+  LD_LIBRARY_PATH variable on IRIX and LINUX; the DYLD_LIBRARY_PATH
+  environment variable on MacOS X) is not set correctly.
+
+
+  You should first verify that you did set the environment for
+  running Priism.  If your shell is bash or sh (i.e. running the
+  command
+
+      basename `echo "$SHELL"`
+
+  prints bash or sh), you should run
+
+      . path_to_priism_directory/Priism_setup.sh
+
+  prior to starting Priism.  If your shell is tcsh or csh, then you
+  should use
+
+      source path_to_priism_directory/Priism_setup
+
+  as the command to set the Priism environment.  You'll need to
+  replace path_to_priism_directory with the path to where Priism
+  installed.  For instance, if the directory /Applications/Priism
+  holds the Priism files and you use bash as your shell, you would
+  need to run
+
+      . /Applications/Priism_setup.sh
+
+  before running Priism.  Please note that the space between the
+  period and the slash is significant.  Without that space the
+  command will run but will not have the desired side effects.
+  After running the setup command appropriate for your shell, you
+  should see a message like "Priism 4.2.5 set up; type Priism to
+  run it" (instead of 4.2.5 you should see a version number matching
+  the version of Priism installed).  If you see any other messages,
+  that usually indicates that you did not use the correct path to
+  where Priism is installed or did not use the setup command
+  appropriate for your shell.
+
+
+  If you have executed the command to set the environment but Priism
+  still does not run and you see an error messages like those
+  mentioned above, you should talk to the person who installed Priism
+  and ask him or her what you should do.  If you are the person who
+  installed Priism, you may not have run post_install.sh or you may
+  have moved Priism since running post_install.sh.  Changing directories
+  to where Priism is installed and running post_install.sh will take
+  care of either of those situations.  You'll then need to rerun the
+  command to set the environment for Priism.  For more details about
+  the post-installation script, consule the installation instructions at
+
+    <http://msg.ucsf.edu/IVE/IVE4_HTML/PriismInstallation.html>
+
+  (for IVE 4) or
+
+    <http://msg.ucsf.edu/IVE/Download/PriismInstallation.html>
+ 
+  (for IVE 3.3).
+
+
+  Another thing that can prevent Priism from starting is if a previous
+  Priism session failed to delete its shared memory file.  Priism 4.1.6
+  and later are better at dectecting the dead session and avoiding the
+  problem.  For all versions, you can run ivekill from the command line
+  to delete the shared memory file.
+
+------------------------------
+
+Subject:    -7- Priism won't exit; what can I do?
+Date:  12 Jun 2003 18:00:00 PDT
+
+  You can run ivekill at the command line to force Priism and the 
+  associated windows to exit.  If the Priism menu bar has disappeared
+  but other Priism windows are still open, running ivekill with the -f
+  option:
+
+    ivekill -f
+
+  may be more effective.  The handling of clean up in Priism could
+  definitely use some work.
+
+------------------------------
+
+Subject:    -8- My decon job is taking forever.  What's wrong?
+Date:  2 Jan 2001 18:00:00 PST
+
+  Here are a couple of things to check:
+
+    1) Check the header for your input data (as one of the first
+       things it does, decon writes a summary of the header to the log
+       file).  If the pixel spacings are invalid (not positive) or one
+       of the wavelengths is invalid (not positive) that could be
+       the cause.  You should kill the decon job, use EditHeader
+       to correct the input data, and restart the job.
+
+    2) The system could be spending most of its time paging chunks
+       of memory to and from disk; this most frequently happens
+       when deconvolving data sets which have large x, y, and
+       z dimensions or when several memory intensive jobs are
+       running at once.  On IRIX, use osview and check the amount
+       of free memory (under the System Memory category) and the
+       Wait Ratio percentages, if the free memory is low and
+       the wait ratio percentages are high, then the entire system
+       is struggling because there is not enough physical memory
+       available for the applications currently running.  On Linux
+       or OSF/1, you can use
+
+            vmstat 10 10
+
+       (check memory statistics every 10 seconds over 10 intervals)
+       and pay attention to the pin/pout (OSF/1) or si/so (Linux)
+       columns.  If these are high, then the system is paging.
+
+       Depending on the situation, any of the following may be
+       an appropriate solution:
+
+         a) Run the job on a machine with more RAM.
+         b) Run fewer jobs at once so that competition for memory
+            is less fierce.
+         c) The decon dialog has an option (the Special
+            Parameters->Use minimal amount toggle) which will
+            cause decon to demand less memory (roughly a factor
+            of 3) and use a scratch file instead.  If the job is
+            large enough to cause the machine to swap heavily,
+            using this option can significantly improve the amount
+            of time needed to perform the deconvolution.  The
+            command-line option to force use of the scratch file
+            is -nomem.
+
+------------------------------
+
+Subject:    -9- Priism starts but does not open windows; what can I do?
+Date:  6 Jun 2003 18:00:00 PDT
+
+  The most common cause for this is a previous Priism session that
+  did not exit cleanly.  Priism 4.1.6 and later versions have a
+  mechanism that usually detects the remains of the previous session
+  and allows correct start up; earlier versions do not and always
+  assume they are reconnecting to a running session. The solution to
+  the problem is:
+
+    1) Exit Priism.
+    2) Run ivekill from the command line.  See question 7 in the
+       FAQ for more information about ivekill.
+
+------------------------------
+
+Subject:    -10- I use Mac OS X 10.5 or 10.6 and my screen goes wonky when I run Priism.  How can I fix that?
+Date:  18 Jan 2011 18:00:00 PDT
+
+  You should only encounter this if you run a version of Priism prior
+  to Priism 4.2.7 or have a custom set of preferences.  In either case,
+  you can resolve the problem with the following steps:
+
+  1) Select "File->Preferences" from the Priism menu.
+  2) In the "IVE Preferences" dialog that appears, check
+     what profile is currently selected:  if it is not "Default"
+     then do the following:
+
+       a) Select "Preferences->Startup" from the menu at the
+          top of the "IVE Preferences" dialog.
+       b) Turn off the "Stereo in window" option.  It is on
+          the third line from the bottom of the dialog.
+       c) Press the button labeled "Close" at the bottom of the
+          dialog.
+       d) Select "File->Save" from the menu at the top of the
+          "IVE Preferences" dialog to save your changes.
+       e) Restart Priism for your changes to take effect.
+
+     If the profile labeled "Default" is currently selected,
+     select "File->New..." from the menu at the top of the
+     "IVE Preferences" dialog.  In the dialog that appears,
+     enter the name of the new profile of preferences ("NoStereo"
+     is a decent choice for a name) and then press the "Accept"
+     button.  Then proceed with steps a through e given above.
+
+------------------------------
+
+End of priism-ive Digest
+******************************

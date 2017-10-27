@@ -1,0 +1,72 @@
+KEYWORD
+     output_file swap_bytes
+
+DESCRIPTION
+     This application takes a Priism file and writes out
+     a file in the native format for the MRC Cambridge
+     Image Processing System.
+
+     mrc2image2000 has the standard set of Priism controls
+     for selecting a subset of the Priism file to convert.
+     For the conversion, enter the name of the file to be
+     generated in the "Output file" field.  If the input
+     file uses floating-point values or complex floating-
+     point values to represent the data, mrc2image2000 can
+     perform the conversion in place (in other words,
+     the output file name can be the same as the input
+     file name); otherwise, the output file name must
+     be different than the input file name.  By default,
+     mrc2image2000 will generate a file using the native
+     byte ordering for the operating system and machine
+     where you run mrc2image2000.  To generate a file with
+     the non-native byte ordering, turn on the "swap bytes"
+     toggle button.
+
+     mrc2image2000 will only convert the first wavelength
+     and time point that you select.  mrc2image2000 will
+     not transfer the wavelength information from the
+     Priism header.  It only transfers the extended
+     header if the extended header appears to contain
+     symmetry information (i.e. the space group field
+     in the header is not zero).
+
+     mrc2image2000 accepts the command-line arguments
+     described in Region.hlp.  In addition, it has the
+     following options:
+
+         -out=n
+             Sets the name of the output file to be n.
+             If you do not include this option,
+             mrc2image2000 attempts to perform the
+             conversion in place.
+
+         -swab
+             Causes mrc2image2000 to generate files with
+             the non-native byte ordering.  By default,
+             mrc2image2000 generates files with the native
+             byte ordering.
+
+     The example below extracts a 160 x 160 x 160 region
+     from a.dat and writes it to a.mrc in the non-native
+     byte ordering.
+
+         mrc2image2000 a.dat -x=0:159 -y=0:159 -z=0:159 \
+             -out=a.mrc -swab
+
+output_file
+     Enter the name of the Image2000 file to generate
+     in the field next to the "Output file" button or
+     use the "Output file" button to select the file
+     with a file selection dialog.  As currently
+     implemented, mrc2image2000 will allow the input
+     file and the output file to be the same (i.e. the
+     conversion is performed in place) if the input
+     file uses floating-point or complex floating-
+     point values to represent the data.
+
+swap_bytes
+     By default, mrc2image2000 generates Image2000
+     files in the native byte ordering for the machine
+     and operating system where you run mrc2image2000.
+     To generate a file with the non-native byte
+     ordering, turn on the "swap bytes" toggle button.

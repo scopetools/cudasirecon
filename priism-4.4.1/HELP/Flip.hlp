@@ -1,0 +1,74 @@
+KEYWORD
+    Orientation WorkingSpace
+
+DESCRIPTION Flip
+    Essentially, Flip allows you to view your dataset from the
+    "side" - so that what once Z axis (the axis perpendicular
+    to the screen when an image is viewed) will now fall in the
+    plane of the screen.  Be cautious in how you visually interpret
+    the results of Flip. You are most often looking at data where
+    the size of the pixels in the X dimension and the Y dimension
+    are equal.  The Z pixel size (section spacing) is often quite
+    different from X and Y, but in a flipped view the pixels are still
+    represented as square, so the aspect ratio will not be 1-to-1.
+    To obtain a 1-to-1 aspect ratio, use Resample2D and adjust the
+    magnification on the X or Y axis to equate the X and Y pixel
+    spacings.
+
+    Flip accepts the command-line arguments described in Region.hlp.
+    To set the desired orientation of the output from the command
+    line, include one of the following options:
+
+         -xz
+              The output generated has xy sections that correspond
+              to xz sections from the input.  This is the default.
+
+         -yz
+              The output generated has xy sections that correspond
+              to yz sections from the input.
+
+         -zy
+              The output generated has xy sections that correspond
+              to zy sections from the input.
+
+    To set the working space, include
+
+        -maxmem=n
+
+    in the options where you would replace n with the desired amount
+    of memory to usie in megabytes.  If you do not set the size of
+    the working space from the command line, Flip will use up to
+    64 megabytes (or at least enough space for one output section
+    if an output section is bigger than 64 megabytes).
+
+     As an example, the following command interchanges the y and z
+     axes of recon.xzyw and puts the result in recon.xyzw:
+
+         Flip recon.xzyw recon.xyzw
+
+Orientation
+    Use this menu to select the orientation of the output.  The
+    names of  the selection indicate which of the axes in the input
+    will fall along the X and Y axes of the output.  With
+    "X-Z Sections", for instance, the old X axis will run along the
+    new X axis and the old Z axis will run along the new Y axis.
+
+WorkingSpace
+    At a minimum, Flip keeps at least one output section in
+    memory, and it will keep more if the total amount of memory
+    used is less than the value, in units of megabytes, shown
+    in the "Working space" field.  You can adjust the amount
+    of memory Flip uses by changing the value in the
+    "Working space" field.  Using more memory (provided that
+    it is not already in use for other processes) will generally
+    speed up the process for yz or zy flipping operations.
+    For xz flipping operations, determining the optimal amount
+    of memory to use is more difficult.  If the data set to
+    be flipped is much bigger than the physical memory
+    available (in other words, Flip will not be able to make
+    effective use of the operating system's caches), telling
+    Flip to use more memory will usually speed up the flipping
+    operation.  If the data set to be flipped is small enough
+    to fit in the physical memory available, entering zero in
+    the "Working space" field will usually be the optimal
+    strategy.

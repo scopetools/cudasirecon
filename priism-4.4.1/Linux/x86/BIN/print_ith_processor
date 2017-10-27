@@ -1,0 +1,60 @@
+#!/bin/sh
+
+# Parses an mpich style machines file and prints the name of the ith processor
+# (i is 0 zero based).  Nothing is printed if i is greater than or equal to
+# the number of processors.  With -h, prints the ith unique host name
+# (by string matching; host names that are different by string matching but
+# represent the same system are counted as unique).
+#
+# Usage:  print_ith_processor [-h] i [machines_file_name]
+
+if test $# -ge 1 ; then
+    if test X-h = X"$1" ; then
+        shift;
+        unique_hosts=1
+    else
+        unique_hosts=0
+    fi
+fi
+if test \( $# -gt 2 \) -o \( $# -lt 1 \); then
+    echo "usage: print_ith_processor i [machines_file_name]" 1>&2
+    exit 1
+elif test $# -eq 2; then
+    if test -r "$2"; then
+	exec < "$2"
+    else
+	echo "print_ith_processor: can not read $2" 1>&2
+	exit 1
+    fi
+fi
+
+prog='
+BEGIN { nproc = 0 }
+/^[ \t\v\f\r\n]*[-a-zA-Z0-9.]+[ \t\v\f\r\n]*$/ {
+    if (iproc == nproc) { print $1; exit 0 };
+    ++nproc
+}
+/^[ \t\v\f\r\n]*[-a-zA-Z0-9.]+[ \t\v\f\r\n]*#/ {
+    split($0,a,"#");
+    if (iproc == nproc) { print a[1]; exit 0 };
+    ++nproc
+}
+/^[ \t\v\f\r\n]*[-a-zA-Z0-9.]+:[0-9]+[ \t\v\f\r\n]*$/ {
+    split($0,a,":");
+    if (iproc >= nproc && iproc < nproc + a[2]) { print a[1]; exit 0 };
+    nproc += a[2]
+}
+/^[ \t\v\f\r\n]*[-a-zA-Z0-9.]+:[0-9]+[ \t\v\f\r\n]*#/ {
+    split($0,a,":");
+    split(a[2],b,"#");
+    if (iproc >= nproc && iproc < nproc + b[1]) { print a[1]; exit 0 };
+    nproc += b[1];
+}
+'
+
+if test $unique_hosts = 0 ; then
+    awk -v iproc="$1" "$prog"
+else
+    cut -d\# -f1 | cut -d\: -f1 | tr -d ' \t\v\f\r' | sort | uniq | awk -v iproc="$1" "$prog"
+fi
+exit 0

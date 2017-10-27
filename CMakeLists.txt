@@ -41,6 +41,9 @@ set(VERSION_MINOR "0")
 set(VERSION_PATCH "1")
 set(PROJECT_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
+set(BOOST_INCLUDEDIR /opt/boost-1.57.0/include)
+set(BOOST_LIBRARYDIR /opt/boost-1.57.0/lib)
+
 ######################################################################
 #
 # Set permissions before adding subdirectories
@@ -113,8 +116,11 @@ if(APPLE)
   link_directories ( ${X11_INCLUDE_DIR}/../lib )
 endif()
 
-set(CUDA_NVCC_FLAGS
-  -gencode=arch=compute_20,code=sm_20;-gencode=arch=compute_30,code=sm_30;-gencode=arch=compute_35,code=sm_35)
+set(CUDA_NVCC_FLAGS "-gencode=arch=compute_30,code=sm_30;\
+					  -gencode=arch=compute_35,code=sm_35;\
+					  -gencode=arch=compute_50,code=sm_50;\
+					  -gencode=arch=compute_52,code=sm_52;\
+					  -gencode=arch=compute_61,code=sm_61")
 
 if(WIN32)
   set(CUDA_NVCC_FLAGS

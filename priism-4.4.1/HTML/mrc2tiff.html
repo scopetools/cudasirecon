@@ -1,0 +1,494 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: mrc2tiff</TITLE>
+  <META NAME="Description" CONTENT="On-line help for converter from Priism's native file format to TIFF.">
+  <META NAME="Keywords" CONTENT="Priism,TIFF">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="mrc2tiff">Convert from Priism's Native Format to TIFF</A></H1>
+<H2>Overview</H2>
+<P>This application takes a Priism file and converts it into one or more
+TIFF files.  The conversion can be direct or the data can be scaled to
+integers in the range of 0 to 255 first.  Preservation of the original data
+values is the key advantage of the direct conversion.  The unfortunate drawback
+is that the output will usually be 16-bit signed integers or 32-bit
+floating-point values (the exact format will depend on the format of the Priism
+file) and will not be readable by another application that only supports the
+baseline TIFF formats (1-, 4-, and 8-bit unsigned integers).
+
+<P>Mrc2tiff has the <A HREF="Region.html">standard set of Priism controls</A>
+for selecting a subset of the Priism file to convert.  If you wish to scale
+the input to integers in the range of 0 to 255 before conversion, turn on the
+<A HREF="#8-bit">"8-bit" toggle button</A>; you can modify the scaling
+parameters via the <A HREF="#scale">"W0 scale" through "W4 scale" fields</A>.
+If you do not wish to scale the input to 8-bit, turn off the
+<A HREF="#8-bit">"8-bit" toggle button</A>.  The other choice you have to make
+is whether to turn on the
+<A HREF="#single_file">"Single file" toggle button</A> and convert each
+section in the input into a page in a multipage TIFF file or to turn off the
+<A HREF="#single_file">"Single file" toggle button</A> and generate a series
+of TIFF files which each contain a single section.  If you are converting a
+single section, the choice does not affect the interpretation of the output
+file, and turning on the <A HREF="#single_file">"Single file" toggle button</A>
+is simpler:  you only have to enter the output file name in the "Output file"
+field.  When converting multiple sections into a single TIFF file, the
+controls that are important are the "Output file" button to browse for the
+output file, the field next to the "Output file" button in which the output
+file name can be entered directly, and the
+<A HREF="#interleaving">"Interleaving" menu</A> which controls the ordering of
+pages in the output.  For multiple TIFF files, the important controls affect
+the generation of the output file names: the
+<A HREF="#name_format">"Name format" menu</A>,
+<A HREF="#output_directory">"Directory" field</A>,
+<A HREF="#output_prefix">"Prefix" field</A>,
+and <A HREF="#template">"Template" field</A>.
+
+<P>Mrc2tiff is not able to convert complex-valued data.
+
+<H3>Topics</H3>
+<P>
+    Overview |
+    <A HREF="Region.html">Region processing</A> |
+    <A HREF="#8-bit">8-bit</A> |
+    <A HREF="#single_file">Single file</A> |
+    <A HREF="#interleaving">Interleaving</A> |
+    <A HREF="#name_format">Name format</A> |
+    <A HREF="#output_directory">Directory</A> |
+    <A HREF="#output_prefix">Prefix</A> |
+    <A HREF="#template">Template</A> |
+    <A HREF="#scale">Scaling</A> |
+    <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+    <A HREF="ImageCapture.html">Image Capture</A> |
+    <A HREF="tiff2mrc.html">Tiff2mrc</A> |
+    <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="8-bit">8-Bit</A></H2>
+<P>If the "8-bit" toggle button is on, Mrc2tiff scales input data values
+to be integers in the range of 0 to 255 and writes the scaled result to
+one or more TIFF files.  The
+<A HREF="#scale">"W0 scale" through "W4 scale" fields</A> allow you to modify
+the scaling parameters.
+
+<P>If the "8-bit" toggle button is off, Mrc2tiff
+does not modify the input data values before writing the TIFF file or files.
+This direct conversion will generate TIFF files that do not conform to the
+baseline TIFF standard if the input data is represented as floating-point
+values or as 16- or 32-bit integers.  Many programs that can read TIFF files
+do not correctly handle such files.
+
+<P>When you select a new input, Mrc2tiff will reset the "8-bit" toggle button.
+If the input is already represented by unsigned 8-bit integers, Mrc2tiff turns
+off the toggle button; otherwise, Mrc2tiff turns on the toggle button.
+
+<H3>Topics</H3>
+<P>
+    <A HREF="#mrc2tiff">Overview</A> |
+    <A HREF="Region.html">Region processing</A> |
+    8-bit |
+    <A HREF="#single_file">Single file</A> |
+    <A HREF="#interleaving">Interleaving</A> |
+    <A HREF="#name_format">Name format</A> |
+    <A HREF="#output_directory">Directory</A> |
+    <A HREF="#output_prefix">Prefix</A> |
+    <A HREF="#template">Template</A> |
+    <A HREF="#scale">Scaling</A> |
+    <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="single_file">Single File</A></H2>
+<P>The output of Mrc2tiff can be a single TIFF file which has multiple
+pages where each page has the data for one section, or can be multiple TIFF
+files where each TIFF file has the data for one section.  If you are converting
+a single section, the single file is easier:  all you have to enter
+is the output file name in the "Output file" field.  If you have multiple
+sections, choose the format to match what your TIFF reader expects; beware
+that some TIFF readers may only be able to access the first page in a TIFF
+file with multiple pages.
+
+<P>To have Mrc2tiff generate a single TIFF file with multiple pages, turn on
+the "Single file" toggle button.  Set the name of the output file with the
+"Output file" button or adjacent field.  Use the
+<A HREF="#interleaving">"Interleaving" menu</A> to control how the numbering
+of the pages reflects the z, wavelength, and time point indices for each
+section.
+
+<P>To have Mrc2tiff generate multiple TIFF files, turn off the "Single file"
+toggle.  The output file names are generated automatically in a variety
+of <A HREF="#name_format">formats</A> which can incorporate a
+<A HREF="#output_directory">directory name</A>,
+<A HREF="#output_prefix">prefix</A>, and the z, wavelength, or time
+point indices for the section.
+
+<P>When you select a new input, Mrc2tiff will reset the "Single file" toggle
+button.  If the input contains a single section, Mrc2tiff turns off the toggle
+button; otherwise, Mrc2tiff turns on the toggle button.
+
+<H3>Topics</H3>
+<P>
+    <A HREF="#mrc2tiff">Overview</A> |
+    <A HREF="Region.html">Region processing</A> |
+    <A HREF="#8-bit">8-bit</A> |
+    Single file |
+    <A HREF="#interleaving">Interleaving</A> |
+    <A HREF="#name_format">Name format</A> |
+    <A HREF="#output_directory">Directory</A> |
+    <A HREF="#output_prefix">Prefix</A> |
+    <A HREF="#template">Template</A> |
+    <A HREF="#scale">Scaling</A> |
+    <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="interleaving">Interleaving</A></H2>
+<P>Interleaving specifies how the z, wavelength, and time point indices map
+to the page number for multiple page output and how output section numbers
+are computed for <A HREF="#template">custom filename templates</A>.  If
+the output has <VAR>nz</VAR> z-sections, <VAR>nw</VAR> wavelengths, and
+<VAR>nt</VAR> time points, and a given section has a z-section index in the
+output of <VAR>iz</VAR> (0 &lt;= <VAR>iz</VAR> &lt; <VAR>nz</VAR>), wavelength
+index in the output of <VAR>iw</VAR> (0 &lt;= <VAR>iw</VAR> &lt;
+<VAR>nw</VAR>), and time point index in the output of <VAR>it</VAR> (0 &lt;=
+<VAR>it</VAR> &lt; <VAR>nt</VAR>) then the page number (or output section
+number), <VAR>p</VAR>, with the different interleaving options is:
+
+<DL>
+  <DT>twz<DD><VAR>it</VAR>+<VAR>nt</VAR>*(<VAR>iw</VAR>+<VAR>nw</VAR>*<VAR>iz</VAR>)
+  <DT>tzw<DD><VAR>it</VAR>+<VAR>nt</VAR>*(<VAR>iz</VAR>+<VAR>nz</VAR>*<VAR>iw</VAR>)
+  <DT>wtz<DD><VAR>iw</VAR>+<VAR>nw</VAR>*(<VAR>it</VAR>+<VAR>nt</VAR>*<VAR>iz</VAR>)
+  <DT>wzt<DD><VAR>iw</VAR>+<VAR>nw</VAR>*(<VAR>iz</VAR>+<VAR>nz</VAR>*<VAR>it</VAR>)
+  <DT>ztw<DD><VAR>iz</VAR>+<VAR>nz</VAR>*(<VAR>it</VAR>+<VAR>nt</VAR>*<VAR>iw</VAR>)
+  <DT>zwt<DD><VAR>iz</VAR>+<VAR>nz</VAR>*(<VAR>iw</VAR>+<VAR>nw</VAR>*<VAR>it</VAR>)
+</DL>
+
+<H3>Topics</H3>
+<P>
+    <A HREF="#mrc2tiff">Overview</A> |
+    <A HREF="Region.html">Region processing</A> |
+    <A HREF="#8-bit">8-bit</A> |
+    <A HREF="#single_file">Single file</A> |
+    Interleaving |
+    <A HREF="#name_format">Name format</A> |
+    <A HREF="#output_directory">Directory</A> |
+    <A HREF="#output_prefix">Prefix</A> |
+    <A HREF="#template">Template</A> |
+    <A HREF="#scale">Scaling</A> |
+    <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="name_format">Name Format</A></H2>
+<P>When multiple TIFF files are generated, the file names are generated
+by filling in a template.  From the "Name format" menu you may select
+a standard template or choose the "custom template" option to use the
+template entered in the <A HREF="#template">"Template" field</A>.  For the
+standard templates, the generated file names will all start with the
+contents of the <A HREF="#output_directory">"Directory" field</A>,
+followed by a slash, and followed by the contents of the
+<A HREF="#output_prefix">"Prefix" field</A>.  The remainder of the
+file name depends on which template was chosen:  it will be the template
+name ("prefix_w#_z#_t#.tif", for instance) without the leading "prefix"
+and with "w#" replaced with a w followed by the output wave index for the
+section in the file, "t#" replaced with a t followed by the output time index
+for the section in the file, and "z#" replaced with a z followed by the
+output z index for the section in the file.  The numbers of digits used for
+an index is the digits needed to represent the largest index in that dimension.
+As an example, with the "prefix_w#_z#_t#.tif" template, /var/tmp as the
+output directory, exp12_2002 as the output prefix, and an input region that
+has 3 wavelengths, 500 time points, and 30 z sections, the file name for the
+section whose output z, wavelength, and time indices are 1, 2, and 3
+respectively would be /var/tmp/exp12_2002_w2_z01_t003.tif.
+
+<H3>Topics</H3>
+<P>
+    <A HREF="#mrc2tiff">Overview</A> |
+    <A HREF="Region.html">Region processing</A> |
+    <A HREF="#8-bit">8-bit</A> |
+    <A HREF="#single_file">Single file</A> |
+    <A HREF="#interleaving">Interleaving</A> |
+    Name format |
+    <A HREF="#output_directory">Directory</A> |
+    <A HREF="#output_prefix">Prefix</A> |
+    <A HREF="#template">Template</A> |
+    <A HREF="#scale">Scaling</A> |
+    <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="output_directory">Directory</A></H2>
+<P>When multiple TIFF files are written and one of the
+<A HREF="#name_format">standard file name formats</A> is used, the generated
+file names will start with the contents of the "Directory" field.
+The <A HREF="#name_format">section on name formats</A> has an example of this.
+For a custom template, the contents of the "Directory" field are
+substituted for any %d conversion codes.
+
+<H3>Topics</H3>
+<P>
+    <A HREF="#mrc2tiff">Overview</A> |
+    <A HREF="Region.html">Region processing</A> |
+    <A HREF="#8-bit">8-bit</A> |
+    <A HREF="#single_file">Single file</A> |
+    <A HREF="#interleaving">Interleaving</A> |
+    <A HREF="#name_format">Name format</A> |
+    Directory |
+    <A HREF="#output_prefix">Prefix</A> |
+    <A HREF="#template">Template</A> |
+    <A HREF="#scale">Scaling</A> |
+    <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="output_prefix">Prefix</A></H2>
+<P>When multiple TIFF files are written and one of the
+<A HREF="#name_format">standard file name formats</A> is used, the generated
+file names will include the contents of the "Prefix" field.
+The <A HREF="#name_format">section on name formats</A> has an example of this.
+For a custom template, the contents of the "Prefix" field are
+substituted for any %p conversion codes.
+
+<H3>Topics</H3>
+<P>
+    <A HREF="#mrc2tiff">Overview</A> |
+    <A HREF="Region.html">Region processing</A> |
+    <A HREF="#8-bit">8-bit</A> |
+    <A HREF="#single_file">Single file</A> |
+    <A HREF="#interleaving">Interleaving</A> |
+    <A HREF="#name_format">Name format</A> |
+    <A HREF="#output_directory">Directory</A> |
+    Prefix |
+    <A HREF="#template">Template</A> |
+    <A HREF="#scale">Scaling</A> |
+    <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="template">Template</A></H2>
+<P>The file name generation mechanism for multiple TIFF files may use
+a custom file name template.  To do so select "custom template" from the
+<A HREF="#name_format">"Name format" menu</A> and enter the template in
+the "Template" field.  When generating file names, special conversion
+codes are expanded in the template.  The conversion codes have the following
+general form: %[<VAR>width</VAR>][<VAR>modifier</VAR>]<VAR>code</VAR>.
+
+<P>The recognized codes are:
+<DL>
+  <DT><STRONG>%</STRONG><DD>Causes a percent sign to be inserted in the
+    file name.
+  <DT><STRONG>d</STRONG><DD>This conversion code is replaced with the
+    contents of the <A HREF="#output_directory">"Directory" field</A>.
+  <DT><STRONG>p</STRONG><DD>This conversion code is replaced with the
+    contents of the <A HREF="#output_prefix">"Prefix" field</A>.
+  <DT><STRONG>z</STRONG><DD>This conversion code is replaced with the z
+    index for the section stored in the file.
+  <DT><STRONG>w</STRONG><DD>This conversion code is replaced with the
+    wavelength index for the section stored in the file.
+  <DT><STRONG>t</STRONG><DD>This conversion code is replaced with the time
+    point index for the section stored in the file.
+  <DT><STRONG>s</STRONG><DD>This conversion code is replaced with the section
+    number for the section stored in the file.
+</DL>
+
+<P><VAR>width</VAR> is optional and may be used with the <STRONG>z</STRONG>,
+<STRONG>w</STRONG>, <STRONG>t</STRONG>, and <STRONG>s</STRONG> codes to
+specify the minimum number of digits which are used to display the index value.
+<VAR>width</VAR> may be a positive integer indicating the minimum number of
+digits to use or the letter a to indicate that the minimum number of digits
+should be the number of digits in the maximum corresponding index.  If an
+index would have less than the minimum number of digits, leading zeros are
+added to fill in the missing portion.
+
+<P><VAR>modifier</VAR> is optional and may be used with the <STRONG>z</STRONG>,
+<STRONG>w</STRONG>, <STRONG>t</STRONG>, and <STRONG>s</STRONG> codes.  If
+<VAR>modifier</VAR> is not present, the index generated by those codes is
+computed for the output file.  If <VAR>modifier</VAR> is the letter i, then
+the index is computed relative to the input file.
+
+<P>As an example, the <A HREF="#name_format">standard name format</A>,
+"prefix_w#_z#_t#.tif", is equivalent to the custom template,
+%d/%p_w%aw_z%az_t%at.tif.  The custom template, /var/tmp/%2iz_%2iw_%2it.tif,
+would generate file names which included the input z, wavelength, and time
+indices of the section in the file.  Each index would be displayed with at
+least two digits.
+
+<H3>Topics</H3>
+<P>
+    <A HREF="#mrc2tiff">Overview</A> |
+    <A HREF="Region.html">Region processing</A> |
+    <A HREF="#8-bit">8-bit</A> |
+    <A HREF="#single_file">Single file</A> |
+    <A HREF="#interleaving">Interleaving</A> |
+    <A HREF="#name_format">Name format</A> |
+    <A HREF="#output_directory">Directory</A> |
+    <A HREF="#output_prefix">Prefix</A> |
+    Template |
+    <A HREF="#scale">Scaling</A> |
+    <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="scale">Scaling</A></H2>
+<P>If the <A HREF="#8-bit">"8-bit" toggle button</A> is on, the values
+in the "W0 scale" field control how the data from the first wavelength
+in the input is scaled to fit in the range of 0 to 255.  The "W1 scale"
+through "W4 scale" fields are similar, but affect the second through
+fifth wavelengths in the input.  For more information about the meaning
+of the scaling values, see the
+<A HREF="Scale.html#Scale">"Scaling Values" topic</A> in the documentation
+for the <A HREF="Scale.html">image window's Scale application</A> (the
+special case mentioned in that documentation does not apply in this situation
+and is handled like all other combinations of scaling values).
+
+<P>If the input to be converted is an image window, the default scaling
+parameters are the scaling values in effect when Mrc2tiff opens the image
+window.  If the input is a file, the default scaling values are set to
+reflect a linear scaling between the minimum and maximum values recorded
+in the file's header.
+
+<H3>Topics</H3>
+<P>
+    <A HREF="#mrc2tiff">Overview</A> |
+    <A HREF="Region.html">Region processing</A> |
+    <A HREF="#8-bit">8-bit</A> |
+    <A HREF="#single_file">Single file</A> |
+    <A HREF="#interleaving">Interleaving</A> |
+    <A HREF="#name_format">Name format</A> |
+    <A HREF="#output_directory">Directory</A> |
+    <A HREF="#output_prefix">Prefix</A> |
+    <A HREF="#template">Template</A> |
+    Scaling |
+    <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>mrc2tiff accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, it has
+the following options (parts in brackets are optional):
+
+<DL>
+  <DT><CODE>-8bit</CODE>
+  <DD>Causes the input to be scaled to unsigned 8-bit integers.  You can modify
+    the scaling parameters with the -scl options.  If you mix -8bit or the
+    -scl options with -preserve_type, the one that appears last on the command
+    line takes precedence.  By default, mrc2tiff will scale to unsigned 8-bit
+    integers unless the input pixel format is unsigned 8-bit integer.
+
+  <DT><CODE>-dir=</CODE><VAR>dir</VAR>
+  <DD>Sets the name of the directory to use in the file name template when
+    mrc2tiff generates multiple output files from the input file.
+    If you use the -single option to force mrc2tiff to generate one output
+    file, the -dir option has no effect.  By default, the directory name is an
+    empty string.
+
+  <DT><CODE>-interleave=</CODE><VAR>arrangement</VAR>
+  <DD>Sets the <A HREF="#interleaving">interleaving</A> to use when writing
+    multiple sections to a single TIFF file or for calculating output section
+    indices for custom file name templates.  Allowed values for
+    <VAR>arrangement</VAR> are twz, tzw, wtz, wzt, ztw, or zwt; ztw is the
+    default.
+
+  <DT><CODE>-out=</CODE><VAR>name</VAR> or <CODE>-out=</CODE><VAR>name_format</VAR>
+  <DD>If you use the -single option, use -out to set the name of the file
+    to generate.  If you do not use the -single option, you can use -out
+    to select one of the predefined output file name templates.  The
+    allowed values for <VAR>name_format</VAR> when you do not use the
+    -single option are:
+    <DL>
+      <DT>prefix+wzt<DD>Causes mrc2tiff to generate output file names as if
+        <A HREF="#name_format">"prefix_w#_z#_t#.tif"</A> had been selected from
+        the user interface.  This is the default.
+      <DT>prefix+wz<DD>Causes mrc2tiff to generate output file names as if
+        <A HREF="#name_format">"prefix_w#_z#.tif"</A> had been selected from
+        the user interface.
+      <DT>prefix+wt<DD>Causes mrc2tiff to generate output file names as if
+        <A HREF="#name_format">"prefix_w#_t#.tif"</A> had been selected from
+        the user interface.
+      <DT>prefix+zt<DD>Causes mrc2tiff to generate output file names as if
+        <A HREF="#name_format">"prefix_z#_t#.tif"</A> had been selected from
+        the user interface.
+      <DT>prefix+w<DD>Causes mrc2tiff to generate output file names as if
+        <A HREF="#name_format">"prefix_w#.tif"</A> had been selected from
+        the user interface.
+      <DT>prefix+z<DD>Causes mrc2tiff to generate output file names as if
+        <A HREF="#name_format">"prefix_z#.tif"</A> had been selected from
+        the user interface.
+      <DT>prefix+t<DD>Causes mrc2tiff to generate output file names as if
+        <A HREF="#name_format">"prefix_t#.tif"</A> had been selected from
+        the user interface.
+    </DL>
+    When you do not use the -single option, the -template option will
+    override the -out option.
+
+  <DT><CODE>-prefix=</CODE><VAR>pref</VAR>
+  <DD>Sets the prefix to use in the file name template when mrc2tiff generates
+    multiple output files from the input file.  If you use the -single option
+    to force mrc2tiff to generate one output file, the -prefix option has no
+    effect.  By default, the prefix is an empty string.
+
+  <DT><CODE>-preserve_type</CODE>
+  <DD>Forces the TIFF output to have the same pixel format (i.e. 16-bit
+    signed integer, 32-bit floating-point, etc ...) as the input MRC file and
+    prevents mrc2tiff from trying to scale the input data.  If you mix this
+    option with -8bit or the -scl options, the one that appears last on the
+    command-line takes precedence.  By default, mrc2tiff will scale the input
+    data and not preserve the pixel format except in the case where the
+    input pixel format is unsigned 8-bit integer.
+
+  <DT><CODE>-scl1=</CODE><VAR>bound1</VAR>[<CODE>:</CODE><VAR>bound2</VAR>[<CODE>:</CODE><VAR>exp</VAR>[<CODE>:</CODE><VAR>flag</VAR>]]]
+  <DD>Sets the scaling parameters for the output drawn from the first
+    wavelength of the input.  Takes one to four parameters; parameters not
+    specified take on their default values (see the
+    <A HREF="#scale">scaling topic</A> for what the default values are).
+    The first two parameters are the intensity bounds for scaling, the third
+    is the exponent, and the fourth sets what happens to data values outside of
+    the intensity bounds.  The documentation for the image window's
+    <A HREF="Scale.html">Scale function</A> describes the parameters in
+    more detail.  Using this option implicitly sets the -8bit option.
+    There are similar options (<CODE>-scl2</CODE>, <CODE>-scl3</CODE>,
+    <CODE>-scl4</CODE>, and <CODE>-scl5</CODE>) to set the scaling for the
+    output from other input wavelengths.  If you mix -8bit or the -scl
+    options with -preserve_type, the one that appears last on the command-line
+    takes precedence.  
+
+  <DT><CODE>-single</CODE>
+  <DD>If you use this option, mrc2tiff will generate a single output file
+    (whose name is controlled by the -out option) and each section drawn
+    from the input file will become a page in the TIFF file.  If you do
+    not use this option, mrc2tiff will generate one TIFF file for each
+    section drawn from the input file.
+
+  <DT><CODE>-template=</CODE><VAR>custom_template</VAR>
+  <DD>Sets the <A HREF="#template">file name template</A> mrc2tiff will
+    use when generating one TIFF file per section in the MRC file.  This
+    option has no effect if you use the -single option and overrides the -out
+    option when you do not use the -single option.  By default, the template is
+    an empty string.
+</DL>
+
+<P>The following example writes out the sections in fish.dat as a sequence
+of TIFF files in the directory /var/tmp; the names of the TIFF files will
+start with "fish" and (because it is the default) include the wavelength, z,
+and time point indices.
+
+<PRE>
+    mrc2tiff fish.dat -dir=/var/tmp -prefix=fish
+</PRE>
+
+<H3>Topics</H3>
+<P>
+    <A HREF="#mrc2tiff">Overview</A> |
+    <A HREF="Region.html">Region processing</A> |
+    <A HREF="#8-bit">8-bit</A> |
+    <A HREF="#single_file">Single file</A> |
+    <A HREF="#interleaving">Interleaving</A> |
+    <A HREF="#name_format">Name format</A> |
+    <A HREF="#output_directory">Directory</A> |
+    <A HREF="#output_prefix">Prefix</A> |
+    <A HREF="#template">Template</A> |
+    <A HREF="#scale">Scaling</A> |
+    Command line
+<HR>
+
+</BODY>
+</HTML>

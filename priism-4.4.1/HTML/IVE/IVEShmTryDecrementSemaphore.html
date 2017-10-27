@@ -1,0 +1,58 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEShmDecrementSemaphore</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVEShmTryDecrementSemaphore.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEShmTryDecrementSemaphore</H1>
+<H2>Overview</H2>
+<P>Atomically tests a semaphore, and if its value is greater than zero,
+decrements the value.  Otherwise, simply returns without altering the
+semaphore's value.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_standards.h"</CODE>
+<BR><CODE>#include "ive_shm.h"</CODE>
+<BR><CODE>int IVEShmTryDecrementSemaphore(IVEShmSemaphore* p_sema);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P>There is no Fortran interface.
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>p_sema</VAR><DD><VAR>p_sema</VAR> points to the semaphore whose
+    value is to be decremented.
+</DL>
+<H2>Return value</H2>
+<P>Returns true if the semaphore's value was decremented; otherwise, returns
+false.
+<H2>Side effects</H2>
+<P>Inclusion of ive_standards.h sets certain feature-set macros.  It is
+safest to include it before any other headers to avoid inconsistent
+definitions.
+<H2>Cross references</H2>
+<P><A HREF="IVEShmInitSemaphore.html">IVEShmInitSemaphore</A>,
+<A HREF="IVEShmDestroySemaphore.html">IVEShmDestroySemaphore</A>,
+<A HREF="IVEShmIncrementSemaphore.html">IVEShmIncrementSemaphore</A>,
+<A HREF="IVEShmDecrementSemaphore.html">IVEShmDecrementSemaphore</A>,
+<A HREF="IVEShmGetSemaphoreValue.html">IVEGetSemaphoreValue</A>, and
+<A HREF="IVEShmSemaphore.html">IVEShmSemaphore</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified May 7, 2002
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

@@ -1,0 +1,258 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: phretavr</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to retrieve a pupil function from a PSF measurement.">
+  <META NAME="Keywords" CONTENT="Priism,phretavr,pupil function,PSF,phase retrieval">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="phretavr">phretavr</A></H1>
+<P>phretavr computes an image of the pupil function from a series of z slices
+through the point spread function (PSF).  The computed pupil function can
+then be used directly as a characterization of the imaging system for
+deconvolution or can first be
+<A HREF="pffit.html">parameterized by a series of Zernike polynomials</A>.
+
+<P>To use phretavr, invoke it from the command line.  The expected form
+of the command line is (optional parts are shown in brackets):
+
+<PRE>
+    phretavr <VAR>psf_input</VAR> <VAR>output</VAR> \
+        [-x=<VAR>start</VAR>[:<VAR>end</VAR>]] [-y=<VAR>start</VAR>[:<VAR>end</VAR>]] \
+        [-z=<VAR>start</VAR>[:<VAR>end</VAR>[:<VAR>step</VAR>]]] [-w=<VAR>w1</VAR>[:<VAR>w2</VAR>...]] \
+        [-cofm=<VAR>x</VAR>:<VAR>y</VAR>[:<VAR>z</VAR>]] [-delz=<VAR>dz</VAR>] \
+        [-guess=<VAR>name</VAR>] [-lens=<VAR>n</VAR>] [-MSEfile=<VAR>name</VAR>] \
+        [-MSEopt=<VAR>opt</VAR>] [-MSEsec] [-na=<VAR>n</VAR>] [-ncycl=<VAR>n</VAR>] \
+        [-nimm=<VAR>n</VAR>] [-nsmod=<VAR>n</VAR>] [-nxy=<VAR>nxp</VAR>[:<VAR>nyp</VAR>]] \
+        [-nzpos=<VAR>zshift</VAR>] [-pcfac=<VAR>r</VAR>] [-qtw=<VAR>n</VAR>] [-regfac=<VAR>r</VAR>] \
+        [-reversez] [-rollfac=<VAR>r</VAR>] [-smooth=<VAR>a</VAR>] [-sub=<VAR>b1</VAR>[:<VAR>b2</VAR>...]] \
+        [-term] [-twall=<VAR>opt</VAR>] [-wv=<VAR>w1</VAR>[:<VAR>w2</VAR>...]]
+</PRE>
+
+<P>or
+
+<PRE>
+    phretavr -h
+</PRE>
+
+<P>where the latter form simply prints a description of the expected input
+parameters and then exits.  The meanings of the different entries on the
+command line are:
+
+<DL>
+  <DT><VAR>psf_input</VAR>
+  <DD><VAR>psf_input</VAR> is expected to be the name of the Priism image
+    file which holds the PSF measurement slices.
+
+  <DT><VAR>output</VAR>
+  <DD><VAR>output</VAR> is the name of the file to use for the output
+    image results.
+
+  <DT><CODE>-x=</CODE><VAR>start</VAR><CODE>:</CODE><VAR>end</VAR>
+  <DD>Limits the range of x pixels to process.  <VAR>start</VAR> is the
+    zero-based index for the first pixel to process and must be greater than
+    or equal to zero.  <VAR>end</VAR> is the zero-based index for the last
+    pixel to process and must be greater than or equal to <VAR>start</VAR>.
+    If you omit <VAR>end</VAR>, phretavr will process from <VAR>start</VAR> to
+    the end of the line.  By default, phretavr processes the full x range of
+    the input.
+
+  <DT><CODE>-y=</CODE><VAR>start</VAR><CODE>:</CODE><VAR>end</VAR>
+  <DD>Limits the range of y pixels to process.  <VAR>start</VAR> is the
+    zero-based index for the first pixel to process and must be greater than
+    or equal to zero.  <VAR>end</VAR> is the zero-based index for the last
+    pixel to process and must be greater than or equal to <VAR>start</VAR>.
+    If you omit <VAR>end</VAR>, phretavr will process from <VAR>start</VAR> to
+    the end of the column.  By default, phretavr processes the full y range of
+    the input.
+
+  <DT><CODE>-z=</CODE><VAR>start</VAR><CODE>:</CODE><VAR>end</VAR><CODE>:</CODE><VAR>step</VAR>
+  <DD>Limits the set of z sections to process.  <VAR>phretavr</VAR> will
+    process the z sections with zero-based indices, <VAR>start</VAR>,
+    <VAR>start</VAR> + <VAR>step</VAR>, ..., <VAR>start</VAR> + <VAR>k</VAR> *
+    <VAR>step</VAR> where <VAR>k</VAR> is the largest integer such that
+    <VAR>start</VAR> + <VAR>k</VAR> * <VAR>step</VAR> is less than or equal
+    to <VAR>end</VAR>.  <VAR>start</VAR> must be greater than or equal to zero.
+    <VAR>end</VAR> must be greater than or equal to <VAR>start</VAR>.
+    <VAR>step</VAR> must be greater than zero.  If you omit <VAR>step</VAR>,
+    phretavr will use a step size of one.  If you omit <VAR>end</VAR>,
+    phretavr will use the number of z sections minus one as <VAR>end</VAR>.
+    By default, phretavr processes the full z range of the input.
+
+  <DT><CODE>-w=</CODE><VAR>w1</VAR>[<CODE>:</CODE><VAR>w2</VAR>...]
+  <DD>Limits the wavelengths to process.  Wavelengths are processed in the
+    order listed and may be specified by its zero-based index in the input
+    file or by its wavelength.  By default, phretavr processes all wavelengths
+    in the input.
+
+  <DT><CODE>-cofm=</CODE><VAR>x</VAR><CODE>:</CODE><VAR>y</VAR><CODE>:</CODE><VAR>z</VAR>
+  <DD>Specifies the pixel coordinates (relative to the full input size) for
+    the center of the input PSFs.  By default, phretavr assumes the center is
+    at (<VAR>x0</VAR> + (<VAR>x1</VAR> - <VAR>x0</VAR>) / 2, <VAR>y0</VAR> +
+    (<VAR>y1</VAR> - <VAR>y0</VAR>) / 2, <VAR>z0</VAR> +
+    (<VAR>z1</VAR> - <VAR>z0</VAR>) / (2 * <VAR>zstep</VAR>)) where
+    <VAR>x0</VAR>, <VAR>x1</VAR>, <VAR>y0</VAR>, <VAR>y1</VAR>, <VAR>z0</VAR>,
+    and <VAR>z1</VAR> are the bounds of the processed region and
+    <VAR>zstep</VAR> is the z increment of the selected region.  To set the
+    center for a specific wavelength, use -cofm1, -cofm2, -cofm3, -cofm4, or
+    -cofm5 which have the same format as -cofm.
+
+  <DT><CODE>-delz=</CODE><VAR>dz</VAR>
+  <DD>Specifies the pixel spacing, in microns, to assume for the input PSF.
+    By default, phretavr uses the z pixel spacing recorded in the PSF file.
+
+  <DT><CODE>-guess=</CODE><VAR>name</VAR>
+  <DD>Specifies the name of a pupil function file to use as the initial guess
+    for the pupil function.  By default phretavr internally generates the
+    initial guess.
+
+  <DT><CODE>-lens=</CODE><VAR>lens</VAR>
+  <DD>If specified, phretavr sets the lens number in the output pupil file to
+    be <VAR>n</VAR>; otherwise, phretavr uses the lens number from the header
+    of the input PSF file.
+
+  <DT><CODE>-MSEfile=</CODE><VAR>name</VAR>
+  <DD>Causes phretavr to write out the mean square error results to a file
+    named <VAR>name</VAR> in addition to writing them to standard output.
+
+  <DT><CODE>-MSEopt=</CODE><VAR>opt</VAR>
+  <DD>If you also set a file with -MSEfile, controls whether phretavr writes
+    the mean square error for the intensity or the amplitude to that file.  If
+    <VAR>opt</VAR> is zero, phretavr writes the result for the intensity;
+    otherwise, phretavr writes the result for the amplitude.  -MSEopt has no
+    effect if you do not set -MSEfile.  If you do not specify -MSEopt,
+    phretavr writes the intensity result.
+
+  <DT><CODE>-MSEsec</CODE>
+  <DD>If specified, phretavr writes out the mean square error results on a
+    section-by-section basis in addition to the combined result for all
+    sections.  By default, phretavr does not write out the error measures for
+    the individual sections.
+
+  <DT><CODE>-na=</CODE><VAR>n</VAR>
+  <DD>Sets the numerical aperture of the lens used when collecting the PSF.
+    By default, phretavr assumes a numerical aperture of 1.3.
+
+  <DT><CODE>-ncycl=</CODE><VAR>n</VAR>
+  <DD>Specifies the number of iterations of phase retrieval.  By default,
+    phretavr will use a single iteration.
+
+  <DT><CODE>-nimm=</CODE><VAR>n</VAR>
+  <DD>Sets the refractive index for the immersion media used with the lens
+    when collecting the PSF.  By default, phretavr assumes the immersion media
+    has a refractive index of 1.518.
+
+  <DT><CODE>-nsmod=</CODE><VAR>n</VAR>
+  <DD>Causes phretavr to apply a smoothing filter to the phase retrieval
+    result after every <VAR>n</VAR> iterations.  If n is less or equal to
+    zero, phretavr does not apply a smoothing filter.  By default, phretavr
+    smoothes the phase retrieval result after every five iterations.
+
+  <DT><CODE>-nxy=</CODE><VAR>nxp</VAR><CODE>:</CODE><VAR>nyp</VAR>
+  <DD>Sets the x and y dimensions, in pixels, of the padded array.  If
+    <VAR>nyp</VAR> is omitted phretavr assumes it has the same value as
+    <VAR>nxp</VAR>.  By default phretavr does not pad in x or y.
+
+  <DT><CODE>-nzpos=</CODE><VAR>zshift</VAR>
+  <DD>Specifies that the center of the PSF has pixel coordinates (relative to
+    the full input) of <VAR>cx</VAR>, <VAR>cy</VAR>, <VAR>cz</VAR> -
+    <VAR>zshift</VAR> where <VAR>cx</VAR>, <VAR>cy</VAR>, and <VAR>cz</VAR> are
+    either set implicitly or by one of the -cofm options.  By default, phretavr
+    assumes a zshift of zero pixels.  To set the shift for a specific
+    wavelength, use -nzpos1, -nzpos2, -nzpos3, -nzpos4, or -nzpos5 which have
+    the same format as -nzpos.
+
+  <DT><CODE>-pcfac=</CODE><VAR>r</VAR>
+  <DD>Controls how the limit set by the numerical aperture is handled.  If
+    <VAR>r</VAR> is less than or equal to 1 x 10^-8 (the default), pupil
+    function components at frequencies higher than the limit set by the
+    numerical aperture are set to zero.  Otherwise, components at the
+    frequencies higher than the limit are multiplied by
+    e^(-<VAR>r</VAR>*(<VAR>k</VAR>-<VAR>kmax</VAR>)) where <VAR>k</VAR> is
+    the spatial frequency (in cycles/micron) for the component and
+    <VAR>kmax</VAR> is the limit imposed by the numerical aperture.
+
+  <DT><CODE>-qtw=</CODE><VAR>n</VAR>
+  <DD>If <VAR>n</VAR> is not zero, processing stops after the absolute value
+    of <VAR>n</VAR> iterations.  If <VAR>n</VAR> is greater than zero the first
+    PSF slice and modified pupil are written prior to the update during the
+    <VAR>n</VAR>th iteration.  If <VAR>n</VAR> is less than zero the first PSF
+    slice and modified pupil are written the update for the abs(<VAR>n</VAR>)th
+    iteration.  When <VAR>n</VAR> is zero, phretavr runs normally.  The -twall
+    option takes precedence over -qtw.
+
+  <DT><CODE>-regfac=</CODE><VAR>r</VAR>
+  <DD>Sets the regularization factor used during the update step.
+    <VAR>r</VAR> should be between zero and one.  The default value is one.
+
+  <DT><CODE>-reversez</CODE>
+  <DD>By default, phretavr assumes the first z section in the PSF input is the
+    deepest (farthest from the cover slip).  If you supply the -reversez
+    option, phretavr assumes the first section is closest to the cover slip.
+
+  <DT><CODE>-rollfac=</CODE><VAR>r</VAR>
+  <DD>Controls how the PSF calculated from the guess pupil is updated in areas
+    where the measured PSF has been padded (the -nxy option sets the padding).
+    If <VAR>r</VAR> is less than or equal to zero, those areas are set to zero.
+    If <VAR>r</VAR> is greater than zero, pixels from those areas are scaled
+    by e^(-<VAR>r</VAR> * <VAR>d</VAR>) where <VAR>d</VAR> is the distance (in
+    pixels) from the pixel to the area covered by the measured PSF.  By
+    default, those areas outside of the measured PSF are set to zero.
+
+  <DT><CODE>-smooth=</CODE><VAR>a</VAR>
+  <DD>Controls the shape of the smoothing filter.  If <VAR>a</VAR> is greater
+    than zero, the filter has a profile of e^(-<VAR>a</VAR> * <VAR>r</VAR>^2)
+    where <VAR>r</VAR> is the distance in pixels from the PSF center.  If
+    <VAR>a</VAR> is less than zero, phretavr does not apply a smoothing
+    filter.  By default, phretavr uses 0.0001 for <VAR>a</VAR>.
+
+  <DT><CODE>-sub=</CODE><VAR>b1</VAR>[<CODE>:</CODE><VAR>b2</VAR>...]
+  <DD>Specifies a constant to be subtracted from all input PSF values in a
+     wavelength before applying the phase retrieval process.  By phretavr
+     assumes a background level of zero for each wavelength.
+
+  <DT><CODE>-term</CODE>
+  <DD>If specified, phretavr will terminate iterations early if the error
+    measure increases.  By default, phretavr performs the number of iterations
+    set by -ncycl.
+
+  <DT><CODE>-twall=</CODE><VAR>opt</VAR>
+  <DD>Controls what is written to the output image file (by default, the
+    final pupil function estimate is written).  Overrides any -qtw option.
+    opt must be one of the following values:
+    <DL>
+      <DT>0<DD>The output is the final pupil function estimate.
+      <DT>1<DD>The output is the pupil function estimate prior to update for
+        each section and each iteration.
+      <DT>2<DD>The output is the amplitude PSF calculated from the pupil
+        function estimate at each iteration.
+      <DT>3<DD>The output is the intensity PSF calculated from the pupil
+        function estimate at each iteration.
+      <DT>4<DD>The output is the difference between the measured PSF and the
+        calculated intensity PSF at each iteration.
+      <DT>5<DD>The output is the pupil function estimate after update for each
+         section and each iteration.
+      <DT>6<DD>The output is the amplitude PSF after update at each iteration.
+      <DT>7<DD>The output is the average pupil function at each iteration.
+    </DL>
+  <DT><CODE>-wv=</CODE><VAR>w1</VAR>[<CODE>:</CODE><VAR>w2</VAR>...]
+  <DD>Specifies the emission wavelengths to use for each wavelength of the
+    output file.  If a wavelength value is less than ten, phretavr assumes it
+    is specified in units of microns; otherwise, phretavr assumes the
+    wavelength has units of nanometers.  By default, phretavr uses the
+    wavelengths recorded in the input PSF file.
+</DL>
+
+<H2>Related Priism Topics</H2>
+<P>
+   <A HREF="OTFAndPupil.html">OTF and pupil function documentation</A> |
+   <A HREF="pf2psf.html">pf2psf</A> |
+   <A HREF="pffit.html">pffit</A> |
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+</BODY>
+</HTML>

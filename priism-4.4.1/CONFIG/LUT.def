@@ -1,0 +1,75 @@
+# Lists color lookup tables that will appear in Priism's
+# Color->Change Lookup Table menu.  Lines whose first
+# character is a # or which only contain whitespace are
+# ignored.  Other lines should have the format
+#
+# "name" "short_name" "path"
+#
+# or
+#
+# "name" "short_name" "path" options
+#
+# name should be the name of the color table as it will
+# appear in the menu.  short_name is a name for the color
+# table appropriate for use from the command line.  path
+# is the path to the file describing the lookup table.  Paths
+# that do not begin with / are interpreted relative to the
+# COLORS directory of the Priism distribution.  Currently
+# support two file formats for lookup tables:
+#
+# 1) The ASCII format MayaVi uses
+#     A header line has LOOKUP_TABLE followed by white space
+#     followed by the table name with no embedded whitespace
+#     followed by the number of table entries.  Each entry
+#     in the color table has red, green, blue, and alpha
+#     components (in that order), and each component is a
+#     floating point value in the range [0, 1].
+#
+# 2) The binary PAL format
+#     The file has 768 bytes of data.  The first 256 bytes hold
+#     the red components, the second 256 bytes hold the green
+#     components, and the final 256 bytes hold the blue
+#     components.  Each component is stored as an unsigned
+#     8-bit integer.
+#
+# options can can contain one or more of the following separated
+# by semicolons:
+#
+# reverse
+#     Reverse the order of the color table entries when used
+#     in Priism.  Reversing the order occurs before adjustments
+#     to the table to account for a mismatch in table size.
+#
+# scale
+#     If the color table is a fixed size color table and its
+#     size is less than the size needed, Priism will linearly
+#     interpolate or skip elements so the table sizes match.
+#     By default, Priism will not include a color table in the
+#     the menu if its size does not match the size needed.
+#
+# shift
+#     If the color table is a fixed size color table and its
+#     size is larger than the size needed, Priism will not
+#     use elements from start of the table so the table
+#     sizes match.
+#
+# skip
+#     If the color table is a fixed size color table and its
+#     size is larger than the size needed, Priism will skip
+#     roughly evenly spaced elements so the table sizes match.
+#
+# truncate
+#     If the color table is a fixed size color table and its
+#     size is larger than the size needed, Priism will not
+#     use elements from the end of the table so the table
+#     sizes match.
+#
+# If options conflict, the one that appears first has precedence.
+# Priism scans the contents of the LUT.def in Priism's CONFIG
+# directory first.  It then scans the LUT.def, if any, in
+# the .iveprefs subdirectory of the user's home directory.
+
+"Standard Grey"	"stdgrey"	"stdgrey.lut"	scale
+"Inverse Grey"	"invgrey"	"stdgrey.lut"	scale;reverse
+"Spectrum"	"spectrum"	"spectrum.lut"	scale
+"Rainbow"	"rainbow"	"rainbow.lut"	scale

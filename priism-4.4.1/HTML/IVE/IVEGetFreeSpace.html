@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEGetFreeSpace</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVEGetFreeSpace.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEGetFreeSpace</H1>
+<H2>Overview</H2>
+<P>IVEGetFreeSpace returns the amount of space currently available on the file
+system holding a given file.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_file.h"</CODE>
+<BR><CODE>int IVEGetFreeSpace(const char* path, int units, int* p_status);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P><CODE>integer IVEGetFreeSpace(path, units, status)</CODE>
+<BR><CODE>character*(*) path</CODE>
+<BR><CODE>integer units</CODE>
+<BR><CODE>integer status</CODE>
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>patch</VAR><DD>(in) <VAR>path</VAR> is the path to a file or
+    directory on the file system of interest.
+  <DT><VAR>units</VAR><DD>(in) IVEGetFreeSpace reports amount of available
+    space on the file system as the amount of free space in bytes divided
+    by the value of <VAR>units</VAR> with any remainder from the division
+    dropped.  <VAR>units</VAR> must be greater than zero.
+  <DT><VAR>status</VAR>(out) IVEGetFreeSpace will set <VAR>status</VAR>
+    (*<VAR>p_status</VAR> in C if <VAR>p_status</VAR> is not NULL) to
+    one of the following if an error occurred:
+    <DL>
+      <DT>IVE_ERR_NO_MEM<DD>There was insufficient space for intermediates.
+      <DT>IVE_ERR_NO_PERMISSION<DD>The caller does not have permission to
+        search at least one of the directories in <VAR>path</VAR>.
+      <DT>IVE_ERR_TIMEOUT<DD>The attempt to get the amount of free space was
+        repeatedly interrupted by a signal.
+      <DT>IVE_ERR_IO<DD>An I/O error occurred while accessing the file system.
+      <DT>IVE_ERR_BAD_FILENAME<DD><VAR>path</VAR> does not exist or is too
+        long.
+      <DT>IVE_ERR_INVALID<DD><VAR>units</VAR> is less than one.
+      <DT>IVE_ERR_OVERFLOW<DD>The amount of free space is too large to be
+        represented by the system library's structures or by the integer
+        return value.
+      <DT>IVE_ERR_INTERNAL<DD>An error internal to the library was detected.
+      <DT>IVE_ERR_UNRECOGNIZED<DD>An error occurred which the library was not
+        prepared to handle.
+    </DL>
+</DL>
+<H2>Return value</H2>
+<P>On a successful call (<VAR>status</VAR> (*<VAR>p_status</VAR> in C) is
+zero before and after the function call), IVEGetFreeSpace returns the number
+of bytes available on the file system divided by <VAR>units</VAR> with any
+remainder discarded.  If an error occurred, IVEGetFreeSpace returns negative
+one.
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified April 22, 2007
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

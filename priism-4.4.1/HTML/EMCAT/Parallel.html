@@ -1,0 +1,644 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Parallel Execution for EM Tomography Calculations</TITLE>
+  <META NAME="Description" CONTENT="On-line help for executing EM tomography calculations on a cluster of machines or a single machine with multiple processors.">
+  <META NAME="Keywords" CONTENT="Priism,EM,tomography,reconstruction,parallel">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Parallel">Parallel Execution for EM Tomography Calculations</A></H1>
+<H2>Overview</H2>
+<P>To speed up some EM tomography calculations, you can run the calculations
+on a cluster of machines, on a single machine which has multiple
+processors, or on one or more machines with NVIDIA graphics cards.
+The <A HREF="EWBP.html">weighted backprojection (EWBP)</A>,
+<A HREF="TAPIR.html">iterative reconstruction (TAPIR)</A>, and
+<A HREF="GPURECON.html">GPU-accelerated reconstruction</A> in
+the <A HREF="EMTAR.html">alignment and reconstruction process</A> can
+be spread across multiple processors as can parts of the iterative alignment
+procedures (<A HREF="RA.html">refine alignment</A>,
+<A HREF="RAGPU.html">refine alignment with GPU acceleration</A>,
+<A HREF="EMTIAR.html">iterative alignment and reconstruction</A>,
+and <A HREF="EMTIARGPU.html">iterative alignment and reconstruction with GPU acceleration</A>).
+
+<P>By default, the parallel execution settings are derived from the
+configuration of the queue or machine where the reconstruction will be done
+(you can control that destination with the "Options" button at the bottom
+of the main dialog).  To view or change the settings which apply to running
+calculations in parallel on multiple CPUs (<A HREF="EWBP.html">EWBP</A>,
+<A HREF="TAPIR.html">TAPIR</A>, <A HREF="RA.html">refine alignment</A>, or
+<A HREF="EMTIAR.html">iterative alignment and reconstruction</A>), turn off the
+the "default" toggle button next to the "Parallel execution settings..."
+button if it is not already off and then press the
+"Parallel execution settings..." button to bring up the dialog for the parallel
+execution parameters.  To view or change the settings which affect calculations
+run on GPUs (<A HREF="GPURECON.html">GPURECON</A>,
+<A HREF="RAGPU.html">refine alignment (GPU)</A>, or
+<A HREF="EMTIARGPU.html">iterative alignment and reconstruction (GPU)</A>),
+turn off the "default" toggle button next to the "GPU execution settings..."
+button if it is not already off and then press the "GPU execution settings..."
+to bring up the dialog for the GPU execution parameters.
+
+<P>If you find yourself changing the default parameters over and over again to
+the same set of values, you should set up the default configuration to avoid
+those changes. You should also set up a default configuration if you want to
+integrate job submission with a queueing system.  The
+<A HREF="../BatchRegion.html#queue">queue topic of BatchRegion.html</A>
+describes how to configure the defaults.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#CPUParallel">CPU Parallel Settings</A> |
+   <A HREF="#GPUParallel">GPU Parallel Settings</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="../Priism.html">Priism</A> |
+   <A HREF="RA.html">Refine Alignment</A> |
+   <A HREF="RAGPU.html">Refine Alignment (GPU)</A> |
+   <A HREF="EMTIAR.html">Iterative Alignment + Reconstruction</A> |
+   <A HREF="EMTIARGPU.html">Iterative Alignment + Reconstruction (GPU)</A> |
+   <A HREF="EMTAR.html">Alignment + Reconstruction</A> |
+   <A HREF="EWBP.html">EWBP</A> |
+   <A HREF="TAPIR.html">TAPIR</A> |
+   <A HREF="GPURECON.html">GPURECON</A>
+<HR>
+
+<H2><A NAME="CPUParallel">CPU Parallel Settings</A></H2>
+<P>Adjusting the parallel execution parameters for use on a single machine
+with multiple processors (or processor cores) is straightforward:
+<OL>
+  <LI>Turn on the "Parallel" toggle button to enable parallel execution if
+    it is not already on.
+  <LI>Adjust the directory displayed in the "Temporary directory" field
+    if necessary.  This is where temporary files will be placed.  If
+    the directory does not already exist it will be created for you.  For the
+    Iterative Alignment + Reconstruction and Refine Alignment processes, the
+    "Temporary directory" field is in the main dialog rather than parallel
+    execution dialog since the temporary directory is used regardless of
+    whether or not the reconstruction is done in parallel.
+  <LI>Select "single host" from the menu next to the button labeled
+    "Parallel dispatch".
+  <LI>Enter the number of processors to use in the "Number of processors"
+    field.
+</OL>
+
+<P>Handling a cluster is more involved.  Your cluster must first satisfy three
+requirements to be usable for the parallel execution of the EM reconstructions:
+
+<UL>
+  <LI>There must be at least one filesystem that is visible to the machine
+    starting the parallel job and all the machines in the cluster to which it
+    distributes the work since the directory where temporary files are placed
+    must be visible to all of those machines.  The input files and final
+    output files only need to be in locations visible to the machine starting
+    the parallel job.
+  <LI>To distribute the work to the machines in the cluster, the parallel
+    execution mode either relies on
+    <A HREF="http://www.open-mpi.org">OpenMPI</A> (version 1.3 or later) or
+    combines a list of machines to access with a remote login command.  The
+    former method is the recommended one:  it is more robust, works with
+    many queueing environments with little extra work, and the configuration
+    necessary is similar to what is needed for using a list of machines and a
+    remote login command.  The installation and configuration of OpenMPI is
+    beyond the scope of this document.  Consult its installation instructions
+    for more details.  Most of the configuration necessary for the second
+    method is to set up a command that functions like rsh and allows access
+    to the cluster nodes.  In particular, that command must satisfy the
+    these requirements:
+    <UL>
+      <LI>Accept the syntax, <CODE>command</CODE> <VAR>host</VAR>
+        <VAR>command_or_commands_to_execute</VAR> &amp, to run
+        <VAR>command_to_commands_to_execute</VAR> on <VAR>host</VAR>.
+      <LI>Does not require further intervention on your part (i.e. entering
+        a password) to login and execute a command on a machine in the
+        cluster.
+      <LI>Will allow the commands to be run in the background when
+        invoked with an option or options (typically -n) between the command's
+        name and the host's name.  When invoked without that option, must pass
+        the standard input from the local machine to the other host.
+    </UL>
+    Choices for how to configure that with ssh would be to use ssh
+    as the name of the command (as an optimization we use ssh -x so
+    that X11 forwarding is disabled since that can introduce delays
+    on at least some systems), -n as the background option, and to
+    either use ssh-agent to supply the password, set up the keys so a
+    password is not required (with OpenSSH this is done with an
+    authorized_keys file), or use host-based authentication (with
+    OpenSSH this uses .shosts or .rhosts (or the system-wide equivalents) and
+    typically requires modifying the sshd configuration as well).   With rsh,
+    you would use rsh as the name of the command, -n as the background option,
+    and configure .rhosts (or the system-wide equivalent) to allow you to log
+    in to the cluster's machines without a password.  You must also construct
+    a file which lists the host names of the machines in your cluster.  The
+    format of the list is the same as is used by
+    <A HREF="http://www.mpich.org">MPICH</A> for its machines file:  one
+    computer host name per line (but you can have comments, which begin with a
+    #, and lines containing only white space) and to indicate machines with
+    multiple processors or processor cores you can either list the host name
+    multiple times or enter the host name followed immediately by a colon and
+    the number of processors (for example, my4way.ucsf.edu:4).
+    <A HREF="machines.txt">machines.txt</A> is an example of a list appropriate
+    for six dual processor systems named compute-0-0, compute-0-1, ..., and
+    compute-0-5.  If your cluster has been configured with MPICH, you likely
+    already have a file listing the names of the machines in the share
+    directory where MPICH is installed or may have a queueing system that
+    automatically generates the list of machines in the appropriate format for
+    each job.
+  <LI>Priism will have to be installed on the machines in the cluster.  It
+    could be installed locally or in a shared location visible to all the
+    machines.  It is easiest if the path to Priism is the same on all the
+    machines and on the machine where you run the front-ends to the
+    reconstruction software.  If the path is not the same, you should
+    configure the IVE_ENV_SETUP environment variable on the machine where you
+    run the front-ends.  That environment variable is expected to hold
+    a command that will correctly establish the Priism environment when
+    the command is executed on a machine in the cluster.  For a little
+    more information about the IVE_ENV_SETUP variable, look at the Priism_setup
+    or Priism_setup.sh files in the top-level directory of the Priism
+    distribution.
+</UL>
+
+<P>Once you have done the preliminary work and want to run a reconstruction,
+make the following adjustments to the front-end controls in order to perform
+the reconstruction on the cluster:
+
+<OL>
+  <LI>You will make your life easier if all file and directory file names you
+    specify as parameters are absolute names (i.e. begin with /).  Some
+    exceptions to that are the names of commands that are in the standard
+    path or the name of the machine list which can be a relative in some cases.
+  <LI>Turn on the "Parallel" toggle button to enable parallel execution
+    if it is not already on.
+  <LI>Adjust the directory displayed in the "Temporary directory" field
+    if necessary.  This is where temporary files will be placed.  If
+    the directory does not already exist it will be created for you.  For the
+    iterative alignment processes, the "Temporary directory" field is in the
+    main dialog rather than parallel execution dialog since the temporary
+    directory is used regardless of whether or not the reconstruction is done
+    in parallel.
+  <LI>If you use OpenMPI, select "OpenMPI mpiexec" from the menu next
+    to the button labeled "Parallel dispatch".  Then enter the path to
+    OpenMPI's mpiexec or mpirun and any necessary options in the field labeled
+    "OpenMPI mpiexec path".  As an example, we have OpenMPI's mpiexec installed
+    in /software/openmpi-1.6/bin but it is not in the standard path.  We will
+    run jobs from a queueing system (Grid Engine), and OpenMPI knows how to
+    determine the requested nodes for a job from that queueing system without
+    any additional options.  Therefore, we enter
+    <CODE>/software/openmpi-1.6/bin/mpiexec</CODE> in "OpenMPI mpiexec path".
+  <LI>If you use a machine list and a remote login command, select
+    "MPICH-style machines file" from the next to the button labeled "Parallel
+    dispatch".  The other changes you may need to make are:
+    <UL>
+      <LI>Enter the name of the file which lists the machine names in the
+        field next to the "Machine list" button or press the "Machine list"
+        button to open a file browser for selecting the file.
+      <LI>Enter the command for logging into a cluster machine without a
+        password and running a command in the "rsh command" field.  The common
+        choices for such a command are "ssh -x" (the default), "ssh", and
+        "rsh".  If necessary, change the value (it defaults to be -n which is
+        appropriate for ssh or rsh) in the "Background option" field to be the
+        option or options necessary to run the command shown in the
+        "rsh command" field in the background.
+      <LI>You should normally leave the "Check command" field blank.  That
+        field specifies a command to run immediately before remotely logging
+        in to a compute node to a launch a task.  You might use that field to
+        work around problems with starting tasks on the compute nodes.  For
+        instance, some old clusters of ours had intermittent problems with
+        compute nodes failing to mount NFS directories from the head node;
+        specifying <CODE>\$rshcmd \"\$machine\" ls \"\$IVE_BASE\" &gt;/dev/null 2&gt;&amp;1</CODE>
+        as the check command was a way of working around the problem.  As shown
+        in that example, you can use shell variables in the check command:
+        \$rshcmd expands to the remote login command to use and \$machine
+        expands to the name of the compute node.
+    </UL>
+  <LI>With either OpenMPI or the machines list, you may specify a number
+    of processors to use.  The value that you give can have two effects.
+    Firstly, it can influence the number of processors requested if you
+    are submitting jobs to a queue.  That requires a customized configuration,
+    see the <A HREF="../BatchRegion.html#queue">queue topic of BatchRegion.html</A>
+    if you want to know more, and the selection of the queue to use from the
+    "Options..." button in the main dialog.  Secondly, the application software
+    either passes the specified number of processors to the mpiexec command or
+    uses that number to control the processors extracted from the machines
+    file.  With a custom queue configuration, the second effect may be disabled
+    so that the requested number of processors only directly affects the
+    request to the queueing software.
+</OL>
+
+<P>Parallel reconstructions are performed by the ewbp_parallel and
+tapir_parallel command-line applications.  Parallel alignment of two tilt
+series is performed by the align_2d_pi_parallel command-line application.
+Those applications accept the same arguments as their non-parallel
+counterparts (<A HREF="EWBP.html">ewbp</A>, <A HREF="TAPIR.html">tapir</A>,
+and <A HREF="align_2d_pi.html">align_2d_pi</A> respectively) and use the
+following options to control parallel execution:
+
+<DL>
+  <DT><CODE>-bkgopt=</CODE><VAR>option</VAR>
+  <DD>Causes the application to use <VAR>option</VAR> with the command
+    specified with <CODE>-rshcmd=</CODE> when that command is to be run
+    in the background.  By default, the application uses "-n" as the option.
+
+  <DT><CODE>-checkcmd=</CODE><VAR>cmd</VAR>
+  <DD>If a list of machines has been supplied with <CODE>-machinefile=</CODE>,
+    specifies a command to execute just before submitting a task to a
+    compute node.  By default, nothing is executed.  This option is not
+    affected by the -no_nodecheck option.  You can use shell variables in the
+    command.  For instance, $machine will expand to the name of the compute
+    node and $rshcmd will expand to the remote login command to use.  In most
+    cases (i.e. when you run ewbp_parallel, tapir_parallel, or
+    align_2d_pi_parallel from within a shell), the dollar signs (and any other
+    characters special to the shell) in the command will need to be escaped
+    with a backslash.
+
+  <DT><CODE>-machinefile=</CODE><VAR>file</VAR>
+  <DD>If <CODE>-ompiexec=</CODE> is not used or specifies an empty file name
+    and <VAR>file</VAR> is not an empty file name, causes the application to
+    read the names of the hosts to use from <VAR>file</VAR> where
+    <VAR>file</VAR> has the format of an MPICH machines file.  If
+    <VAR>file</VAR> is an empty file name or you do not use
+    <CODE>-machinefile=</CODE>, the parallel job will be executed through
+    OpenMPI, if <CODE>-ompiexec=</CODE> specifies a non-empty value, or by
+    running multiple processes on the host where the parallel script runs.
+
+  <DT><CODE>-no_nodecheck</CODE>
+  <DD>If running under OpenMPI (the options include <CODE>-ompiexec=</CODE>
+    with a non-empty value) or with a list of machines that has been
+    supplied with <CODE>-machinefile=</CODE>, disables the checks on whether
+    all of the compute nodes can see the temporary directory and whether
+    copies of the input files need to be made in order to see those files on
+    the compute nodes.  Only use this option if you know the temporary
+    directory and input files are visible to the compute nodes and you want to
+    avoid the extra overhead of the additional checks.
+
+  <DT><CODE>-np=</CODE><VAR>n</VAR>
+  <DD>Sets the maximum number of processor to use to be <VAR>n</VAR> with the
+    caveat that the value of the NSLOTS environment variable and the method
+    for dispatching parallel tasks can override or modify that behavior.  If
+    you run the application under OpenMPI (<CODE>-ompiexec=</CODE> sets a
+    non-empty value), the application will pass this option to the command
+    specified by <CODE>-ompiexec</CODE> unless the NSLOTS environment variable
+    is set to something other than an empty string.  In that case, the
+    application will ignore the <CODE>-np=</CODE> option.  If you run the
+    application with a machine list (<CODE>-machinefile=</CODE> sets a
+    non-empty value and <CODE>-ompiexec</CODE> is not used or sets an empty
+    value), the application will use at most <VAR>m</VAR> processors from
+    the machine list where <VAR>m</VAR> is either the value of the
+    NSLOTS environment variable if it is set to a non-empty value,
+    <VAR>n</VAR> if you use the <CODE>-np=</CODE> option, or the total number
+    of processors in the machine list.  <VAR>m</VAR> must be positive integer.
+    If you do not use OpenMPI nor a machine list, the application will launch
+    <VAR>p</VAR> processes on the node where the application runs where
+    <VAR>p</VAR> is either the value of the NSLOTS environment variable if it
+    is set to a non-empty value, <VAR>n</VAR> if you use the <CODE>-np=</CODE>
+    option, or one.  <VAR>p</VAR> must be a positive integer.  The use of the
+    NSLOTS environment variable is for compatibility with the Grid Engine
+    queueing system.  That system sets NSLOTS to the number of processors
+    assigned to a job.
+
+  <DT><CODE>-ompiexec=</CODE><VAR>file</VAR>
+  <DD>If <VAR>file</VAR> is not an empty file name, causes the application
+    to assume that <VAR>file</VAR> is the equivalent of
+    <A HREF="http://open-mpi.org">OpenMPI</A>'s mpirun or mpiexec and to use
+    that command to launch the parallel tasks.  The version of OpenMPI used
+    must be 1.3 or later.  If <VAR>file</VAR> is an empty file name or you do
+    not use <CODE>-ompiexec=</CODE>, the parallel tasks will either be
+    launched with a remote login command, if you specify a list of hosts to
+    use with <CODE>-machinefile=</CODE>, or by running multiple processes on
+    the host where the parallel script runs.
+
+  <DT><CODE>-rshcmd=</CODE><VAR>cmd</VAR>
+  <DD>Causes the application to use <VAR>cmd</VAR> to launch processes on
+    the machines specified in the machine list.  By default, the command used
+    is "ssh -x".
+
+  <DT><CODE>-tmpdir=</CODE><VAR>dir</VAR>
+  <DD>Causes the application to place the temporary files during parallel
+    execution in the directory named <VAR>dir</VAR>.  When you do not
+    explicitly set the temporary directory with <CODE>-tmpdir=</CODE>,
+    the temporary files are placed in a directory named tmp within your home
+    directory.
+</DL>
+
+<P><A HREF="#Parallel">Return to overview</A>
+<HR>
+
+<H2><A NAME="GPUParallel">GPU Parallel Settings</A></H2>
+<P>The GPU-accelerated calculations for tomography in Priism are implemented
+as a client-server architecture.  One piece of software, the GPU reconstruction
+server, works with the compatible NVIDIA graphics cards attached to a host.
+Other pieces of software, the clients, work with one or more instances of the
+server software to deliver the reconstruction to you.
+
+<H3>Hardware and Software Prerequisites</H3>
+<P>The server software is currently only available for x86 or x86_64 Linux
+systems.  It has been compiled to be compatible with NVIDIA graphics cards that
+have a compute capability of 1.0 or higher.  To check if your hardware will be
+compatible, look at the list in
+<A HREF="https://developer.nvidia.com/cuda-gpus">https://developer.nvidia.com/cuda-gpus</A>.
+We have had trouble using the server software on graphics cards that are also
+being used for desktop display.  On most of our systems that we use for
+GPU-accelerated calculations, the X server is not enabled to avoid that
+problem.  If you do need an X server on the system, we recommend that you have
+multiple graphics cards, one of which is an NVIDIA device that is not used for
+desktop display.
+
+<P>The server software requires that NVIDIA's propietary driver be installed
+on the systems where the server software will be run.  The library,
+libcuda.so.1, that is packaged with the driver, must be in the search path
+for dynamically loaded libraries.  NVIDIA's drivers are available from
+<A HREF="http://www.nvidia.com/drivers">http://www.nvidia.com/drivers</A>.  The
+64-bit version of the server software was compiled with version 5.0.7 of CUDA.
+The 32-bit version of the server software was compiled with version 3.1.9 of
+CUDA.  The matching CUDA runtime libraries (libcudart.so.5.0 for the 64-bit
+version and libcudart.so.3 for the 32-bit version) are included with the server
+software.  The other runtime libraries that the server software requires are
+libpthread.so.0, libstdc++.so.6, libm.so.6, libgcc_s.so.1, and libc.so.6.
+
+<P>The client software can be run on the same host as the server software,
+and that should not require any special configuration of the host beyond the
+requirements for the server software.  When run on a different host, the
+following requirements must be met:
+<UL>
+  <LI>It must be possible for the client's host to connect to the server's host
+    over the network.  The connection is through TCP and, by default uses port
+    number 20248.  It may be possible to use a different port number, but that
+    requires additional configuration.
+  <LI>If you have the client software start and stop the server software as
+    necessary (that is the default behavior), you'll either need
+    <A HREF="http://www.open-mpi.org">OpenMPI</A> (verion 1.3 or later) or a
+    command that allows you to login from the client's host to the server host
+    without intervention from you.  That command has to accept the following
+    syntax:  <CODE>command</CODE> <VAR>host</VAR> <VAR>command to execute</VAR>.
+    One way to do this is to use ssh as the command (as an optimization, we
+    use ssh -x so that X11 forwarding is disabled) and use ssh-agent to supply
+    the password, set up keys so a password is not required (with OpenSSH this
+    is done with an authorized_keys file), or use host-based authentication
+    (with OpenSSH that uses .shosts or .rhosts (or the system-wide equivalents)
+    and typically requires modifying the sshd configuration as well).  With
+    rsh, you would use rsh as the name of the command and configure .rhosts (or
+    the system-wide equivalent) to allow you to login without a password.
+  <LI>When the client software uses multiple hosts for servers, it currently
+    assumes that the server software can be started in the same way on all
+    the hosts: that all the hosts are already running the server software or
+    that the same rsh-style command and path to server executable can be used
+    on all the hosts.
+</UL>
+
+<H3>User Interface Controls</H3>
+<P>The settings in the Priism user interface to control execution for the
+GPU-accelerated tomography calculations are listed below.  For one common case,
+running the GPU reconstruction server with a default configuration on the same
+machine as the client, you should not have to change anything.
+<DL>
+  <DT>Start/stop server<DD>If this toggle button is on, then the client
+    software will assume that server software should be started and stopped
+    as needed.  In that case, you may need to modify the path to the server
+    executable and, if the server runs on a different machine than the client,
+    the rsh-style command to use to connect to the other machine and start or
+    stop the server software.  When the toggle button is off, the client
+    assumes the server software is already running.
+  <DT>Server executable<DD>This field is only relevant if the client software
+    starts and stops the server software.  If this field is not empty, the
+    client software will use it as the executable or script to run on each
+    host in order to start the GPU reconstruction server.  When this field is
+    empty, the client software will use one of the following in order, of
+    precedence, as the path to the executable (note that the environment
+    variables are evaluated on the machine where the client runs and not on
+    the machine where the server software will run):
+    <OL>
+      <LI>the value of the environment variable, RGEMT_EXEC, if that
+        environment variable has been set
+      <LI>the value of the environment variable, IVE_BASE, with
+        "grecsrv/bin/grecsrv" appended, if that environment variable has been
+        set
+      <LI>/net/daa5.ucsf.edu/Volumes/home2/lehua/grecsrv/curr/bin/grecsrv
+    </OL>
+  <DT>Server port<DD>Sets the TCP port to use when the client contacts the
+    server software on any host address that does not specify a port number
+    (any hosts that come from OpenMPI or the machine list will not have a
+    port number associated with them).  If the server software is started by
+    the client software, the client software will also configure the server
+    software to listen on the specified port.
+  <DT>Memory fraction<DD>This only has an effect if the client starts the
+    server software.  In that case, the client software will configure the
+    server software to use the given fraction of each graphics card's onboard
+    memory.  The fraction is limited to the range of 0.2 to 0.8 since the
+    server software clamps the value to that range.
+  <DT>Busy IDs<DD>This only has an effect if the client starts the server
+    software.  In that case, the client software will configure the server
+    software to ignore the given device IDs.  The device IDs should be
+    non-negative integers, separated by spaces or commas.  If you have a
+    graphics card that is also used for desktop display, you may need to
+    include the ID of that graphics card in the list of busy IDs so that
+    it is not used for computations.
+  <DT>Dispatch<DD>The menu next to the button labeled "Dispatch" controls
+    how the client determines which hosts are running or will run the server
+    software.  The first option is "simple":  the client will use the hosts
+    listed in the "Server" fields.  The second option is
+    "MPICH-style machines file":  the client will look at the file specified
+    by the field labeled "Machine list" for the hosts to use.  The third
+    option is "OpenMPI mpiexec":  the client will assume the command given in
+    the field labeled "OpenMPI mpiexec path" is equivalent to
+    <A HREF="http://www.open-mpi.org">OpenMPI</A>'s mpiexec or mpirun and use
+    that command to determine the hosts to contact.  You would normally use
+    that option if the job is submitted to a queue which dynamically assigns
+    hosts and the queueing software is compatible with OpenMPI.
+  <DT>Number of processors<DD>The value shown here can have two effects.
+    Firstly, regardless of how the "Dispatch" menu has been set, it can
+    influence the number of processors requested if you are submitting jobs to
+    a queue.  That requires a customized configuration, see the
+    <A HREF="../BatchRegion.html#queue">queue topic of BatchRegion.html</A> if
+    you want to know more, and the selection of the queue to use from the
+    "Options..." button in the main dialog.  Secondly, when the "Dispatch"
+    menu has been set to "OpenMPI mpiexec" or "MPICH-style machines file",
+    the client software either passes the specified number of processors
+    to the mpiexec command or uses that number to control the processors
+    extracted from the machines file.  With a custom queue configuration, the
+    second effect may be disabled so that the requested number of processors
+    only directly affects the request to the queueing software.
+  <DT>OpenMPI mpiexec path<DD>If the menu next to the button labeled "Dispatch"
+    is set to "OpenMPI mpiexec", this field specifies the command equivalent
+    to OpenMPI's mpirun or mpiexec.  The version of OpenMPI must be 1.3 or
+    higher.  If the command name is empty, the client will act as if in the
+    "simple" dispatch mode without any host names in the "Server" fields.
+  <DT>Machine list<DD>If the menu next to the button labeled "Dispatch" is
+    set to "MPICH-style machines file", this field specifies the name of the
+    file with the lists of hosts to use for the server software.  The format
+    of the file is the same as described in the <A HREF="#CPUParallel">section
+    on settings for parallel execution with multiple CPUs</A>.  The client
+    will only use unique hosts (judged by the host name; it does not test if
+    different names resolve to the same address or machine) from the file.
+    The machines file format does not allow specification of a port number to
+    use for each host so the server software must be configured to use the
+    same port on all hosts if you use the machines list.  If the name of the
+    machines list is empty, the client will act as if in the "simple" dispatch
+    mode without any host names in the "Server" fields.
+  <DT>rsh command<DD>This field is only relevant if the client software starts
+    and stops the server software, the host where the server software will run
+    is different from the host running the client, and the client has not been
+    set to start the server software using OpenMPI.  In that case, the value of
+    this field will be used as the <VAR>command</VAR> part of
+    <CODE>command</CODE> <VAR>host</VAR> <VAR>command to execute</VAR> when
+    starting and stopping the server software.  Common choices are "ssh -x",
+    "ssh", or "rsh".  The given command must have been configured so that it
+    does not prompt for a name and password when logging in to the remote
+    system.
+  <DT>Server<DD>If the menu labeled "Dispatch" is set to "simple", there are
+    eight fields in which you can specify the host names where the server
+    software is or will be running.  If you want the client software to connect
+    over a specific port to the server software, append a colon followed by the
+    port number to the host's address (if that port number is different than
+    the default, 20248, the server software must have been configured to listen
+    on the specified port).  Any of those fields which are empty will be
+    ignored.  If you do not specify any hosts in the server fields, the client
+    will look at the value of the RGEMT_SERVER_LIST environment variable and
+    treat it as a comma-separated list of hosts to use.  If that variable is
+    not set or empty, the client will use the host where the client runs for
+    the server software.
+</DL>
+
+<H3>Command-line Operation: rgemt_autostart</H3>
+<P>When running jobs that use GPU acceleration from the command line, we
+recommend that you use rgemt_autostart (it's in the standard location for
+Priism executables) to start the task.  rgemt_autostart handles the job of
+determining the hosts to use (if you use OpenMPI or a machine list) and, as
+necessary, starting and stopping the server software. The syntax for
+rgemt_autostart is <CODE>rgemt_autostart</CODE> <VAR>client_options</VAR> <VAR>autostart_options</VAR>
+where <VAR>client_options</VAR> are the command line arguments and options
+expected by the client software and <VAR>autostart_options</VAR> must
+include <CODE>-rgemt_client=</CODE><VAR>client_name</VAR> to set which client
+software to use and zero or more of the other options described below:
+<DL>
+  <DT><CODE>-machinefile=</CODE><VAR>filename</VAR><DD>Specifies that the
+    unique hosts listed in the file named <VAR>filename</VAR> will be used for
+    the GPU reconstruction server software.  The file must be in the same
+    format as a machines file for MPICH.  rgemt_autostart ignores this option
+    if the <CODE>-ompiexec=</CODE> option is used with a non-empty value or
+    if <VAR>filename</VAR> is an empty string.
+  <DT><CODE>-np=</CODE><VAR>n</VAR><DD>If you use <CODE>-ompiexec=</CODE>
+    with a non-empty value and the NSLOTS environment variable is not set or
+    is set to an empty value, rgemt_autostart will pass
+    <CODE>-np=</CODE><VAR>n</VAR> to the mpiexec command.  If you use
+    <CODE>-machinefile=</CODE> with a non-empty value, then rgemt_autostart
+    will use at most <VAR>m</VAR> hosts from the file.  If the NSLOTS
+    environment variable is not set or is set to an empty value, <VAR>m</VAR>
+    is <VAR>n</VAR>; otherwise, <VAR>m</VAR> is the value of the NSLOTS
+    environment variable.
+  <DT><CODE>-ompiexec=</CODE><VAR>mpiexec_path</VAR><DD>Causes rgemt_autostart
+    to use <VAR>mpiexec_path</VAR> as the equivalent of OpenMPI's mpiexec or
+    mpirun.  rgemt_autostart will use that command to determine which hosts
+    to use and, if necessary, start and stop the server software.  If
+    <VAR>mpiexec_path</VAR> is an empty string, rgemt_autostart ignores this
+    option.
+  <DT><CODE>-rgemt_busy=</CODE><VAR>i1</VAR>...<DD>If rgemt_autostart starts
+    the server software, specifies one or more device IDs, separated by
+    commas, that the server software will not use.
+  <DT><CODE>-rgemt_client=</CODE><VAR>client_name</VAR><DD>Specifies that
+    rgemt_autostart run <VAR>client_name</VAR> as the client software.  The
+    standard values for <VAR>client_name</VAR> are
+    <A HREF="GPURECON.html">gpurecon</A>,
+    <A HREF="gpureproj.html">gpureproj</A>, <A HREF="RAGPU.html">ra_gpu</A>,
+    or <A HREF="EMTIARGPU.html">emtiar_gpu</A>.
+  <DT><CODE>-rgemt_exe=</CODE><VAR>exepath</VAR><DD>Specifies that
+    rgemt_autostart use <VAR>exepath</VAR> as the path to the GPU
+    reconstruction server software on all hosts.  If you do not use this
+    option, rgemt_autostart will use one of the following, in order of
+    precedence:
+    <OL>
+      <LI>the value of the environment variable, RGEMT_EXEC, if that
+        environment variable has been set
+      <LI>the value of the environment variable, IVE_BASE, with
+        "grecsrv/bin/grecsrv" appended, if that environment variable has been
+        set
+      <LI>/net/daa5.ucsf.edu/Volumes/home2/lehua/grecsrv/curr/bin/grecsrv
+    </OL>
+  <DT><CODE>-rgemt_mem=</CODE><VAR>f</VAR><DD>If rgemt_autostart starts the
+    server software, rgemt_autostart will instruct it to use at most a
+    fraction, <VAR>f</VAR>, of each device's onboard memory.  <VAR>f</VAR>
+    must be a floating-point value.  The server software will automatically
+    clamp <VAR>f</VAR> to the range of 0.2 to 0.8.
+  <DT><CODE>-rgemt_noauto</CODE><DD>If you include this in the options,
+    rgemt_autostart will assume that the GPU reconstruction server software is
+    already running on all of the hosts.  Otherwise, rgemt_autostart starts
+    the GPU reconstruction server software before starting the client software
+    and terminates the GPU reconstruction server software after the client
+    finishes.
+  <DT><CODE>-rgemt_port=</CODE><VAR>p</VAR><DD>For hosts that come from the
+    machines file or are discovered with OpenMPI or hosts specified with
+    -server that do not include a port number, causes the client to connect to
+    port number, <VAR>p</VAR>, when contacting the server software.  If
+    rgemt_autostart starts the server software, rgemt_autostart will cause it
+    to listen on port number, <VAR>p</VAR>.
+  <DT><CODE>-rshcmd=</CODE><VAR>cmd</VAR><DD>Specifies that the command,
+    <VAR>cmd</VAR>, be used when connecting to other hosts to start and stop
+    the GPU reconstruction server software if you are not using OpenMPI.
+    If you do not supply this option, rgemt_autostart will use "ssh -x".
+  <DT><CODE>-server=</CODE><VAR>name</VAR><DD>Specifies that <VAR>name</VAR>
+    be used as a host for the server software.  If <VAR>name</VAR> has a colon
+    followed by a port number at the end, that port number will be used when
+    contacting the server software on that host.  You may use multiple
+    <CODE>-server=</CODE> options.  If you use the <CODE>-ompiexec=</CODE> or
+    <CODE>-machinefile=</CODE> options with non-empty values, rgemt_autostart
+    will ignore any <CODE>-server=</CODE> options you provide.
+</DL>
+
+<H3>Server Software Details</H3>
+<P>Priism includes two version of the GPU reconstruction server software,
+grecsrv/bin/grecsrv-linux-x86 and grecsrv/bin/grecsrv-linux-x86_64.  The first
+is for 32-bit x86 Linux.  The second is for 64-bit x86_64 Linux.  Priism has a
+script, grecsrv/bin/grecsrv, that chooses which executable to use based on the
+machine's architecture, sets the library path to include the version of
+libcudart.so.5.0 included with Priism, and then runs the server software with
+a current directory of /.  rgemt_autostart, by default, uses that script when
+starting the server software.
+
+<P>Three attributes of the server software can be configured.  Those are the
+same attributes that rgemt_autostart can set (port number, memory fraction,
+and list of busy GPUs) though rgemt_autostart has the limitation that the
+attributes for each host in a computation are the same.  The server software
+first looks for a configuration file, named config.gpu, in the current
+working directory for the configuration information.  If that file is not
+present, the server software looks at a handful of environment variables.
+This is an example configuration file:
+<CODE>
+ServerPort = 20248
+MemoryPercentage = 0.50
+BusyGpus = 6, 7, 8
+</CODE>
+<P>The first line configures the server software to listen for TCP connections
+on port 20248.  The second line configures the server software to use half
+of the onboard memory of each device.  Internally, the server will take the
+fraction you provide and clamp it to the range of 0.2 to 0.8.  The third line
+configures the server to ignore the specified CUDA device IDs.  The environment
+variables that the server software will look at for configuration are:
+<DL>
+  <DT>GRECSRV_PORT<DD>If no configuration file was found and the value of this
+    variable is an integer in decimal, the reconstruction server will listen
+    on the TCP port number given by that value.
+  <DT>GRECSRV_MEM_PCT<DD>If no configuration file was found and the value of
+    this variable is a floating-point value, the reconstruction server will use
+    that value, clamped to be between 0.2 and 0.8, as the fraction of each
+    device's memory to use.
+  <DT>GRECSRV_BUSY_GPUS<DD>If no configuration file was found and the value of
+    this variable is a comma-separated list of integers, the reconstruction
+     server will use the value as the list of CUDA device IDs to ignore.
+</DL>
+
+<P>When you do not provide a configuration file and do not configure the port
+number in the environment, the reconstruction server will listen on TCP port
+20248.  When you do not provide a configuration file and do not configure the
+fraction of the device memory to use, the reconstruction server will use one
+half of the device memory.  When you do not provide a configuration file and
+do not specify any busy devices in the environment, the reconstruction server
+uses all the attached devices that CUDA detects.
+
+<P><A HREF="#Parallel">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

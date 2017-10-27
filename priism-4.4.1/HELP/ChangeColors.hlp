@@ -1,0 +1,43 @@
+KEYWORD
+    save_colors restore_colors accept_colors toggles
+    shade apply_color color_wheel
+
+DESCRIPTION
+    ChangeColors lets you select the graphics colors
+    for the system from a colorwheel.
+
+save_colors
+    if you have found a set of colors that you will
+    want to use again in another priism session, save
+    the color set to a file so that you can restore
+    it next time without using the color wheel.
+
+restore_colors
+    if you have saved a color file using this program
+    previously, you can read the file back in using 
+    the restore colors button. once read in, you
+    must hit accept colors in order for it to be
+    applied to the system.
+
+accept_colors
+    accepts the colors and colornames to the system
+
+toggles
+    set the toggle on for the color slot you wish to
+    modify before hitting the apply color button.
+
+apply_color
+    applies the color currently in the color to the
+    color slot toggled on. you must enter a new
+    color name if you change to a different color
+
+color_wheel
+    click in the color wheel to select the different
+    colors.
+
+shade
+    use the slider to get the different shades of 
+    the colors.
+
+
+  

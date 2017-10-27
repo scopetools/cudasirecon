@@ -1,0 +1,440 @@
+KEYWORD
+    Dimensions SectionOrganization Multires MapMode StartIndices
+    PixelSpacing AxesAssignments SamplingFrequency CellDimensions
+    CellAngles Origin Statistics TiltAngles SpaceGroup
+    ExtendedHeaderSize ImageType Wavelengths Titles ExtendedHeader
+
+DESCRIPTION
+    Image files have a section at the start of the file, the
+    header, that describes the contents of the file.  The
+    EditHeader application displays what is in the header.
+    You can also use it to change the contents of the header.
+
+    To use EditHeader, enter the name of the file or the image
+    window number in the field labeled "Filename".  To browse
+    for a file, press the "Filename" button.  After a file or
+    image window has been selected, the various fields and
+    menus will change to reflect the contents of the current
+    file.  To save the changes you make, press the "Write Changes"
+    button at the bottom of the dialog.  If you do modify
+    the header, keep in mind that those changes will only
+    affect how applications interpret the image values in
+    the file and do not change image values or how they are
+    arranged.
+
+Dimensions
+    EditHeader displays the dimensions of each image and the
+    number of images in the field labeled "Number of columns,
+    rows,sections".  The first value in the field is the
+    number of columns in each image; the second value is the
+    number of rows in each image; the third value is the
+    number of images (also called sections).
+
+SectionOrganization
+    The images (sections) in a file are further subdivided
+    into three dimensions:  z, time, and wavelength.  The
+    first value EditHeader displays in the "Data Organized(zwt)"
+    field is the number of z slices (or for, EM tilt series,
+    the number of tilts).  The second value is the number of
+    wavelengths.  The third value is the number of time points.
+    In normal usage, the product of these three values will
+    equal the total number of sections (the third value in
+    the "Number of columns,rows,sections" field).
+
+    Within a file, sections representing different z slices,
+    wavelengths, or time points are ordered in one of three
+    ways:  non-interleaved, interleaved (wzt), and interleaved
+    (zwt).  The interleaved (wzt) arrangement is commonly used
+    for data directly from an optical microscope.  Other data
+    or the results of processing are usually stored in the
+    non-interleaved arrangement.  For the non-interleaved
+    configuration, the images in a file with two wavelengths,
+    two time points, and three z slices are arranged as follows:
+
+    Section index  Z slice index  Wavelength index  Time point index
+    -------------  -------------  ----------------  ----------------
+          0              0                0                0
+          1              1                0                0
+          2              2                0                0
+          3              0                0                1
+          4              1                0                1
+          5              2                0                1
+          6              0                1                0
+          7              1                1                0
+          8              2                1                0
+          9              0                1                1
+         10              1                1                1
+         11              2                1                1
+
+    For the interleaved (wzt) configuration, the images in a
+    file with two wavelengths, two time points, and three z
+    slices are arranged as follows:
+
+    Section index  Z slice index  Wavelength index  Time point index
+    -------------  -------------  ----------------  ----------------
+          0              0                0                0
+          1              0                1                0
+          2              1                0                0
+          3              1                1                0
+          4              2                0                0
+          5              2                1                0
+          6              0                0                1
+          7              0                1                1
+          8              1                0                1
+          9              1                1                1
+         10              2                0                1
+         11              2                1                1
+
+    For the interleaved (zwt) configuration, the images in a
+    file with two wavelengths, two time points, and three z
+    slices are arranged as follows:
+
+    Section index  Z slice index  Wavelength index  Time point index
+    -------------  -------------  ----------------  ----------------
+          0              0                0                0
+          1              1                0                0
+          2              2                0                0
+          3              0                1                0
+          4              1                1                0
+          5              2                1                0
+          6              0                0                1
+          7              1                0                1
+          8              2                0                1
+          9              0                1                1
+         10              1                1                1
+         11              2                1                1
+
+Multires
+    An image file contains a full resolution data set with
+    the dimensions shown in the field labeled "Number of
+    columns,rows,sections".  The file may also contain
+    lower resolution versions of the same data.  The first
+    lower resolution has one half of the number (rounded
+    down) of columns and rows in the highest resolution.
+    The number of z slices in the first lower resolution
+    is the number of z slices in the full resolution
+    divided by a positive integer and rounded up.  Each
+    subsequent resolution is one-half the size in rows
+    and columns and reduced by the same factor in z.
+
+    The first value in the field labeled "Multi-resolution
+    (#, zfactor)" is the total number of resolutions (one
+    for the highest resolution and one for each of the
+    lower resolutions).  The second value in the field is
+    the integer factor by which the number of z slices is
+    reduced in each of the lower resolutions.
+
+MapMode
+    To store a pixels value in a file or image window,
+    the numeric value is encoded in a specific format.
+    EditHeader displays the format used by the current file
+    in the menu labeled "Map mode".  The different
+    numeric formats that are possible are:
+
+    0 (unsigned 8-bit integer)
+        Each pixel's value is an integer greater than or
+        equal to 0 and less than or equal to 255.
+
+    1 (signed 16-bit integer)
+        Each pixel's value is an integer greater than or
+        equal to -32768 and less than or equal to -32767.
+
+    2 (32-bit floating-point)
+        Each pixel's value is a real number.  The
+        representation allows a relative accuracy of
+        approximately 1 part in 10^6 with a range of
+        approximately -3 x 10^38 to -1 x 10^-38, 0, and
+        1 x 10^-38 to 3 x 10^38.
+
+    3 (complex, 2 signed 16-bit integers)
+        Each pixel's value is a complex number.  The real
+        and imaginary components of the value are stored
+        as 16-bit signed integers.
+
+    4 (complex, 2 32-bit floating-point values)
+        Each pixel's value is a complex number.  The real
+        and imaginary components of the value are stored
+        as 32-bit floating-point numbers.
+
+    5 (signed 16-bit integer; EM)
+        This format is identical to 1 (signed 16-bit
+        integer).
+
+    6 (unsigned 16-bit integer)
+        Each pixel's value is an integer greater than or
+        equal to 0 and less than or equal to 65535.
+
+    7 (signed 32-bit integer)
+        Each pixel's value is an integer greater than or
+        equal to -2147483648 and less than or equal to
+        21747483647.
+
+    Format 5 is specific to Priism and formats 6 and 7 are
+    specific to Priism 4 (Priism 3.3 does not handle them).
+    Other applications that use variants of the MRC file
+    format may not be able to correctly interpret files in
+    formats 5 through 7.  Some Priism applications can not
+    handle complex-valued data (formats 3 and 4).
+
+StartIndices
+    There are values in the header that can specify the
+    relationship between the data set and a source data set
+    from which it was extracted.  The values in the "Start
+    col,rows,sections" field specify the x, y, and z pixel
+    coordinates in the source data set for first pixel in
+    the data set.  The value in the "Start time" field
+    specifies the time point index in the source data
+    set that matches the first time point in the data set.
+
+PixelSpacing
+    The three values EditHeader displays in the "Pixel
+    spacing" field are distances in between adjacent
+    pixel centers in the x, y, and z directions,
+    respectively.  For optical microscope data, the
+    pixel spacing units are, by convention, microns.
+    For electron microscope data, the pixel pacing units
+    are, by convention, angstroms.
+
+AxesAssignments
+    The MRC file format allows the flexibility to vary
+    the mapping between the rows, columns, and sections
+    of the file and the x, y, and z coordinate axes.
+    Except for the calculation of the pixel spacing,
+    Priism applications do not take into account this
+    flexibility:  documentation and handling of coordinate
+    systems assume that moving across columns is equivalent
+    to moving in x, moving across rows is equivalent to
+    moving y, and changing sections (in a file that has
+    just one wavelength and time point) is equivalent to
+    moving in z.
+
+    In EditHeader, the three menus labeled "Columns",
+    "Rows", and "Sections" display the current mapping of
+    the rows, columns, and sections to the coordinate
+    axes and allow you to change that mapping.  Except for
+    crystallographic data, the three menus would normally
+    read "X axis", "Y axis", and "Z axis" in that order.
+
+SamplingFrequency
+    The values in the "Sampling frequency x, y, z" field
+    factor into the pixel spacing calculation.  Most Priism
+    applications do not use them for any other purpose.
+    The applications that implement Fourier transforms,
+    FTransform2D and FTransform3D, use the sampling
+    frequencies to store the unpadded size of the source
+    data for a forward transform.  Applications that
+    generate data sets from scratch (for instance, data
+    collection systems or programs that import data from
+    other formats) typically set the sampling frequencies
+    equal to the x, y, and z dimensions in pixels or set
+    all three sampling frequencies to one.
+
+CellDimensions
+    For non-crystallographic data, the pixel spacing,
+    sampling frequency, and axes assignments are the
+    parameters of interest, and the values shown in the
+    field labeled "Cell dimensions" are completely
+    determined by the settings of the those other parameters.
+    For crystallographic data, the values shown in the
+    field labeled "Cell dimensions" are the dimensions
+    of the unit cell in angstroms, and those dimensions
+    along with the sampling frequency and axes assignments
+    set the pixel spacing.
+
+CellAngles
+    The values in the field field labeled "Cell angles" are
+    the angles, in degrees, between the coordinate axes.  For
+    non-crystallographic data, all three values are normally
+    90.
+
+Origin
+    The image file header includes entries to define the
+    position of the stored data relative to a reference
+    coordinate system.  The three values shown in the
+    "Origin on x y z" are the displacement, as measured in
+    the data set's coordinate system, of the data set's
+    first pixel (whose pixel coordinates are (0, 0, 0))
+    from the origin of the reference coordinate system.
+    The units for the displacement are the same as the
+    units of the pixel spacings:  conventionally microns
+    for optical microscope data and angstroms for electron
+    microscope data.  The vector equation for the reference
+    coordinate system coordinates, (x', y', z'), of the
+    center of pixel (i, j, k) is
+
+        [ x' ]            [ (i + 0.5) * s1 + o1 ]
+        [ y' ] = Rz Ry Rx [ (j + 0.5) * s2 + o2 ]
+        [ z' ]            [     k * s3 + o3     ]
+
+             [  cos(g)   sin(g)     0    ]
+        Rz = [ -sin(g)   cos(g)     0    ]
+             [    0        0        1    ]
+
+             [  cos(b)     0     -sin(b) ]
+        Ry = [    0        1        0    ]
+             [  sin(b)     0      cos(b) ]
+
+             [    1        0        0    ]
+        Rx = [    0      cos(a)   sin(a) ]
+             [    0     -sin(a)   cos(a) ]
+
+    o1, o2, and o3 are the values shown in the "Origin
+    on x y z" field.  a, b, and g are the angles, after
+    conversion to radians, from the "Tilt angles" field.
+    s1, s2, and s3 are the spacing between pixels shown
+    in the "Pixel spacing" field.
+
+Statistics
+    The header has room to store the minimum and maximum image
+    value for each wavelength for up to five wavelengths.  It
+    also has room to store the mean image value for the first
+    wavelength.  To see the statistics stored for a given
+    wavelength, enter the number of the wavelength (from zero
+    to the number of wavelengths minus one) in the field
+    labeled "Wave"; the minimum, maximum and mean value, in
+    that order, are then displayed in the field labeled
+    "Min,max,mean".  If you wish to change the values of the
+    statistics, simply edit the contents of the "Min,max,mean"
+    field.  For wavelengths other than the first one, the mean
+    value will be shown as zero until edited, and any changes
+    made to it will have no effect.
+
+TiltAngles
+    The image file header includes entries to define the
+    position of the stored data relative to a reference
+    coordinate system.  The three values shown in the
+    "Tilt angles" field are the rotations, in degrees,
+    necessary to align the data set's coordinate system
+    with the reference coordinate system.  The vector
+    equation for the reference coordinate system
+    coordinates, (x', y', z'), of the center of pixel
+    (i, j, k) is
+
+        [ x' ]            [ (i + 0.5) * s1 + o1 ]
+        [ y' ] = Rz Ry Rx [ (j + 0.5) * s2 + o2 ]
+        [ z' ]            [     k * s3 + o3     ]
+
+             [  cos(g)   sin(g)     0    ]
+        Rz = [ -sin(g)   cos(g)     0    ]
+             [    0        0        1    ]
+
+
+             [  cos(b)     0     -sin(b) ]
+        Ry = [    0        1        0    ]
+             [  sin(b)     0      cos(b) ]
+
+             [    1        0        0    ]
+        Rx = [    0      cos(a)   sin(a) ]
+             [    0     -sin(a)   cos(a) ]
+
+    o1, o2, and o3 are the values shown in the "Origin
+    on x y z" field.  a, b, and g are the angles, after
+    conversion to radians, from the "Tilt angles" field.
+    s1, s2, and s3 are the spacing between pixels shown
+    in the "Pixel spacing" field.
+
+SpaceGroup
+    For non-crystallographic data, the value shown in the
+    field labeled "Space group" should be 0; the extended
+    header, if any, is then assumed to contain a fixed number
+    of integers and fixed number of floating-point values
+    per each image (section) in file.  For crystallographic
+    data, the value shown in the field should be non-zero and
+    is the crystallographic space group for the structure.
+    For crystallographic data, the extended header, if any,
+    contains the symmetry operators.
+
+ExtendedHeaderSize
+    The image file format allows for a part of the file
+    header, the extended header, to have a variable size.
+    The value shown in the field labeled "# bytes symm"
+    field is the number of bytes reserved for the extended
+    header.  To view and edit the contents of the extended
+    header, use the "Show extended header ..." button.
+
+ImageType
+    The image file format has several predefined image
+    types (for more details see the list in the MRC file
+    format description) and has space to store three
+    integer attributes (called the lens number, n1, and n2)
+    and two floating-point attributes (v1 and v2) specific
+    to that image type.  EditHeader displays the integer
+    code for the image type as the first value in the field
+    labeled "idtype,lens,n1,n2".  The remaining three
+    entries in that field are the lens number, n1, and n2,
+    respectively.  EditHeader displays the floating-point
+    attributes specific to the image type in the field
+    labeled "v1 v2".
+
+    Much of the image data used by Priism will have an
+    image type code of 0.  In that case the n1, n2, v1,
+    and v2 values are not assigned special meanings and
+    are normally set to zero.  The lens number has a
+    special meaning for optical microscope data and is
+    used to identify the objective lens used during data
+    collection.
+
+Wavelengths
+    The header has room to store the wavelength values
+    for up to five wavelengths (the number of wavelengths
+    in the file is indicated by the second value in the
+    "Data organized(zwt)" field).  EditHeader displays the
+    values of those five wavelengths (by convention
+    units of nanometers are used) in the field labeled
+    "Wavelengths nm".
+
+Titles
+    The header has space for ten 80 character long titles.
+    EditHeader displays the contents of those titles in the
+    text field with scroll bars at the bottom of the dialog.
+    If you want to add or change a title, enter the new title
+    in the field labeled "New title" and then select an action
+    from the adjacent "Action" menu.  The available actions are:
+
+    Append
+        Adds the contents of the "New title" field to the end
+        of the current titles.  If there are already 10
+        titles, deletes the first and shifts the others to
+        make room for the new title.
+
+    Prepend
+        Adds the contents of the "New title" field as the
+        first title.  Shifts the current titles to make room
+        and deletes the last title if necessary.
+  
+    Clear titles
+        Clears the current set of titles.
+
+    Replace title x
+        Replaces the xth title with the contents of the
+        "New title" field.
+
+ExtendedHeader
+    The image file format allows for a part of the file
+    header, the extended header, to have a variable size.
+    If there is an extended header, you can view (and, for
+    non-crystallographic data, edit) the contents of the
+    extended header by pressing the "Show extended
+    header ..." button.
+
+    If the data is not crystallographic data (i.e. the
+    space group is zero), pressing the "Show extended
+    header ..." button opens a dialog which displays the
+    extended header information for one image (section)
+    from the file.  To change which section is displayed,
+    you can enter the section number to display directly
+    in the field with an arrow button on either side.
+    You could also use the arrow buttons:  the one on the
+    left decreases the current section number by the value
+    shown in the field labeled "Step" and the one on the
+    right increases the current section number by the step
+    value.  The contents of the extended header are a
+    fixed number of integer values and a fixed number of
+    real values per image.  The values are shown in the
+    order they appear in the header.  To change a value,
+    simply edit the corresponding field.
+
+    If the data is crystallographic data, pressing the
+    "Show extended header ..." button opens a dialog where
+    the symmetry information is shown in a text field.  The
+    field does not allow editing of the symmetry information.

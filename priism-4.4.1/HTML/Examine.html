@@ -1,0 +1,192 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Examine Data</TITLE>
+  <META NAME="Description" CONTENT="On-line help for viewing a data file in tabular form.">
+  <META NAME="Keywords" CONTENT="Priism">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Examine">Examine Data</A></H1>
+<H2>Overview</H2>
+
+<P>This application allows you to view the data values from an image file
+as a table of numbers.
+
+<P>Select a file or enter an image window number in the <EM>File</EM> field.
+When the file loads, the area at the bottom of the dialog will be filled
+with a table of numbers corresponding to the data values in a region of the
+file.  Along the bottom of this table are the x coordinates (numbered from
+zero) and along the right are the y coordinates (also numbered from zero).
+The data values shown in the table have been scaled; multiply by the
+<A HREF="#Scale">scale factor</A> shown in the second line of the dialog to
+get the approximate data value (it's approximate because after scaling the
+value has also been rounded to the nearest integer).  Other fields at the
+top of the dialog will be updated with the dimensions of the file and
+some of some statistics of the region shown.
+
+<P>To change the portion viewed in the table, use the scroll bars next to the
+table to change the x and y positions.  Adjust the <A HREF="#Z">z section</A>
+or <A HREF="#T">time point</A> shown using the sliders just above the table.
+Change the wave shown by selecting one the <A HREF="#Wave">wave toggles</A>.
+If you're working with data from an image window, the region shown in the table
+will be outlined in red.  You can move this region by clicking elsewhere in
+the image with the left mouse button or by clicking in the red rectangle with
+the mouse button and dragging it.  Changing the section shown in the image
+window will cause the table of values in the <EM>Examine Data</EM> dialog to
+be automatically updated.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#Sizes">XYZWT Sizes</A> |
+   <A HREF="#Scale">Scale</A> |
+   <A HREF="#MMM">Min/Max/Mean</A> |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#Z">Z</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#Precision">Precision</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="Sizes">XYZWT Sizes</A></H2>
+
+<P>These are the dimensions of the full dataset.  The numbers, in the
+order shown, are the number of points in x (number of columns), number of
+points in y (number of rows), number of sections in z, number of wavelengths,
+and number of time points.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Examine">Overview</A> |
+   XYZWT Sizes |
+   <A HREF="#Scale">Scale</A> |
+   <A HREF="#MMM">Min/Max/Mean</A> |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#Z">Z</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#Precision">Precision</A>
+<HR>
+
+<H2><A NAME="Scale">Scale</A></H2>
+
+<P>Multiply the values shown in the table by the value shown to obtain the
+original data values (out to the <A HREF="#Precision">precision</A> that has
+been specified).  The scale factor is always chosen to be a power of ten
+and can vary as you move around in the file.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Examine">Overview</A> |
+   <A HREF="#Sizes">XYZWT Sizes</A> |
+   Scale |
+   <A HREF="#MMM">Min/Max/Mean</A> |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#Z">Z</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#Precision">Precision</A>
+<HR>
+
+<H2><A NAME="MMM">Min/Max/Mean</A></H2>
+
+<P>A handful of statistics are calculated for the region in the table.  These
+are the minimum and its x and y coordinates, the maximum and its x and y
+coordinates, and the mean.
+
+<P>When viewing complex data, the minimum and maximum reported are the data
+values with the minimum and maximum amplitude.  When viewing floating point
+data (real or complex), any not-a-numbers or infinities are not included in
+the calculation of the minimum and maximum, but are factored into the
+calculation of the mean.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Examine">Overview</A> |
+   <A HREF="#Sizes">XYZWT Sizes</A> |
+   <A HREF="#Scale">Scale</A> |
+   Min/Max/Mean |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#Z">Z</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#Precision">Precision</A>
+<HR>
+
+<H2><A NAME="Wave">Wave</A></H2>
+
+<P>This set of toggle buttons indicates the wave currently being shown
+(when the wavelength is a meaningful value, it will be shown next to the
+toggle).  Selecting a different toggle will cause that wave to be
+displayed.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Examine">Overview</A> |
+   <A HREF="#Sizes">XYZWT Sizes</A> |
+   <A HREF="#Scale">Scale</A> |
+   <A HREF="#MMM">Min/Max/Mean</A> |
+   Wave |
+   <A HREF="#Z">Z</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#Precision">Precision</A>
+<HR>
+
+<H2><A NAME="Z">Z</A></H2>
+
+<P>Use this slider to change the z section currently in view.  The number
+of the current z section (zero is the first one in the file) is shown above
+the slider.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Examine">Overview</A> |
+   <A HREF="#Sizes">XYZWT Sizes</A> |
+   <A HREF="#Scale">Scale</A> |
+   <A HREF="#MMM">Min/Max/Mean</A> |
+   <A HREF="#Wave">Wave</A> |
+   Z |
+   <A HREF="#T">T</A> |
+   <A HREF="#Precision">Precision</A>
+<HR>
+
+<H2><A NAME="T">T</A></H2>
+
+<P>Use this slider to change the time point currently in view.  The number
+of the current time point (zero is the first one in the file) is shown above
+the slider.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Examine">Overview</A> |
+   <A HREF="#Sizes">XYZWT Sizes</A> |
+   <A HREF="#Scale">Scale</A> |
+   <A HREF="#MMM">Min/Max/Mean</A> |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#Z">Z</A> |
+   T |
+   <A HREF="#Precision">Precision</A>
+<HR>
+
+<H2><A NAME="Precision">Precision</A></H2>
+
+<P>This option menu allows you to select the number of digits that are shown
+for each value in the table.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Examine">Overview</A> |
+   <A HREF="#Sizes">XYZWT Sizes</A> |
+   <A HREF="#Scale">Scale</A> |
+   <A HREF="#MMM">Min/Max/Mean</A> |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#Z">Z</A> |
+   <A HREF="#T">T</A> |
+   Precision
+<HR>
+
+</BODY>
+</HTML>

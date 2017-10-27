@@ -1,0 +1,1008 @@
+KEYWORD
+     ImageSeries BadPixelInput CorrectedResult
+     BadPixelOutput DoseRate Threshold0 Threshold1
+     Threshold2 GainCorrection Detect Multires Size1
+     Size2 ExposureTime MinimumVariance SamplingRate
+     ElectronToValue OutputFormat OutputScale
+     CommandLine
+
+DESCRIPTION
+     k2corr is intended to detect and correct bad pixels
+     in the output from Gatan's K2 camera.  While it can
+     work with a single frame of data, you should normally
+     give it a series of frames since that allows the
+     tests for the bad pixels to be more robust.  The bad
+     pixel detection algorithm that k2corr uses assumes
+     that the sum of the input frames can be approximated
+     by a normal distribution.  A small number of input
+     frames or a low number of counts in each frame can
+     violate that assumption.  The descriptions for
+     Threshold0 and Threshold1 provide more detail about
+     the assumption of a normal distribution.
+
+     The default parameters should be adequate for k2corr
+     so that all you should have to specify is the input
+     image sequence and where to write the corrected
+     result.  Optionally, you can specify a list of
+     pixels already know to be bad and have k2corr write
+     out the list of bad pixels (that will include the
+     pixels from the input lists and any detected by
+     k2corr's algorithm).  To tune k2corr's bad pixel
+     detection algorithm, the most useful parameters
+     that you can vary are the three threshold levels
+     for the different detection stages (the third of
+     those is the most important for the bad pixels
+     selected), the two neighborhood sizes for the last
+     two detection stages (in the graphical user
+     interface, the neighborhood sizes are in the
+     special parameters dialog), and the dose rate.
+
+     The bad pixel detection algorithm that k2corr uses
+     is this:
+
+     1) Sum the images in the input series.  The reason
+     for that is single-frame statistical tests (or the
+     combination of those tests) did not reliably detect
+     bad pixels that have systematically lower response
+     levels.
+
+     2) In the summed image, mark pixels as bad that
+     exceed a user-set threshold (Threshold0) given the
+     expected dose rate or were marked as bad in one
+     of the input bad pixel lists.
+
+     3) Split the results from the previous step into
+     non-overlapping blocks of a given size (Size1)
+     and compute the mean of each block excluding any
+     bad pixels.  Then, for each pixel in the block,
+     mark the pixel as bad if it is sufficiently far
+     into either tail (Threshold1) of the normal
+     distribution with a mean equal to the block mean
+     and a standard deviation equal to the square
+     root of m / c * (1 - m / (c * n)) where m is
+     the block mean, c is the conversion factor
+     between electrons and image value, and n is the
+     total exposure time divided by the camera's
+     internal sampling rate.
+
+     4) Consider each pixel in the summed image and
+     mark the pixel as bad if (p - a) * (p -a) / v
+     is sufficiently large (Threshold2).  p is the
+     value at the pixel.  a is the average value
+     over the local neighborhood (set by Size2)
+     centered on the pixel where any pixels
+     previously identified as bad are excluded
+     from the sum.  v is the larger of the minimum
+     variance parameter and the sample variance
+     for that same local neighborhood with the
+     bad pixels excluded.
+
+     5) Go through the pixels flagged as bad and
+     remove those that were only flagged by
+     threshold 0 or threshold 1.
+    
+     You can turn of bad pixel detection (in other
+     words, force k2corr to use the input bad pixel
+     lists without modifications); see the Detect
+     topic for more details.  If requested, k2corr
+     will write a list of the bad pixels (including
+     both the input bad pixels and any flagged by
+     the detection algorithm) to a text file; see
+     the BadPixelOutput topic for more details.
+
+     The bad pixel correction algorithm that k2corr
+     uses is this:
+
+     1) Choose the first pattern from the four
+     horizontally connected neighbors, the four
+     diagonally connected neighbors, the four
+     neighbors at distance of two pixels, and
+     the four neighbors at a distance of the
+     square root of 8 pixels, where at least
+     one of the pixels in the pattern has not
+     been marked as a bad pixel.
+
+     2) The corrected value at the pixel is
+     the average of the good pixels in the
+     selected pattern.  If all the patterns
+     had no good pixels, set the pixel value
+     to the mean for the image.
+
+     k2corr will not apply bad pixel correction
+     if you do not specify a filename for the
+     corrected images.
+
+ImageSeries
+     k2corr requires one image series, in
+     Priism's version of the MRC format, as
+     input.  From the graphical user interface,
+     set the filename for that image series
+     using the field next to the button labeled
+     "ImageSeries".  You can press that button
+     to select the file with a file browser.
+     On the command line, pass the filename of
+     the image series as the first argument to
+     k2corr.
+
+     If the extended header for the image
+     series is not present or is not in UCSF 
+     Tomography's format, you should set the
+     exposure time since k2corr will not be
+     able to extract that information from
+     the extended header.
+
+BadPixelInput
+     k2corr can accept one or more lists of bad
+     pixels.  k2corr will exclude those bad
+     pixels from the statistics calculations
+     during bad pixel detection. During the
+     correction step, k2corr will correct both
+     the input bad pixels and any that k2corr
+     detects.
+
+     In the graphical user interface, you can
+     specify a bad pixel list by entering the
+     filename in the field next to the button
+     labeled "Bad pixel list (in)".  You can
+     also press that button to select the
+     file with a file browser.  If the
+     filename in the field is empty or is
+     "none", k2corr will not expect an input
+     bad pixel list.  If the filename is "-",
+     k2corr will read the pixel list from
+     standard input.  On the command line,
+     use the option, -inbad=, to set the
+     filename for an input bad pixel list.
+     As with the graphical interface,
+     k2corr will ignore the option if the
+     filename is empty or "none" and will
+     read the bad pixels from standard
+     input if the filename is "-".  Using
+     the command line, you may have multiple
+     input lists by specifying -inbad= for
+     each list.
+
+     The bad pixel list must be in text
+     format.  Any lines which do not begin
+     with two integer values or with two
+     floating-point values will be ignored.
+     In the lines that are not ignored,
+     the first value (rounded to the nearest
+     integer if floating-point) will be used
+     as the zero-based x coordinate and the
+     second value  (rounded to the nearest
+     integer if floating-point) will be used
+     as the zero-based y coordinate.
+     Coordinates are assumed to relative to
+     the full dimensions (prior to any region
+     selection) of the input image stack.  Any
+     coordinates beyond the bounds of the
+     region selected are ignored.
+
+CorrectedResult
+     k2corr will write the corrected image
+     series as an MRC file (in Priism's
+     format).  From the graphical user
+     interface, enter the file name to
+     use in the field labeled "Corrected".
+     When the toggle button adjacent to that
+     field is on, the graphical user
+     interface will automatically select a
+     file name based on the name of the
+     input image series.  On the command
+     line, use the -corrected= option to
+     set the filename for output image
+     series.  If the filename is empty or
+     is equal to "none" (or has not been
+     set from the command line), k2corr
+     will not correct the input image
+     series.
+
+BadPixelOutput
+     k2corr can write the list of bad pixels
+     (including those read from the input
+     lists and those detected by k2corr)
+     to a text file.  From the graphical
+     user interface, enter the file name
+     for the output bad pixel list in the
+     field next to the button labeled
+     "Bad pixel list (out)".  If the toggle
+     button next to that field is on, the
+     user interface will automatically
+     select a file name based on the name
+     of the input image series.  On the
+     command line, use the -outbad= option
+     to set the filename for the output bad
+     pixel list.  If the filename is empty
+     or is equal to "none", k2corr will not
+     write the output bad pixel list.
+
+     The output bad pixel list will be in
+     a text format with one line per bad
+     pixel.  The content of such a line
+     will be the x coordinate (zero-based
+     as an integer), y coordinate (zero-
+     based as an integer), an integer to
+     indicate how the pixel was added to
+     the list, the frame sum at the pixel,
+     the local mean estimate used for
+     threshold 2, the local variance
+     estimate used for threshold 2, and
+     the score at the pixel for testing
+     against threshold 2.  The values are
+     separated by spaces.  The integer
+     indicating how the pixel was added
+     to the list is a bitwise-or of one
+     of the following:
+
+     1    Added from the input list of
+          bad pixels.
+     2    Added by exceeding threshold 0.
+     4    Added by being less than the
+          lower bound set by threshold 1.
+     8    Added by exceeding the upper
+          bound set by threshold 1.
+     16   Added by exceeding threshold 2.
+
+     The score for the test against
+     threshold 2 is the value at the
+     pixel for
+
+     (series sum - local_mean(series sum))^2 /
+         maximum(local_variance(series sum), vl)
+
+     vl is the minimum variance.
+
+DoseRate
+     The first stage of bad pixel detection uses
+     a test of the pixel value against an expected
+     value based on the dose rate and exposure time.
+     The primary purpose of this test is to exclude
+     pixels with extremely high values that would
+     distort the statistics used in the subsequent
+     stages of bad pixel detection.  For the dose
+     rate, it is easiest to use the value, in
+     electrons per second, that the sample is
+     expected to receive.  You could use the dose
+     rate at the camera, but then it should
+     correspond to the expected value where the
+     sample has attenuated the beam the least.
+
+     From the graphical user interface, set the
+     dose rate by entering the value, in electrons
+     per second, in the field next to the button
+     labeled "Dose rate (e-/sec)".  On the
+     command-line, use -doserate=d to set the
+     dose rate to d electrons per second.  The
+     dose rate must be positive.  If it is not
+     set, k2corr will use a value of ten
+     electrons per second.
+
+Threshold0
+     The first stage of bad pixel detection uses
+     a test of the pixel value (after summing
+     across the image sequence) against an
+     expected value based on the dose rate and
+     accumulated exposure time.  The primary
+     purpose of this test is to exclude pixels
+     with extremely high values that would
+     distort the statistics used in the
+     subsequent stages of bad pixel detection.
+     Threshold 0 is the cutoff for the test:
+     one half of threshold 0 is the chance
+     that a value drawn from the expected
+     distribution (in other words, a good
+     pixel) would be flagged as a bad pixel.
+     The expected distribution is a scalar
+     (the conversion factor between electrons
+     and the recorded pixel value) times a
+     binomial distribution with n trials (n is
+     the largest integer less than or equal to
+     the internal sampling rate times the
+     summed exposure time for the image
+     sequence) and a probability of success,
+     p, for each trial equal to the dose rate
+     divided by the internal sampling rate.
+     To simplify the calculations, k2corr
+     assumes that the binomial distribution
+     can be decently approximated with a normal
+     distribution.  One common criteria for
+     that assumption is that n * minimum(p,
+     1 - p) be greater than ten.
+
+     From the graphical user interface, you
+     can set the value for threshold 0 by
+     changing the value in field next to the
+     button labeled "Threshold 0".  On the
+     command line, include -thresh0=t in
+     the options to set the threshold to be
+     equal to the floating-point value, t.
+     In either case, the threshold must be
+     greater than zero and less than or
+     equal to one.  The default value for
+     the threshold is 1e-12.
+
+Threshold1
+     The second stage of bad pixel detection
+     algorithm tests a pixel's value (after
+     summing across the image sequence)
+     against a local estimate of the mean.
+     The local estimate of the mean is the
+     average (excluding any bad pixels
+     already flagged) for the rectangular
+     block containing the pixel.  The blocks
+     do not overlap and are squares whose
+     size is set by the size 1 parameter
+     unless they are the last block in a
+     row or column where the dimensions of
+     the block are extended to the left or
+     top edge of the image.  k2corr assumes
+     that a good pixel's value is a random
+     variable drawn from a distribution
+     equal to a scalar (the conversion factor
+     between electrons and the recorded pixel
+     value) times a binomial distribution
+     with n trials (n is the largest integer
+     less than or equal to the internal
+     sampling rate times the summed exposure
+     time for the image sequence) and a
+     probability of success, p, for each
+     trial equal to the local mean estimate
+     divided by the product of n and the
+     electron to counts conversion factor.
+     Let fl be the fraction of that
+     distribution which is less than
+     the observed pixel value and let fh
+     the the fraction of that distribution
+     which is greater than the observed pixel
+     value.  If fl or fh is less than half of
+     the value for threshold 1, k2corr flags
+     the pixel as a bad pixel.  To simplify
+     the calculations, k2corr assumes that
+     the binomial distribution can be
+     decently approximated with a normal
+     distribution.  One common criteria for
+     that assumption is that n * minimum(p,
+     1 - p) be greater than ten.
+
+     From the graphical user interface,
+     you can set the value for threshold 1
+     by changing the value in the field
+     next to the button labeled "Threshold 1".
+     On the command line, include -thresh1=t
+     in the options to set threshold to be
+     equal to the floating-point value, t.
+     In either case, the threshold must be
+     greater than zero and less than or
+     equal to one.  The default value for
+     the threshold is 1e-12.
+
+Threshold2
+     The final stage of bad pixel detection
+     compares a pixel's value (after summing
+     across the image sequence) against a
+     local estimate of the mean and variance.
+     If the square of the difference between
+     the pixel's value and the local mean
+     divided by the variance, exceeds
+     threshold 2, k2corr flags the pixel as
+     bad.  The local mean and variance are
+     computed over a square, centered on the
+     pixel, whose size is given by the size 2
+     parameter.  The estimates of the statistics
+     exclude any bad pixels already flagged.
+
+     From the graphical user interface, you
+     can set the value for threshold 2 by
+     changing the value in the field next to
+     the button labeled, "Threshold 2".  On
+     the command line, include -thresh2=t
+     in the options to set the threshold
+     to be equal to the floating-point
+     value, t.  In either case the
+     threshold must be greater than zero.
+     The default value for the threshold
+     is 140.
+
+GainCorrection
+     In some cases, the data from the K2
+     may not have been corrected for pixel
+     to pixel variations in the gain or
+     quantum efficiency.  If you have
+     the image of the gain corrections
+     (either stored at the end of the
+     extended header in the input image
+     series or as the first image in a
+     separate MRC file), you can have
+     k2corr correct the input data.  To
+     do so from the user interface,
+     change the menu next to the button
+     labeled "Gain correction" to be
+     either "from header" (if the gain
+     correction image is stored at the
+     end of the extended header of the
+     input image series) or "from file"
+     (if the gain correction image is
+     stored as the first image in an MRC
+     file).  In the latter case, enter
+     the name of the file in the field
+     on the next line or press the
+     button labeled "Gain correction file"
+     on that line to select the file with
+     a file browser.  On the command line,
+     include -ingain=header in the options
+     to have k2corr read and apply the
+     gain correction from the extended
+     header or -ingain=filename to have
+     k2corr read the gain correction image
+     from the first image in the file
+     named filename.
+
+     If you are working with data that has
+     not been gain corrected, there are a
+     handful of k2corr's parameters that
+     you'll likely want to change from
+     their default settings:
+
+     1) For data that has not been gain
+     corrected, the conversion factor from
+     electron events to image counts (see
+     the ElectronToValue topic) is usually
+     one rather than the default value,
+     100, that k2corr uses.
+
+     2) The minimum variance parameter (see
+     the MinimumVariance topic) varies with
+     the square of the electron event to
+     image count conversion factor.  If you
+     adjust that factor, you'll likely want
+     to adjust the minimum variance as well.
+
+     3) The uncorrected data would normally
+     be stored with one byte per pixel.  By
+     default, k2corr will store the corrected
+     results with two bytes per pixel.  To
+     preserve much of the effects of the gain
+     correction, you should specify a scaling
+     factor for the output (see the
+     OutputScale topic).  A common choice
+     would be a scaling factor of one hundred.
+     Alternatively, you could have k2corr
+     store the corrected results as floating-
+     point values to more faithfully represent
+     the results of the gain correction at the
+     cost of a file that takes up twice as
+     much space.
+
+     Gatan's software generates a gain
+     correction image that should be
+     multiplied with the raw data to generate
+     the corrected result.  If the gain
+     correction image you have should be used
+     to divide the input data, you can have
+     k2corr apply it by specifying the source
+     of the gain image as described above
+     and then turning on the toggle button
+     labeled "Invert gain" in the graphical
+     user interface or including -invertgain
+     in the command line options.
+
+     When k2corr applies a gain correction,
+     it can also write out the gain correction
+     it applied to an MRC file.  To have it do
+     so from the user interface, open the
+     special parameters dialog for k2corr, and
+     enter the file name to use in the field
+     next to the button labeled "Output gain
+     file".  You can use the toggle button at
+     the end of that line to have the user
+     interface select a file name based on
+     the name of the input image series.
+     To cause k2corr to write the gain
+     correction when invoking k2corr from the
+     command line, include -outgain=filename
+     in the options where filename is the
+     name of the file that will contain the
+     gain correction image.  If you chose to
+     invert the gain correction image, the image
+     that k2corr writes will be inverted.
+
+Detect
+     By default, k2corr attempts to detect
+     bad pixels.  You can disable bad pixel
+     detection so that k2corr uses the input
+     bad pixel lists without modification.
+     To do that from the graphical user
+     interface, turn off the toggle button
+     labeled "Detect bad pixels"; that toggle
+     button is in the special parameters
+     dialog for k2corr.  To disable bad pixel
+     detection from the command-line, include
+     -no-baddetect in k2corr's command-line
+     options.
+
+Multires
+     When k2corr writes the corrected image
+     sequence, it can add lower resolution
+     versions of the data set to the MRC
+     file.  When it does so, it adds
+     resolutions until the larger of the x
+     and y dimensions for the downsampled
+     data has 256 or less samples or until
+     the smaller of the x and y dimensions
+     for the downsampled data has one sample.
+     From the graphical user interface,
+     adding lower resolutions is enabled by
+     default and can be turned off by turning
+     off the toggle button labeled "Add
+     resolutions" in k2corr's special
+     parameters dialog.  On the command line,
+     you'll have to include -multires in
+     k2corr's command-line options to add
+     lower resolutions to the corrected
+     image sequence.
+
+Size1
+     The local mean estimates for the second
+     stage of bad pixel detection are
+     computed for non-overlapping blocks with
+     a size that you specify (the blocks
+     in the last column or row can deviate
+     from that size to cover the extent of
+     the image).  From the graphical user
+     interface, you can set the size, in
+     pixels, for the side of the block by
+     entering the value in the field labeled
+     "Region size 1".  That field is in the
+     special parameters dialog for k2corr.
+     On the command line, include -rsize1=n
+     in k2corr's options to set the size to
+     be n pixels.  n must be positive integer.
+     The default value for the size is 100.
+
+Size2
+     The local mean and variance estimates
+     for the third stage of bad pixel
+     detection use a square region, centered
+     on the pixel to be tested.  You can
+     specify the size of the square region.
+     The size must be an positive odd
+     integer greater than or equal to three.
+     Since 3 x 3 blocks of bad pixels have
+     been observed in data from K2 cameras,
+     the smallest recommended size is five.
+     The default value for the size is five.
+
+     From the graphical user interface, you
+     can set the size, in pixels, for the
+     square by entering the value in the
+     field labeled "Region size 2".  That
+     field is in the special parameters
+     dialog for k2corr.  On the command
+     line, include -rsize2=n in k2corr's
+     options to set the size to be n
+     pixels.
+
+ExposureTime
+     k2corr normally uses the extended
+     header of the input image sequence
+     to determine the exposure time for
+     each image.  If the extended header
+     is not present or is not in the format
+     generated by UCSF Tomography or you
+     wish to override what is present in
+     the extended header, you can specify
+     that all the images have the same
+     exposure time.
+
+     From the graphical interface, you
+     can set the exposure time, in seconds,
+     by opening k2corr's special parameters
+     dialog, turning off the toggle button
+     labeled "use header", and entering
+     the desired exposure time in the field
+     adjacent to that button.  To restore
+     the default behavior of reading the
+     exposure times from the extended header,
+     turn the toggle button labeled "use
+     header" back on.
+
+     On the command line, include -exptime=t
+     in k2corr's options to set the exposure
+     time for each image to be t seconds.
+     When you do not use that option, k2corr
+     will read the exposure times from the
+     extended header, or when that is not
+     possible, will use an exposure time of
+     one second for each image.
+
+MinimumVariance
+     In the third stage of bad pixel detection,
+     k2corr divides by a local estimate of the
+     variance.  To prevent division by zero,
+     k2corr coerces the local estimate of the
+     variance to be a small positive value (by
+     default, 4.0).  You can change that value.
+     To do so from the graphical user interface,
+     enter the value in the field labeled
+     "Minimum variance"; that field is in
+     k2corr's special parameters dialog.  To do
+     so from the command line, include -vmin=v
+     in k2corr's options where v is the desired
+     minimum value for the variance.  The value
+     that you specify in either case must be
+     greater than zero.
+
+     The default value comes from assuming a
+     total exposure time of two hundred seconds
+     and an internal sampling rate of 400
+     samples per second to find the binomial
+     distribution with 80000 trials and
+     probability of success per trial of p that
+     would have a probability of at least 99
+     percent for generating 25 samples (i.e.
+     the default region size for the third
+     stage of bad pixel detection) that are
+     all zero.  p works out to be around
+     5e-9 so that the variance of the
+     distribution is around 4e-4 electrons
+     squared or 4 (assuming a conversion
+     factor of 100).
+
+SamplingRate
+     k2corr's model for the K2 camera assumes
+     that each pixel is sampled internally at
+     a fixed rate where each sample will be
+     either zero or one.  The reported
+     measurement is the sum of the samples
+     multiplied by the conversion factor from
+     electrons to image value.  You can set
+     the sampling rate.  To do so from the
+     graphical interface, open k2corr's
+     special parameters dialog and enter
+     the sampling rate (in samples per
+     second) in the field next to the button
+     labeled "Sampling rate".  To do so on
+     the command line, include -samprate=s
+     in k2corr's options where s is the
+     desired sampling rate in samples per
+     second.  By default, k2corr uses a
+     sampling rate for 400 samples per
+     second which is what current K2
+     hardware uses.
+
+ElectronToValue
+     UCSF Tomography multiplies the number
+     of electrons reported by the K2 camera
+     by a scalar factor (current versions
+     use 100) before recording the data.
+     Since k2corr uses the electron
+     statistics for some of the stages of
+     bad pixel detection, k2corr needs to
+     know the conversion factor from
+     electrons to the value recorded in
+     the image file.
+
+     By default, k2corr assumes that the
+     conversion factor is 100.  If you
+     need to work with data that was
+     recorded with a different conversion
+     factor, you can change k2corr's
+     assumption.  To do so from the
+     graphical interface, open k2corr's
+     special parameters dialog and enter
+     the desired conversion factor in
+     the field next to the button labeled
+     "e- to value".  To do so on the
+     command line, include -cnt2val=c
+     where c is the conversion factor.
+     The conversion factor must be
+     positive.
+
+OutputFormat
+     k2corr will write the corrected images
+     using either a 16-bit unsigned integer
+     or 32-bit floating-point value to
+     represent each pixel's value.  By
+     default, k2corr will use 16-bit
+     unsigned integers.  To set the output
+     format from the user interface, open
+     k2corr's special parameters dialog and
+     change the menu next to the button
+     labeled "Output format" to the desired
+     format.  To set the output format from
+     the command line, include -mode=ushort
+     in the command line options to have
+     the data written as 16-bit unsigned
+     integers or include -mode=float in the
+     command line options to have the data
+     written as 32-bit floating-point values.
+
+     If you save the corrected data as 16-bit
+     unsigned integers, you have the option of
+     scaling the corrected results (see the
+     OutputScale topic) by a constant factor
+     before rounding them to the nearest
+     integer and saving them.
+
+OutputScale
+     If k2corr saves the output as 16-bit
+     unsigned integers (see the OutputFormat
+     topic), you may specify a scale factor
+     that will be applied to the corrected
+     results before they are rounded and
+     saved to the output file.  To set the
+     scale factor from the graphical user
+     interface, open k2corr's special
+     parameters dialog and enter the desired
+     scale factor in the field next to the
+     button labeled "Output scale".  To set
+     the scale factor to be the value, s,
+     from the command line, include
+     -scale=s in the command line options.
+
+     If the input data has already been gain
+     corrected, then the input data may have
+     already been scaled by a factor (UCSF
+     Tomography uses a factor of 100) so you
+     would usually use a scale factor of one,
+     the default value, in that case.  If the
+     input data has not been gain corrected,
+     you would normally set the scale factor
+     to something like one hundred so that
+     the rounding of the output does not
+     obscure most of the effects of the gain
+     correction.
+
+CommandLine
+     The command-line syntax for invoking
+     k2corr is
+
+     k2corr image_series options
+
+     options can be one or more of the
+     options described below.  Any option
+     can appear multiple times, but, with
+     the exception of -inbad, only the
+     last occurrence is used when
+     processing the input series.
+
+     -badcorrect
+         This turns on bad pixel
+         correction.  Note that bad
+         pixel correction is on by
+         default.
+
+     -baddetect
+         This turns on bad pixel
+         detection.  Note that bad
+         pixel detection is on by
+         default.
+
+     -corrected=cname
+         Causes the corrected data
+         to be written to the file
+         named cname.  That may be
+         the same as the input file name.
+         If you do not supply -corrected
+         or cname is empty or equal to
+         "none", k2corr will not perform
+         bad pixel correction.
+
+     -cnt2val=c
+         Sets the scalar by which electron
+         counts are multiplied before they
+         are stored.  c must be greater
+         than zero.  If you do not use this
+         option, k2corr will assume the
+         electron counts were multiplied by
+         100 before being stored in the
+         input file.
+
+     -doserate=d
+         Sets the expected dose rate to be
+         d electrons per second.  d must
+         be positive.  If you do not use
+         this option, k2corr will assume
+         a dose rate of ten electrons per
+         second.  The DoseRate topic
+         describes how the dose rate is
+         used during bad pixel detection.
+
+     -exptime=t
+         Causes k2corr to t seconds as
+         the exposure time for all images.
+
+     -inbad=iname
+         If iname is not empty and is not
+         equal to "none", causes k2corr
+         to read a list or coordinates
+         from the file named iname.  If
+         iname is "-", k2corr will read
+         the bad pixel coordinates from
+         standard input.  The BadPixelInput
+         topic describes the expected file
+         format.  You may repeat this
+         option to have k2corr read from
+         multiple files.
+
+     -ingain=source
+         If source is an empty string or
+         "none", k2corr will not try to
+         correct the input image series
+         for calibrated gain differences.
+         If source is "header", k2corr
+         will attempt to read the gain
+         calibration image from the end
+         of the input image series'
+         extended header and use that to
+         correct the image series for
+         gain variations.  For all other
+         values of source, k2corr will
+         attempt to read the gain
+         correction image from the file
+         named source (k2corr assumes
+         that the file is in MRC format)
+         and use that to correct the
+         image series for gain variations.
+
+     -invertgain
+         If k2corr corrects the image
+         series for gain variations (see
+         -ingain), this option causes
+         k2corr to divide by the gain
+         correction image rather than
+         multiply by that image.
+         Multiplying by the gain
+         correction image is the default.
+
+     -mode=ushort or -mode=float
+         The first form, -mode=ushort,
+         causes k2corr to write the
+         corrected image series using
+         one unsigned 16-bit integer per
+         pixel.  The second form causes
+         k2corr to write the corrected
+         image using one 32-bit floating-
+         point value per pixel.  If you
+         do not set the output format,
+         k2corr will use 16-bit unsigned
+         integers.
+
+     -multires
+         Causes k2corr to add lower
+         resolutions to the corrected
+         images if the images are
+         sufficiently large.
+
+     -no-badcorrect
+         This disables bad pixel correction.
+
+     -no-baddetect
+         This disables bad pixel detection.
+
+     -no-invertgain
+         If k2corr corrects the image series
+         for gain variations (see -ingain,
+         this option causes k2corr to divide
+         by the gain correction image rather
+         than multiply by that image.
+         Multiplying by the gain correction
+         image is the default.
+
+     -outbad=oname
+         If oname is not empty and is not
+         equal to "none", causes k2corr to
+         write the coordinates of the bad
+         pixels to the file named oname.
+         The BadPixelOutput topic describes
+         the format of the file.
+
+     -outgain=oname
+         If oname is not empty and is not
+         equal to "none" and you have chosen
+         to correct the input image series
+         for calibrated gain variations (see
+         -ingain), this option causes k2corr
+         to write the calibrated gain
+         correction image as an MRC file
+         named oname.  If you have chosen to
+         invert the gain correction image
+         (see -invertgain, the image written
+         will be one divided by the gain
+         correction image that k2corr read.
+
+     -rsize1=n
+         Sets the block dimension used for
+         the second stage of bad pixel
+         detection to be n pixels.  n
+         must be a positive integer.  If
+         you do not use this option,
+         k2corr will use 100 pixels as
+         the block size.  The description
+         and Threshold1 describe the
+         second stage of bad pixel
+         detection in more detail.
+
+     -rsize2=n
+         Sets the region size used for
+         the third stage of bad pixel
+         detection to be n pixels.
+         n must be an odd integer
+         greater than one.  If you do
+         not use this option, k2corr
+         will use a region size of
+         5 pixels, and that is the
+         minimum recommended size.
+         The description and Threshold2
+         topic describe the third stage
+         of bad pixel detection in more
+         detail.
+
+     -samprate=s
+         Sets the number of times per
+         second that the camera internally
+         reads out each pixel.  s must be
+         positive.  If you do not use this
+         option, k2corr assumes that the
+         camera reads each pixel 400
+         times per second.
+
+     -scale=s
+         If you have selected unsigned 16-bit
+         integer output (see -mode), this
+         option sets the scale factor to apply
+         to the corrected image data before
+         rounding it to integers and writing
+         it to the output file.  By default,
+         k2corr will use a scale factor one.
+
+     -thresh0=t0
+         Sets the threshold for the first
+         stage of bad pixel detection to
+         be t0.  t0 must be greater than
+         zero and less than or equal to
+         one.  If you do not use this
+         option, k2corr will use a value
+         of 7e-10 for the threshold.  The
+         The description and Threshold0
+         topic describe the first stage
+         of bad pixel detection in more
+         detail.
+
+     -thresh1=t1
+         Sets the threshold for the second
+         stage of bad pixel detection to
+         be t1.  t1 must be greater than
+         zero and less than or equal to
+         one.  If you do not use this
+         option, k2corr will use a value
+         of 2e-9 for the threshold.  The
+         description and Threshold1 topic
+         describe the second stage of bad
+         pixel detection in more detail.
+
+     -thresh2=t2
+         Sets the threshold for the third
+         stage of bad pixel detection to
+         be t2.  t2 must be greater than
+         zero.  If you do not use this
+         option, k2corr will use a value
+         of 100 for the threshold.  The
+         description and Threshold2
+         topic describe the third stage
+         of bad pixel detection in more
+         detail.
+
+     -vmin=v
+         Sets the minimum variance to
+         accept in the third stage of
+         bad pixel detection. v must
+         be a value greater than zero.
+         If you do not use this option,
+         k2corr will use 4.0 as the
+         minimum variance.  The
+         description and Threshold2
+         topic describe the third stage
+         of bad pixel detection in more
+         detail.

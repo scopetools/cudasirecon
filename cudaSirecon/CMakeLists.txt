@@ -16,7 +16,7 @@ if(WIN32)
     link_directories ( ${PRIISM_LIB_PATH} )
     if(WITH_TIFF)
         include_directories( ${TIFF_INCLUDE_DIR} )
-        link_directories ( ${TIFF_LIBRARY} ) 
+        link_directories ( ${TIFF_LIBRARY} )
     endif(WITH_TIFF)
 elseif(APPLE)
 ## Assuming the builder's shell environment is already set up to use 64-bit Priism
@@ -38,7 +38,7 @@ if(WIN32)
   #   PATHS ${PRIISM_LIB_PATH}
   #   REQUIRED)
 else(WIN32)
-  find_library(IMLIB imlib 
+  find_library(IMLIB imlib
     PATHS ${PRIISM_LIB_PATH}
     REQUIRED)
   find_library(IVELIB ive
@@ -152,5 +152,10 @@ else(WIN32)
     X11
 #    nvidia-ml
   )
+  target_link_libraries(
+    cudaSireconDriver
+    cudaSirecon
+  )
 endif(WIN32)
+CUDA_ADD_CUFFT_TO_TARGET(cudaSirecon)
 CUDA_ADD_CUFFT_TO_TARGET(cudaSireconDriver)

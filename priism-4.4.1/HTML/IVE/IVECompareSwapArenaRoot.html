@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVECompareSwapArenaRoot</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVECompareSwapArenaRoot.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVECompareSwapArenaRoot</H1>
+<H2>Overview</H2>
+<P>If unrelated processes are to share an <A HREF="IVEArena.html">IVEArena</A>
+and none of the processes has the special role of creating the arena
+and initializing the shared data, IVECompareSwapArenaRoot provides a mechanism
+so that the processes can safely initialize the arena.  See the example below
+for how this may be done.
+<P>IVECompareSwapArenaRoot atomically compares a value to the value stored
+in the root location of an arena and if the two values are the same, replaces
+the value stored in the root location with another value.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_shm.h"</CODE>
+<BR><CODE>int IVECompareSwapArenaRoot(IVEPtrRep old_value, IVEPtrRep new_value, IVEArena arena);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P>There is no Fortran interface.
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>old_value</VAR><DD>If <VAR>old_value</VAR> is the same as the
+    current value stored in the root location, the value in the root location
+    is set to <VAR>new_value</VAR>; otherwise, the value in the root location
+    is left unchanged.
+  <DT><VAR>new_value</VAR><DD><VAR>new_value</VAR> is the new setting for the
+    value in the arena's root location.  It is only applied if
+    <VAR>old_value</VAR> is the same as the current setting.
+  <DT><VAR>arena</VAR><DD><VAR>arena</VAR> is the arena on which to operate.
+</DL>
+<H2>Return value</H2>
+<P>Returns true if <VAR>old_value</VAR> was the same as the current value
+in the root location and <VAR>new_value</VAR> was put in its place.  Otherwise,
+returns false.
+<H2>Example</H2>
+<P>If multiple processes attempt to initialize an arena without other
+coordination, the following steps could be used in each of the processes to
+guarantee that the initialization does not have any race conditions.
+<PRE>
+    int status;
+    IVEArena arena;
+
+    while (1) {
+        int status = IVE_ERR_NONE;
+
+        arena = IVECreateArena(arena_name, (IVEArenaAttr) 0, 0, &status);
+	if (arena != 0 || status != IVE_ERR_IN_USE) {
+	    break;
+        }
+    );
+
+    if (arena != 0) {
+        /*
+         * Offset to a master data structure; it will typically
+         * contain a mutex or read-write lock so the processes
+         * can synchronize their actions once initialization is
+         * complete.
+         */
+        IVEPtrRep master_off;
+
+        while (1) {
+            master_off = IVEGetArenaInfo(arena);
+            /*
+             * Someone has already initialized the root location.
+             */
+            if (master_off != 0) {
+                break;
+            }
+
+            /*
+             * Allocate and initialize the master data structure. 
+             * Convert its address to an IVEPtrRep and store it
+             * in master_off.
+             */
+            ...;
+            master_off = IVEPtrToRep(..., arena);
+
+            /*
+             * Attempt to install the location of the master
+             * structure in the root location.
+             */
+            if (IVECompareSwapArenaRoot(0, master_off, arena)) {
+                /*
+                 * Success !
+                 */
+                break;
+            }
+            /*
+             * Another process had modified the root location.
+             * Release the allocated structure and try again.
+             */
+            ...;   
+        }
+    }
+</PRE>
+<H2>Cross references</H2>
+<P><A HREF="IVESetArenaRoot.html">IVESetArenaRoot</A>,
+<A HREF="IVEGetArenaRoot.html">IVEGetArenaRoot</A>,
+<A HREF="IVEArena.html">IVEArena</A>, and
+<A HREF="IVEPtrRep.html">IVEPtrRep</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified May 7, 2002
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

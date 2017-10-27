@@ -1,0 +1,66 @@
+#    This file specifies a list of IVE programs on the system that will
+#    be directly invokeable from the monitor.  It will be read
+#    in when the first monitor (monitor 0) is started.  The file
+#    describes how the programs will be presented in a cascade of nested
+#    pulldowns.  The pulldowns can go to as many levels as needed.  The
+#    monitor window has three pulldowns that are always present, "File",
+#    "Image", "Options", and "Help" (in that order).
+#
+#    The format required in this file is:
+#      1) text after a # on a line is ignored
+#      2) blank lines are ignored
+#      3) start each pulldown at the top with:    start pulldown "label" 
+#      4) add all the elements that will be in the pulldown and then end
+#         the pulldown with: end pulldown. Indentation can be used for
+#         readability.  Types of lines that can be in a pulldown:
+#         a. start submenu "label"
+#            This describes the label of an element of the pulldown that will
+#            have a pullright menu off of it. Submenus can be inside other
+#            submenus for as many levels as you want.  When all the elements
+#            have been added for a submenu, end it with: end submenu.
+#         b. end submenu
+#            Ends a submenu started with start submenu.
+#         c. path   "program label"  "help root"
+#            Specifies one program to be entered in the current submenu.
+#            path - Gives the name of the executable to run.  If it begins with
+#              a /, the name is not modified; otherwise, the path to the
+#              directory for executables in the Priism directory tree is
+#              prepended to the name.  The environment variable IVE_BASE is
+#              assumed to point the root of the Priism directory tree.
+#            program label - this must be in quotes since it can be more
+#              than one word long. this is just the label for the program in
+#              the pulldown. 
+#            help root - the root of the help file name. the root only is
+#              given so that either .html or .hlp will be used depending on
+#              the IVE_HELP environmental variable. Help root can include a
+#              keyword if desired.  If a file name begins with a /, nothing
+#              is added to the beginning of the name when searching for the
+#              help file; otherwise the name of the IVE directory containing
+#              the help files in html or old text format is prepended to the
+#              name.
+#         d. insert separator
+#            Inserts a separator (horizontal line) into the menu.
+
+start pulldown "File"
+  EditHeader	"Info"		"EditHeader"
+  Point         "Point values"  "Point"
+  Examine       "Examine data"	"Examine"
+  SaveWindow	"Save"		"SaveWindow"
+  AppendRes     "Append resolutions"	"AppendRes"
+  RaiseSWOrder	"Raise swap order"	"Monitor RaiseSwapOrder"
+end pulldown
+
+start pulldown "Image"
+  Scale		"Scale"		"Scale"
+  Align		"Align"		"Align"
+  Movie		"Movie"		"Movie"
+  MonToPS	"Print"		"MonToPS"
+  ClearGraph	"Clear graphics"	"Monitor ClearGraphics"
+  MeasureFPS	"Measure FPS"	"MeasureFPS"
+end pulldown
+
+start pulldown "Options"
+  DisplayAttr		"Attributes"		"DisplayAttr"
+  SelectImgColors	"Image Colors"		"SelectImgColors"
+  SelectGrColors	"Graphics Colors"	"SelectGrColors"
+end pulldown

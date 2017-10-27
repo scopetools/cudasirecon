@@ -1,0 +1,793 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: 3D Filter (Frequency domain)</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to apply various 3D filters in the Fourier domain.">
+  <META NAME="Keywords" CONTENT="Priism,filter,Gabor,Butterworth,Gaussian,Fourier domain">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="FFilter3D">3D Filter (Frequency domain)</A></H1>
+<H2>Overview</H2>
+
+<P>This program will apply a <A HREF="#Butterworth">Butterworth</A>,
+<A HREF="#Gabor">Gabor</A>, or <A HREF="#Gaussian">weighted combination
+of Gaussian filters</A> to each x, y, and z or x, y, and time volume in the
+input.  These filters are applied in the frequency domain; the advantages or
+disadvantages of this technique as opposed to the filtering in the spatial
+domain that is done with <A HREF="Filter3D.html">3D Filter</A> are
+
+<UL>
+  <LI>For a filter which has a large spatial extent, the frequency
+    domain techniques will be generally faster.  For an input with N
+    elements and a filter with M elements where M is less than or equal
+    to N, the spatial domain techniques generally perform on the order of N*M
+    calculations and the frequency domain techniques perform N*log(N)
+    calculations.
+  <LI>With the frequency domain techniques, care needs to be taken
+    in choosing the size of the input region: certain sizes (those
+    that have small prime factors) are handled much more efficiently.
+    By default, this is done automatically for you by adding additional
+    elements so that the input can be handled efficiently and then
+    stripping these additional elements off before writing the result.
+    To change this behavior, modify the <A HREF="#Edges">edge handling</A>
+    and <A HREF="#OutputSize">output size</A> inputs.
+  <LI>Frequency domain techniques treat the right edge (after padding)
+    as contiguous with the left edge; the top and bottom are handled similarly.
+    This can be problematic when the values along the edges are very different.
+    <A HREF="#Preprocessing">Preprocessing the data</A> to remove background
+    trends which cause the edges to be different, <A HREF="#Window">windowing
+    the data</A> to reduce the variations at the edges, or
+    <A HREF="#Edges">padding the data</A> with additional elements so that
+    the number of elements added is greater than the approximate spatial
+    extent of the filter are possible approaches to mitigate this problem.
+</UL>
+
+<P>Also of practical note is that the types of filters offered by this
+application and by the applications that filter in the spatial domain
+are quite different, and the availability of the filter you want will
+frequently limit your choice to one or the other.
+
+<P>The controls in the user interface include a
+<A HREF="Region.html">standard set of controls</A> for selecting the input
+file, output file, and region of interest and for starting and interrupting
+processing.  The other controls are organized as follows:
+
+<UL>
+  <LI>When the <A HREF="#SwapZT">toggle button labeled "Swap z/time"</A> is
+    off, the filter works on the x, y, and z dimensions.  When that toggle
+    button is on, the filter works on the x, y, and time dimensions.  If
+    the toggle button labeled "use Nyquist from x pixel spacing" (see below
+    for more details) is also on, the value in the field labeled "Time
+    conversion" will be used as the pixel spacing (in the spatial pixel
+    spacing units) for the time dimension.
+  <LI>The type of filter is selected by the <A HREF="#Filter">option menu</A>
+    just below the "Swap z/time" toggle button.  To display and change the
+    parameters for the current filter type, press the button labeled
+    <EM>Set parameters</EM> which is next to the option menu.  If you want
+    to apply the inverse of the filter, turn on the
+    <A HREF="#Inverse">"inverse" toggle button</A>; otherwise, turn it off.
+    The inverse filter is implemented as a simplified Wiener filter, to edit
+    the parameters for the Wiener filter, press the button labeled "Set Wiener
+    parameters".
+  <LI>The filters have parameters that are specified as fractions of the
+    Nyquist frequency.  By default, the Nyquist frequency is expressed in
+    terms of cycles per sample, and the physical pixel spacing does not affect
+    the shape of the applied filter.  The other alternative uses the Nyquist
+    frequency (in cycles per the unit of the pixel spacing) in the x direction
+    when computing the shape of the filter.  To use the Nyquist frequency from
+    the x dimension, turn on the toggle button labeled "use Nyquist from x
+    pixel spacing" in the main dialog.  If the pixel spacing is isotropic,
+    the filter will be the same for both alternatives.  If you've swapped
+    z and time (see the description of the "Swap z/time" toggle button),
+    the value in the field labeled "Time conversion" is the spacing that will
+    be used to compute frequencies for the time dimension.
+  <LI>Some of the filters are radially symmetric in the chosen coordinate
+    system.  To generate a radial profile of the filter function which can be
+    displayed with <A HREF="2d_plot.html">2D Plot</A>, press the button labeled
+    <EM>Create filter profile</EM> to select the output file and write the
+    result.
+  <LI>Use the <A HREF="#Preprocessing">button labeled "Set preprocessing"</A>
+    to display and change the parameters which control the processing of the
+    data before it is padded and filtered.  By default, no preprocessing is
+    done.
+  <LI>Use the <A HREF="#Window">button labeled "Set window/taper"</A> to
+    select a function used to smooth out discontinuities at the edges of the
+    data after preprocessing and before padding and transforming the data.
+    By default, no smoothing is done.
+  <LI>Use the <A HREF="#Edges">button labeled "Set edge handling"</A>
+    to control the number and values of the elements that are appended to
+    the input region before filtering.  By default, the input data is padded
+    with zeroes so that it is a size which can be efficiently processed.
+  <LI>Use the <A HREF="#OutputSize">button labeled "Set output size"</A>
+    to open a dialog with the controls for trimming the output region.  By
+    default the output region is the same size as the input region and any
+    padding that was added is stripped off after filtering.
+</UL>
+
+<H3>Topics</H3>
+<P>
+  Overview |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#Filter">Filter types</A> |
+  <A HREF="#Inverse">Inverse filter</A> |
+  <A HREF="#Preprocessing">Preprocessing</A> |
+  <A HREF="#Window">Window/taper</A> |
+  <A HREF="#Edges">Edge handling</A> |
+  <A HREF="#OutputSize">Output size</A> |
+  <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="Filter2D.html">2D Filter (spatial domain)</A> |
+   <A HREF="NewConvolution.html">Convolution</A> |
+   <A HREF="FFilter2D.html">2D Filter (frequency domain)</A>
+   <A HREF="Filter3D.html">3D Filter (spatial domain)</A>
+
+<HR>
+
+<H2><A NAME="SwapZT">Swap Z/Time</A></H2>
+<P>The three dimensions used for filtering can either be x, y, and z or
+x, y, and time.  When the toggle button labeled "Swap z/time" is off, the
+program uses x, y, and z as the dimensions to filter.  When that toggle
+button is on, the program uses x, y, and time as the dimensions to filter.
+When you select a new input file, the program will automatically select
+the dimension to use as the third dimension.  If the file has more than one
+z section or only one time point, the program will use the z dimension as
+the third dimension; otherwise, it will use the time dimension as the third
+dimension.
+
+<P>If you swap z and time and also turn on the toggle button labeled
+"use Nyquist from x pixel spacing", FFilter3D will use the value labeled
+"Time conversion" as the sampling for the time dimension.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#FFilter3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  Swap z/time |
+  <A HREF="#Filter">Filter types</A> |
+  <A HREF="#Inverse">Inverse filter</A> |
+  <A HREF="#Preprocessing">Preprocessing</A> |
+  <A HREF="#Edges">Edge handling</A> |
+  <A HREF="#OutputSize">Output size</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Filter">Filter types</A></H2>
+<P>Four different types of filters are currently supported:
+<A HREF="#Butterworth">Butterworth</A>, <A HREF="#Gabor">Gabor</A>,
+<A HREF="#Gaussian">weighted combination of Gaussians</A>,
+<A HREF="#(1-Gauss)Gauss">one minus a Gaussian times another Gaussian</A>.
+Descriptions of the forms of these filters and the input parameters specific
+to each are given below.
+
+<H3><A NAME="Butterworth">Butterworth</A></H3>
+<P>The filter labeled as "Butterworth" is not the analog filter of that name
+but is a digital filter whose frequency response is the amplitude squared of
+the analog Butterworth filter's gain.  Unlike the analog Butterworth filter,
+the digital filter does not modify the phases of data passed through the
+filter.
+
+<P>Four variants of Butterworth filters are provided.  The first is a
+smoothing filter which passes low frequencies and attenuates the high
+frequency components of the input.  The second is a sharpening filter which
+attenuates the low frequency components.  The third is a bandpass filter,
+whose gain drops outside a given frequency range.  The fourth is a bandstop
+filter whose gain is lower inside a given frequency range than outside that
+range.  The cutoff frequencies mark the transition from regions where the
+frequency components are not as strongly attenuated to regions where the
+frequency components are more strongly attenuated.  The cutoff frequencies are
+specified as fractions of the Nyquist frequency.  If the toggle button labeled
+"use Nyquist from x pixel spacing" in the main dialog is off, the Nyquist
+frequency is 0.5 cycles per sample, and the physical pixel spacing does not
+affect the filter shape. If the toggle button labeled "use Nyquist from x
+pixel spacing" is on, the Nyquist frequency is the Nyquist frequency in the
+x direction expressed in units of cycles per the unit of pixel spacing.  For
+the lowpass and highpass filters, there's one cutoff frequency, and the signal
+is attenuated by one half at that frequency.  For the bandpass and bandstop
+filters, there are two cutoff frequencies, and the order in which you provide
+them does not matter.  For the bandpass filter, the attenuation at the cutoff
+frequencies, c0 and c1, is 1 / (1 + ((c0 + c1) / (c0 - c1))^(2 * order)).  For
+the bandstop filter, the attenuation at the cutoff frequencies is 1 /
+(1 + ((c0 - c1) / (c0 + c1))^(2 * order)).  The order of the filter controls
+how rapidly the filter's gain decreases outside of the frequency ranges passed
+by the filter.  A higher order gives a more rapid decline in the filter's
+response outside of the frequency ranges passed by the filter.
+
+<H3><A NAME="Gabor">Gabor</A></H3>
+<P>A Gabor filter is a good choice for selecting the components of an image
+that contribute to a limited range of frequencies.  If the components selected
+in the dialog are "both" or "positive only", the range has a contribution from
+frequencies about
+<PRE>
+  cf * (cos(a) * sin(b), sin(a) * sin(b), cos(b))
+</PRE>
+<P>where cf is the central frequency magnitude specified in the dialog, a
+is the central frequency theta, and b is the central frequency phi.  If the
+components selected in the dialog are "both" or "negative only", the range has
+a contribution from frequencies about
+<PRE>
+  -cf * (cos(a) * sin(b), sin(a) * sin(b), cos(b))
+</PRE>
+.  Both components are limited by an elliptical Gaussian envelope.  One axis
+of the envelope is oriented along the radial direction from the zero frequency
+to the central frequency.  Another axis (the "theta direction") is parallel to
+the plane kz = 0 and perpendicular to the radial axis.  The width of the
+envelope along the axes is given in terms of the sigma for the Gaussian.
+
+<P>With the "positive only" or "negative only" options for the components, you
+should usually force the output to be complex-valued because the filters are
+not, in general, conjugate symmetric.
+
+<H3><A NAME="Gaussian">Gaussian</A></H3>
+<P>The frequency response of this filter is radially symmetric about the
+zero frequency and is the weighted sum of up to four Gaussian envelopes.
+The number of Gaussians summed to give the filter is controlled by the
+field labeled <EM>Number of filters to combine</EM>.  For each Gaussian
+there is central frequency, a width specified in terms of the Gaussian's
+sigma, and the amplitude at the central frequency.  One common choice
+for the amplitudes of the Gaussians ensures that the frequency response
+at zero frequency is one.  This generates a filter that does not
+change the mean of the data.
+
+<H3><A NAME="(1-Gauss)Gauss">(1-Gauss)Gauss</A></H3>
+<P>The frequency response of this filter is radially symmetric about the
+zero frequency and is one minus a Gaussian envelope multiplied by another,
+optional, Gaussian.  For each Gaussian, there is a central frequency and
+a width, specified in terms of the Gaussian's sigma.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#FFilter3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  Filter types |
+  <A HREF="#Inverse">Inverse filter</A> |
+  <A HREF="#Preprocessing">Preprocessing</A> |
+  <A HREF="#Window">Window/taper</A> |
+  <A HREF="#Edges">Edge handling</A> |
+  <A HREF="#OutputSize">Output size</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Inverse">Inverse Filter</A></H2>
+<P>Instead of applying the filter, you can apply it's inverse by turning
+on the "inverse" toggle button.  The inverse filter is computed as a
+simplified Wiener filter:
+
+<PRE>
+  H*(k) / (H(k) H*(k) + C)
+</PRE>
+
+<P>where H(k) is the frequency response of the filter to be inverted, H*(k)
+is complex conjugate of H(k), and C is a non-negative constant.  The
+application allows C to be set in two ways:
+
+<UL>
+  <LI>You can directly specify the value of C.
+  <LI>You can specify a non-negative multiplicative constant.  The value
+    of C will be the value of that constant divided by the average
+    amplitude for all frequency components in the input volume and then
+    multiplied by the average amplitude for input volume frequency
+    components whose x frequency component has an absolute value of greater
+    than or equal to <VAR>kxl</VAR>, whose y frequency component has an
+    absolute value of greater than or equal to <VAR>kyl</VAR>, or whose z
+    (or time) frequency component has an absolute value of greater than or
+    equal to <VAR>kzl</VAR>.
+</UL>
+
+<P>To set the value of C, "Set Wiener parameters" button in the main dialog to
+open the dialog with the controls for modifying C.  If the "absolute" toggle
+button is on in that dialog, the value in the "Wiener factor" field
+is the value of C.  If the "absolute" toggle button is off, the value in the
+"Wiener factor" field is the value of the multiplicative constant, and the
+three values in the "Cutoff frequencies" field are, respectively, the values
+of <VAR>kxl</VAR>, <VAR>kyl</VAR>, and <VAR>kzl</VAR> in units of cycles per
+pixel (i.e. the Nyquist frequency has a value of 0.5).
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#FFilter3D">Overview</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Filter">Filter types</A> |
+  Inverse filter |
+  <A HREF="#Preprocessing">Preprocessing</A> |
+  <A HREF="#Window">Window/taper</A> |
+  <A HREF="#Edges">Edge handling</A> |
+  <A HREF="#OutputSize">Output size</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Preprocessing">Preprocessing</A></H2>
+<P>The input region can be processed to remove an offset or trend before
+the data is padded and filtered.  To display the controls for this processing,
+press the button labeled <EM>Set preprocessing</EM> in the main dialog.  There
+are five types of processing that can be done; select one by pressing the
+appropriate toggle in the dialog.  The processing options are:
+
+<DL>
+  <DT>None<DD>The input is not modified before filtering and padding.
+  <DT>Subtract offset<DD>The specified value is subtracted from all the input
+    values.
+  <DT>Subtract mean<DD>For each 3D input region, the mean of the region
+    is subtracted from all values in the region.
+  <DT>Remove linear trend<DD>An average slope for each 3D input region
+    is estimated by averaging values from the first and last third of each
+    dimension; the linear trend corresponding to that average slope and
+    the mean of the region is subtracted from the input data.  The algorithm
+    used is the average slope method extended to three dimensions (Digital data
+    analysis procedures, Bendat and Piersol, 1st Edition, 1971, page 288).
+  <DT>Remove trends up to order<DD>A polynomial of the given order is fit to
+    each 3D input region.  That polynomial evaluated at each input point
+    is then subtracted from the input before padding and filtering.
+</DL>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#FFilter3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#Filter">Filter types</A> |
+  <A HREF="#Inverse">Inverse filter</A> |
+  Preprocessing |
+  <A HREF="#Window">Window/taper</A> |
+  <A HREF="#Edges">Edge handling</A> |
+  <A HREF="#OutputSize">Output size</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Window">Window/taper</A></H2>
+<P>Applying a windowing function, also called tapering, multiplies the
+data by a function which goes to zero (or near zero) at the edges of the
+data.  This is done before the forward transform to remove discontinuities
+at the edges; the disadvantage of applying a window is that it essentially
+throws away parts of the input.
+
+<P>The windowing functions used are separable, i.e, the windowing function,
+W(x,y,z), can be written as the product of WX(x), WY(y), and WZ(z).  WX, WY,
+and WZ are calculated from the same formula but with different inputs for the
+number of pixels, n, and the fraction, f, of the dimension that is attenuated
+by the windowing function.  The three values in the
+<EM>Coverage</EM> field are the values of f divided by two for the x, y,
+and z (or time) directions, respectively.  Commonly used values for the
+coverage are 0.5 (a "full taper") and 0.1 (a 10% taper).  The power, x, is
+used by half-sine windowing function.
+
+<P>The functions used to calculate the windowing functions are shown below.
+i is the pixel index and runs from 0 to n minus 1, and e is given by
+
+<PRE>
+      { floor(0.5 + f / 2.0 * n)          n even
+  e = {
+      { floor(0.5 + f / 2.0 * (n - 1))    n odd
+</PRE>
+
+<H3>Rectangular</H3>
+<PRE>
+         { 0     i &lt; e
+  w(i) = { 1     e &lt;= i &lt;= n - e
+         { 0     i &gt; n - e
+</PRE>
+<P>Because of the sharp cutoffs of the rectangular window, it is
+not particularly useful; it's provided for completeness.
+
+<H3>Triangular</H3>
+<PRE>
+         { i / e           i &lt; e
+  w(i) = { 1               e &lt;= i &lt;= n - e
+         { (n - i) / e     i &gt; n - e
+</PRE>
+
+<H3>Half-sine^power</H3>
+<PRE>
+         { (sin(pi * i / (2 * e)))^x           i &lt; e
+  w(i) = { 1                                   e &lt;= i &lt;= n - e
+         { (sin(pi * (n - i) / (2 * e)))^x     i &gt; n - e
+</PRE>
+
+<H3>Hamming</H3>
+<PRE>
+         { 0.54 - 0.46 * cos(pi * i / e)           i &lt; e
+  w(i) = { 1                                       e &lt;= i &lt;= n - e
+         { 0.54 - 0.46 * cos(pi * (n - i) / e)     i &gt; n - e
+</PRE>
+
+<H3>Blackman</H3>
+<PRE>
+         { cos(pi * i / e)           i &lt; e
+  a(i) = { -1                        e &lt;= i &lt;= n - e
+         { cos(pi * (n - i) / e)     i &gt; n - e
+
+  w(i) = 0.34 - a(i) * (0.5 - a(i) * 0.16)
+</PRE>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#FFilter3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#Filter">Filter types</A> |
+  <A HREF="#Inverse">Inverse filter</A> |
+  <A HREF="#Preprocessing">Preprocessing</A> |
+  Window/taper |
+  <A HREF="#Edges">Edge handling</A> |
+  <A HREF="#OutputSize">Output size</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Edges">Edge handling</A></H2>
+<P>The dimensions of the input region can be extended by adding elements
+at the end of each dimension.  This is typically done for two reasons:
+
+<UL>
+  <LI>Adding the extra elements gives a size that is efficiently handled
+    by Fourier transforms.
+  <LI>Adding the extra elements reduces the blending of opposite edges of
+    the data which might be troublesome if the values at the opposite edges
+    are very different.
+</UL>
+
+<P>To display the controls for the amount of padding and the values of the
+elements added, press the button labeled <EM>Set edge handling</EM> in the
+main dialog.  For each dimension the <EM>Width</EM> field sets the number
+of elements that will be added.  When the toggle labeled
+<EM>Use default width</EM> is on, the <EM>Width</EM> field will automatically
+be set so the padded size can be efficiently handled.  There are three
+ways in which the values of the added elements are set.  These are:
+
+<DL>
+  <DT>Pad with value<DD>Use the given value for all the elements added to
+    a dimension.  The imaginary component of the value is only used if the
+    input data is complex.
+  <DT>Pad with mean<DD>Use the mean of the 3D input region being
+    processed when padding the dimension.
+  <DT>Pad with linear ramp<DD>For each line in x, y, or z (or time), the
+    padding elements added to the line are a linear combination of the first
+    and last element of that input line.
+</DL>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#FFilter3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#Filter">Filter types</A> |
+  <A HREF="#Inverse">Inverse filter</A> |
+  <A HREF="#Preprocessing">Preprocessing</A> |
+  <A HREF="#Window">Window/taper</A> |
+  Edge handling |
+  <A HREF="#OutputSize">Output size</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="OutputSize">Output size</A></H2>
+<P>The size of the region written to the output file may be different than
+the input size.  The size is influenced by the <A HREF="#Edges">controls
+to pad</A> the input data before filtering, and the controls, described here,
+to trim the filtered result before saving it.  To display the trimming
+controls, press the button labeled <EM>Set output size</EM> in the main dialog.
+This will open a dialog in which there is a set of controls for each dimension
+filtered.  First the input size and the padded size of the region are listed.
+Below that are the toggles which control how the size in that dimension is
+trimmed.  There are two mutually exclusive options for trimming:
+
+<DL>
+  <DT>Same as input size<DD>Trim the dimension (if necessary) so the output
+    has the same size in that dimension as the input region.
+  <DT>Trim padded size by<DD>Removes the specified non-negative number of
+    elements from the dimension.  The removed elements are from the end
+    of the dimension so elements added by padding are removed first and then,
+    if necessary, elements that correspond to positions in the input region.
+</DL>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#FFilter3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#Filter">Filter types</A> |
+  <A HREF="#Inverse">Inverse filter</A> |
+  <A HREF="#Preprocessing">Preprocessing</A> |
+  <A HREF="#Window">Window/taper</A> |
+  <A HREF="#Edges">Edge handling</A> |
+  Output size |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command line</A></H2>
+<P>FFilter3D accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, FFilter3D
+accepts the options shown below (optional parts are shown in brackets).  If
+mutually exclusive options (i.e. for selection of the type of filter or
+preprocessing), the last option that appears on the command line takes
+precedence.  The defaults are to use a 2nd order Butterworth lowpass filter
+with a cutoff frequency of half of Nyquist, no preprocessing, padding with
+zeros to an efficient size in all directions, and to trim the output, if
+necessary, so that it is the same size as the selected input region.
+
+<DL>
+  <DT><CODE>-3d=z</CODE> or <CODE>-3d=t</CODE>
+  <DD>Selects which dimension to use as the third dimension for processing.
+    The first form selects the z dimension as the third dimension; the second
+    form selects the time dimension as the third dimension.  If you do not
+    specify either form, the program uses the z dimension as the third
+    dimension when the input file has multiple z sections per time point or
+    only one time point.  Otherwise, the program uses the time dimension as
+    the third dimension for filtering.
+
+  <DT><CODE>-tconvert=</CODE><VAR>tc</VAR>
+  <DD>Sets the sampling, <VAR>tc</VAR>, used to compute frequencies in the
+    time dimension.  That is only useful if you are also using
+    <CODE>-3d=t</CODE> and <CODE>-xspacing-nyquist</CODE>.  <VAR>tc</VAR>
+    must be greater than zero.  If you do not use <CODE>-tconvert</CODE>
+    when you use <CODE>-3d=t</CODE> and <CODE>-xspacing-nyquist</CODE>,
+    FFilter3D will use a value of one for the time sampling.
+
+  <DT><CODE>-xspacing-nyquist</CODE>
+  <DD>Specifies that the filter parameters expressed as fractions of the
+    Nyquist frequency are referenced to the Nyquist frequency, in units of
+    cycles per unit of pixel spacing, for the x direction.  If you do not use
+    this option, the frequency parameters are referenced to 0.5 cycles per
+    sample, and the pixel spacing in the header has no effect on the filter's
+    shape.  If you also use the option, <CODE>-3d=t</CODE>, you may use
+    <CODE>-tconvert</CODE> to set the spacing that will be used to compute
+    the frequencies for the time dimension.
+
+  <DT><CODE>-butterworth_bandpass=</CODE><VAR>filter_order</VAR><CODE>:</CODE><VAR>c0</VAR><CODE>:</CODE><VAR>c1</VAR>
+  <DD>Selects the Butterworth bandpass filter.  Requires two three parameters.
+    The first, <VAR>filter_order</VAR>, is the order of the filter (valid
+    values are integers between 1 and 16, inclusive).  The second and third
+    parameters, <VAR>c0</VAR> and <VAR>c1</VAR> are the cutoff frequencies
+    as a fraction of the Nyquist frequency (valid values are between 0 and 10).
+
+  <DT><CODE>-butterworth_bandstop=</CODE><VAR>filter_order</VAR><CODE>:</CODE><VAR>c0</VAR><CODE>:</CODE><VAR>c1</VAR>
+  <DD>Selects the Butterworth bandstop filter.  Requires two three parameters.
+    The first, <VAR>filter_order</VAR>, is the order of the filter (valid
+    values are integers between 1 and 16, inclusive).  The second and third
+    parameters, <VAR>c0</VAR> and <VAR>c1</VAR> are the cutoff frequencies
+    as a fraction of the Nyquist frequency (valid values are between 0 and 10).
+
+  <DT><CODE>-butterworth_smooth=</CODE><VAR>filter_order</VAR><CODE>:</CODE><VAR>cutoff_freq</VAR>
+  <DD>Selects the Butterworth smoothing (lowpass) filter.  Requires two
+    parameters.  The first, <VAR>filter_order</VAR>, is the order of the
+    filter (valid values are integers between 1 and 16, inclusive), and
+    the second is the cutoff frequency as a fraction of the Nyquist frequency
+    (valid values are between 0 and 10).
+
+  <DT><CODE>-butterworth_sharpen=</CODE><VAR>filter_order</VAR><CODE>:</CODE><VAR>cutoff_freq</VAR>
+  <DD>Selects the Butterworth sharpening (highpass) filter.  Requires two
+    parameters.  The first, <VAR>filter_order</VAR>, is the order of the
+    filter (valid values are integers between 1 and 16, inclusive), and
+    the second is the cutoff frequency as a fraction of the Nyquist frequency
+    (valid values are between 0 and 10).
+
+  <DT><CODE>-fenhance=</CODE><VAR>center_freq1</VAR><CODE>:</CODE><VAR>sigma1</VAR> or <CODE>-fenhance=</CODE><VAR>center_freq1</VAR><CODE>:</CODE><VAR>sigma1</VAR><CODE>:</CODE><VAR>center_freq2</VAR><CODE>:</CODE><VAR>sigma2</VAR>
+  <DD>Selects the (1-Gauss)Gauss filter.  The first two parameters are the
+    central frequency as fraction of the Nyquist frequency and sigma as
+    a fraction of the Nyquist frequency for the Gaussian in the (1-Gaussian)
+    term.  If you supply the third and fourth parameters, the second Gaussian
+    is included.  The third parameter is the central frequency as fraction of
+    the Nyquist frequency for the second Gaussian.  The fourth parameter is
+    the sigma of the second Gaussian as a fraction of the Nyquist frequency.
+    Valid values for the central frequencies are values between zero and ten.
+    Valid values for the sigmas are values between 0.0001 and 10000.
+
+  <DT><CODE>-gabor=</CODE><VAR>freq_mag</VAR><CODE>:</CODE><VAR>freq_theta</VAR><CODE>:</CODE><VAR>freq_phi</VAR><CODE>:</CODE><VAR>sigma_radial</VAR><CODE>:</CODE><VAR>sigma_theta</VAR><CODE>:</CODE><VAR>sigma_phi</VAR>
+  <DD>Selects the Gabor filter.  Requires six parameters.  The first
+    is the magnitude of the central frequency as fraction of the Nyquist
+    frequency (valid values are between 0 and 10).  The second is theta angle
+    for the central frequency in degrees (valid values range from 0 to 180).
+    The third is the phi angle for the central frequency in degrees (valid
+    values range from 0 to 180).  The fourth is the value of sigma in the
+    radial direction as a fraction of the Nyquist frequency.  The fifth is the
+    value of sigma in the theta direction as a fraction of the Nyquist
+    frequency.  The sixth is the value of sigma in the phi direction as
+    a fraction of the Nyquist frequency.  Valid values for the sigmas are
+    greater than zero and less than or equal to ten.  Selects a filter
+    with frequency components about <VAR>freq_mag</VAR> *
+    (cos(<VAR>theta</VAR>) * sin(<VAR>phi</VAR>), sin(<VAR>theta</VAR>) *
+    sin(<VAR>phi</VAR>), cos(<VAR>phi</VAR>)) and
+    -<VAR>freq_mag</VAR> * (cos(<VAR>theta</VAR>) * sin(<VAR>phi</VAR>),
+    sin(<VAR>theta</VAR>) * sin(<VAR>phi</VAR>), cos(<VAR>phi</VAR>)).
+
+  <DT><CODE>-gabor_neg=</CODE><VAR>freq_mag</VAR><CODE>:</CODE><VAR>freq_theta</VAR><CODE>:</CODE><VAR>freq_phi</VAR><CODE>:</CODE><VAR>sigma_radial</VAR><CODE>:</CODE><VAR>sigma_theta</VAR><CODE>:</CODE><VAR>sigma_phi</VAR>
+  <DD>Similar to -gabor, but selects a filter with frequency components about
+    -<VAR>freq_mag</VAR> * (cos(<VAR>theta</VAR>) * sin(<VAR>phi</VAR>),
+    sin(<VAR>theta</VAR>) * sin(<VAR>phi</VAR>), cos(<VAR>phi</VAR>)).
+
+  <DT><CODE>-gabor_pos=</CODE><VAR>freq_mag</VAR><CODE>:</CODE><VAR>freq_theta</VAR><CODE>:</CODE><VAR>freq_phi</VAR><CODE>:</CODE><VAR>sigma_radial</VAR><CODE>:</CODE><VAR>sigma_theta</VAR><CODE>:</CODE><VAR>sigma_phi</VAR>
+  <DD>Similar to -gabor, but selects a filter with frequency components about
+    <VAR>freq_mag</VAR> * (cos(<VAR>theta</VAR> * sin(<VAR>phi</VAR>)),
+    sin(<VAR>theta</VAR>) * sin(<VAR>phi</VAR>), cos(<VAR>phi</VAR>)).
+
+  <DT><CODE>-gaussian_bank=</CODE><VAR>filter_count</VAR>
+  <DD>Selects the bank of Gaussian filters with <VAR>filter_count</VAR> in
+    the bank.  Valid values of <VAR>filter_count</VAR> range from one to four.
+
+  <DT><CODE>-gauss1=</CODE><VAR>center_freq</VAR><CODE>:</CODE><VAR>sigma</VAR><CODE>:</CODE><VAR>amplitude</VAR>
+  <DD>Sets the attributes for the first filter in the bank of Gaussian filters.
+    Requires three parameters.  The first is the central frequency as a
+    fraction of the Nyquist frequency (valid values are between 0 and 10).  The
+    second is the sigma for the filter as a fraction of the Nyquist frequency
+    (valid values are greater than zero and less than or equal to ten
+    thousand).  The third is the amplitude.
+
+  <DT><CODE>-gauss2=</CODE><VAR>center_freq</VAR><CODE>:</CODE><VAR>sigma</VAR><CODE>:</CODE><VAR>amplitude</VAR>
+  <DD>Is similar to <CODE>-gauss1</CODE> but sets the attributes for the
+    second filter in the bank of Gaussian filters.
+
+  <DT><CODE>-gauss3=</CODE><VAR>center_freq</VAR><CODE>:</CODE><VAR>sigma</VAR><CODE>:</CODE><VAR>amplitude</VAR>
+  <DD>Is similar to <CODE>-gauss1</CODE> but sets the attributes for the
+    third filter in the bank of Gaussian filters.
+
+  <DT><CODE>-gauss4=</CODE><VAR>center_freq</VAR><CODE>:</CODE><VAR>sigma</VAR><CODE>:</CODE><VAR>amplitude</VAR>
+  <DD>Is similar to <CODE>-gauss1</CODE> but sets the attributes for the
+    fourth filter in the bank of Gaussian filters.
+
+  <DT><CODE>-inverse</CODE>
+  <DD>If you specify this option, the inverse of the filter is applied using
+    a simplified Wiener filter.
+
+  <DT><CODE>-subtract=</CODE><VAR>value</VAR> or <CODE>-subtract=mean</CODE>
+  <DD>Specifies that the input data should be preprocessed by subtracting
+    <VAR>value</VAR> or the mean.
+
+  <DT><CODE>-linear_detrend</CODE>
+  <DD>Specifies that the input data should be preprocessed by subtracting the
+    linear trend which corresponds to the estimated average slope.
+
+  <DT><CODE>-polyfit=</CODE><VAR>n</VAR>
+  <DD>Specifies that the input data should be preprocessed by subtracting
+    the least-squares fit polynomial of order <VAR>n</VAR>.  Valid values
+    of <VAR>n</VAR> range from one to 10.
+
+  <DT><CODE>-wiener=</CODE><VAR>w</VAR>
+  <DD>Specifies the noise suppression factor for the Wiener filter.  If
+    you do not also specify a <CODE>-wiener_cut</CODE> option, this parameter
+    is used directly; otherwise, it is used as a multiplier for the average
+    amplitude of the high frequency components of the input volume divided
+    by the average amplitude for all frequency components in the input volume.
+    The default value is ten.  The specified value must not be negative.
+ 
+  <DT><CODE>-wiener_cut=</CODE><VAR>k</VAR> or <CODE>-wiener_cut=</CODE><VAR>kx</VAR><CODE>:</CODE><VAR>ky</VAR><CODE>:</CODE><VAR>kz</VAR>
+  <DD>If you specify this option, the noise suppression factor for the Wiener
+    filter is interpreted as a multiplier for the average amplitude of the
+    high frequency components of the input volume divided by the average
+    amplitude for all frequency components in the input volume.  In the first
+    form, a high frequency is any frequency where the absolute value of the x,
+    y, or z frequency component is greater than or equal to <VAR>k</VAR>.
+    <VAR>k</VAR> is assumed to have units of cycles per pixel; i.e., the
+    Nyquist frequency is 0.5.  In the second form, a high frequency is any
+    frequency where the absolute value of the x frequency component is greater
+    than or equal to <VAR>kx</VAR>, the absolute value of the y frequency
+    component is greater than or equal to <VAR>ky</VAR>, or the absolute value
+    of the z frequency component is greater than or equal to <VAR>kz</VAR>.
+    <VAR>kx</VAR>, <VAR>ky</VAR>, and <VAR>kz</VAR> must be non-negative and
+    are assumed to have units of cycles per pixel.
+
+  <DT><CODE>-rectangular=</CODE><VAR>x_coverage</VAR><CODE>:</CODE><VAR>y_coverage</VAR><CODE>:</CODE><VAR>z_coverage</VAR>
+  <DD>Selects a rectangular windowing function that attenuates 200 times
+    <VAR>x_coverage</VAR> percent of the data in x, 200 times
+    <VAR>y_coverage</VAR> percent of the data in y, and 200 times
+    the <VAR>z_coverage</VAR> percent of the data in z (or time).  Valid values
+    for <VAR>x_coverage</VAR>, <VAR>y_coverage</VAR>, and <VAR>z_coverage</VAR>
+    are between 0 and 0.5.
+
+  <DT><CODE>-triangular=</CODE><VAR>x_coverage</VAR><CODE>:</CODE><VAR>y_coverage</VAR><CODE>:</CODE><VAR>z_coverage</VAR>
+  <DD>Selects a triangular windowing function that attenuates 200 times
+    <VAR>x_coverage</VAR> percent of the data in x, 200 times
+    <VAR>y_coverage</VAR> percent of the data in y, and 200 times
+    the <VAR>z_coverage</VAR> percent of the data in z (or time).  Valid values
+    for <VAR>x_coverage</VAR>, <VAR>y_coverage</VAR>, and <VAR>z_coverage</VAR>
+    are between 0 and 0.5.
+
+  <DT><CODE>-halfsine=</CODE><VAR>x_coverage</VAR><CODE>:</CODE><VAR>y_coverage</VAR><CODE>:</CODE><VAR>z_coverage</VAR>
+  <DD>Selects a half-sine windowing function (consult the
+    <A HREF="#Window">Window/taper topic</A> for details) that attenuates 200
+    times <VAR>x_coverage</VAR> percent of the data in x, 200 times
+    <VAR>y_coverage</VAR> percent of the data in y, and 200 times
+    <VAR>z_coverage</VAR> percent of the data in z (or time).  Valid values for
+    <VAR>x_coverage</VAR>, <VAR>y_coverage</VAR>, and <VAR>z_coverage</VAR>
+    are between 0 and 0.5.  Use <CODE>-halfsine_power</CODE> to set the
+    exponent, which controls the sharpness of the window edges.
+
+  <DT><CODE>-halfsine_power=</CODE><VAR>p</VAR>
+  <DD>Sets the exponent for the half-sine windowing function.  This option is
+    ignored when other windowing functions are used.  If this option is not
+    explicitly specified when the half-sine windowing function is used, the
+    exponent used is one.
+
+  <DT><CODE>-hamming=</CODE><VAR>x_coverage</VAR><CODE>:</CODE><VAR>y_coverage</VAR><CODE>:</CODE><VAR>z_coverage</VAR>
+  <DD>Selects a Hamming window function (consult the
+    <A HREF="#Window">Window/taper topic</A> for details) that attenuates 200
+    times <VAR>x_coverage</VAR> percent of the data in x, 200 times
+    <VAR>y_coverage</VAR> percent of the data in y, and 200 times
+    the <VAR>z_coverage</VAR> percent of the data in z (or time).  Valid values
+    for <VAR>x_coverage</VAR>, <VAR>y_coverage</VAR>, and <VAR>z_coverage</VAR>
+    are between 0 and 0.5.
+
+  <DT><CODE>-blackman=</CODE><VAR>x_coverage</VAR><CODE>:</CODE><VAR>y_coverage</VAR><CODE>:</CODE><VAR>z_coverage</VAR>
+  <DD>Selects a Blackman window function (consult the
+    <A HREF="#Window">Window/taper topic</A> for details) that attenuates 200
+    <VAR>x_coverage</VAR> percent of the data in x, 200 times
+    <VAR>y_coverage</VAR> percent of the data in y, and 200 times
+    the <VAR>z_coverage</VAR> percent of the data in z (or time).  Valid values
+    for <VAR>x_coverage</VAR>, <VAR>y_coverage</VAR>, and <VAR>z_coverage</VAR>
+    are between 0 and 0.5.
+
+  <DT><CODE>-xpad=default</CODE> or <CODE>-xpad=</CODE><VAR>n</VAR>
+  <DD>Specifies that the x dimension should be padded by the default amount
+    or by <VAR>n</VAR> pixels, where <VAR>n</VAR> is a non-negative integer.
+
+  <DT><CODE>-xpad_value=mean</CODE> or <CODE>-xpad_value=ramp</CODE> or <CODE>-xpad_value=</CODE><VAR>rv</VAR>[<CODE>:</CODE><VAR>iv</VAR>]
+  <DD>Specifies what values to use when padding the x dimension.
+    <CODE>-xpad_value=mean</CODE> causes the data to be padded with the
+    mean value.  <CODE>-xpad_value=ramp</CODE> causes the data to be padded
+    with values which range linearly from the value at one boundary to the
+    value at the other boundary.  The last form causes the data to be
+    padded with a constant value whose real component is <VAR>rv</VAR> and
+    whose imaginary component is <VAR>iv</VAR>.  If the imaginary component
+    is omitted, it is assumed to be zero.
+
+  <DT><CODE>-ypad=default</CODE> or <CODE>-ypad=</CODE><VAR>n</VAR>
+  <DD>Is similar to <CODE>-xpad</CODE> but specifies the amount of padding
+    in the y dimension.
+
+  <DT><CODE>-ypad_value=mean</CODE> or <CODE>-ypad_value=ramp</CODE> or <CODE>-ypad_value=</CODE><VAR>rv</VAR>[<CODE>:</CODE><VAR>iv</VAR>]
+  <DD>Is similar to <CODE>-xpad_value</CODE> but specifies the padding values
+    for the y dimension.
+
+  <DT><CODE>-zpad=default</CODE> or <CODE>-zpad=</CODE><VAR>n</VAR>
+  <DD>Is similar to <CODE>-xpad</CODE> but specifies the amount of padding
+    in the z dimension.
+
+  <DT><CODE>-zpad_value=mean</CODE> or <CODE>-zpad_value=ramp</CODE> or <CODE>-zpad_value=</CODE><VAR>rv</VAR>[<CODE>:</CODE><VAR>iv</VAR>]
+  <DD>Is similar to <CODE>-xpad_value</CODE> but specifies the padding values
+    for the z dimension.
+
+  <DT><CODE>-xtrim=default</CODE> or <CODE>-xtrim=</CODE><VAR>n</VAR>
+  <DD>The first form specifies that the x dimension of the result
+    (including padding) should be trimmed to have the same size as the
+    x dimension of the selected input region.  The second form trims
+    <VAR>n</VAR> pixels from the x dimension before output; <VAR>n</VAR>
+    must be a non-negative integer.
+
+  <DT><CODE>-ytrim=default</CODE> or <CODE>-ytrim=</CODE><VAR>n</VAR>
+  <DD>Is similar to <CODE>-xtrim</CODE> but controls the amount trimmed
+    from the y dimension before output.
+
+  <DT><CODE>-ztrim=default</CODE> or <CODE>-ztrim=</CODE><VAR>n</VAR>
+  <DD>Is similar to <CODE>-xtrim</CODE> but controls the amount trimmed
+    from the z dimension before output.
+</DL>
+
+<P>As an example, the following command line removes second order trends
+from the data in raw.dat, applies a Gabor filter, and places the result
+in out.dat:
+<PRE>
+    FFilter3D raw.dat out.dat -polyfit=2 \
+        -gabor=0.24:135:45:0.16:0.16:0.16
+</PRE>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#FFilter3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#Filter">Filter types</A> |
+  <A HREF="#Inverse">Inverse filter</A> |
+  <A HREF="#Preprocessing">Preprocessing</A> |
+  <A HREF="#Window">Window/taper</A> |
+  <A HREF="#Edges">Edge handling</A> |
+  <A HREF="#OutputSize">Output size</A> |
+  Command line
+<HR>
+
+</BODY>
+</HTML>

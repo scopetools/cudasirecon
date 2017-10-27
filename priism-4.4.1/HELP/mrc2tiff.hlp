@@ -1,0 +1,423 @@
+KEYWORD
+        8-bit single_file interleaving name_format output_directory
+        output_prefix template scale
+
+DESCRIPTION mrc2tiff
+        This application takes a Priism file and converts it
+        into one or more TIFF files.  The conversion can be
+        direct or the data can be scaled to integers in the
+        range of 0 to 255 first.  Preservation of the original
+        data values is the key advantage of the direct
+        conversion.  The unfortunate drawback is that the
+        output will usually be 16-bit signed integers or
+        32-bit floating-point values (the exact format will
+        depend on the format of the Priism file) and will
+        not be readable by another application that only
+        supports the baseline TIFF formats (1-, 4-, and 8-bit
+        unsigned integers).
+
+        Mrc2tiff has the standard set of Priism controls
+        for selecting a subset of the Priism file to convert
+        (these are described in Region.hlp).  If you wish to
+        scale the input to integers in the range of 0 to 255
+        before conversion, turn on the "8-bit" toggle button;
+        you can modify the scaling parameters via the "W0
+        scale" through "W4 scale" fields.  If you do not wish
+        to scale the input to 8-bit, turn off the "8-bit"
+        toggle button.  The other choice you have to make
+        is whether to turn on the "Single file" toggle button
+        and convert each section in the input into a page in
+        a multipage TIFF file or to turn off the "Single file"
+        toggle button and generate a series of TIFF files
+        which each contain a single section.  If you are
+        converting a single section, the choice does not
+        affect the interpretation of the output file, and
+        turning on the "Single file" toggle button is simpler:
+        you only have to enter the output file name in the
+        "Output file" field.  When converting multiple
+        sections into a single TIFF file, the controls that
+        are important are the "Output file" button to browse
+        for the output file, the field next to the "Output file"
+        button in which the output file name can be entered
+        directly, and the "Interleaving" menu which controls
+        the ordering of pages in the output.  For multiple
+        TIFF files, the important controls affect the generation
+        of the output file names: the "Name format" menu,
+        "Directory" field, "Prefix" field, and "Template" field.
+
+        Mrc2tiff is not able to convert complex-valued data.
+
+        mrc2tiff accepts the command-line arguments described
+        in Region.hlp.  In addition, it has the following
+        options (parts in brackets are optional):
+
+            -8bit
+                Causes the input to be scaled to unsigned 8-bit
+                integers.  You can modify the scaling parameters
+                with the -scl options.  If you mix -8bit or the
+                -scl options with -preserve_type, the one that
+                appears last on the command line takes
+                precedence.  By default, mrc2tiff will scale
+                to unsigned 8-bit integers unless the input
+                pixel format is unsigned 8-bit integer.
+
+            -dir=dir
+                Sets the name of the directory to use in the
+                file name template when mrc2tiff generates
+                multiple output files from the input file.
+                If you use the -single option to force mrc2tiff
+                to generate one output file, the -dir option
+                has no effect.  By default, the directory
+                name is an empty string.
+
+            -interleave=arrangement
+                Sets the interleaving to use when writing
+                multiple sections to a single TIFF file or
+                for calculating output section indices for
+                custom file name templates.  Allowed values
+                for arrangement are twz, tzw, wtz, wzt, ztw,
+                or zwt; ztw is the default.
+
+            -out=name or -out=name_format
+                If you use the -single option, use -out to
+                set the name of the file to generate.  If
+                you do not use the -single option, you can
+                use -out to select one of the predefined output
+                file name templates.  The allowed values
+                for name_format when you do not use the
+                -single option are:
+
+                prefix+wzt
+                    Causes mrc2tiff to generate output file
+                    names as if "prefix_w#_z#_t#.tif" had
+                    been selected from the user interface.
+                    This is the default.
+
+                prefix+wz
+                    Causes mrc2tiff to generate output file
+                    names as if "prefix_w#_z#.tif" had been
+                    selected from the user interface.
+
+                prefix+wt
+                    Causes mrc2tiff to generate output file
+                    names as if "prefix_w#_t#.tif" had been
+                    selected from the user interface.
+
+                prefix+zt
+                    Causes mrc2tiff to generate output file
+                    names as if "prefix_z#_t#.tif" had been
+                    selected from the user interface.
+
+                prefix+w
+                    Causes mrc2tiff to generate output file
+                    names as if "prefix_w#.tif" had been
+                    selected from the user interface.
+
+                prefix+z
+                    Causes mrc2tiff to generate output file
+                    names as if "prefix_z#.tif" had been
+                    selected from the user interface.
+
+                prefix+t
+                    Causes mrc2tiff to generate output file
+                    names as if "prefix_t#.tif" had been
+                    selected from the user interface.
+
+                When you do not use the -single option, the
+                -template option will override the -out
+                option.
+
+            -prefix=pref
+                Sets the prefix to use in the file name
+                template when mrc2tiff generates multiple
+                output files from the input file.  If you
+                use the -single option to force mrc2tiff
+                to generate one output file, the -prefix
+                option has no effect.  By default, the
+                prefix is an empty string.
+
+            -preserve_type
+                Forces the TIFF output to have the same pixel
+                format (i.e. 16-bit signed integer, 32-bit
+                floating-point, etc ...) as the input MRC
+                file and prevents mrc2tiff from trying to
+                scale the input data.  If you mix this
+                option with -8bit or the -scl options, the
+                one that appears last on the command-line
+                takes precedence.  By default, mrc2tiff will
+                scale the input data and not preserve the
+                pixel format except in the case where the
+                input pixel format is unsigned 8-bit integer.
+
+            -scl1=bound1[:bound2[:exp[:flag]]]
+                Sets the scaling parameters for the output
+                drawn from the first wavelength of the
+                input.  Takes one to four parameters;
+                parameters not specified take on their
+                default values (see the scaling topic for
+                what the default values are).  The first
+                two parameters are the intensity bounds for
+                scaling, the third is the exponent, and the
+                fourth sets what happens to data values
+                outside of the intensity bounds.  The
+                documentation for the image window's Scale
+                function describes the parameters in more
+                detail.  Using this option implicitly sets
+                the -8bit option.  There are similar options
+                (-scl2, -scl3, -scl4, and -scl5) to set the
+                scaling for the output from other input
+                wavelengths.  If you mix -8bit or the -scl
+                options with -preserve_type, the one that
+                appears last on the command-line takes
+                precedence.  
+
+            -single
+                If you use this option, mrc2tiff will
+                generate a single output file (whose name
+                is controlled by the -out option) and each
+                section drawn from the input file will
+                become a page in the TIFF file.  If you do
+                not use this option, mrc2tiff will generate
+                one TIFF file for each section drawn from
+                the input file.
+
+            -template=custom_template
+                Sets the file name template mrc2tiff will
+                use when generating one TIFF file per section
+                in the MRC file.  This option has no effect
+                if you use the -single option and overrides
+                the -out option when you do not use the -single
+                option.  By default, the template is an empty
+                string.
+
+        The following example writes out the sections in
+        fish.dat as a sequence of TIFF files in the directory
+        /var/tmp; the names of the TIFF files will start
+        with "fish" and (because it is the default) include
+        the wavelength, z, and time point indices.
+
+            mrc2tiff fish.dat -dir=/var/tmp -prefix=fish
+
+8-bit
+        If the "8-bit" toggle button is on, Mrc2tiff scales
+        input data values to be integers in the range of 0 to
+        255 and writes the scaled result to one or more TIFF
+        files.  The "W0 scale" through "W4 scale" fields
+        allow you to modify the scaling parameters.
+
+        If the "8-bit" toggle button is off, Mrc2tiff does
+        not modify the input data values before writing the
+        TIFF file or files.  This direct conversion will
+        generate TIFF files that do not conform to the
+        baseline TIFF standard if the input data is
+        represented as floating-point values or as 16- or
+        32-bit integers.  Many programs that can read TIFF
+        files do not correctly handle such files.
+
+        When you select a new input, Mrc2tiff will reset
+        the "8-bit" toggle button.  If the input is already
+        represented by unsigned 8-bit integers, Mrc2tiff
+        turns off the toggle button; otherwise, Mrc2tiff
+        turns on the toggle button.
+
+single_file
+        The output of Mrc2tiff can be a single TIFF file
+        which has multiple pages where each page has the
+        data for one section, or can be multiple TIFF files
+        where each TIFF file has the data for one section.
+        If you are converting a single section, the single
+        file is easier:  all you have to enter is the output
+        file name in the "Output file" field.  If you have
+        multiple sections, choose the format to match what
+        your TIFF reader expects; beware that some TIFF
+        readers may only be able to access the first page
+        in a TIFF file with multiple pages.
+
+        To have Mrc2tiff generate a single TIFF file with
+        multiple pages, turn on the "Single file" toggle
+        button.  Set the name of the output file with the
+        "Output file" button or adjacent field.  Use the
+        "Interleaving" menu to control how the numbering
+        of the pages reflects the z, wavelength, and time
+        point indices for each section.
+
+        To have Mrc2tiff generate multiple TIFF files,
+        turn off the "Single file" toggle.  The output file
+        names are generated automatically in a variety of
+        formats which can incorporate a directory name,
+        prefix, and the z, wavelength, or time point
+        indices for the section.
+
+        When you select a new input, Mrc2tiff will reset
+        the "Single file" toggle button.  If the input
+        contains a single section, Mrc2tiff turns off the
+        toggle button; otherwise, Mrc2tiff turns on the
+        toggle button.
+
+interleaving
+        Interleaving specifies how the z, wavelength, and
+        time point indices map to the page number for multiple
+        page output and how output section numbers are
+        computed for custom filename templates.  If the
+        output has nz z-sections, nw wavelengths, and nt
+        time points, and a given section has a z-section
+        index in the output of iz (0 <= iz < nz), wavelength
+        index in the output of iw (0 <= iw < nw), and time
+        point index in the output of it (0 <= it < nt)
+        then the page number (or output section number),
+        p, with the different interleaving options is:
+
+            twz     p = it + nt * (iw + nw * iz)
+            tzw     p = it + nt * (iz + nz * iw)
+            wtz     p = iw + nw * (it + nt * iz)
+            wzt     p = iw + nw * (iz + nz * it)
+            ztw     p = iz + nz * (it + nt * iw)
+            zwt     p = iz + nz * (iw + nw * it)
+
+name_format
+        When multiple TIFF files are generated, the file names
+        are generated by filling in a template.  From the "Name
+        format" menu you may select a standard template or
+        choose the "custom template" option to use the template
+        entered in the "Template" field.  For the standard
+        templates, the generated file names will all start with
+        the contents of the "Directory" field, followed by a
+        slash, and followed by the contents of the "Prefix"
+        field.  The remainder of the file name depends on which
+        template was chosen:  it will be the template name
+        ("prefix_w#_z#_t#.tif", for instance) without the
+        leading "prefix" and with "w#" replaced with a w
+        followed by the output wave index for the section in
+        the file, "t#" replaced with a t followed by the output
+        time index for the section in the file, and "z#"
+        replaced with a z followed by the output z index for
+        the section in the file.  The numbers of digits used
+        for an index is the digits needed to represent the
+        largest index in that dimension.  As an example, with
+        the "prefix_w#_z#_t#.tif" template, /var/tmp as the
+        output directory, exp12_2002 as the output prefix, and
+        an input region that has 3 wavelengths, 500 time
+        points, and 30 z sections, the file name for the
+        section whose output z, wavelength, and time indices
+        are 1, 2, and 3 respectively would be
+
+            /var/tmp/exp12_2002_w2_z01_t003.tif
+
+output_directory
+        When multiple TIFF files are written and one of the
+        standard file name formats is used, the generated
+        file names will start with the contents of the
+        "Directory" field.  The section on name formats has
+        an example of this.  For a custom template, the
+        contents of the "Directory" field are substituted
+        for any %d conversion codes.
+
+output_prefix
+        When multiple TIFF files are written and one of the
+        standard file name formats is used, the generated
+        file names will include the contents of the "Prefix"
+        field.  The section on name formats has an example
+        of this.  For a custom template, the contents of
+        the "Prefix" field are substituted for any %p
+        conversion codes.
+
+template
+        The file name generation mechanism for multiple
+        TIFF files may use a custom file name template.  To
+        do so select "custom template" from the "Name format"
+        menu and enter the template in the "Template" field.
+        When generating file names, special conversion codes
+        are expanded in the template.  The conversion codes
+        have the following general form:
+
+            %[width][modifier]code.
+
+        The recognized codes are:
+
+            %
+                Causes a percent sign to be inserted in the
+                file name.
+
+            d
+                This conversion code is replaced with the
+                contents of the "Directory" field.
+
+            p
+                This conversion code is replaced with the
+                contents of the "Prefix" field.
+
+            z
+                This conversion code is replaced with the z
+                index for the section stored in the file.
+            w
+                This conversion code is replaced with the
+                wavelength index for the section stored in
+                the file.
+
+            t
+                This conversion code is replaced with the
+                time point index for the section stored in
+                the file.
+
+            s
+                This conversion code is replaced with the
+                section number for the section stored in
+                the file.
+
+        width is optional and may be used with the z, w,
+        t, and s codes to specify the minimum number of
+        digits which are used to display the index value.
+        width may be a positive integer indicating the
+        minimum number of digits to use or the letter a
+        to indicate that the minimum number of digits
+        should be the number of digits in the maximum
+        corresponding index.  If an index would have less
+        than the minimum number of digits, leading zeros
+        are added to fill in the missing portion.
+
+        modifier is optional and may be used with the z,
+        w, t, and s codes.  If modifier is not present,
+        the index generated by those codes is computed
+        for the output file.  If modifier is the letter i,
+        then the index is computed relative to the input
+        file.
+
+        As an example, the standard name format
+
+            prefix_w#_z#_t#.tif
+
+        is equivalent to the custom template,
+
+            %d/%p_w%aw_z%az_t%at.tif
+
+        The custom template
+
+            /var/tmp/%2iz_%2iw_%2it.tif,
+
+        would generate file names which included the
+        input z, wavelength, and time indices of the
+        section in the file.  Each index would be
+        displayed with at least two digits.
+
+scale
+        If the "8-bit" toggle button is on, the values
+        in the "W0 scale" field control how the data
+        from the first wavelength in the input is scaled
+        to fit in the range of 0 to 255.  The "W1 scale"
+        through "W4 scale" fields are similar, but affect
+        the second through fifth wavelengths in the input.
+        For more information about the meaning of the
+        scaling values, see the "Scaling Values" topic
+        in the documentation for the image window's Scale
+        application (the special case mentioned in that
+        documentation does not apply in this situation
+        and is handled like all other combinations of
+        scaling values).
+
+        If the input to be converted is an image window,
+        the default scaling parameters are the scaling
+        values in effect when Mrc2tiff opens the image
+        window.  If the input is a file, the default scaling
+        values are set to reflect a linear scaling between
+        the minimum and maximum values recorded in the
+        file's header.

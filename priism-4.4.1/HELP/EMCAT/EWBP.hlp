@@ -1,0 +1,279 @@
+KEYWORD
+      AlignedSeries Reconstruction NX:NY:NV OutputXZSize YRange
+      WeightingFunction ParticleXZSize OutputFormat HammingFilter
+      r*HammingFilter Positivity Resolution ResolutionScale Multires
+
+DESCRIPTION
+      This program (EWBP, elliptical-square weighted
+      backprojection) computes the weighted backprojection
+      (WBP) reconstruction of a volume from a mass
+      normalized and aligned series of projections.
+      WBP is a linear shift-invariant algorithm, hence
+      the reconstruction can be described by its point
+      spread function.  The only thing one can manipulate
+      with this algorithm is its weighting function.  The
+      reconstruction is computed by multiplying the Fourier
+      transform of each projection with its weighting
+      function and backprojecting the weighted values into
+      the reconstruction volume.
+
+      The current program provides a set of weighting
+      functions.  Besides the conventional r*-weighting
+      function which is valid for a regular tilt series,
+      there is the so-called elliptical-square weighting
+      function which applies to arbitrary tilting geometry
+      of the projection set and also takes care of the
+      scaling problem (that is, the scales of the 
+      reconstruction and that of the projections correspond
+      to each other).  The elliptical-square weighting
+      function is recommended for all situations.
+
+      Here's an example command file for EWBP:
+
+          (time ewbp /mama/weiping/prog/junk.MnAln \
+              /mama/weiping/prog/junk.xzyw -dimxz=128:150 \
+              -iy=0:127 -filter=2 -reconxz=128:150 \
+              -moderec=2 -hdfilt=1 -positivity=1 ) \
+              > /mama/weiping/emrecon.log
+
+AlignedSeries
+      This is the name of the input file which contains
+      the mass normalized and aligned projection series
+      created by APPL_PRM.  On the command line, the name
+      of the file with mass-normalized and aligned data
+      is the first argument.
+
+Reconstruction
+      This is the name of the file that will contain the
+      data for the reconstructed volume.  On the command
+      line, the name of for the output image data is the
+      second argument.
+
+NX:NY:NV
+      The first two values are, respectively, the x and
+      y dimensions of the data in the input projection
+      series.  The last value is the number of projections
+      in the series.
+
+OutputXZSize
+      These two values set the x and z dimensions, in
+      pixels, of the reconstructed volume (the volume is
+      written as slices parallel to the xz plane so these
+      values are the dimensions of a single slice).  The
+      z dimension should be greater than the specimen
+      thickness.  When the reconstructed volume is used
+      as an input for TAPIR, the z dimension should be
+      twice the specimen thickness to limit contamination
+      of the TAPIR reconstruction by volatile projection
+      direct components; also, the sizes for the TAPIR
+      reconstruction and the initial reconstruction should
+      be the same.
+
+      On the command line, the dimensions of the
+      reconstruction are set with
+
+          -reconxz=nx:nz
+
+      When the dimensions are not set, nx is taken to
+      be the same size as the x dimension of an input
+      projection, and nz is set to one-fourth of nx.
+
+YRange
+      These two values set the range of y pixels from
+      the aligned tilt series to use in the reconstruction.
+      The first is the first index (running from 0 to the
+      number of y pixels minus one) to use, and the
+      second is the last possible index to use.
+
+      From the command line, use
+
+          -iy=start_index:last_index
+
+      to set the range of y pixels used in the reconstruction.
+      If you do not specify a range, all y pixels are used:
+      start_index is set to zero and last_index is set to
+      the number of y pixels minus one.
+
+WeightingFunction
+      There are three choices for the weighting function to
+      use in the weighted backprojection:
+
+      elliptical-square
+          Can be applied to arbitrary tilt geometry of the
+          projection set and handles the scaling problem (the
+          scales of the reconstruction and of the projections
+          correspond to each other with this weighting
+          function).  Tends to be more stable than the
+          elliptical weighting function since it avoids
+          the possibility of very large values at some
+          projection Fourier points.  The elliptical-square
+          weighting function is the recommended weighting
+          function.
+
+      r*
+          Is valid for regular tilt series but does not
+          properly scale the reconstruction so it can not
+          be used to generate an initial guess for TAPIR.
+
+      elliptical
+          Is similar to the elliptical-square weighting
+          function but tends to be less stable.
+
+      To specify the weighting function from the command
+      line use
+
+          -filter=code
+
+      where code is one of the following:
+
+          1  elliptical weighting function
+          2  elliptical-square weighting function
+          3  r*-weighting function
+
+      When no weighting function is specified on the command
+      line, the default is to use the elliptical-square
+      function.
+
+ParticleXZSize
+      These two values are, respectively, the x and z
+      dimensions in pixels of the particle and are used when
+      computing the elliptical or elliptical-square
+      weighting functions.
+
+      To specify the particle dimensions from the command
+      line, use
+
+          -sizexz=nx:nz
+
+      If the particle size is not set, the program uses
+      the x and z dimensions of a reconstruction slice for
+      the dimensions of the particle.
+
+OutputFormat
+      This parameter controls the data type used to
+      represent the values in the reconstructed volume.
+      You have the choice of using a four byte floating-
+      point representation or a two byte signed integer
+      representation.
+
+      To set the output data type from the command line,
+      use
+
+          -moderec=2
+
+      for the floating-point representation or
+
+          -moderec=1
+
+      for the signed integer representation.  If neither
+      is set, the floating-point representation is used.
+
+HammingFilter
+      When the toggle is on, a Hamming filter is applied
+      to the data before the reconstruction; when it is off,
+      no Hamming filter is applied.  On the command line,
+      the way to turn on the Hamming filter applied before
+      the reconstruction is to use
+
+          -hdfilt=any_value
+
+      The default behavior is not to apply the initial
+      Hamming filter if no such option is supplied.
+
+      This switch is normally not used.
+
+r*HammingFilter
+      This toggle only affects the reconstruction when the
+      r*-weighting function is used.  When the toggle is off,
+      no Hamming filter is combined with the r*-weighting
+      function for reconstruction; when it is on, a Hamming
+      filter is combined with the weighting function.  When
+      you use the r*-weighting function and turn on both
+      this option and the Hamming filter option, the
+      projections will be filtered twice with a Hamming
+      filter. On the command line, the way to combine a
+      Hamming filter with the r*-weighting function is
+      to use
+
+          -hrfilt=any_value
+
+      The default behavior is to not include a Hamming
+      filter with the r*-weighting function if no such
+      command line option has been supplied.
+
+      This switch is normally not used.
+
+Positivity
+      When this toggle is on, data values in reconstructed
+      volume which are less than zero are coerced to zero
+      (a positivity constraint).  No such constraint is
+      applied when the switch is off (the default behavior).
+      On the command line, the way to force the positivity
+      constraint is to supply a
+
+          -positivity=any_value
+
+      option.  If no command line option is supplied, the
+      default is to not apply a positivity constraint.
+
+      This switch is normally not used.
+
+Resolution
+      The resolution parameter selects which resolution
+      to process from the input tilt series.  Normally,
+      the tilt series has been preprocessed with apply
+      parameters, and the highest resolution in the tilt
+      series corresponds to the resolution you want.  In
+      those situations, you would set the resolution
+      parameter to zero (the default value) to select
+      the highest resolution from the tilt series.
+
+      On the command line, use
+          -res=i
+
+      to have the reconstruction use the ith resolution
+      from the tilt series.  When run from the command 
+      line and no resolution is selected, the reconstruction
+      will use the highest resolution present in the
+      input tilt series.
+
+ResolutionScale
+      The resolution scale parameter controls the scale
+      factor applied to the reconstruction and particle
+      size parameters.  In the typical case where you
+      select a resolution level to process from the main
+      dialog of EMTAR, the graphical interface will
+      automatically fill in the resolution scale correctly.
+      In the case where you are running the reconstruction
+      directly on a downsampled tilt series but still
+      specify the reconstruction sizes in terms of the full
+      resolution, you should set the resolution scale to
+      be the same as the downsampling factor (if the data
+      is scaled down by a factor of four set the resolution
+      scale parameter to four).
+
+      On the command line, use
+
+          -rscale=i
+
+      set the resolution scale to be i.  When run from
+      the command line without the -rscale option, ewbp
+      will use a scale factor equal to two raised to the
+      power of the resolution level selected with -res.
+
+Multires
+      Turn on the "Add multires" toggle button to cause
+      ewbp to add lower resolutions to the reconstruction
+      if the x and y dimensions of the reconstruction are
+      large enough.  Turn off the "Add multires" toggle
+      button to cause ewbp to generate a reconstruction
+      with a single resolution.
+
+      On the command line, include
+
+          -multires
+
+       in the command-line options for ewbp to cause
+       ewbp to add lower resolutions to the reconstruction
+       if the x and y dimensions of the reconstruction
+       are large enough.

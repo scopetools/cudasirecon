@@ -1,0 +1,257 @@
+KEYWORD
+    InputFile OutputFile SamplingRatio InputProjections
+    OutputProjections XYRange XYOffset CommandLine
+
+DESCRIPTION
+    The lists of markers from the bead alignment programs
+    do not include information about the pixel spacing or
+    origin.  Therefore, it is not possible to use a list
+    with a resampled or binned version of the tilt series
+    from which the list was generated.  Rather than
+    recalculate a list of markers from scratch for the
+    altered version of the tilt series, you can use Bead
+    List Resample to generate a new list from an existing
+    one by transforming the marker coordinates.
+
+    As an example, assume that you have a tilt series, a.stk,
+    with 2048 x 2048 images.  For a variety of reasons, you
+    may want to align and reconstruct a version of a.stk,
+    b.stk, which has been binned to 512 x 512.  If you then
+    want to take the marker coordinates for the binned
+    version, b.sl2, and refine them for aligning and
+    reconstructing the original tilt series, you would:
+
+      1) Use Bead List Resample with an input file of b.sl2,
+         an output file of a.sl2, and a sampling ratio of 4 to
+         create a list of coordinates usable with a.stk.
+      2) Use the interactive last stage of the bead alignment
+         programs to refine the coordinates and calculate
+         the alignment parameters.
+      3) Use the calculated alignment parameters with the
+         reconstruction applications to generate the
+         reconstruction of a.stk.
+
+InputFile
+    For the interactive Bead List Resample, use the "Input
+    file" field to enter the name of the unmatched (.pl,
+    .rbl, or .sbl) or matched (.sl) marker list that you
+    want to convert.  You can use the button adjacent to
+    the field to bring up a file browser for selection of
+    the file.
+
+OutputFile
+    For the interactive Bead List Resample, use the "Output
+    file" field to enter the name for the output parameter
+    file.  You can use the button adjacent to the field to
+    bring up a file browser for selection of the file.
+
+SamplingRatio
+    Let x1 be the x pixel spacing of the tilt series used
+    to generate the input marker list and x2 be the x pixel
+    spacing of the tilt series for which you want to
+    generate a marker list.  Then enter the ratio of x1
+    to x2 in the "Sampling ratio" field.
+
+    Like the other alignment and reconstruction applications,
+    Bead List Resample assumes the pixels in the tilt series
+    are square:  i.e. the ratio calculated above will hold
+    true for the y pixel spacing as well.
+
+InputProjections
+    In the interactive Bead list Resample, the controls
+    immediately below the "Input projections" label control
+    which projections are included from the input marker list.
+    The controls are:
+
+      All
+          If the "All" toggle button is on, all projections
+          from the input marker list are considered for
+          included in the output list (for a matched list,
+          the "Count" control for output projections may limit
+          the total number included in the output).  If the
+          "All" toggle button is off, the "Range" and
+          "Increment" fields described below are active and
+          control which projections to include from the input.
+
+      Range
+           The first value in the "Range" field is the zero-
+           based index of the first projection to include.
+           The second value in the "Range" field is the zero-
+           based index of the last projection to include.
+
+      Increment
+           The value in the "Increment" field is the step
+           between adjacent projections included from the
+           input list:  for instance, use an increment of
+           two to skip every other projection.
+
+OutputProjections
+    In the interactive Bead List Resample, the controls
+    immediately below the "Output projections" label control
+    the output numbering for the projections selected from
+    the input list.  The controls are:
+
+      Auto
+          If the "Auto" toggle button is on, the projections
+          selected from the input are numbered zero for the
+          first projection, one for the second, and so on.
+          If the input list is a matched list, the number of
+          projections in the output is the minimal number
+          necessary to cover the specified input projection
+          range.  If the "Auto" toggle button is off, the
+          "Start", "Increment", and, for matched lists,
+          "Count" fields described below control the output
+          numbering for the selected input projections.
+
+      Start
+          The value in the "Range" field is the zero-based
+          index for the projection in the output which is
+          the counterpart for the first projection selected
+          from the input list.
+
+      Increment
+          For input projections i and i+d where d is the
+          input section increment, the corresponding output
+          projection indices will differ by s where s is
+          the value shown in the "Increment" field.
+
+      Count
+          The "Count" field only has an effect if the input
+          list is a matched list.  In that case, use the
+          "Count" field to limit the total number of
+          projections included in the output list; the
+          projections will be numbered from zero to the
+          value in the "Count" field minus one.
+
+XYRange
+    In the interactive Bead List Resample, the first value
+    in the "X range" field is lower bound for the x
+    coordinate of markers included in the output, and the
+    second value in the same field is the upper bound for
+    the x coordinate of markers included in the output.
+    If the "All" toggle button immediately adjacent
+    "X range" field is on, the values in the field are
+    ignored and no restrictions are enforced on the x
+    coordinates of the markers.  The "Y range"
+    controls function similarly but control the range
+    of y coordinates accepted.
+
+XYOffset
+    The value in the "X offset" field is added to each x
+    coordinate before scaling by the pixel spacing ratio
+    and writing the transformed coordinate to the output
+    list.  In a similar fashion, the value in the "Y offset
+    field" is added to each y coordinate.
+
+CommandLine
+    A command-line application, tfbl, provides the same
+    operations as the interactive Bead List Resample.
+    To reproduce the example from the overview (calculate
+    a bead list a.sl2 from another bead list b.sl2 for
+    the tilt series at one-quarter of the resolution), use
+
+        tfbl b.sl2 -ratio=4 -out=a.sl2
+
+    The full command-line syntax is (optional parts are
+    shown in braces):
+
+        tfbl input_file [-ratio=r] \
+            [-istart=is] [-iend=ie] [-istep=ii] \
+            [-ostart=os] [-ostep=oi] \
+            [-out=out_name] [-nv=count] [-xrange=l[:u]] \
+            [-yrange=l[:u]] [-xoff=o] [-yoff=o]
+
+
+    input_file
+        Is the name of the input marker list.  If the
+        name is - (a single hyphen), tfbl reads the
+        marker list from standard input.
+
+    -ratio=r
+        Sets the ratio, r, of the x pixel spacing assumed
+        for the input marker list to the x  pixel spacing
+        assumed for the output marker list.  tfbl assumes
+        that the ratio of the y pixel spacings is also r.
+        If you do not specify a pixel spacing ratio, tfbl
+        assumes the ratio is one.
+
+    -istart=is
+        Sets the zero-based index for the first projection
+        to use from the input marker list.  If you do not
+        specify the first projection to use, tfbl will
+        start from projection zero.
+
+    -iend=ie
+        Sets the zero-based index for the last projection
+        to use from the input marker list.  If you do not
+        specify the last projection to use, tfbl will end
+        with the highest projection index in the input
+        marker list.
+
+    -istep=ii
+        Sets the index increment between adjacent projections
+        to use from the input marker list.  ii must not be
+        zero.  If you do not specify an increment, tfbl uses
+        an increment of one.
+
+    -ostart=os
+        Sets the destination projection in the output for
+        the starting projection that you selected with
+        -istart.  os is the zero-based index of the
+        destination projection.  If you do not set the
+        destination  projection, tfbl assumes that the
+        destination is projection zero in the output.
+
+    -ostep=oi
+        Sets the increment between destination projections
+        for adjacent projections taken from input marker
+        list.  If you do not set the destination increment,
+        tfbl uses an increment of one.
+
+    -out=name
+        Sets the name of the file to create for the output
+        marker list.  If you use this option more than once,
+        only the last has any effect.  If you do not specify
+        the name of the output file, tfbl writes the generated
+        marker list to standard output.
+
+    -nv=count
+        If the input marker list is a matched list (.sl),
+        sets the total number of projections (which will
+        be numbered from 0 to count-1) in the output marker
+        list.  Has no effect if the input marker list is not
+        matched.  If you do not set the number of output
+        projections for a matched list, tfbl uses the smallest
+        number that will accommodate the destination
+        projections for the projections selected from the
+        input marker list.
+
+    -xrange=l[:u]
+        Sets the range of x coordinates accepted from the
+        input marker lists.  Markers whose x coordinate is
+        less than l or greater than u will not be included
+        in the output marker list.  If you do not specify
+        u, tfbl does not place an upper limit on the x
+        coordinate value.  If you do not set the x range,
+        tfbl does not restrict the x coordinates at all.
+
+    -yrange=l[:u]
+        Sets the range of y coordinates accepted from the
+        input marker lists.  Markers whose y coordinate is
+        less than l or greater than u will not be included
+        in the output marker list.  If you do not specify
+        u, tfbl does not place an upper limit on the y
+        coordinate value.  If you do not set the x range,
+        tfbl does not restrict the y coordinates at all.
+
+    -xoff=o
+        Sets the value, o, added to each x coordinate
+        before scaling by the pixel spacing ratio.  If
+        you do not specify an offset for the x coordinate,
+        tfbl uses an offset of zero.
+
+    -yoff=o
+        Sets the value, o, added to each y coordinate before
+        scaling by the pixel spacing ratio.  If you do not
+        specify an offset for the y coordinate, tfbl uses
+        an offset of zero.

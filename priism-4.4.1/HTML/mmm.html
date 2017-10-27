@@ -1,0 +1,346 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Region Min/Max/Mean</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Min/Max/Mean application.">
+  <META NAME="Keywords" CONTENT="Priism">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="mmm">Region Min/Max/Mean</A></H1>
+<H2>Overview</H2>
+
+<P>This program calculates the minimum, maximum, mean, and standard deviation
+of 4D (x, y, z, and time) regions of a data set.  For complex-valued data,
+the minimum and maximum are for the amplitude; it will also compute the
+minimum and maximum for the phase, real component, and imaginary component
+for complex-valued data but those are only displayed in the results dialog or
+when results are recorded to a file.  To use the application, first enter
+the file name or window number in the first line.  Then use the controls below
+that to select a region of interest.  The <A HREF="#XY">XY field</A> has the
+starting x index, starting y index, x size, and y size.  The starting and
+ending z indices are in the <A HREF="#SectionRange">Z field</A>, and the
+starting and ending time are in the <A HREF="#SectionRange">T field</A>.
+Select the wavelength used with the toggles next to the
+<A HREF="#Wave">W button</A>.  When the input is from an image window, there
+are two controls to ease region selection:
+
+<UL>
+  <LI>When the <A HREF="#CurrentSection">Current section toggle</A> is on,
+    the z, time, and wavelength fields are automatically set based on the
+    currently displayed section.  Also, if the section changes the min, max,
+    and mean are recalculated and shown in the dialog.
+  <LI>Pressing the <EM>Select region</EM> button enables the mouse for
+    selection of the x/y region of interest.  A recipe for to do this is
+    <UL>
+      <LI>Press the <EM>Select region</EM> button.
+      <LI>Move the mouse pointer to the image window.
+      <LI>Depending on where the pointer is relative to the region selected,
+        you can:
+        <UL>
+          <LI>Shift an existing region by depressing the left mouse button
+            when the pointer is in the center of the region, dragging the
+            mouse, and releasing the left mouse button.
+          <LI>Adjust the size of a region by depressing the left mouse button
+            when the pointer is at an edge or corner of the region, dragging
+            the mouse, and releasing the left mouse button.
+          <LI>Select a new region by depressing the left mouse button while
+            the pointer is outside of the existing region, dragging the
+            mouse, and releasing the left mouse button.
+        </UL>
+      <LI>After the left mouse button has been pressed in the image window, the
+        selection process will terminate if the mouse pointer leaves the image
+        and the left mouse button is not held down.  Press the <EM>Select
+        region</EM> button again to restart the selection process.
+    </UL>
+</UL>
+
+<P>Once a region is selected, press the <EM>Calculate</EM> button to determine
+and display the min, max, and mean.  The most recent result, as shown in
+the dialog, can be added to a list of results with the <EM>Record</EM> button.
+Use the <A HREF="#RecordedResults">controls at the bottom of the dialog</A>
+and just above the <EM>Quit</EM> button to manipulate this list of results.
+Use the <A HREF="#Loop">Loop ...</A> button to automate calculations for
+regions from the same file which have the same size.
+
+<P>The application also has a command-line mode of execution.  For more
+information on that mode, look at the <A HREF="#CommandLine">command line</A>
+topic.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#XY">XY region</A> |
+   <A HREF="#SectionRange">Section range</A> |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#CurrentSection">Current section</A> |
+   <A HREF="#LastResult">Last result</A> |
+   <A HREF="#Loop">Looping</A> |
+   <A HREF="#RecordedResults">Recorded results</A> |
+   <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="XY">XY region</A></H2>
+<P>When the <EM>Calculate</EM> button is pressed, the lower-lefthand corner
+and size of the x/y bounds for the region of interest are read from the
+values in the <EM>XY</EM> field in the main dialog.  The first value is
+the starting x index, the second value is the starting y index, the third
+value is the x size, and the last value is the y size.
+
+<P>There is a similar control in the dialog to loop over multiple regions
+(use the <EM>Loop...</EM> button in the main dialog to open this dialog); the
+meaning of the values in the field is the same but they set the x/y bounds
+for the first region of interest.  The other regions of interest are shifted
+from this first region of interest based on the <A HREF="#Loop">values for the
+step size in x and y</A>.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#mmm">Overview</A> |
+   XY region |
+   <A HREF="#SectionRange">Section range</A> |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#CurrentSection">Current section</A> |
+   <A HREF="#LastResult">Last result</A> |
+   <A HREF="#Loop">Looping</A> |
+   <A HREF="#RecordedResults">Recorded results</A> |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="SectionRange">Section range</A></H2>
+<P>When the <EM>Calculate</EM> button is pressed, the z and time bounds
+for the region of interest are set from the <EM>Z</EM> and <EM>T</EM> fields
+in the main dialog.  The first value in the field is the starting index
+(in z or time, respectively) for the region and the second value is the last
+index in the region.
+
+<P>There are similar controls in the dialog to loop over multiple regions
+(use the <EM>Loop...</EM> button in the main dialog to open this dialog).
+The values in these fields have the same meaning, but they set the z and
+time bounds for the first region of interest.  The other regions of interest
+are shifted from this first region based on the <A HREF="#Loop">values for
+the step size in z and time</A>.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#mmm">Overview</A> |
+   <A HREF="#XY">XY region</A> |
+   Section range |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#CurrentSection">Current section</A> |
+   <A HREF="#LastResult">Last result</A> |
+   <A HREF="#Loop">Looping</A> |
+   <A HREF="#RecordedResults">Recorded results</A> |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Wave">Wave</A></H2>
+<P>The toggles next to the <EM>W</EM> button in the main dialog control
+from which wavelength the region of interest is drawn.  The leftmost toggle
+represents the first wavelength in the file, and the rightmost toggle
+represents the last wavelength in the file.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#mmm">Overview</A> |
+   <A HREF="#XY">XY region</A> |
+   <A HREF="#SectionRange">Section range</A> |
+   Wave |
+   <A HREF="#CurrentSection">Current section</A> |
+   <A HREF="#LastResult">Last result</A> |
+   <A HREF="#Loop">Looping</A> |
+   <A HREF="#RecordedResults">Recorded results</A> |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="CurrentSection">Current section</A></H2>
+<P>When the input is drawn from an image window and the
+<EM>Current section</EM> toggle in the main dialog is on, the region of
+interest is limited to a subset of the section currently displayed in the
+window and the results for the minimum, maximum, and mean will be automatically
+updated when the displayed section is changed.
+
+<P>When the input is a file or the <EM>Current section</EM> toggle is off,
+the region of interest can be 4D (x, y, z, and time) and to update the
+<A HREF="#LastResult">display of the most recent results</A> it is always
+necessary to press the <EM>Calculate</EM> button.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#mmm">Overview</A> |
+   <A HREF="#XY">XY region</A> |
+   <A HREF="#SectionRange">Section range</A> |
+   <A HREF="#Wave">Wave</A> |
+   Current section |
+   <A HREF="#LastResult">Last result</A> |
+   <A HREF="#Loop">Looping</A> |
+   <A HREF="#RecordedResults">Recorded results</A> |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="LastResult">Last result</A></H2>
+<P>The result from the last time the <EM>Calculate</EM> button was pressed
+(or when the current section in the input window was last changed and
+the <A HREF="#CurrentSection">Current section toggle</A> was on), is shown
+in the <EM>Min/max</EM>, <EM>Mean</EM>, and <EM>Std. dev.</EM> fields.  Use
+the <EM>Record</EM> button to save this result in a list which can be
+<A HREF="#RecordedResults">saved to a file</A>.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#mmm">Overview</A> |
+   <A HREF="#XY">XY region</A> |
+   <A HREF="#SectionRange">Section range</A> |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#CurrentSection">Current section</A> |
+   Last result |
+   <A HREF="#Loop">Looping</A> |
+   <A HREF="#RecordedResults">Recorded results</A> |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Loop">Looping</A></H2>
+<P>To calculate the minimum, maximum, and mean for several regions which
+have the same size and are drawn from the same dataset, the controls in
+the looping controls, accessed with the <EM>Loop...</EM> button in the 
+main dialog, may be useful.  These controls allow you to set up an
+initial region and m - 1 additional regions where m is
+
+<PRE>
+     m = (# regions in x) * (# regions in y) * (# regions in z) *
+         (# regions in time) * (# selected waves)
+</PRE>
+
+<P>The number of regions in each dimension is the first value in each
+of the fields below <EM>Loop sizes and steps</EM>.  The displacement,
+in pixels or samples, along one dimension between adjacent regions
+is given by the second value.
+
+<P>As a simple example, consider calculating the minima, maxima, means,
+and standard deviations for the four quadrants of each section in a
+1024 x 1024 x 30 stack.  For the first region, the <EM>XY</EM> field would be
+<SAMP>0 0 512 512</SAMP>, the <EM>Z</EM> and <EM>T</EM> fields would
+be <SAMP>0 0</SAMP>.  The x size and step and y size and step would be the
+same: <SAMP>2 512</SAMP>, and the z size and step would be <SAMP>30 1</SAMP>.
+The time size and step would be <SAMP>1 1</SAMP>.
+
+<P>Once the initial regions, number of regions, and step sizes are selected,
+use the <EM>Start loop</EM> button to start the calculation.  For each
+region the result will be calculated and recorded; the
+<A HREF="#LastResult">most recent result fields</A> in the main dialog are
+not changed.  During processing, what was the <EM>Start loop</EM> button
+will be labeled <EM>Interrupt</EM> and can be pressed to stop the calculation.
+The <EM>Close</EM> dismisses the dialog and will interrupt processing if
+it is not finished.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#mmm">Overview</A> |
+   <A HREF="#XY">XY region</A> |
+   <A HREF="#SectionRange">Section range</A> |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#CurrentSection">Current section</A> |
+   <A HREF="#LastResult">Last result</A> |
+   Looping |
+   <A HREF="#RecordedResults">Recorded results</A> |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="RecordedResults">Recorded results</A></H2>
+<P>The <EM>Record</EM> button in the main dialog adds the
+<A HREF="#LastResult">most recent result to a list of results</A>; the
+<A HREF="#Loop">looping option</A> also adds to this list.
+
+<P>Use the <EM>Save</EM> button near the bottom of the main dialog to save
+the list of results to a text file.  The file has a one line header with
+column titles and the data follows in columns delimited by one or more
+spaces.  The columns are:  the starting x index for the region, the starting
+y index for the region, the region's x size, the region's y size,
+the starting z index for the region, the region's z size, the wave index
+for the region, the starting time index for the region, the number of
+time points in the region, the minimum value in the region, the
+maximum value in the region, the mean value for the region, and the
+standard deviation for the region.  This format differs from previous versions:
+the March 1999 release and earlier versions did not include the z size and
+number of time points and versions prior to September 2004 did not include
+the standard deviation.
+
+<P>The <EM>Display</EM> button, will open a dialog with the recorded
+results shown in a tabular format.  If you want to delete some of the
+recorded results, use the <EM>Delete...</EM> button in this dialog to
+choose a range of results (as they are numbered in the first, <EM>ID</EM>,
+column) to delete.
+
+<P>Use the <EM>Clear</EM> button to erase the stored results.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#mmm">Overview</A> |
+   <A HREF="#XY">XY region</A> |
+   <A HREF="#SectionRange">Section range</A> |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#CurrentSection">Current section</A> |
+   <A HREF="#LastResult">Last result</A> |
+   <A HREF="#Loop">Looping</A> |
+   Recorded results |
+   <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>When called with one or more command-line arguments, the region min/max/mean
+application will not display the graphical interface and instead proceed to
+collect the statistics for one or more regions in the same file, write the
+results (by default to standard output), and exit.  The command-line syntax
+for the region min/max/mean application is (optional parts are enclosed in
+brackets):
+
+<PRE>
+    <CODE>mmm</CODE> <VAR>input_file_name</VAR> \
+        [<CODE>-x=</CODE><VAR>start</VAR>[<CODE>:</CODE><VAR>stop</VAR>]] \
+        [<CODE>-y=</CODE><VAR>start</VAR>[<CODE>:</CODE><VAR>stop</VAR>]] \
+        [<CODE>-z=</CODE><VAR>start</VAR>[<CODE>:</CODE><VAR>stop</VAR>]] \
+        [<CODE>-t=</CODE><VAR>start</VAR>[<CODE>:</CODE><VAR>stop</VAR>]] \
+        [<CODE>-w=</CODE><VAR>wave1</VAR>[<CODE>:</CODE><VAR>wave2</VAR>[...]]] \
+        [<CODE>-xloop=</CODE><VAR>count</VAR>[<CODE>:</CODE><VAR>step</VAR>]] \
+        [<CODE>-yloop=</CODE><VAR>count</VAR>[<CODE>:</CODE><VAR>step</VAR>]] \
+        [<CODE>-zloop=</CODE><VAR>count</VAR>[<CODE>:</CODE><VAR>step</VAR>]] \
+	[<CODE>-tloop=</CODE><VAR>count</VAR>[<CODE>:</CODE><VAR>step</VAR>]] \
+        [<CODE>-out=</CODE><VAR>output_file_name</VAR>]
+</PRE>
+
+<P>The -x, -y, -z, and -t options select a region from the input file.  If you
+omit one or more of them, the application will use the full range of the
+corresponding dimension for the selected region.  The -xloop, -yloop, -zloop,
+and -tloop options instruct the application to report statistics for more than
+region in the input file (the bounds of the initial region are still under
+the control of the -x, -y, -z, and -t options).  Loop options that you do not
+specify will implicitly have a count of one.  The -w option selects the
+wavelengths to use.  If you do not use the -w option, the application will
+use the first wavelength in the file.  You can use the -out option to control
+where the application will write the results.  By default, the application
+will write them to standard output (the application will also write the
+results to standard output if the given file name is a single hyphen, i.e.
+"-").  The results are written in the format described in the
+<A HREF="#RecordedResults">Recorded Results</A> topic.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#mmm">Overview</A> |
+   <A HREF="#XY">XY region</A> |
+   <A HREF="#SectionRange">Section range</A> |
+   <A HREF="#Wave">Wave</A> |
+   <A HREF="#CurrentSection">Current section</A> |
+   <A HREF="#LastResult">Last result</A> |
+   <A HREF="#Loop">Looping</A> |
+   <A HREF="#RecordedResults">Recorded results</A> |
+   Command line
+<HR>
+
+</BODY>
+</HTML>

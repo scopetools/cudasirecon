@@ -1,0 +1,52 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Reconstruction Coordinate System</TITLE>
+  <META NAME="Description" CONTENT="Describes the coordinate system used for Priism's EM tomography reconstruction applications.">
+  <META NAME="Keywords" CONTENT="Priism,EM,tomography,reconstruction,coordinate">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1>Coordinate System for EM Tomography Reconstructions</H1>
+<P>Priism's applications for reconstructing EM tomograms use this relationship
+between a coordinate, (xv, yv, zv), in the reconstruction volume and its
+projection, (xp, yp), to the aligned coordinate grid for the tilt angle, ta:
+
+<PRE>
+    [ xp ]   [ cos(ta)  0  sin(ta) ] [ xv-0.5*(nxv-1) ]   [ 0.5*(nxp-1) ]
+    [    ] = [                     ] [       yv       ] + [             ]
+    [ yp ]   [    0     1     0    ] [ zv-0.5*(nxv-1) ]   [      0      ]
+</PRE>
+
+<P>nxv and nzv are the number of samples along the x and z axes, respectively,
+of the reconstruction.  nxp is the number of samples along the x axis of the
+aligned projection.
+
+<P>All of Priism's applications for reconstructing EM tomograms assume the
+projections have been aligned such that the tilt axis is parallel to the y
+axis.  The <A HREF="APPL_PRM.html#ApplyAlignment">section titled, Apply
+Alignment, of APPL_PRM.html</A> describes the coordinate transformations used
+to map the unaligned projections to the aligned coordinate system.
+
+<P>Given two planes, z = z1 and z = z2, with z1 greater than z2 from the
+reconstruction of a sample measured with an underfocus, the convention
+<A HREF="PFOCUSRAMP.html#Defocus">for the change in defocus</A> used by
+Priism's CTF correction application, <A HREF="PFOCUSRAMP.html">pfocusramp</A>,
+implies that the plane at z1 had less of an underfocus at zero tilt than the
+plane at z2.
+
+<H2>Related Priism Topics</H2>
+<P>
+  <A HREF="../Priism.html">Priism</A> |
+  <A HREF="EWBP.html">EWBP</A> |
+  <A HREF="TAPIR.html">TAPIR</A> |
+  <A HREF="GPURECON.html">GPURECON</A> |
+  <A HREF="APPL_PRM.html#ApplyAlignment">Coordinate transformation for unaligned projections</A> |
+  <A HREF="PFOCUSRAMP.html">pfocusramp</A>
+
+<HR>
+
+</BODY>
+</HTML>
