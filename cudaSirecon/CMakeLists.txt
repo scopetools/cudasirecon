@@ -124,7 +124,6 @@ if(WIN32)
     )
   endif(WITH_TIFF)
 
-  CUDA_ADD_CUFFT_TO_TARGET(cudaSirecon)
   target_link_libraries(
     cudaSireconDriver
     cudaSirecon
@@ -137,7 +136,6 @@ if(WIN32)
   )
 else(WIN32)
   target_link_libraries(
-    cudaSireconDriver
     cudaSirecon
     gpuFunctions
     Buffer
