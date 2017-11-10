@@ -125,10 +125,11 @@ endif()
 set(CUDA_NVCC_FLAGS
    -gencode=arch=compute_61,code=sm_61 " " ${CUDA_NVCC_FLAGS} )
 
-if(WIN32)
-  set(CUDA_NVCC_FLAGS
-     ${CUDA_NVCC_FLAGS};-I${Boost_INCLUDE_DIRS};--use-local-env;--cl-version=2013)
-endif(WIN32)
+# if(WIN32)
+#   set(CUDA_NVCC_FLAGS
+#      ${CUDA_NVCC_FLAGS} -I${Boost_INCLUDE_DIRS}; --use-local-env --cl-version=2013)
+# endif(WIN32)
+
 
 message(STATUS "CUDA_NVCC_FLAGS: " ${CUDA_NVCC_FLAGS})
 
