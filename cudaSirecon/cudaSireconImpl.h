@@ -151,6 +151,7 @@ struct ReconParams {
   int   nxotf, nyotf, nzotf;
   float dkzotf, dkrotf;  /** OTF's pixel size in inverse mirons */
   int   bRadAvgOTF;   /** is radially-averaged OTF used? */
+  int   bOneOTFperAngle; /** one OTF per SIM angle (instead of common OTF for all angles)?*/
 
   /* drift correction and phase step correction related flags */
   int   bFixdrift;   /** whether nor not to correct drift between pattern directions */
@@ -220,7 +221,7 @@ struct DriftParams {
 };
 struct ReconData {
   int sizeOTF;
-  std::vector<GPUBuffer> otf;
+  std::vector<std::vector<GPUBuffer>> otf;
   CPUBuffer background;
   CPUBuffer slope;
   float backgroundExtra;
@@ -258,12 +259,9 @@ void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER
 // void readDriftData(const ReconParams& params, DriftParams* driftParams);
 void getOTFs(ReconParams* params, const ImageParams& imgParams,
     ReconData* data);
-void determine_otf_dimensions(int norders, int nz, ReconParams *params,
-    int *sizeOTF);
-void allocateOTFs(int norders, int sizeOTF,
-    std::vector<GPUBuffer>* otfs);
-int loadOTFs(int norders, const ReconParams& params,
-    const ImageParams& imgParams, ReconData* data);
+void determine_otf_dimensions(ReconParams *pParams, int nz, int *sizeOTF);
+void allocateOTFs(ReconParams *pParams, int sizeOTF, std::vector<std::vector<GPUBuffer>> & otfs);
+int loadOTFs(const ReconParams& params, const ImageParams& imgParams, ReconData* data);
 void allocateImageBuffers(const ReconParams& params,
     const ImageParams& imgParams, ReconData* reconData);
 

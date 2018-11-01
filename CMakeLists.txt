@@ -45,9 +45,6 @@ set(VERSION_MINOR "0")
 set(VERSION_PATCH "1")
 set(PROJECT_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
-set(BOOST_INCLUDEDIR /opt/boost-1.57.0/include)
-set(BOOST_LIBRARYDIR /opt/boost-1.57.0/lib)
-
 ######################################################################
 #
 # Set permissions before adding subdirectories

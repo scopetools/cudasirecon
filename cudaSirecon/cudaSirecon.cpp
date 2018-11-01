@@ -40,6 +40,7 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->bUseEstimatedWiener = 1;
 
   pParams->bRadAvgOTF = 0;  /* default to use non-radially averaged OTFs */
+  pParams->bOneOTFperAngle = 0;  /* default to use one OTF for all SIM angles */
 
   pParams->bFixdrift = 0;
   pParams->drift_filter_fact = 0.0;
@@ -210,12 +211,12 @@ void getOTFs(ReconParams* params, const ImageParams& imgParams,
   } else {
     params->norders = params->nphases / 2 + 1;
   }
-  determine_otf_dimensions(params->norders, imgParams.nz, params, &(data->sizeOTF));
-  allocateOTFs(params->norders, data->sizeOTF, &(data->otf));
- loadOTFs(params->norders, *params, imgParams, data);
+  determine_otf_dimensions(params, imgParams.nz, &(data->sizeOTF));
+  allocateOTFs(params, data->sizeOTF, data->otf);
+  loadOTFs(*params, imgParams, data);
 }
 
-void determine_otf_dimensions(int norders, int nz, ReconParams *pParams, int *sizeOTF)
+void determine_otf_dimensions(ReconParams *pParams, int nz, int *sizeOTF)
 {
 #ifdef __SIRECON_USE_TIFF__
   uint32 nxotf, nyotf, nzotf;
@@ -228,7 +229,7 @@ void determine_otf_dimensions(int norders, int nz, ReconParams *pParams, int *si
   do ++nzotf; while (TIFFReadDirectory(otf_tiff));
 
   /* determine nzotf, nxotf, nyotf, dkrotf, dkzotf based on dataset being 2D/3D and 
-     flag bRadAvgOTF */
+     flags bRadAvgOTF and bOneOTFperAngle */
 
   if (nz == 1) {  /* 2D */
     pParams->nxotf = nxotf;
@@ -249,7 +250,7 @@ void determine_otf_dimensions(int norders, int nz, ReconParams *pParams, int *si
       pParams->dkrotf = yres;
     }
     else {
-      pParams->nzotf = nzotf / norders; // each order has a 3D OTF stack (non-negative kx half of Fourier space)
+      pParams->nzotf = nzotf / pParams->norders; // each order has a 3D OTF stack (non-negative kx half of Fourier space)
       pParams->nxotf = nxotf;
       pParams->nyotf = nyotf;
       pParams->dkzotf = xres;
@@ -265,8 +266,8 @@ void determine_otf_dimensions(int norders, int nz, ReconParams *pParams, int *si
   IMGetHdr(otfstream_no, &otfheader);
   IMAlCon(otfstream_no, 0);
   /* determine nzotf, nxotf, nyotf, dkrotf, dkzotf based on dataset
-   * being 2D/3D and flag bRadAvgOTF */
-  if (nz == 1) {  /* 2D */
+   * being 2D/3D and flags bRadAvgOTF and bOneOTFperAngle */
+  if (nz == 1) {  // 2D, ignore bOneOTFperAngle
     pParams->nxotf = otfheader.nx;
     if (pParams->bRadAvgOTF)
       pParams->nyotf = 1;
@@ -275,7 +276,7 @@ void determine_otf_dimensions(int norders, int nz, ReconParams *pParams, int *si
     pParams->nzotf = 1;
     pParams->dkrotf = otfheader.xlen;  // dkrotf's unit is 1/micron
     pParams->dkzotf = 1;
-  } else {   /* 3D */
+  } else {   // 3D, take into account bOneOTFperAngle
     if (pParams->bRadAvgOTF) {
       pParams->nzotf = otfheader.nx;
       pParams->nxotf = otfheader.ny;
@@ -285,7 +286,9 @@ void determine_otf_dimensions(int norders, int nz, ReconParams *pParams, int *si
     } else {
       // each order has a 3D OTF stack (non-negative kx half of Fourier
       // space)
-      pParams->nzotf = otfheader.nz / norders;
+      pParams->nzotf = otfheader.nz / pParams->norders;
+      if (pParams->bOneOTFperAngle)
+        pParams->nzotf /= pParams->ndirs;
       pParams->nxotf = otfheader.nx;
       pParams->nyotf = otfheader.ny;
       pParams->dkzotf = otfheader.zlen;
@@ -297,24 +300,28 @@ void determine_otf_dimensions(int norders, int nz, ReconParams *pParams, int *si
       pParams->nzotf, pParams->dkzotf, pParams->nxotf, pParams->nyotf,
       pParams->dkrotf);
 
-  /* sizeOTF and norders are determined so that correct memory can be
+  /* sizeOTF are determined so that correct memory can be
    * allocated for otf */
   *sizeOTF = pParams->nzotf*pParams->nxotf*pParams->nyotf;
 }
 
-void allocateOTFs(int norders, int sizeOTF,
-    std::vector<GPUBuffer>* otfs)
+void allocateOTFs(ReconParams* pParams, int sizeOTF,
+                  std::vector<std::vector<GPUBuffer>>& otfs)
 {
-  otfs->clear();
-  for (int i = 0; i < norders; ++i) {
-    GPUBuffer buff;
-    buff.resize(sizeOTF * sizeof(cuFloatComplex));
-    otfs->push_back(buff);
+  otfs.clear();
+  unsigned short nDirsOTF = 1;
+  if (pParams->bOneOTFperAngle)
+    nDirsOTF = pParams->ndirs;
+  otfs.resize(nDirsOTF);
+  for (int dir = 0; dir< nDirsOTF; dir++)
+    for (int i = 0; i < pParams->norders; ++i) {
+      GPUBuffer buff;
+      buff.resize(sizeOTF * sizeof(cuFloatComplex));
+      otfs[dir].push_back(buff);
   }
 }
 
-int loadOTFs(int norders, const ReconParams& params,
-    const ImageParams& imgParams, ReconData* data)
+int loadOTFs(const ReconParams& params, const ImageParams& imgParams, ReconData* data)
 {
 #ifdef __SIRECON_USE_TIFF__
   int i, nzotf;
@@ -375,28 +382,34 @@ int loadOTFs(int norders, const ReconParams& params,
   IMGetHdr(otfstream_no, &otfheader);
 
   CPUBuffer otfTmp(data->sizeOTF * sizeof(cuFloatComplex));
+  // If one OTF per dir is used, then load all dirs of OTF
+  unsigned short nDirsOTF = 1; // used in the upcoming for{} loop
+  if (params.bOneOTFperAngle)
+    nDirsOTF = params.ndirs;
 
-  /* Load OTF data, no matter 2D, 3D, radially averaged or not. */
-  for (int i = 0; i < norders; i++) {
-    /* If OTF file has multiple sections, then read them into otf[i]; */
-    if (imgParams.nz == 1 || params.bRadAvgOTF) {
-      if (otfheader.nz > i) {
-        /* each section in OTF file is OTF of one order; so load that
-         * section into otf[i]  */
-        IMRdSec(otfstream_no, otfTmp.getPtr());
-        otfTmp.set(&(data->otf[i]), 0, otfTmp.getSize(), 0);
-      } else {
-        /* If there's just 1 OTF image, do not read any more and just
-         * duplicate otf[0] into otf[i] */
-        data->otf[0].set(&(data->otf[i]), 0,
-            data->otf[0].getSize(), 0);
-      }
-    } else {  // non-radially averaged 3D OTF
-      for (int z = 0; z < params.nzotf; ++z) {
-        IMRdSec(otfstream_no, otfTmp.getPtr());
-        otfTmp.set(&(data->otf[i]),
-            0, params.nxotf * params.nyotf * sizeof(cuFloatComplex),
-            z * params.nxotf * params.nyotf * sizeof(cuFloatComplex));
+  // Load OTF data, no matter 2D, 3D, radially averaged or not. */
+  for (int dir = 0; dir< nDirsOTF; dir++) {
+    for (int i = 0; i < params.norders; i++) {
+      /* If OTF file has multiple sections, then read them into otf[i]; */
+      if (imgParams.nz == 1 || params.bRadAvgOTF) {
+        if (otfheader.nz > i + dir*params.norders) {
+          /* each section in OTF file is OTF of one order; so load that
+           * section into otf[i]  */
+          IMRdSec(otfstream_no, otfTmp.getPtr());
+          otfTmp.set(&(data->otf[dir][i]), 0, otfTmp.getSize(), 0);
+        } else {
+          /* If it's 2D image, do not read any more and just
+           * duplicate otf[0][0] into otf[*][i] */
+          data->otf[0][0].set(&(data->otf[dir][i]), 0,
+                           data->otf[0][0].getSize(), 0);
+        }
+      } else {  // non-radially averaged 3D OTF
+        for (int z = 0; z < params.nzotf; ++z) {
+          IMRdSec(otfstream_no, otfTmp.getPtr());
+          otfTmp.set(&(data->otf[dir][i]),
+                     0, params.nxotf * params.nyotf * sizeof(cuFloatComplex),
+                     z * params.nxotf * params.nyotf * sizeof(cuFloatComplex));
+        }
       }
     }
   }
@@ -577,7 +590,7 @@ void findModulationVectorsAndPhasesForAllDirections(
        * k0 initialization code is near lines 430ff in sirecon.c */
       makemodeldata(imgParams.nx, imgParams.ny, imgParams.nz0, bands,
           params->norders, data->k0[direction], imgParams.dy, imgParams.dz,
-          &data->otf, imgParams.wave[0], params);
+          &data->otf[0], imgParams.wave[0], params);
     }
 
 #ifndef __SIRECON_USE_TIFF__
@@ -618,6 +631,13 @@ void findModulationVectorsAndPhasesForAllDirections(
     /* assume k0 vector not well known, so fit for it */
     cuFloatComplex amp_inv;
     cuFloatComplex amp_combo;
+
+    // dir_ is used in upcoming calls involving data->otf, to differentiate the cases
+    // of common OTF and dir-specific OTF
+    int dir_=0;
+    if (params->bOneOTFperAngle)
+      dir_ = direction;
+
     if (params->bSearchforvector &&
         !(imgParams.ntimes > 1 && imgParams.curTimeIdx > 0 && params->bUseTime0k0)) {
       /* In time series, can choose to use the time 0 k0 fit for the
@@ -626,7 +646,7 @@ void findModulationVectorsAndPhasesForAllDirections(
        * cross-correlation. */
       findk0(bands, &data->overlap0, &data->overlap1, imgParams.nx,
           imgParams.ny, imgParams.nz0, params->norders,
-          &(data->k0[direction]), imgParams.dy, imgParams.dz, &data->otf,
+          &(data->k0[direction]), imgParams.dy, imgParams.dz, &(data->otf[dir_]),
           imgParams.wave[0], params);
 
       if (params->bSaveOverlaps) {
@@ -665,7 +685,7 @@ void findModulationVectorsAndPhasesForAllDirections(
 
       fitk0andmodamps(bands, &data->overlap0, &data->overlap1, imgParams.nx,
           imgParams.ny, imgParams.nz0, params->norders, &(data->k0[direction]),
-          imgParams.dy, imgParams.dz, &data->otf, imgParams.wave[0],
+          imgParams.dy, imgParams.dz, &(data->otf[dir_]), imgParams.wave[0],
           &data->amp[direction][0], params);
 
       if (imgParams.curTimeIdx == 0) {
@@ -691,13 +711,13 @@ void findModulationVectorsAndPhasesForAllDirections(
             corr_coeff = findrealspacemodamp(bands, &data->overlap0,
               &data->overlap1, imgParams.nx, imgParams.ny, imgParams.nz0,
               0, order, data->k0[direction], imgParams.dy, imgParams.dz,
-              &data->otf, imgParams.wave[0], &data->amp[direction][order],
+              &(data->otf[dir_]), imgParams.wave[0], &data->amp[direction][order],
               &amp_inv, &amp_combo, 1, params);
           else
             corr_coeff = findrealspacemodamp(bands, &data->overlap0,
               &data->overlap1, imgParams.nx, imgParams.ny, imgParams.nz0,
               order-1, order, data->k0[direction], imgParams.dy, imgParams.dz,
-              &data->otf, imgParams.wave[0], &data->amp[direction][order],
+              &(data->otf[dir_]), imgParams.wave[0], &data->amp[direction][order],
               &amp_inv, &amp_combo, 1, params);
           printf("modamp mag=%f, phase=%f\n, correlation coeff=%f\n\n",
                  cmag(data->amp[direction][order]),
@@ -713,7 +733,7 @@ void findModulationVectorsAndPhasesForAllDirections(
         float corr_coeff = findrealspacemodamp(bands, &data->overlap0,
             &data->overlap1, imgParams.nx, imgParams.ny, imgParams.nz0, 
             0, order, data->k0[direction], imgParams.dy, imgParams.dz,
-            &data->otf, imgParams.wave[0], &data->amp[direction][order],
+            &(data->otf[dir_]), imgParams.wave[0], &data->amp[direction][order],
             &amp_inv, &amp_combo, 1, params);
         printf("modamp mag=%f, phase=%f\n",
             cmag(data->amp[direction][order]),
@@ -1550,11 +1570,13 @@ int SIM_Reconstructor::setupProgramOptions()
      "modamps forced to these values")
     ("k0angles", po::value< std::string >(), //po::value< std::vector<float> >()->multitoken(),
      "user given pattern vector k0 angles for all directions")
-    ("otfRA", po::value<int>(&m_myParams.bRadAvgOTF)->implicit_value(1),
+    ("otfRA", po::value<int>(&m_myParams.bRadAvgOTF)->implicit_value(true),
      "using rotationally averaged OTF")
-    ("fastSI", po::value<int>(&m_myParams.bFastSIM)->implicit_value(1),
+    ("otfPerAngle", po::value<int>(&m_myParams.bOneOTFperAngle)->implicit_value(true),
+     "using one OTF per SIM angle")
+    ("fastSI", po::value<int>(&m_myParams.bFastSIM)->implicit_value(true),
      "SIM data is organized in Z->Angle->Phase order; default being Angle->Z->Phase")
-    ("k0searchAll", po::value<int>(&m_myParams.bUseTime0k0)->implicit_value(0),
+    ("k0searchAll", po::value<int>(&m_myParams.bUseTime0k0)->implicit_value(false),
      "search for k0 at all time points")
     ("equalizez", po::value<int>(&m_myParams.equalizez)->implicit_value(true), 
      "bleach correcting for z")
@@ -1576,7 +1598,7 @@ int SIM_Reconstructor::setupProgramOptions()
      "save overlap0 and overlap1 (real-space complex data) into a file and exit")
     ("config,c", po::value<std::string>(&m_config_file)->default_value(""),
      "name of a file of a configuration.")
-    ("2lenses", po::value<int>(&m_myParams.bTwolens)->implicit_value(1), "I5S data")
+    ("2lenses", po::value<int>(&m_myParams.bTwolens)->implicit_value(true), "I5S data")
     ("help,h", "produce help message")
 #ifdef __SIRECON_USE_TIFF__
     ("xyres", po::value<float>(&m_imgParams.dy)->default_value(0.1),
@@ -1652,7 +1674,7 @@ int SIM_Reconstructor::setParams()
           it != tokens.end();
           ++it)
         m_myParams.k0angles.push_back(strtod(it->c_str(), NULL));
-    std::cout << m_myParams.k0angles << std::endl;
+//    std::cout << m_myParams.k0angles << std::endl;
   }
 
   return 0;
@@ -1730,9 +1752,15 @@ void SIM_Reconstructor::processOneVolume()
 
   for (int direction = 0; direction < m_myParams.ndirs; ++direction) {
 
+    // dir_ is used in upcoming calls involving otf, to differentiate the cases
+    // of common OTF and dir-specific OTF
+    int dir_=0;
+    if (m_myParams.bOneOTFperAngle)
+      dir_ = direction;
+
     filterbands(direction, &m_reconData.savedBands[direction],
         m_reconData.k0, m_myParams.ndirs, m_myParams.norders,
-        m_reconData.otf, m_imgParams.dy, m_imgParams.dz,
+        m_reconData.otf[dir_], m_imgParams.dy, m_imgParams.dz,
         m_reconData.amp, m_reconData.noiseVarFactors,
         m_imgParams.nx, m_imgParams.ny, m_imgParams.nz0, m_imgParams.wave[0],
         &m_myParams);
@@ -1796,7 +1824,7 @@ void SIM_Reconstructor::writeResult(int it, int iw)
   m_reconData.outbuffer.set(&outbufferHost, 0, outbufferHost.getSize(), 0);
 
 #ifndef __clang__
-  float t1 = omp_get_wtime();
+  double t1 = omp_get_wtime();
 #endif
 
 #ifdef __SIRECON_USE_TIFF__
@@ -1840,7 +1868,7 @@ void SIM_Reconstructor::writeResult(int it, int iw)
 #endif
 
 #ifndef __clang__
-  float t2 = omp_get_wtime();
+  double t2 = omp_get_wtime();
   printf("amin, amax took: %f s\n", t2 - t1);
 #endif
 
