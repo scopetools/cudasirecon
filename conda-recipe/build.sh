@@ -14,4 +14,4 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${PREFIX}" -DCMAKE_INST
 
 make
 make install
-ln -s ${PREFIX}/bin/cudaSireconDriver ${PREFIX}/bin/sirecon
+ln -s ${PREFIX}/bin/cudaSireconDriver ${PREFIX}/bin/cudasirecon
