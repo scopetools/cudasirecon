@@ -221,7 +221,7 @@ struct DriftParams {
 };
 struct ReconData {
   int sizeOTF;
-  std::vector<std::vector<GPUBuffer>> otf;
+  std::vector<std::vector<GPUBuffer> > otf;
   CPUBuffer background;
   CPUBuffer slope;
   float backgroundExtra;
@@ -260,7 +260,7 @@ void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER
 void getOTFs(ReconParams* params, const ImageParams& imgParams,
     ReconData* data);
 void determine_otf_dimensions(ReconParams *pParams, int nz, int *sizeOTF);
-void allocateOTFs(ReconParams *pParams, int sizeOTF, std::vector<std::vector<GPUBuffer>> & otfs);
+void allocateOTFs(ReconParams *pParams, int sizeOTF, std::vector<std::vector<GPUBuffer> > & otfs);
 int loadOTFs(const ReconParams& params, const ImageParams& imgParams, ReconData* data);
 void allocateImageBuffers(const ReconParams& params,
     const ImageParams& imgParams, ReconData* reconData);

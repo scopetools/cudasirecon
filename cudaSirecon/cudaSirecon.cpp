@@ -306,7 +306,7 @@ void determine_otf_dimensions(ReconParams *pParams, int nz, int *sizeOTF)
 }
 
 void allocateOTFs(ReconParams* pParams, int sizeOTF,
-                  std::vector<std::vector<GPUBuffer>>& otfs)
+                  std::vector<std::vector<GPUBuffer> >& otfs)
 {
   otfs.clear();
   unsigned short nDirsOTF = 1;
