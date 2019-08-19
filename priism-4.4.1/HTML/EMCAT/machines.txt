@@ -1,7 +1,0 @@
-# Example machines list for six dual processor systems.
-compute-0-0:2
-compute-0-1:2
-compute-0-2:2
-compute-0-3:2
-compute-0-4:2
-compute-0-5:2
