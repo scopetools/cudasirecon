@@ -1,0 +1,279 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: LCE 3D</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to perform 3D local contrast enhancement.">
+  <META NAME="Keywords" CONTENT="Priism,local contrast,enhancement">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="LCE3D">LCE 3D</A></H1>
+<H2>Overview</H2>
+<P>LCE 3D is functionally similar to <A HREF="LCE.html">LCE 2D</A> but can
+use a 3D neighborhood to determine the estimate of the local mean and contrast.
+The handling of the <A HREF="#AutoRange">Autorange</A> option is also
+different: in the 2D version that option causes the range for the weighting
+functions to vary from section to section rather than from volume to volume as
+it does in the 3D version.  LCE 3D uses substantially more (space to hold 3
+volumes instead of 3 sections) than LCE 2D.  The three-dimensional neighborhood
+processed can either include x, y, and z or x, y, and time.
+
+<P>Consult the <A HREF="LCE.html">overview section</A> of the LCE 2D
+documentation if you want to know more about how the contrast enhancement
+process works.
+
+<H3>Topics</H3>
+<P>
+  Overview |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Box">Box</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#AutoRange">Autorange</A> |
+  <A HREF="#MinMax">MinMax</A> |
+  <A HREF="#MeanStretchFunction">Mean stretch function</A> |
+  <A HREF="#ContrastWeightingFunction">Contrast weighting function</A> |
+  <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="LCE.html">LCE 2D</A> |
+  <A HREF="HisEqual.html">Histogram equalization</A> |
+  <A HREF="Filter2D.html">Filter2D</A> |
+  <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="Box">Box</A></H2>
+<P>The local mean intensity at a point is estimated by calculating the mean
+intensity for a box, centered on the point, with x and y dimensions of
+<VAR>n1</VAR> pixels and a z (or time) dimension of <VAR>n2</VAR> pixels.
+<VAR>n1</VAR> is the first value in the <EM>Box</EM> field, and <VAR>n2</VAR>
+is the second value in the <EM>Box</EM> field.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#LCE3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  Box |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#AutoRange">Autorange</A> |
+  <A HREF="#MinMax">MinMax</A> |
+  <A HREF="#MeanStretchFunction">Mean stretch function</A> |
+  <A HREF="#ContrastWeightingFunction">Contrast weighting function</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="SwapZT">Swap Z/Time</A></H2>
+<P>The three-dimensional neighborhood used for the local contrast calculations
+can either include the x, y, and z dimensions or the x, y, and time dimensions.
+When the toggle button labeled "swap z/time" is off, the program uses x, y,
+and z.  When that toggle button is on, the program uses x, y, and time.
+When you select a new input file, the program will automatically select
+the dimension to use as the third dimension.  If the file has more than one
+z section or only one time point, the program will use the z dimension as
+the third dimension; otherwise, it will use the time dimension as the third
+dimension.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#LCE3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Box">Box</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#AutoRange">Autorange</A> |
+  <A HREF="#MinMax">MinMax</A> |
+  <A HREF="#MeanStretchFunction">Mean stretch function</A> |
+  <A HREF="#ContrastWeightingFunction">Contrast weighting function</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="AutoRange">Autorange</A></H2>
+<P>When the <EM>AutoRange</EM> toggle is on, the
+<A HREF="#MinMax">range of values</A> for which the weighting functions are
+calculated and plotted, is automatically set from the minimum and maximum
+local mean in the xyz volume containing the point to process.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#LCE3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Box">Box</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  Autorange |
+  <A HREF="#MinMax">MinMax</A> |
+  <A HREF="#MeanStretchFunction">Mean stretch function</A> |
+  <A HREF="#ContrastWeightingFunction">Contrast weighting function</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="MinMax">MinMax</A></H2>
+<P>The <EM>MinMax</EM> field shows the range of values on the horizontal axes
+of the <A HREF="#MeanStretchFunction">local mean stretch graph</A> and
+the <A HREF="#ContrastWeightingFunction">local contrast weighting graph</A>.
+When the <A HREF="#AutoRange">AutoRange toggle</A> is on, these bounds
+are automatically set based on the minimum and maximum local means for the
+current volume (after choosing a file or changing the region selected, the
+bounds shown will be for the first volume in the selected input region).
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#LCE3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Box">Box</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#AutoRange">Autorange</A> |
+  MinMax |
+  <A HREF="#MeanStretchFunction">Mean stretch function</A> |
+  <A HREF="#ContrastWeightingFunction">Contrast weighting function</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="MeanStretchFunction">Local Mean Stretch Function</A></H2>
+<P>As the <A HREF="LCE.html">LCE 2D documentation</A> describes in more
+detail, the result of local contrast enhancement at each pixel is the sum of
+two components: a contribution from the local mean of the input data about the
+point and a contribution from the local contrast (difference between the
+local mean and the point's value).  The local mean stretch function
+affects the first and is plotted in red as a function of the local mean
+intensity.  A histogram of the local mean values for the first volume in the
+input range (if the input is a file) is shown on the same axis for reference.
+
+<P>The curve has three control points to control the shape of the curve.  To
+adjust a control point, position the mouse pointer over it, depress the
+right mouse button, drag the mouse, and then release the right mouse
+button.  The control points on the left and right move both vertically
+and horizontally; the control point in the middle only moves horizontally.
+
+<P>Below the plot, the coordinates of the control points are shown and may
+be edited directly.  The coordinates are normalized to the range of zero
+to one.  The first two values shown are the horizontal and vertical
+coordinates, respectively, of the left control point.  The third value
+is the horizontal coordinate of the middle control point.  The fourth
+and fifth values are the horizontal and vertical coordinates, respectively,
+of the right control point.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#LCE3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Box">Box</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#AutoRange">Autorange</A> |
+  <A HREF="#MinMax">MinMax</A> |
+  <A HREF="#MeanStretchFunction">Mean stretch function</A> |
+  <A HREF="#ContrastWeightingFunction">Contrast weighting function</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="ContrastWeightingFunction">Local Contrast Weighting Function</A></H2>
+<P>As the <A HREF="LCE.html">LCE 2D documentation</A> describes in more detail,
+the result of local contrast enhancement at each pixel is the sum of two
+components: a contribution from the local mean of the input data about the
+point and a contribution from the local contrast (difference between the
+local mean and the point's value).  The local contrast weighting function
+affects the first and is plotted in red as a function of the local mean
+intensity.  A histogram of the local mean values for the first volume in the
+input range (if the input is a file) is shown on the same axis for reference.
+
+<P>The curve has two control points to control the shape of the curve.  To
+adjust a control point, position the mouse pointer over it, depress the
+right mouse button, drag the mouse, and then release the right mouse
+button.  The control points move both vertically and horizontally.
+
+<P>Below the plot, the coordinates of the control points are shown and may
+be edited directly.  The coordinates are normalized to the range of zero
+to one.  The first two values shown are the horizontal and vertical
+coordinates, respectively, of the left control point.  The third
+and fourth values are the horizontal and vertical coordinates, respectively,
+of the right control point.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#LCE3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Box">Box</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#AutoRange">Autorange</A> |
+  <A HREF="#MinMax">MinMax</A> |
+  <A HREF="#MeanStretchFunction">Mean stretch function</A> |
+  <A HREF="#ContrastWeightingFunction">Contrast weighting function</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>Local contrast enhancement accepts the command-line arguments described
+in <A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition,
+local contrast enhancement has the following options:
+
+<DL>
+  <DT><CODE>-3d=z</CODE> or <CODE>-3d=t</CODE>
+  <DD>Selects which dimension to use as the third dimension for processing.
+    The first form selects the z dimension as the third dimension; the second
+    form selects the time dimension as the third dimension.  If you do not
+    specify either form, the program uses the z dimension as the third
+    dimension when the input file has multiple z sections per time point or
+    only one time point.  Otherwise, the program uses the time dimension as
+    the third dimension.
+
+  <DT><CODE>-box=</CODE><VAR>n1</VAR><CODE>:</CODE><VAR>n2</VAR>
+  <DD>Sets the region about each point used to estimate the local mean to be
+    a box with x and y dimensions of <VAR>n1</VAR> pixels and a z (or time)
+    dimension of <VAR>n2</VAR> pixels.  Both <VAR>n1</VAR> and <VAR>n2</VAR>
+    must be positive integers.  If <CODE>-box</CODE> does not appear on the
+    command line, local contrast enhancement uses a 3 by 3 by 1 box.
+
+  <DT><CODE>-range=</CODE><VAR>rmin</VAR><CODE>:</CODE><VAR>rmax</VAR>
+  <DD>Sets the range of local mean intensities for which the mean stretch
+    and contrast weighting functions are calculated.  Points where the local
+    mean estimate is less than <VAR>rmin</VAR> are treated as if the local
+    mean was <VAR>rmin</VAR>; pointer where the local mean estimate is greater
+    than <VAR>rmax</VAR> are treated as if the local mean was <VAR>rmax</VAR>.
+    <VAR>rmin</VAR> must be less than <VAR>rmax</VAR>.  If <CODE>-range</CODE>
+    does not appear on the command line, the range is automatically set for
+    each section to the full range of local mean estimates for that section.
+
+  <DT><CODE>-mean_stretch=</CODE><VAR>x1</VAR><CODE>:</CODE><VAR>y1</VAR><CODE>:</CODE><VAR>x2</VAR><CODE>:</CODE><VAR>x3</VAR><CODE>:</CODE><VAR>y3</VAR>
+  <DD>Sets the shape of the mean stretch function.  Requires five arguments
+    between zero and one.  The first two arguments are the normalized
+    coordinate of the left control point.  The third argument is the normalized
+    horizontal coordinate for the middle control point.  The fourth and fifth
+    arguments are the normalized coordinates for the right control point.
+    If <CODE>-mean_stretch</CODE> does not appear on the command line, local
+    contrast enhancement runs as if
+    <CODE>-mean_stretch=0.0:0.0:0.5:1.0:0.5</CODE> was on the command line.
+
+  <DT><CODE>-contrast_weight=</CODE><VAR>x1</VAR><CODE>:</CODE><VAR>y1</VAR><CODE>:</CODE><VAR>x2</VAR><CODE>:</CODE><VAR>y2</VAR>
+  <DD>Sets the shape of the contrast weighting function.  Requires four
+    arguments between zero and one.  The first two arguments are the normalized
+    coordinate of the left control point.  The third and fourth arguments are
+    the normalized coordinates for the right control point.  If
+    <CODE>-contrast_weight</CODE> does not appear on the command line, local
+    contrast enhancement runs as if
+    <CODE>-contrast_weight=0.0:0.0:1.0:1.0</CODE> was on the command line.
+</DL>
+
+<P>Here's an example command-line that uses a 5 by 5 by 3 neighborhood to
+estimate the local mean and contrast and applies the default mean stretch
+and contrast weighting functions.
+
+<PRE>
+    LCE3D a.dat b.dat -box=5:3 \
+        -mean_stretch=0:0:.5:1:.5 -contrast_weight=0:0:1:1
+</PRE>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#LCE3D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Box">Box</A> |
+  <A HREF="#SwapZT">Swap z/time</A> |
+  <A HREF="#AutoRange">Autorange</A> |
+  <A HREF="#MinMax">MinMax</A> |
+  <A HREF="#MeanStretchFunction">Mean stretch function</A> |
+  <A HREF="#ContrastWeightingFunction">Contrast weighting function</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+</BODY>
+</HTML>

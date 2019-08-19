@@ -1,0 +1,430 @@
+KEYWORD
+      NumberOfProcessors Background Smoothing PaddedZSize
+      NumericalAperture RefractiveIndex IterationCount
+      Positivity Plotfile Ratio MissingConeWeight
+      AuxiliarySmoothing Relaxation Nonlinearity
+      HighCutoff Tolerance NormalizeOTF CommandLine
+
+DESCRIPTION core_decon
+    Muthuvel Arigovindan has devised two new
+    deconvolution algorithms; this documentation
+    describes Priism's implementation of the first
+    one, ER-Decon I.  ER-Decon I should be easier
+    to use than Muthuvel Arigovindan's other
+    algorithm, ER-Decon II, because you should
+    only need to tune one parameter, but, when
+    appropriately tuned, ER-Decon II should
+    generate better quality deconvolutions.
+
+    The algorithm has three required parameters:
+    the name of the file with the data to
+    deconvolve, the name of the file which has the
+    optical transfer function (OTF) for the imaging
+    system, and the name of the file to use for
+    recording the deconvolution result.  You can use
+    the procedure described in the "measuring_otf"
+    topic of OTFAndPupil.hlp to prepare the OTF.
+    There are additional parameters that affect the
+    algorithm, but the only one that likely needs to
+    be tuned for your data is the smoothing parameter.
+
+    The deconvolution application can be accessed
+    from either the graphical user interface or
+    directly from the command line.  To bring up
+    the graphical user interface, use the Processing->
+    OM Processing->ER-Decon I option in the Priism
+    menus.  That will generate a dialog with fields
+    for the three required file names at the top
+    of the dialog.  Immediately below that are
+    controls to select a region to process from
+    the measurement.  For further information about
+    those controls, look at BatchRegion.hlp.  The
+    remaining fields in the dialog are for the
+    ER-Decon I algorithm parameters; you can find
+    more information about those parameters in the
+    subsections of this document.  At the bottom of the
+    dialog is a "Do It" button; pressing that button
+    will start the processing with the currently selected
+    parameters.  The "Options" button at the bottom of
+    the dialog brings up another dialog where you can
+    control certain aspects of what happens when you
+    press the "Do It" button.  You can find more
+    information about the "Do It" and "Options" buttons
+    in BatchRegion.hlp.  You can find the syntax for
+    the command-line interface for the deconvolution
+    application in the CommandLine section of this
+    document.
+
+NumberOfProcessors
+    The deconvolution can be performed with multiple
+    threads of execution.  On a system with multiple
+    processors (or processor cores), using multiple
+    threads can reduce the time needed to complete
+    the calculations.
+
+    From the graphical user interface you can select
+    a number of threads to use using the "Number of
+    Processors" field.  When the toggle button,
+    labeled "default", next to that field is on,
+    the field will be disabled and the number of
+    threads to use will be determined by the
+    destination for the reconstruction job.  To
+    adjust the value, you can turn the toggle
+    button off and enter the desired number of
+    threads to use in the field.
+
+Background
+    ER-Decon I gives you two ways to handle a
+    constant background signal in your data.  In the
+    first, the application computes an estimate of what
+    the background is for each wavelength and then,
+    prior to deconvolving a wavelength, subtracts off
+    that estimated background for that wavelength
+    multiplied by a value that you supply.  To set up
+    that mode of operation from the graphical user
+    interface, turn off the toggle button (labeled
+    "absolute") next to the field labeled "Background"
+    and then enter the value for each wavelength that
+    will multiply the estimated background level.
+
+    In the second method for handling a constant
+    background signal, you supply the value to
+    subtract from each wavelength and the application
+    does not perform its estimate of the background.
+    To set up that mode of operation from the graphical
+    user interface, turn on the toggle button next
+    to the field labeled "Background" and then enter
+    the value for each wavelength that you want to
+    subtract from the input data.
+
+Smoothing
+    The value in the "Smoothing" field is the one
+    parameter that you will likely have to tune
+    for your data.  An appropriate choice for the
+    value will depend on the noise level of the
+    data.  Any positive value is allowed.
+
+PaddedZSize
+    Prior to deconvolution, the data will be
+    padded in Z so that it has the number of
+    samples given in the field labeled
+    "Padded Z Size".  When the adjacent toggle
+    button labeled "Default" is on (i.e.
+    pushed in), the number of samples will
+    be automatically calculated from the size
+    in Z of the region to process.  When that
+    adjacent toggle button is off, you are
+    free to change the value for the padded
+    size.  The value should be positive and
+    greater than or equal to the Z size of
+    the processed region.  A value that is
+    the product of small prime numbers (for
+    instance a power of 2), will improve how
+    fast the deconvolution can be done and
+    reduce round-off errors in the processing.
+
+NumericalAperture
+    The algorithm compensates for the range of rays not
+    observed by the objective lens.  To specify the
+    range of rays observed by the objective lens for
+    your data, enter the effective numerical aperture
+    of the lens in the field labeled "Numerical
+    aperture" which is in the "Special Parameters"
+    dialog.  The default value for the numerical
+    aperture is 1.4; any positive value less than
+    or equal to the refractive index of the immersion
+    media is allowed.
+
+RefractiveIndex
+    The algorithm compensates for the range of rays
+    not observed by the objective lens which is
+    determined by the effective numerical aperture
+    and the refractive index of the immersion media.
+    To specify the refractive index of the immersion
+    media, enter the refractive index in the field
+    labeled "Refractive index" which is in the
+    "Special Parameters" dialog.  The default value
+    for the refractive index is 1.512; any positive
+    value is allowed.  If you enter a value that is
+    less than the current numerical aperture, the
+    graphical user interface will coerce the
+    numerical aperture to be equal to the refractive
+    index.
+
+IterationCount
+    Sets the maximum number of iterations to perform.
+    If the calculations satisfy your selected level
+    of tolerance before the maximum number of
+    iterations has been performed, then the full
+    number of iterations will not be used.  The
+    default value for the number of iterations
+    is fifty; any positive value is allowed.
+
+Positivity
+    The value in the field labeled "Positivity"
+    controls the size of the corrections applied
+    to keep values in the deconvolved result
+    greater than or equal to zero.  When the
+    value in the "Positivity" field is zero, no
+    corrections will be made to keep values in
+    the deconvolved result greater than zero.
+    The default value in the "Positivity" field
+    is one hundred and any value greater than
+    or equal to zero will be accepted.
+
+Plotfile
+    If you enter a file name that is not "none"
+    or nothing at all, in the field labeled
+    "Plot file", a history of the values for
+    the termination criteria will be written
+    to that file in a form viewable with
+    2D Plot.
+
+Ratio
+    The ER-Decon I algorithm employs
+    regularization based on the signal itself
+    and the second derivatives.  The relative
+    contribution of the those two components
+    is controlled by the ratio parameter.  Valid
+    values range from zero to one with higher
+    values decreasing the weight given to the
+    second derivatives.  The default value for
+    the ratio parameter is 0.5.
+
+MissingConeWeight
+    The ER-Decon I algorithm has a mechanism
+    (the missing cone filter) for
+    compensating for the range of angles not
+    observed by the objective lens.  The
+    missing cone weight is a scaling factor
+    for that compensation mechanism.  Any
+    non-negative value is a valid value for
+    the weight; the default value is one hundred.
+
+AuxiliarySmoothing
+    The auxiliary smoothing parameter multiplies
+    the smoothing parameter in one portion (the
+    computation of the Tikhonov solution) of the
+    deconvolution calculations.  Any positive
+    value is a valid value for the auxiliary
+    smoothing parameter.  The default value is
+    one hundred.
+
+Relaxation
+    In the iterative portion of the calculation,
+    the relaxation parameter is used to scale the
+    correction term before it is added to the previous
+    iteration's result to give the result for the
+    current iteration.  Any positive value for
+    the relaxation parameter is accepted.  The
+    default value is 0.8.
+
+Nonlinearity
+    The nonlinearity parameter applies to the
+    regularization calculations.  The default
+    value is one thousand.  Any value greater
+    than or equal to zero is accepted.
+
+Tolerance
+    In the iterative portion of the calculation,
+    the iterations will stop early if the RMS
+    difference between the prediction and the
+    goal is less than or equal to the tolerance
+    value.  Any non-negative value for the tolerance
+    is accepted.  The default value is 0.001.
+
+HighCutoff
+    The default values for many of the deconvolution
+    parameters were chosen for data which had values
+    ranging from zero to one.  To reduce how sensitive
+    good choices for those parameters are to the range
+    of data values in your data, each volume is
+    automatically scaled prior to applying the
+    deconvolution and then the inverse of the scale
+    factor is applied to the deconvolution result
+    before saving it.  After the automatic scaling,
+    a rescaled intensity of one matches the intensity
+    at which the fraction, f, of the original volume
+    has larger intensity values.  The default value of
+    f is .001; valid values are greater than or equal
+    to zero and less than one.
+
+NormalizeOTF
+    For transfer functions that have not been radially
+    averaged, the deconvolution application normally
+    rescales all the values of the transfer function
+    by the value of the transfer function at zero
+    frequency.  To prevent rescaling of the transfer
+    function, turn off the "Normalize OTF" toggle
+    button in the special parameters dialog, or on
+    the command line, include -nonorm_otf in the
+    options.
+
+    Radially averaged transfer functions are never
+    rescaled.
+
+CommandLine
+    The command-line syntax for the ER-Decon I
+    application is (optional parts are in brackets):
+
+        core_decon measurement_file result_file \
+            otf_file [options]
+
+    where options can be zero or more of the following
+    in any order (if an option appears multiple times
+    the one appearing last on the command line takes
+    precedence):
+
+    -abs_background
+        If you supply this option, any values supplied
+        by the -sub option are subtracted directly
+        from the input data, and the application does
+        not compute its estimate of the background.
+        When you do not supply the -abs_background
+        option, the application computes an estimate
+        of the background for each wavelength and
+        multiplies that estimate by the value
+        supplied by the -sub option for that wavelength
+        to arrive at the value that will be subtracted
+        from the input data.
+
+    -alpha=a
+        Sets the nonlinearity parameter's value to be a.
+
+    -cuth=t
+        Sets the high cutoff to be t.
+
+    -lamf=f
+        Sets the smoothing parameter's value to be f.
+
+    -lamratio=r
+        Sets the ratio parameter's value to be r.
+
+    -lampc=p
+        Sets the missing cone weight to be p.
+
+    -lampos=p
+        Sets the value of the positivity parameter to
+        be p.
+
+    -lamsmooth=s
+        Sets the value of the auxiliary smoothing
+        parameter to be s.
+
+    -na=v
+        Sets the numerical aperture to be v.
+
+    -ncycl=n
+        Sets the maximum number of iterations to be n.
+
+    -nimm=n
+        Sets the refractive index of the immersion
+        media to be n.
+
+    -nonorm_otf
+        Normally the transfer function will be rescaled
+        to have a zero frequency response of one.  This
+        option disables that rescaling for non-radially
+        averaged transfer functions (radially averaged
+        transfer functions are never rescaled).
+
+    -np=n
+        Sets the number of threads to use to be n.
+        n must be a positive integer.  This option
+        will be ignored if the environment variable,
+        NSLOTS, is set.  When you do not supply this
+        option, the number of threads will be the
+        larger of one and the value of the
+        environment variable, NSLOTS.  If that
+        environment variable is not set or is not
+        set to an integer, the number of threads
+        will equal the number of processors on the
+        machine.
+
+    -nzpad=n
+        Sets the size (in samples) in z after padding
+        to be n.
+
+    -omega=o
+        Sets the relaxation parameter's value to be o.
+
+    -oplotfile=pltname
+        Specifies that the values tested for the
+        termination criteria be recorded in a file
+        named pltname.  The file is plain text and
+        can be viewed with 2D Plot.
+
+    -sub=b1[:b2...]
+        The behavior of this option depends on whether
+        the -abs_background has also been specified on
+        the command line.  When -abs_background does
+        not appear on the command line, the program
+        computes an internal estimate of the background
+        for each wavelength, multiplies that estimate
+        by the value (b1 for wavelength 1, b2 for
+        wavelength 2, ...) supplied by the -sub option,
+        and then subtracts the result from the incoming
+        data.  If the -sub option does not appear on
+        the command line or does not set the value for
+        a wavelength, the program acts as if the value
+        for that wavelength is one.  When
+        -abs_background option appears on the command
+        line, the program directly subtracts the value
+        supplied by the -sub option (b1 for wavelength
+        1, b2 for wavelength2, ...) from the incoming
+        data.  In that case, if the -sub option does
+        not appear on the command line or does not set
+        the value for a wavelength, the program acts
+        as if the value for that wavelength is zero.
+
+    -t=start[:stop[:step]
+        Selects the range of points in time to process
+        from the input file.  The default is to process
+        the entire range present in the input.  start
+        and stop must be non-negative integers less
+        than the number of time points in the input
+        file.  Also, start must be less than or equal
+        to stop and step must be greater than zero.
+
+    -tol=t
+        Sets the termination tolerance to be t.
+
+    -w=w0[:w1...]
+        Selects the wavelengths to process from the
+        input file.  In the colon-separated list of
+        wavelengths, you can select a wavelength by
+        giving the wavelength position index (between
+        zero and four, inclusive) in the input file or,
+        if the wavelength in the header is greater than
+        200.5 and less than 1999.5 nanometers, by the
+        wavelength in nanometers rounded to the nearest
+        integer.  If you do not specify this option,
+        all wavelengths present in the input file will
+        be processed.
+
+    -x=start[:stop]
+        Selects the range of pixels in x to process
+        from the input file.  The default is to process
+        the entire range present in the input.  start
+        and stop must be non-negative integers less
+        than the number of pixels in the x dimension
+        of the input file.  Also, start must be less
+        than or equal to stop.
+
+    -y=start[:stop]
+        Selects the range of pixels in y to process
+        from the input file.  The default is to
+        process the entire range present in the input.
+        start and stop must be non-negative integers
+        less than the number of pixels in the y
+        dimension of the input file.  Also, start
+        must be less than or equal to stop.
+
+    -z=start[:stop]
+        Selects the range of pixels in z to process
+        from the input file.  The default is to
+        process the entire range present in the input.
+        start and stop must be non-negative integers
+        less than the number of pixels in the z
+        dimension of the input file.  Also, start
+        must be less than or equal to stop.

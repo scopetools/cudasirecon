@@ -1,0 +1,360 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Image Capture</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to capture images from an image window and save them in a variety of formats.">
+  <META NAME="Keywords" CONTENT="Priism,conversion,animation,movie">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Image Capture">Image Capture</A></H1>
+<H2>Overview</H2>
+
+<P>The Image Capture utility captures images from an image window and saves
+the result in one of a variety of formats.  The different formats are handled
+by loadable modules (plugins); consult the
+<A HREF="#file_format">File format</A> topic for a list of the supported
+formats.
+
+<P>Because the images are captured from the screen, all of the following
+caveats apply:
+
+<UL>
+  <LI>Any graphics overlayed on the image are captured as well (the one
+    exception is the box drawn by this application to highlight the region
+    selected).  Graphics outside the image bounds are not captured.
+  <LI>Anything that obscures the window will be captured as well so you'll
+    want to make the image window the top window on the screen.
+  <LI>Only the portion of the data that is displayed in the window can
+    be captured; you will be warned if the x and y bounds you selected
+    cover parts of the data not visible in the window.
+</UL>
+
+<P>Depending on the output format, the result is either a single file
+whose name is set by the <A HREF="#output_file">"Output file" field</A> or
+a sequence of files.  In the latter case, the format of the file names
+are controlled by the <A HREF="#name_format">"Name Format" menu</A> and the
+<A HREF="#output_directory">Directory</A>,
+<A HREF="#output_prefix">Prefix</A>, <A HREF="#extension">Extension</A>, and
+<A HREF="#template">Template</A> fields.
+
+<H3>Topics</H3>
+<P>
+  Overview |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#file_format">File format</A> |
+  <A HREF="#greyscale">Greyscale</A> |
+  <A HREF="#interleaving">Interleaving</A> |
+  <A HREF="#output_file">Output file</A> |
+  <A HREF="#name_format">Name format</A> |
+  <A HREF="#output_directory">Directory</A> |
+  <A HREF="#output_prefix">Prefix</A> |
+  <A HREF="#extension">Extension</A> |
+  <A HREF="#template">Template</A> |
+  <A HREF="#command_line">Command Line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="mrc2tiff.html">mrc2tiff</A>
+<HR>
+
+<H2><A NAME="file_format">File Format</A></H2>
+<P>Use the "File format" menu in Image Capture's main dialog to select the
+output format.  Supported file formats are:
+
+<UL>
+  <LI><A HREF="JFIF_Save.html">JPEG compressed images stored as JFIF files</A>
+  <LI><A HREF="PGM_PPM_Save.html">PGM and PPM</A> image files
+  <LI><A HREF="TIFF_Save.html">TIFF</A> image files
+  <LI>QuickTime movies:  available on <A HREF="AppleQT.html">Mac OS X via
+    the native libraries</A> and on
+    <A HREF="LQT.html">Linux via libquicktime</A>
+</UL>
+
+<P>To view and edit the options specific to the currently selected format,
+press the "options..." button next to the "File format" menu.
+
+<P>Image Capture determines the available formats by reading save_plugins.def
+in Priism's CONFIG directory and excluding all the formats which do not have
+an installed plugin.
+
+<P><A HREF="#Image Capture">Return to overview.</A>
+<HR>
+
+<H2><A NAME="greyscale">Greyscale</A></H2>
+<P>When this toggle is on, Image Capture saves the captured images as greyscale
+(single component) images.  Image Capture uses a weighted average of the
+red, green, and blue components at a pixel to determine the greyscale pixel
+value: nearest_integer(0.299 * red + 0.587 * green + 0.114 * blue).
+
+<P>When this toggle is off, Image Capture saves the three components (red,
+green, and blue) of the captured images.
+
+<P><A HREF="#Image Capture">Return to overview.</A>
+<HR>
+
+<H2><A NAME="interleaving">Interleaving</A></H2>
+<P>Interleaving controls the order in which Image Capture records images.
+With the "zt" interleaving, Image Capture records all the selected z sections
+at a given time point before proceeding to the next time point.  With the "tz"
+interleaving, Image Capture records all the selected time points for a given
+z section before proceeding to the next z section.
+
+<P>If the output is separate image files, the choice of interleaving only
+has an impact if you use a <A HREF="#template">custom file template</A> which
+includes the one dimensional output section index.  If the output is a
+single file with multiple images, the order of the images in the file is the
+order in which the images were captured.
+
+<P><A HREF="#Image Capture">Return to overview.</A>
+<HR>
+
+<H2><A NAME="output_file">Output file</A></H2>
+<P>If the <A HREF="#file_format">chosen file format</A> stores multiple images
+in a single file, enter the desired name of the output file in the
+"Output file" field or press the "Output file" button to select the output
+file with a file browser.
+
+<P><A HREF="#Image Capture">Return to overview.</A>
+<HR>
+
+<H2><A NAME="name_format">Name format</A></H2>
+<P>If the <A HREF="#file_format">chosen file format</A> stores one image per
+file, use the "Name format" menu to set the template used by
+Image Capture to generate the file names.  From the "Name format" menu you may
+select a standard template or choose the "custom template" option to use the
+template entered in the <A HREF="#template">Template field</A>.  For the
+standard templates, the generated file names will all start with the
+contents of the <A HREF="#output_directory">Directory field</A>,
+followed by a slash, and followed by the contents of the
+<A HREF="#output_prefix">Prefix field</A>.  The remainder of the
+file name depends on which template was chosen:  it will be the template
+name ("prefix_z#_t#extension", for instance) without the leading "prefix"
+and with "t#" replaced with a t followed by the output time index
+for the image in the file, "z#" replaced with a z followed by the
+output z index for the image in the file, and extension replaced by either
+the default extension for the file format or the contents of the
+<A HREF="#extension">Extension field</A>.  The number of digits used for
+an index is the number of digits needed to represent the largest index in that
+dimension.  As an example, with the "prefix_z#_t#.extension" template,
+/var/tmp as the output directory, exp12_2002 as the output prefix, .tif as the
+extension, and an input region that has 500 time points and 30 z sections,
+the file name for the section whose output z and time indices are 1 and 2
+respectively would be /var/tmp/exp12_2002_z01_t002.tif.
+
+<P><A HREF="#Image Capture">Return to overview.</A>
+<HR>
+
+<H2><A NAME="output_directory">Directory</A></H2>
+<P>If the <A HREF="#file_format">chosen file format</A> stores one image per
+file and you have selected one of the
+<A HREF="#name_format">standard file name formats</A>, the files generated
+by Image Capture will all have names that start with the contents of the
+Directory field.  The <A HREF="#name_format">section on name formats</A>
+has an example of this.  For a
+<A HREF="#template">custom file name template</A>, the contents of the
+Directory field are substituted for any %d conversion codes.
+
+<P><A HREF="#Image Capture">Return to overview.</A>
+<HR>
+
+<H2><A NAME="output_prefix">Prefix</A></H2>
+<P>If the <A HREF="#file_format">chosen file format</A> stores one image per
+file and you have selected one of the
+<A HREF="#name_format">standard file name formats</A>, the files generated by
+Image Capture will have names that include the contents of the Prefix field.
+The <A HREF="#name_format">section on name formats</A> has an example of this.
+For a <A HREF="#template">custom file name template</A>, the contents of the
+Prefix field are substituted for any %p conversion codes.
+
+<P><A HREF="#Image Capture">Return to overview.</A>
+<HR>
+
+<H2><A NAME="extension">Extension</A></H2>
+<P>If the <A HREF="#file_format">chosen file format</A> stores one image per
+file and you have selected one of the
+<A HREF="#name_format">standard file name formats</A>, the files generated
+by Image Capture will have file names that end with the default extension
+for the chosen file format if the "default" toggle next to the Extension
+field is on or the contents of the extension field if the "default" toggle
+is off.  The <A HREF="#name_format">section on name formats</A> has an example
+of this.  For a <A HREF="#template">custom file name template</A>, the
+default file name extension (if the "default" toggle is on) or the contents
+of the Extension field (if the "default" toggle is off) are substituted for
+any %e conversion codes.
+
+<P><A HREF="#Image Capture">Return to overview.</A>
+<HR>
+
+<H2><A NAME="template">Template</A></H2>
+<P>If the <A HREF="#file_format">chosen file format</A> stores one image per
+file, you can force Image Capture to use your own file name template by
+selecting "custom template" from the
+<A HREF="#name_format">"Name format" menu</A> and enter the template in the
+Template field.  When Image Capture generates file names, it expands special
+conversion codes in the template.  The conversion codes have the following
+general form:  %[<VAR>width</VAR>][<VAR>modifier</VAR>]<VAR>code</VAR>.
+
+<P>Image Capture recognizes the following conversion codes:
+<DL>
+  <DT><STRONG>%</STRONG><DD>Causes a percent sign to be inserted in the
+    file name.
+  <DT><STRONG>d</STRONG><DD>This conversion code is replaced with the
+    contents of the <A HREF="#output_directory">Directory field</A>.
+  <DT><STRONG>p</STRONG><DD>This conversion code is replaced with the
+    contents of the <A HREF="#output_prefix">Prefix field</A>.
+  <DT><STRONG>e</STRONG><DD>This conversion code is replaced with the
+    contents of the <A HREF="#extension">Extension field</A> if the
+    "default" toggle adjacent to the Extension field is off or is replaced
+    with the default extension for the chosen file format if the
+    "default" toggle is on.
+  <DT><STRONG>z</STRONG><DD>This conversion code is replaced with the z
+    index for the image stored in the file.
+  <DT><STRONG>t</STRONG><DD>This conversion code is replaced with the time
+    point index for the image stored in the file.
+  <DT><STRONG>s</STRONG><DD>This conversion code is replaced with the section
+    number for the image stored in the file.
+</DL>
+
+<P><VAR>width</VAR> is optional and may be used with the <STRONG>z</STRONG>,
+<STRONG>t</STRONG>, and <STRONG>s</STRONG> codes to specify the minimum number
+of digits which are used to display the index value.  <VAR>width</VAR> may be
+a positive integer indicating the minimum number of digits to use or the
+letter a to indicate that the minimum number of digits should be the number of
+digits in the maximum corresponding index.  If an index would have less than
+the minimum number of digits, leading zeros are added to fill in the missing
+portion.
+
+<P><VAR>modifier</VAR> is optional and may be used with the <STRONG>z</STRONG>,
+<STRONG>t</STRONG>, and <STRONG>s</STRONG> codes.  If <VAR>modifier</VAR> is
+not present, the index generated by those codes is computed for the output
+file.  If <VAR>modifier</VAR> is the letter i, then the index is computed
+relative to the input file.
+
+<P>As an example, the <A HREF="#name_format">standard name format</A>,
+"prefix_z#_t#extension", is equivalent to the custom template,
+%d/%p_z%az_t%at%e.  The custom template, /var/tmp/%2iz_%2it.tif,
+would generate file names which included the input z and time
+indices of the image in the file.  Each index would be displayed with at
+least two digits.
+
+<P><A HREF="#Image Capture">Return to overview.</A>
+<HR>
+
+<H2><A NAME="command_line">Command Line</A></H2>
+<P>Image Capture accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, it
+has the following options (parts in brackets are optional):
+
+<DL>
+  <DT><CODE>-dir=</CODE><VAR>dir</VAR>
+  <DD>Sets the name of the directory to use in the file name template when
+    Image Capture generates multiple output files.  If the output format
+    (set via the -format option) stores the sections in a single file,
+    the -dir option has no effect.  By default, the directory used in
+    file name templates will be the value of the HOME environment variable
+    or, if that variable is not set, /var/tmp.
+
+  <DT><CODE>-extension=</CODE><VAR>ext</VAR>
+  <DD>Sets the file name extension to use in the file name template when
+    Image Capture generates multiple output files.  If the output format
+    (set via the -format option) stores the sections in a single file,
+    the -extension option has no effect.  If you do not specify the
+    -extension option, Image Capture will use the default extension for
+    the selected output format.
+
+  <DT><CODE>-format=</CODE><VAR>format_name</VAR>[<CODE>,</CODE><VAR>format_option</VAR>...]
+  <DD>Sets the format for the captured images.  To set a format-specific
+    option, append a comma and then the format-specific option.  You can
+    specify -format multiple times:  the options for any format will
+    accumulate and, if you use different values for format_name, the one
+    that appears in the last -format option will take precedence.
+    <VAR>format_name</VAR> can be one of the following:
+    <DL>
+      <DT>jfif<DD>Compresses each image with the JPEG algorithm and stores
+        each compressed image as a JFIF file.  Consult
+        <A HREF="JFIF_Save.html#CommandLine">JFIF_Save.html</A> for the
+        options supported by this format.
+      <DT>pgm_ppm<DD>Saves each image separately as a PGM (portable greymap)
+        or PPM (portable pixmap) file.  Consult
+        <A HREF="PGM_PPM_Save.html#CommandLine">PGM_PPM_Save.html</A> for the
+        options supported by this format.
+      <DT>tiff<DD>Saves the images as a single TIFF file or as a sequence of
+        TIFF files.  Consult
+        <A HREF="TIFF_Save.html#CommandLine">TIFF_Save.html</A> for the
+        options supported by this format.
+      <DT>qt<DD>Saves the images as a QuickTime movie.  The exact options
+        supported are different on different systems.  For Mac OS X,
+        consult <A HREF="AppleQT.html#CommandLine">AppleQT.html</A>.  For
+        Linux, consult <A HREF="LQT.html#CommandLine">LQT.html</A>.
+    </DL>
+    By default, Image Capture will use TIFF as the output format or,
+    if it can not load the TIFF output plugin, the format supported by the
+    first plugin it can load.
+  <DT><CODE>-gray</CODE> or <CODE>-grey</CODE>
+  <DD>If you specify -gray or -grey on the command line, Image Capture
+    will save the captured images as greyscale (single component images).
+    By default, Image Capture saves the three components (red, green, blue)
+    of the captured images.
+
+  <DT><CODE>-interleave=</CODE><VAR>arrangement</VAR>
+  <DD>Sets the <A HREF="#interleaving">interleaving</A> to use when writing
+    multiple sections to a single file or for calculating output section
+    indices for custom file name templates.  Allowed values for
+    <VAR>arrangement</VAR> are zt or tz; zt is the default.
+
+  <DT><CODE>-out=</CODE><VAR>name</VAR> or <CODE>-out=</CODE><VAR>name_format</VAR>
+  <DD>If the output format (set via the -format option) stores multiple
+    sections in a single file, use -out to set the name of the file
+    to generate.  Otherwise, use -out to select one of the predefined
+    output file name templates.  When the output format stores each section
+    in a separate file, the allowed values for <VAR>name_format</VAR> are:
+    <DL>
+      <DT>prefix+zt<DD>Causes Image Capture to generate output file names as if
+        <A HREF="#name_format">"prefix_z#_t#extension"</A> had been selected
+        from the user interface.  This is the default.
+      <DT>prefix+z<DD>Causes Image Capture to generate output file names as if
+        <A HREF="#name_format">"prefix_z#extension"</A> had been selected from
+        the user interface.
+      <DT>prefix+t<DD>Causes Image Capture to generate output file names as if
+        <A HREF="#name_format">"prefix_t#extension"</A> had been selected from
+        the user interface.
+    </DL>
+    When each section is written to a separate file, the -template option
+    will override the -out option.
+
+  <DT><CODE>-prefix=</CODE><VAR>pref</VAR>
+  <DD>Sets the prefix to use in the file name template when Image Capture
+    generates multiple output files.  If the output format (set via the
+    -format option) stores the sections in a single file, the -prefix option
+    has no effect.  By default the prefix used in the file name template is
+    "img".
+
+  <DT><CODE>-template=</CODE><VAR>custom_template</VAR>
+  <DD>Sets the <A HREF="#template">file name template</A> Image Capture will
+    use when generating multiple files.  This option has no effect if you
+    use an output format which stores multiples sections in a single file.
+    When the output format stores each section in a separate file, this
+    option overrides the -out option.
+</DL>
+
+<P>The following example captures the contents of image window 1 and
+saves them as JPEG (with a quality parameter of 60) compressed images:
+
+<PRE>
+    ImageCapture 1 -format=jfif,qual=60 -dir=/var/tmp -prefix=win1
+</PRE>
+
+<P>The above example uses /var/tmp/win1_z##_t##.jpg as the file name
+pattern for the output files (the number of digits following _z and _t
+will depend on the number of z sections and time points in image window
+1).
+
+<P><A HREF="#Image Capture">Return to overview.</A>
+<HR>
+
+</BODY>
+</HTML>

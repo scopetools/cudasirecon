@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Image Arithmetic</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to perform arithmetic operations on one or two data sets.">
+  <META NAME="Keywords" CONTENT="Priism">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+<H1><A NAME="ImageArith">Image Arithmetic</A></H1>
+<H2>Overview</H2>
+<P>Image Arithmetic calculates an output data set from one or two input
+data sets using one of <A HREF="#Operator">several arithmetic operations</A>.
+The inputs may be any combination of windows or files.
+
+<P>To create the result, select the operation, the
+<A HREF="#Coefficients">coefficients</A>, and whether or not to
+<A HREF="#ZeroClamp">force values less than zero to zero</A>. Then select
+the file or files on which to operate and the region of the file to process
+(these controls are the same as other region processing applications; see
+the <A HREF="Region.html">region processing interface documentation</A> for
+more information).  When the parameters have been set, press <EM>DoIt</EM> to
+generate the result.
+
+<P>Image Arithmetic performs its internal calculations in floating-point
+arithmetic, but by default, the output is converted to the same data type
+as the first input file.  In several cases, this may not be what you want
+and you should explicitly set the output type with the
+<A HREF="Region.html#MODE">Mode control</A>.
+
+<H3>Topics</H3>
+<P>
+  Overview |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Operator">Operators</A> |
+  <A HREF="#Coefficients">Coefficients</A> |
+  <A HREF="#ZeroClamp">Clamping to zero</A> |
+  <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="CopyRegion.html">CopyRegion</A>
+<HR>
+
+<H2><A NAME="Operator">Operators</A></H2>
+<P>There a fixed set of operations that Image Arithmetic can apply.  The
+operations are applied independently to each pixel in the selected region.
+In terms of the <A HREF="#Coefficients">two coefficients</A>, A and B, the
+pixel value in file 1, X, and the pixel value in file 2, Y, the available
+operations are:
+
+<UL>
+<LI>A * X + B * Y
+<LI>A * X - B * Y
+<LI>A * X * B * Y
+<LI>A * X / B * Y
+<LI>A * X * Conj(B * Y)
+<LI>Abs(A * X)
+<LI>Conj(A * X)
+<LI>A * Phase(X)
+<LI>A * X + B
+<LI>A * X * B
+<LI>A / (B * Y)
+<LI>A * Ln(X + B)
+<LI>(X + B)**A
+</UL>
+
+<P><EM>Abs</EM> in the sixth operation takes the absolute value of a real
+quantity and the magnitude of a complex quantity.  <EM>Conj</EM> in the fifth
+and seventh operations returns the complex conjugate of its argument.
+<EM>Phase</EM> in the eighth operation returns the phase, in radians, of the
+value (if the value is purely real it returns zero if the value is non-negative
+and negative pi if the value is negative).  <EM>Ln</EM> in the twelfth
+operation is the natural logarithm.  The thirteenth operation raises the pixel
+value from the first file plus B to the Ath power.
+
+<P>All the calculations are done in floating-point arithmetic.  When an
+operation produces a complex result but the output file does not use a
+complex data type, the imaginary part of the result is discarded and only the
+real part is stored.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#ImageArith">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  Operators |
+  <A HREF="#Coefficients">Coefficients</A> |
+  <A HREF="#ZeroClamp">Clamping to zero</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Coefficients">Coefficients</A></H2>
+<P><A HREF="#Operator">Image Arithmetic's operators</A> use two coefficients.
+<A NAME="CoeffA">Coefficient A</A> is substituted for <VAR>A</VAR> in the
+operator expressions; in general, it is applied to values from the first
+file.  <A NAME="Coeff B">Coefficient B</A> is
+substituted for <VAR>B</VAR> in the operator expressions; in general, it is
+applied to values from the second file.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#ImageArith">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Operator">Operators</A> |
+  Coefficients |
+  <A HREF="#ZeroClamp">Clamping to zero</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="ZeroClamp">Clamping to zero</A></H2>
+<P>Set this toggle on if you want values less than zero from the arithmetic
+operation to be set to zero in the output (clamping).  Clamping is only
+performed if the output is stored in a pure real format (byte, short,
+float, ushort, or long);  if the output is complex, no clamping is done.  When
+clamping is used with an operation that generates a complex value and the
+output data set is real, the clamping is only applied to the real component
+of the intermediate value (the imaginary component is discarded).
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#ImageArith">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Operator">Operators</A> |
+  <A HREF="#Coefficients">Coefficients</A> |
+  Clamping to zero |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>Image Arithmetic accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, Image
+Arithmetic has the following options (optional parts are shown in brackets):
+
+<DL>
+  <DT><CODE>-a=</CODE><VAR>real_part</VAR>[<CODE>:</CODE><VAR>imaginary_part</VAR>]
+  <DD>Specifies the value substituted for <VAR>A</VAR> in the operator
+    expressions.  If the coefficient is to be purely real, only the first
+    argument has to be supplied.  If <CODE>-a</CODE> is not specified, one
+    is substituted for the value of <VAR>A</VAR>.
+
+  <DT><CODE>-b=</CODE><VAR>real_part</VAR>[<CODE>:</CODE><VAR>imaginary_part</VAR>]
+  <DD>Specifies the value substituted for <VAR>B</VAR> in the operator
+    expressions.  If the coefficient is to be purely real, only the first
+    argument has to be supplied.  If <CODE>-b</CODE> is not specified, one
+    is substituted for the value of <VAR>B</VAR>.
+
+  <DT><CODE>-clamp</CODE>
+  <DD>If specified and the output is stored in a pure real format (byte,
+    short, float, ushort, or long), any values in the output less than zero
+    are set to zero.
+
+  <DT><CODE>-operator=</CODE><VAR>operator_name</VAR>
+  <DD>Specifies the operation to be performed.  Possible values for
+    <VAR>operator_name</VAR> are listed below; <CODE>a1+b2</CODE> is the
+    default if <CODE>-operator</CODE> does not appear on the command line.
+    <DL>
+      <DT><CODE>a1+b2</CODE><DD>Computes input 1 multiplied by <VAR>A</VAR>
+         plus input 2 multiplied by <VAR>B</VAR>.
+      <DT><CODE>a1-b2</CODE><DD>Computes input 1 multiplied by <VAR>A</VAR>
+         minus input 2 multiplied by <VAR>B</VAR>.
+      <DT><CODE>a1b2</CODE><DD>Computes input 1 multiplied by <VAR>A</VAR>
+         multiplied by input 2 multiplied by <VAR>B</VAR>.
+      <DT><CODE>a1/b2</CODE><DD>Computes input 1 multiplied by <VAR>A</VAR>
+         divided by the product of input 2 and <VAR>B</VAR>.
+      <DT><CODE>a1_conj_b2</CODE><DD>Computes input 1 multiplied by
+        <VAR>A</VAR> multiplied by the complex conjugate of the product of
+        input 2 and <VAR>B</VAR>.
+      <DT><CODE>abs_a1</CODE><DD>Computes the absolute value of the product
+         of input 1 and <VAR>A</VAR>.
+      <DT><CODE>conj_a1</CODE><DD>Computes the complex conjugate of the product
+        of input 1 and <VAR>A</VAR>.
+      <DT><CODE>a_phase_1</CODE>Computes the product of <VAR>A</VAR> and the
+        phase of input 1.
+      <DT><CODE>a1+b</CODE><DD>Computes input 1 multiplied by <VAR>A</VAR>
+         plus <VAR>B</VAR>.
+      <DT><CODE>a1b</CODE><DD>Computes input 1 multiplied by <VAR>A</VAR>
+         multiplied by <VAR>B</VAR>.
+      <DT><CODE>a/b2</CODE><DD>Computes <VAR>A</VAR> divided by the product
+         of <VAR>B</VAR> and input 2.
+      <DT><CODE>a_ln_1+b</CODE><DD>Computes <VAR>A</VAR> times the natural
+        logarithm of the sum of input 1 and <VAR>B</VAR>.
+      <DT><CODE>1+b_pow_a</CODE><DD>Raises the sum of input 1 and <VAR>B</VAR>
+        to the <VAR>A</VAR>th power.
+    </DL>
+</DL>
+
+<P>As an example, the command line below computes the ratio of the
+second wavelength to the first wavelength in window 1 and writes the result
+to window 2:
+<PRE>
+    ImgArith 1 1 2 -w1=1 -w2=0 -operator=a1/b2 -mode=float
+</PRE>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#ImageArith">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Operator">Operators</A> |
+  <A HREF="#Coefficients">Coefficients</A> |
+  <A HREF="#ZeroClamp">Clamping to zero</A> |
+  Command line
+<HR>
+
+</BODY>
+</HTML>

@@ -1,0 +1,572 @@
+#!/bin/sh
+
+# Usage:
+#     ewbf input_tilt_series output_tilt_series [-method=m] \
+#         [ewbp or tapir options] [-nrecon=n] [-multires] [-slab] \
+#         [-tmpdir=dir] [-parallel] [-ompiexec=mpiexec_path] \
+#         [-machinefile=file] [-np=n] [-rshcmd=cmd] [-bkgopt=opt] \
+#         [-no_nodecheck] [-checkcmd=cmd]
+#
+# Computes a projection series from another projection series using a
+# combination of a reconstruction (from elliptically weighted backprojection or
+# TAPIR) of the input tilt series where every nth projection has been omitted
+# with a reprojection to get every nth projection.
+#
+# Expects the standard Unix commands, awk, cat, chmod, cut, echo,
+# expr, mkdir, rm, sed, test, and time to be in the search path.
+#
+# Expects the Priism commands AppendRes, count_processors, ewbp,
+# ewbp_parallel, header, mergemrc, print_ith_processor, reproj, tapir,
+# and tapir_paralel to be in the search path.
+#
+# Creates temporary files (versions of the tilt series and intermediate
+# reconstructions) in the directory specified by -tmpdir; if you do no
+# explicitly specify the directory, the temporary files are placed in a
+# directory named tmp in your home directory.  Will create the directory
+# for the temporary files if needed.  The names of the temporary files use
+# the process ID of the creator plus an extension.
+
+# Since the script never uses pathname expansion, disable it.
+set -f
+
+status=0
+trap_signals="INT QUIT TERM"
+
+# Extract required arguments.
+if test $# -lt 3; then
+    echo "usage: ewbf input_tilt_series output_tilt_series [options]" 1>&2
+    exit 1
+fi
+input_tilt_series="$1"
+shift
+output_tilt_series="$1"
+shift
+
+# Set up default values for options.  The parallel_options, ewbp_options,
+# and tapir_options variables will collect options to be passed on.  Newlines
+# will be used to separate the options collected (that means that options which
+# include newlines will not be handled correctly).
+method=ewbp
+nrecon=10
+multir=""
+tmpdir="$HOME"/tmp
+parallel=0
+ompiexec=""
+ompiexec_np=""
+machinefile=""
+nproc_used=-1
+rshcmd="ssh -x"
+nodecheck="yes"
+parallel_options=""
+ewbp_options=""
+tapir_options=""
+proj_options=""
+nv=`echo 0 0 | header "$input_tilt_series" | sed -n -e '/Image Size (X,Y,Sections)\.\.*/ s/Image Size (X,Y,Sections)\.\.*//p' | awk '{print $3}'`
+if test "$nv" -ge 2; then
+    :
+else
+    status=1
+    echo "ewbf: the input tilt series must have at least two sections"
+fi
+
+# Parse command line options.
+while test $# -gt 0; do
+    case "$1" in
+        -method=*)
+            method=`echo " $1" | sed -e 's/ -method=//'`
+            ;;
+
+        -nrecon=*)
+            nrecon=`echo " $1" | sed -e 's/ -nrecon=//'`
+            # Structure the test this way (empty then clause) to handle the
+            # case where the value is not an integer.
+            if test "$nrecon" -ge 2; then
+                :
+            else
+                status=1
+                echo "ewbf: number of reconstructions must be an integer greater than one" 1>&2
+            fi
+            ;;
+
+        -multires)
+            multir="yes"
+            ;;
+
+        -slab)
+            proj_options="$proj_options
+$1"
+            ;;
+
+        -tmpdir=*)
+            tmpdir=`echo " $1" | sed -e 's/ -tmpdir=//'`
+            ;;
+
+	-parallel)
+            parallel=1
+            ;;
+
+        -bkgopt=*)
+            parallel_options="$parallel_options
+$1"
+            ;;
+
+        -checkcmd=*)
+            parallel_options="$parallel_options
+$1"
+            ;;
+
+        -machinefile=*)
+            machinefile=`echo " $1" | sed -e 's/ -machinefile=//'`
+            parallel_options="$parallel_options
+$1"
+            ;;
+
+        -no_nodecheck)
+            nodecheck=""
+            ;;
+
+        -np=*)
+            # Ignore -np= if NSLOTS is set.
+            if test -z "$NSLOTS" ; then
+		nproc_used=`echo " $1" | sed -e 's/ -np=//'`
+                # Structure the test this way (empty then clause) to handle
+                # the case where the value is not an integer.
+		if test "$nproc_used" -gt 0; then
+                    :
+		else
+                    status=1
+                    echo "ewbf: invalid number of processors" 1>&2
+		fi
+		parallel_options="$parallel_options
+$1"
+		ompiexec_np="$1"
+            fi
+            ;;
+
+        -ompiexec=*)
+            ompiexec=`echo " $1" | sed -e 's/ -ompiexec=//'`
+            parallel_options="$parallel_options
+$1"
+            ;;
+
+        -rshcmd=*)
+            # When checking nodes, the command specified with this
+            # option is not quoted, so appropriate quoting is up to the
+            # caller.
+            rshcmd=`echo " $1" | sed -e 's/ -rshcmd=//'`
+            parallel_options="$parallel_options
+$1"
+            ;;
+
+        # These options are used by EWBP and TAPIR.
+        -reconxz=*)
+            ewbp_options="$ewbp_options
+$1"
+            tapir_options="$tapir_options
+$1"
+            ;;
+
+        -iy=*)
+            ewbp_options="$ewbp_options
+$1"
+            tapir_options="$tapir_options
+$1"
+            ;;
+
+        -moderec=*)
+            ewbp_options="$ewbp_options
+$1"
+            tapir_options="$tapir_options
+$1"
+            ;;
+
+        -positivity=*)
+            ewbp_options="$ewbp_options
+$1"
+            tapir_options="$tapir_options
+$1"
+            ;;
+
+        -res=*)
+            ewbp_options="$ewbp_options
+$1"
+            tapir_options="$tapir_options
+$1"
+            ;;
+
+        -rscale=*)
+            ewbp_options="$ewbp_options
+$1"
+            tapir_options="$tapir_options
+$1"
+            ;;
+
+        # These options are only used by EWBP.
+        -filter=*)
+            ewbp_options="$ewbp_options
+$1"
+            ;;
+
+        -sizexz=*)
+            ewbp_options="$ewbp_options
+$1"
+            ;;
+
+        -hdfilt=*)
+            ewbp_options="$ewbp_options
+$1"
+            ;;
+
+        -hrfilt=*)
+            ewbp_options="$ewbp_options
+$1"
+            ;;
+
+        # These options are only used by TAPIR.
+        -istrfile=*)
+            if test " $1" != " -istrfile=" ; then
+                tapir_options="$tapir_options
+$1"
+            fi
+            ;;
+
+        -smooth=*)
+            tapir_options="$tapir_options
+$1"
+            ;;
+
+        -cycles=*)
+            tapir_options="$tapir_options
+$1"
+            ;;
+
+        -statfile=*)
+            tapir_options="$tapir_options
+$1"
+            ;;
+
+        -proj_pos=*)
+            tapir_options="$tapir_options
+$1"
+            ;;
+
+        -gres=*)
+            tapir_options="$tapir_options
+$1"
+            ;;
+
+        *)
+            echo "ewbf: unexpected option $1" 1>&2
+            ;;
+    esac
+    shift
+done
+
+case "$method" in
+    ewbp)
+        recon_cmd=ewbp
+        recon_options="$ewbp_options"
+        ;;
+
+    tapir)
+        recon_cmd=tapir
+        recon_options="$tapir_options"
+        ;;
+
+    *)
+        echo "ewbf: unexpected reconstruction method: $method" 1>&2
+        status=1
+        ;;
+esac
+
+if test -e "$tmpdir"; then
+    if test \! -d "$tmpdir"; then
+        echo "ewbf: $tmpdir is not a directory" 1>&2
+        status=1
+    fi
+else
+    mkdir -p "$tmpdir" || status=1
+fi
+
+if test $status -ne 0; then
+    exit 1
+fi
+
+if test $nrecon -gt $nv; then
+    nrecon=$nv
+fi
+
+if test $parallel -ne 0; then
+    # Verify whether or not the compute nodes can see the temporary directory.
+    if test -n "$nodecheck" ; then
+        if test -n "$ompiexec" ; then
+            temp_script="$tmpdir"/$$.sh
+            trap 'rm "$temp_script" ; exit 1' INT QUIT TERM
+            cat >"$temp_script" <<EOF
+#!/bin/sh
+status=
+test \! -r "$temp_script" && status=1\$status
+echo \$status
+exit 0
+EOF
+            if test $? -eq 0 ; then
+		chmod a+x "$temp_script"
+		if test $? -ne 0 ; then
+                    echo "ewbf: could not make $temp_script executable" 1>&2
+                    status=1
+		fi
+            else
+		echo "ewbf: could not create $temp_script" 1>&2
+		status=1
+            fi
+            if test $status -eq 0 ; then
+		echo "*** Checking nodes..."
+		result=`$ompiexec ${ompiexec_np:+"$ompiexec_np"} "$temp_script"`
+		if test $? -ne 0 ; then
+                    echo "ewbf: OpenMPI's mpiexec, ${ompiexec}, failed" 1>&2
+                    status=1
+		fi
+		echo " $result" | grep -q 1
+		if test $? -eq 0 ; then
+                    echo "ewbf: one or more nodes can not see the directory, $tmpdir, or that directory is not shared by all of the nodes" 1>&2
+                    status=1
+		fi
+	    fi
+            rm "$temp_script"
+            trap INT QUIT TERM
+	    if test $status -ne 0 ; then
+                exit 1
+	    fi
+        elif test -n "$machinefile" ; then
+            if test $nproc_used -lt 0; then
+                if test -z "$NSLOTS" ; then
+		    nproc_used=`count_processors "$machinefile"`
+		    if test $? -eq 0; then
+			if test $nproc_used -eq 0; then
+			    echo "ewbf: zero processors in $machinefile" 1>&2
+			    exit 1
+			fi
+		    else
+			exit 1
+		    fi
+                else
+		    nproc_used="$NSLOTS"
+		    if test "$nproc_used" -gt 0; then
+			:
+		    else
+			echo "ewbf_parallel: NSLOTS is not a positive integer" 1>&2
+			exit 1
+		    fi
+                fi
+            fi
+
+            iproc=0
+            while test $iproc -lt $nproc_used; do
+		machine=`print_ith_processor $iproc "$machinefile"`
+		if test $? -ne 0; then
+                    exit 1
+		elif test -n "$machine"; then
+                    echo "*** Checking node, $machine, ..."
+
+                    $rshcmd "$machine" /bin/sh -s <<EOF
+test \! -d "$tmpdir" && exit 1
+exit 0
+EOF
+
+                    case $? in
+			0)
+                            # Child node can see the temporary directory.
+                            # Nothing special needs to be done.
+                            ;;
+
+			1)
+                            # Child node can not see the temporary directory.
+			    # Can not proceed.
+                            echo "ewbf: the machine, $machine," \
+				" can not see the directory, $tmpdir" 1>&2
+                            exit 1
+                            ;;
+
+			*)
+                            # Presumably the rshcmd failed.
+                            echo "ewbf: could not connect to the " \
+				"machine, $machine, with the command, $rshcmd" 1>&2
+                            exit 1
+                            ;;
+                    esac
+		fi
+		iproc=`expr $iproc + 1`
+            done
+        fi
+    fi
+
+    recon_cmd="$recon_cmd"_parallel
+    recon_options="$recon_options
+$parallel_options
+-tmpdir=$tmpdir
+-no_nodecheck"
+fi
+
+temp_recon="$tmpdir"/$$.xzyw
+temp_series="$tmpdir"/$$.MnAln
+temp_script="$tmpdir"/$$.scr
+part_base=$$.reproj
+temp_part_list="$tmpdir"/$$.parts
+
+i=0
+while test $i -lt $nrecon -a $status -eq 0; do
+    trap 'cd "$tmpdir"; cut -d" " -f 1 "$temp_part_list" | xargs rm; rm "$temp_part_list" "$temp_series" "$temp_script"; exit 1' $trap_signals
+
+    # Generate the projection series to backproject.
+    cat >"$temp_script" <<EOF
+#!/bin/sh
+. "$IVE_BASE"/Priism_setup.sh
+mergemrc "$temp_series" \\
+EOF
+    if test $? -ne 0; then
+        status=1
+    fi
+    if test $i -gt 0; then
+        cat >>"$temp_script" <<EOF
+"$input_tilt_series" -in_sections=0:${i}:1 \\
+EOF
+        if test $? -ne 0; then
+            status=1
+        fi
+        nomit=$i
+    else
+        nomit=0
+    fi
+    j=`expr $i + 1`
+    while test $j -lt $nv; do
+        j1=`expr $j + $nrecon - 1`
+        if test $j1 -gt $nv; then
+            j1=$nv
+        fi
+        cat >>"$temp_script" <<EOF
+"$input_tilt_series" -in_sections=${j}:`expr $j1 - $j`:1 \\
+EOF
+        if test $? -ne 0; then
+            status=1
+        fi
+        nomit=`expr $nomit + $j1 - $j`
+        j=`expr $j1 + 1`
+    done
+    nomit=`expr $nv - $nomit`
+    echo >>"$temp_script"
+    if test $? -ne 0; then
+        status=1
+    fi
+    if test $status -eq 0; then
+        chmod a+x "$temp_script"
+        if test $? -ne 0; then
+            status=1 
+            echo "ewbf: unable to make $temp_script executable" 1>&2
+        fi
+    else
+        echo "ewbf: error generating $temp_script" 1>&2
+    fi
+
+    if test $status -eq 0; then
+        echo "*** Running $temp_script"
+        time "$temp_script"   
+        if test $? -ne 0; then
+            status=1
+            echo "ewbf: failed to extract subset for reconstruction" 1>&2
+        fi
+    fi
+    rm "$temp_script"
+
+    trap 'cd "$tmpdir"; cut -d" " -f 1 "$temp_part_list" | xargs rm; rm "$temp_part_list" "$temp_series" "$temp_recon"; exit 1' $trap_signals
+
+    if test $status -eq 0; then
+        # Do the backprojection.
+        # Reset the positional arguments to be the ones that are passed through
+        # to ewbp.
+        old_ifs="$IFS"
+        # Just a newline.
+        IFS='
+'
+        set -- $recon_options
+        IFS="$old_ifs"
+
+        echo "*** Running $recon_cmd $temp_series $temp_recon $@"
+        time "$recon_cmd" "$temp_series" "$temp_recon" "$@"
+        if test $? -ne 0; then
+            status=1
+        fi
+    fi
+
+    # Generate the template projection series for the reprojection.
+    if test $status -eq 0; then
+        echo "*** Running mergemrc $temp_series $input_tilt_series -in_sections=${i}:${nomit}:${nrecon}"
+        time mergemrc "$temp_series" "$input_tilt_series" -in_sections=${i}:${nomit}:${nrecon}
+        if test $? -ne 0; then
+            status=1
+            echo "ewbf: failed to create $temp_series"
+        fi
+    fi
+
+    # Reproject.
+    part=${part_base}_$i
+    if test $i -eq 0; then
+        echo $part -out_sections=${i}:${nomit}:${nrecon} > "$temp_part_list"
+    else
+        echo $part -out_sections=${i}:${nomit}:${nrecon} >> "$temp_part_list"
+    fi
+    if test $? -ne 0; then
+        status=1
+        echo "ewbf: unable to update $temp_part_list" 1>&2
+    fi
+    if test $status -eq 0; then
+        old_ifs="$IFS"
+        # Just a newline.
+        IFS='
+'
+        set -- $proj_options
+        IFS="$old_ifs"
+        echo "*** Running reproj $temp_recon $temp_series $tmpdir/$part $@"
+        time reproj "$temp_recon" "$temp_series" "$tmpdir"/$part "$@"
+    fi
+
+    rm "$temp_recon" "$temp_series"
+
+    trap 'cd "$tmpdir"; cut -d" " -f 1 "$temp_part_list" | xargs rm; rm "$temp_part_list"; exit 1' $trap_signals
+
+    i=`expr $i + 1`
+done
+
+# Merge the pieces.
+cd "$tmpdir"
+if test $? -ne 0; then
+    status=1
+fi
+if test $status -eq 0; then
+    echo "*** Running mergemrc $output_tilt_series -f=$temp_part_list"
+    time mergemrc -specify_out "$output_tilt_series" -f="$temp_part_list"
+    if test $? -ne 0; then
+        status=1
+        echo "ewbf: failed to merge results to form $output_tilt_series"
+    fi
+fi
+
+cut -d' ' -f 1 "$temp_part_list" | xargs rm
+rm "$temp_part_list"
+
+if test -n "$multir" -a $status -eq 0; then
+    nres=1
+    size=`echo 0 0 | header "$output_tilt_series" | sed -n -e '/Image Size (X,Y,Sections)\.\.*/ s/Image Size (X,Y,Sections)\.\.*//p'`
+    nx=`echo " $size" | awk '{print $1}'`
+    ny=`echo " $size" | awk '{print $2}'`
+    while test \( "$nx" -gt 256 -o "$ny" -gt 256 \) -a "$nx" -gt 2 -a "$ny" -gt 2; do
+        nx=`expr "$nx" / 2`
+        ny=`expr "$ny" / 2`
+        nres=`expr $nres + 1`
+    done
+    if test $nres -gt 1; then
+	echo "*** Running AppendRes $output_tilt_series $nres 1"
+	time AppendRes "$output_tilt_series" $nres 1
+    fi
+fi
+
+exit $status

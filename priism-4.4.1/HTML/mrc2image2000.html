@@ -1,0 +1,99 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: mrc2image2000</TITLE>
+  <META NAME="Description" CONTENT="On-line help for converter from Priism's native file format to the native format for the MRC Camgrid Image Processing System.">
+  <META NAME="Keywords" CONTENT="Priism,convert,MRC,Image2000">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="mrc2image2000">Convert from Priism's Native Format to Image2000's
+Variant of the MRC Format</A></H1>
+<H2>Overview</H2>
+<P>This application takes a Priism file and writes it out as a file in the
+native format for the
+<A HREF="http://www2.mrc-lmb.cam.ac.uk/image2000.html" TARGET="_top">MRC Cambridge Image Processing System</A>.
+
+<P>mrc2image2000 has the <A HREF="Region.html">standard set of Priism controls</A>
+for selecting a subset of the Priism file to convert.  For the conversion,
+enter the name of the file to be generated in the
+<A HREF="#output_file">"Output file"</A> field.  If the input file uses
+floating-point values or complex floating-point values to represent the
+data, mrc2image2000 can perform the conversion in place (in other words, the
+output file name can be the same as the input file name); otherwise, the
+output file name must be different than the input file name.  By default,
+mrc2image2000 will generate a file using the native byte ordering for the
+operating system and machine where you run mrc2image2000.  To generate a file
+with the non-native byte ordering, turn on the
+<A HREF="#swap_bytes">"swap bytes"</A> toggle button.
+
+<P>mrc2image200 will only convert the first wavelength and time point that you
+select.  mrc2image2000 will not transfer the wavelength information from the
+Priism header.  It only transfers the extended header if the extended header
+appears to contain symmetry information (i.e. the space group field in the
+header is not zero).
+
+<H3>Topics</H3>
+<P>
+    Overview |
+    <A HREF="Region.html">Region processing</A> |
+    <A HREF="#output_file">Output file</A> |
+    <A HREF="#swap_bytes">Swap bytes</A> |
+    <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+    <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="output_file">Output File</A></H2>
+<P>Enter the name of the Image2000 file to generate in the field next to the
+"Output file" button or use the "Output file" button to select the file with
+a file selection dialog.  As currently implemented, mrc2image2000 will allow
+the input file and the output file to be the same (i.e. the conversion is
+performed in place) if the input file uses floating-point or complex
+floating-point values to represent the data.
+
+<P><A HREF="#mrc2image2000">Return to overview</A>
+<HR>
+
+<H2><A NAME="swap_bytes">Swap Bytes</A></H2>
+<P>By default, mrc2image2000 generates Image2000 files in the native byte
+ordering for the machine and operating system where you run mrc2image2000.  To
+generate a file with the non-native byte ordering, turn on the "swap bytes"
+toggle button.
+
+<P><A HREF="#mrc2image2000">Return to overview</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>mrc2image2000 accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, it has
+the following options:
+
+<DL>
+  <DT><CODE>-out=</CODE><VAR>n</VAR>
+  <DD>Sets the name of the output file to be <VAR>n</VAR>.  If you do not
+    include this option, mrc2image2000 attempts to perform the conversion in
+    place.
+
+  <DT><CODE>-swab</CODE>
+  <DD>Causes mrc2image2000 to generate files with the non-native byte ordering.
+    By default, mrc2image2000 generates files with the native byte ordering.
+</DL>
+
+<P>The example below extracts a 160 x 160 x 160 region from a.dat
+and writes it to a.mrc in the non-native byte ordering.
+
+<PRE>
+    mrc2image2000 a.dat -x=0:159 -y=0:159 -z=0:159 -out=a.mrc -swab
+</PRE>
+
+<P><A HREF="#mrc2image2000">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

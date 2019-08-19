@@ -1,0 +1,70 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEPluginInitProc</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the IVEPluginInitProc type.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEPluginInitProc</H1>
+<H2>Overview</H2>
+<P>IVEPluginInitProc is the prototype for the routine used to initialize
+a plugin when the plugin is loaded with
+<A HREF="IVELoadPlugin.html">IVELoadPlugin</A>.  The arguments and return value
+for the initialization procedure are described below.
+<P>Include ive_plugin.h to declare IVEPluginInitProc.
+<H2>Prototype (C)</H2>
+<P><CODE>int (*IVEPluginInitProc)(const char* interface_name, void (*error_reporter)(const char* format, ...), void** p_attr, IVEPluginCleanupProc* p_cleanup_func);</CODE>
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>interface_name</VAR><DD>Is the name of the interface requested in
+    the call to <A HREF="IVELoadPlugin.html">IVELoadPlugin</A>.
+  <DT><VAR>error_reporter</VAR><DD>Is a pointer to a function whose first
+    argument is a printf-style format string; like printf, the remaining
+    arguments depend on the contents of the format string.  Use the function
+    pointed to by <VAR>error_reporter</VAR> to record the reason for an
+    initialization failure.
+  <DT><VAR>p_attr</VAR><DD>Set the pointer pointed to by <VAR>p_attr</VAR> to
+    the address of the plugin's attributes.
+    <A HREF="IVEGetPluginAttr.html">IVEGetPluginAttr</A> will return that
+    address to the end user.  If you do not set <VAR>p_attr</VAR>,
+    <A HREF="IVEGetPluginAttr.html">IVEGetPluginAttr</A> will return NULL for
+    the attributes' address.
+  <DT><VAR>p_cleanup_func</VAR><DD>Set the function pointer pointed to by
+    <VAR>p_cleanup_func</VAR> to the address of the function that
+    <A HREF="IVEUnloadPlugin.html">IVEUnloadPlugin</A> will call to free
+    any resources allocated during the plugin initialization.  The
+    documentation for
+    <A HREF="IVEPluginCleanupProc.html">IVEPluginCleanupProc</A> describes
+    the expected prototype for the cleanup function.
+</DL>
+<H2>Return value</H2>
+<P>If the initialization succeeded, the function should return 0.  If the
+initialization failed, the function should return a non-zero value and use
+the function pointed to by <VAR>error_reporter</VAR> to record a
+human-readable explanation for the failure.
+<H2>Cross references</H2>
+<P><A HREF="IVELoadPlugin.html">IVELoadPlugin</A>,
+<A HREF="IVEGetPluginAttr.html">IVEGetPluginAttr</A>,
+<A HREF="IVEUnloadPlugin.html">IVEUnloadPlugin</A>, and
+<A HREF="IVEPluginCleanupProc.html">IVEPluginCleanupProc</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified December 16, 2002
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

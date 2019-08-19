@@ -1,0 +1,271 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help:  Simplex</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the command-line application to align multiple wavelength data and compensate for magnification differences.">
+  <META NAME="Keywords" CONTENT="Priism,alignment,wavelength,simplex">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Simplex">Simplex</A></H1>
+<H2>Overview</H2>
+<P>Simplex automatically aligns the specified wavelengths to a reference
+wavelength and outputs the alignment parameters.  The aligned data is generated
+as well, if desired.  The alignment compensates for translation and
+magnification differences between the different wavelengths.
+
+<P>Currently, unprocessed data do not compensate for magnification and
+translation diffences between the different wavelengths used in data
+collection.  This can result in problems analyzing data when it is important
+to know how differently-labeled objects are positioned with respect to each
+other.
+
+<P>Simplex uses a multi-parameter r-factor minimization based on the simplex
+method, as written in <U>Numerical Recipes</U> (see section 10.4,
+pages 289-293 in either general or FORTRAN versions).  This program requires
+that one or more structures have data in multiple wavelengths, either by using 
+bleedthrough (e.g. excite in DAPI, and record emission in Texas Red or FITC) or
+by using an object that is labeled with multiple fluorphores (e.g.
+multicolored beads).  This program uses a simplex to minimize the r-factor
+calculated from differences between these images.  All data is loaded into
+memory as two byte integers to reduce data storage sizes.
+
+<H2>Basic usage</H2>
+<OL>
+  <LI>Record dataset with either additional reference bleedthrough images or
+    reference beads located within the dataset.  The dataset can be spread over
+    two files if more than 5 wavelengths are recorded.  If there is more than
+    one file, the <CODE>-in2</CODE> option must be used.  The order of
+    wavelengths in the input file(s) must be kept in mind when specifying
+    wavelengths.
+  <LI>Process data through ccdcor and decon, as with any other dataset.
+  <LI>Select the reference wavelength, align wavelengths, and compare
+    wavelengths. These are all thereoretically optional, as there is a default
+    setting for each, but you really don't want to use that!  You must specify
+    which wavelength (by order in the file) in which file, using the
+    <CODE>-refwave</CODE>, <CODE>-alignwaves</CODE>, and
+    <CODE>-comparewaves</CODE> options.  See below for exact details on the
+    usage of these options.
+  <LI>(optional) Select wavelenghths to be simply passed to final file.  If
+    you have data which you want in the final output file, but you either
+    don't want or don't have the option to align, use the <CODE>-pass</CODE>
+    option.
+  <LI>(optional) By default, the wavelength used for alignment is included as
+    the first wavelength when aligned data is generated.  If you do not want it
+    included there, use the <CODE>-norefout</CODE> option.
+  <LI>(optional) Select the region over which you want your data aligned.
+    The minimum and maximum pixel values are given to Simplex by the
+    <CODE>-x</CODE>, <CODE>-y</CODE>, and <CODE>-z</CODE> options.  The default
+    is that the whole dataset will be aligned.  Typically, the default option
+    is better to use, but larger datasets can be trimmed to decrease the
+    running time.
+  <LI>Select the region over which you want to compare the image alignments.
+    Simplex will align the entire region defined by the <CODE>-x</CODE>,
+    <CODE>-y</CODE>, and <CODE>-z</CODE> options, but will only use the region
+    defined within the <CODE>-compxyz</CODE> option.  Unlike the
+    <CODE>-x</CODE>, <CODE>-y</CODE>, and <CODE>-z</CODE> options, the
+    <CODE>-compxyz</CODE> option is required!
+  <LI>(optional) Estimate background values to subtract from the reference and
+    compare wavelengths in order to minimize effects of background noise from
+    the r-factor calculations.  This option isn't required, as the default
+    will be zero for any wavelengths not supplied with an integer value to
+    subtract.
+  <LI>(optional) Estimate starting translations (<CODE>-tstart</CODE>) and
+    scale (<CODE>-scale</CODE>) to improve the speed of Simplex reaching the
+    tolerance value.  You can also specify to have an edge rolloff
+    (<CODE>-rolloff</CODE>) in microns as well.  These are optional, real
+    values.  Usually, only the <CODE>-scale</CODE> option is readily estimable.
+  <LI>(optional) Determine the tolerance (<CODE>-tol</CODE>) you're willing to
+    have in your alignment.  The default is set at 0.0001, which appears to be
+    a reasonable value.
+  <LI>(optional) Select a name for the output file (<CODE>-out</CODE> option).
+    If no output file is selected, the final alignment values will only be
+    printed on the screen (or specified file -- see the
+    <A HREF="#Examples">Examples section</A>).
+  <LI>Start Simplex using the commands listed below and in the
+    <A HREF="#Examples">Examples section</A>.
+</OL>
+
+<H2>Important parameters</H2>
+<P>The commands to use simplex has a number of required commands, as well as
+several optional commands (those in brackets):
+
+<PRE>
+     simplex file1 [-in2=file2] [-x=] [-y=] [-z=] [-t=] [-rolloff=] -compxyz=
+     [-tstart=] -out=outfile -refwave=file#:refw -bkg= [-tol=] [-scale=]
+     -alignwaves=al1f#:al1w:alf2#:al2w [-comparewaves=c1f#:cw1:c2f#:cw2]
+     [-pass=p1f#:p1w:p2f#:p2w] [-norefout]
+</PRE>
+
+<DL>
+  <DT><STRONG>file1</STRONG>
+  <DD>Is the name of the file containing the image data.
+  <DT><STRONG>-in2</STRONG>=<VAR>file2</VAR>
+  <DD>Is the name of the second, and optional, file with image data.  The
+    x, y, z, and time dimensions of the data must be compatible with those in
+    <VAR>file1</VAR>.
+  <DT><STRONG>-x</STRONG>=<VAR>x_min</VAR>:<VAR>x_max</VAR> <STRONG>-y</STRONG>=<VAR>y_min</VAR>:<VAR>y_max</VAR> <STRONG>-z</STRONG>=<VAR>z_min</VAR>:<VAR>z_max</VAR> <STRONG>-t</STRONG>=<VAR>t_min</VAR>:<VAR>t_max</VAR>:<VAR>t_step</VAR>
+  <DD>These options limit the data read in from the input files and analyzed
+    by simplex.  By default, the entire input dataset is used.
+  <DT><STRONG>-rolloff</STRONG>=<VAR>r</VAR>
+  <DD>This is the width of the border, in microns, to rolloff.  The default
+    is no rolloff: <VAR>r</VAR> is zero.
+  <DT><STRONG>-compxyz</STRONG>=<VAR>x_min</VAR>:<VAR>x_max</VAR>:<VAR>y_min</VAR>:<VAR>y_max</VAR>:<VAR>z_min</VAR>:<VAR>z_max</VAR>
+  <DD>This is the subregion of the image to use for r-factor calculation. 
+    This avoids image edge problems and must be supplied by user.
+  <DT><STRONG>-tstart</STRONG>=<VAR>x_trans</VAR>:<VAR>y_trans</VAR>:<VAR>z_trans</VAR>
+  <DD>Is the starting translation to be applied before using simplex.  The
+    default is no translation (<VAR>x_trans</VAR>, <VAR>y_trans</VAR>, and
+    <VAR>z_trans</VAR> are all zero).
+  <DT><STRONG>-scale</STRONG>=<VAR>s</VAR>
+  <DD>Starting image intensity scale factor, where scale is used as:  refint = compint/scale.
+  <DT><STRONG>-bkg</STRONG>=<VAR>ref_bkg</VAR>:<VAR>comp1_bkg</VAR>:<VAR>comp2_bkg</VAR>...
+  <DD>Specifies the background value to subtract from the reference wavelength
+    (the first value listed) and each of the compared wavelengths (the
+    second value listed if for the first compare set, the third value for
+    the second compare set, and so on).  If there are fewer values than
+    the number of compare sets plus one, the background for the remaining
+    waves is zero.
+  <DT><STRONG>-out</STRONG>=<VAR>name</VAR>
+  <DD>Specifies the name of the optional output file.  When no output file
+    is given, you just get the calculated alignment parameters written to
+    the screen (or redirected to a file).
+  <DT><STRONG>-tol</STRONG>=<VAR>t</VAR>
+  <DD>Specifies the r-factor tolerance in the simplex calculation.  The
+    default is <VAR>t</VAR> = 0.0001.
+  <DT><STRONG>-refwave</STRONG>=<VAR>ref_file</VAR>:<VAR>ref_wave</VAR>
+  <DD>Selects the wavelength to be used as a reference.  <VAR>ref_file</VAR>
+    sets which of the two input files to use for the reference; use one
+    for <VAR>file1</VAR> and two for <VAR>file2</VAR>.  <VAR>ref_wave</VAR>
+    is the index of the reference wavelength in the file; it can range from
+    zero, for the first wavelength, through four, for the last wavelength
+    assuming that there are five wavelengths.  The default is to use the
+    first wavelength from <VAR>file1</VAR> as the reference (i.e. equivalent
+    to <CODE>-refwave=1:0</CODE>).
+  <DT><STRONG>-alignwaves</STRONG>=<VAR>a1_file</VAR>:<VAR>a1_wave</VAR>:<VAR>a2_file</VAR>:<VAR>a2_wave</VAR>...
+   <DD>Specifies the wavelengths which are to be aligned to the reference
+     wavelength.  As with <CODE>-refwave</CODE>, each wavelength is specified
+     by a file number and a wavelength index.  The default is to use every
+     wavelength except the one specified as the reference wavelength.
+  <DT><STRONG>-comparewaves</STRONG>=<VAR>c1_file</VAR>:<VAR>c1_wave</VAR>:<VAR>c2_file</VAR>:<VAR>c2_wave</VAR>...
+  <DD>Specifies the wavelengths to compare to the reference wavelength in
+    lieu of using the wavelengths to be aligned.  The usage is the same as
+    with <CODE>-alignwaves</CODE>.  Each wavelength specified in this list
+    is used in conjunction with the wavelength in the same position in the
+    aligned wavelengths list.  For example, use <CODE>-alignwaves</CODE> when
+    you have bleedthrough data which is excited in the reference wave's
+    excitation and recorded in the aligned wavelength's emission wavelengths.
+    There <STRONG>must</STRONG> be the same number of wavelengths here as
+    listed with <CODE>-alignwaves</CODE>!  If you are using the
+    same wavelength to align as you want saved, you need to rewrite it in the
+    appropriate order if you need to specify bleedthroughs for other
+    wavelengths.  The default is to use the same list of wavelengths for
+    the comparison waves as were set with <CODE>-alignwaves</CODE>.
+  <DT><STRONG>-pass</STRONG>=<VAR>p1_file</VAR>:<VAR>p1_wave</VAR>:<VAR>p2_file</VAR>:<VAR>p2_wave</VAR>...
+  <DD>Specifies the wavelengths to pass to the output file without any
+    processing.  The waves are specified using the file number and the
+    wavelength index just as they are in <CODE>-alignwaves</CODE>.  The
+    wavelengths passed without processing appear first in the output file
+    after the reference wavelength (if it is output).
+  <DT><STRONG>-norefout</STRONG>
+  <DD>If this option is supplied, the reference wavelength is not written
+    to the output file.  By default, the reference wavelength is written
+    as the first wavelength in the output file.
+  <DT><STRONG>-w</STRONG>
+  <DD>This option is accepted, but do not use it.
+</DL>
+
+<H2><A NAME="Examples">Examples</A></H2>
+<P>Simplex tends to run slowly so, if a queueing system available, you will
+want to make a script file as below to submit to a queue.
+
+<H3>Sample header for file 1</H3>
+<PRE>
+  Number of columns, rows, sections ......   512   512   160
+  Data organized (NZ,NW,NT) ..............    40     4     1 non-interleaved
+  .
+  .
+  .
+  # wavelengths, wavelengths (nm).........   4 540 605 675 460
+      6 Titles :
+  opf 40-48_cyc13.dat;ndo 40;exfilter fitc-w;ccd 3.0;exfilter rhod-w;ccd 3.0;
+ exfilter cy5;ccd 7.0;exfilter dapi;ccd 3.0;foc 0.25;wait 2.0;enddo;clf;stop;
+ Mon Apr  7 08:32:03 1997
+ CCDCOR: CCD data correction V2.3 Norm=ON  Method=PHOTON COUNTER DATA
+ Bleach=ON  Zline=ON
+ DECON: DAA      0.1010    5    0.3050    1.0000   15    0.0029
+</PRE>
+
+<H3>Sample header for file 2</H3>
+<PRE>
+  Number of columns, rows, sections ......   512   512   160
+  Data organized (NZ,NW,NT) ..............    40     2     1 non-interleaved
+  .
+  .
+  .
+  # wavelengths, wavelengths (nm).........   2 605 675
+      6 Titles :
+  opf 40-48_cyc13.dat;ndo 40;exfilter fitc-w;emfilter rhod-w;ccd 7.0;
+ emfilter cy5;ccd 12.0;foc 0.25;wait 2.0;enddo;clf;stop;
+ Mon Apr  8 09:27:17 1997
+ CCDCOR: CCD data correction V2.3 Norm=ON  Method=PHOTON COUNTER DATA
+ Bleach=ON  Zline=ON             
+ DECON: DAA      0.1010    5    0.3050    1.0000   15    0.0029
+</PRE>
+
+<P>Let's assume that from file 1, you want to use fitc-w (540) as your
+wavelength to align everything to, rhod-w (605) and cy5 (675) as the
+wavelengths to be aligned (i.e. they contain your data), and dapi(460)
+as a wavelength to be passed (as there is no means by which to align
+this data to the fitc-w wavelength).  File 2 contains bleedthrough data
+of fitc-w excitation in the rhod-w (605) and cy5 (675) emission wavelengths.
+These can be used to align the corresponding emission wavelength data in
+file 1.
+
+<P>The script file would look something like this (it is assumed the
+environment variable IVE_BASE is set to point to where Priism is installed,
+you could also explicitly replace $IVE_BASE with the path to the installation
+directory (i.e. /usr/local/ucsf_msg/IVE)):
+
+<PRE>
+#/bin/sh
+#command file for simplex
+
+. $IVE_BASE/Priism_setup.sh
+( time simplex /usr/people/X/file1.dat_cor_decon \
+ -in2=/usr/people/X/file2.dat_cor_decon -scale=1.0:1.0 \
+ -compxyz=26:160:60:250:0:40 -refwave=1:0 -alignwaves=1:1:1:2 \
+ -comparewaves=2:0:2:1 -pass=1:3 -bkg=0:0:0) \
+ &gt;&amp; /usr/people/X/simplex.log
+</PRE>
+
+<H2>Helpful hints and notes</H2>
+<UL>
+  <LI>You <STRONG>must</STRONG> use the file specifications in
+    <CODE>-refwave</CODE>, <CODE>-alignwaves</CODE>,
+    <CODE>-comparewaves</CODE>, and <CODE>-pass</CODE> even if you are using
+    only one file!  This program does not need to use two files, but it will
+    require a file specification in those options.
+  <LI>A standard Simplex run will take about one hour for a 120x200x40 region
+    (R8000 90 MHz).  Larger regions will run slower, but will be more accurate
+    due to comparison of a larger subregion of the dataset.
+  <LI>Currently, only one referece wavelength can be defined in Simplex.  This
+    may be a problem if one is trying to align Cy5 to DAPI, as DAPI doesn't
+    appear to bleed through to Cy5.  One option is to use Simplex twice:
+    first to align Cy5 to another wavelength, then to align everything DAPI
+    (the second alignment of Cy5 can use the initial reference wavelength
+    bleedthrough as the comparison wavelength).  This requires a
+    Cy5 bleedthrough of a different wavelength data, for example, Texas Red.
+  <LI>Only one comparison region is allowed with the current Simplex version.
+    This is a real bummer because you're screwed if you wanted to align all
+    the reference beads surrounding a nucleus.  Maybe someday this will be
+    modified so you can  select multiple regions or remove some regions
+    (e.g. set a certaion region to zero, with some rolloff at the edges).
+    In the meantime, your best bet is to play with EditPolygon and CutMask,
+    and use the two file option if you have datasets like that!
+</UL>
+
+</BODY>
+</HTML>

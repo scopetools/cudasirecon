@@ -1,0 +1,577 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: DisplayAttr</TITLE>
+  <META NAME="Description" CONTENT="On-line help for DisplayAttr.">
+  <META NAME="Keywords" CONTENT="Priism,image window parameters">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="DisplayAttr">Display Attributes</A></H1>
+<H2>Overview</H2>
+
+<P>Display Attributes allows you to view and alter many of the parameters
+controlling how images are displayed in an image window.  To view or change
+the default parameters that are used, use Priism's
+<A HREF="Preferences.html">Preferences dialog</A>.  Display Attributes runs
+in one of two modes.  The first presents a graphical user interface for viewing
+and changing an image window's parameters.  All of the topics listed below,
+except for the <A HREF="#CommandLine">"Command Line"</A> and
+<A HREF="#QueryOutput">"Query Output"</A> topics, describe elements of that
+graphical user interface.  The second mode reads the command line for the
+changes to make to an image window, performs those changes, and then exits.
+The <A HREF="#CommandLine">Command Line</A> topic describes that mode.
+
+<H3>Topics</H3>
+<P>Overview |
+   <A HREF="Scale.html#Scale">Scale</A> |
+   <A HREF="#GrDisRange">Graphics Display Range</A> !
+   <A HREF="#WinGeom">Geometry</A> |
+   <A HREF="#Zoom">Zoom</A> |
+   <A HREF="#CurrentZWT">Current ZWT</A> |
+   <A HREF="#Interpolation">Interpolate Zoom</A> |
+   <A HREF="#BufferImage">Buffer Image</A> |
+   <A HREF="#ShowImage">Show Image</A> |
+   <A HREF="#ShowGraphics">Show Graphics</A> |
+   <A HREF="#MatrixDisplay">Matrix Display</A> !
+   <A HREF="#MatrixLayout">Matrix Layout</A> |
+   <A HREF="#Step_Inc">Step Increment</A> |
+   <A HREF="#StepDirection">Step Direction</A> |
+   <A HREF="#WaveSynching">Wave Synching</A> |
+   <A HREF="#ScalingAlgorithm">Scaling Algorithm</A> |
+   <A HREF="#ComplexDataDisOpt">Complex Data</A> |
+   <A HREF="#ScaleBar">Scale Bar</A> |
+   <A HREF="#Direction">Direction</A> |
+   <A HREF="#Color">Color</A> |
+   <A HREF="#Width">Width</A> |
+   <A HREF="#Length">Length</A> |
+   <A HREF="#Position">Position</A> |
+   <A HREF="#CommandLine">Command Line</A> |
+   <A HREF="#QueryOutput">Query Output</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="Monitor.html">Image windows</A> |
+   <A HREF="Preferences.html">Preferences</A>
+<HR>
+
+<H2><A NAME="GrDisRange">Graphics Display Range</A></H2>
+
+<P>When an image window displays a section of data, the graphics from
+nearby z slices and time points can be included in the display.  Let f1, f2,
+f3, and f4 be the four values shown in the "GrDisRange" field.  Then the
+section with z index, z0, and time point index, t0, will include the
+graphics from sections whose z index is between z0 minus f1 and z0 plus f2 and
+whose time point index is between t0 minus f3 and t0 plus f4.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="WinGeom">Window Geometry</A></H2>
+
+<P>You can alter any of the values here to modify the window's geometry.
+The first two values in this field specify the x and y position of the
+lower lefthand corner of the monitor window, in pixels, as measured from
+the lower lefthand corner of the screen.  The third and fourth values
+specify the width and height in pixels of the image window (including
+the associated menus and borders).
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="Zoom">Zoom</A></H2>
+<P>Use the field labeled "Zoom", to change the zoom factor for images
+displayed in the image window.  To zoom out (make the image smaller than
+its normal size), enter "1/" followed by the integer factor by which the
+size will be reduced.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="CurrentZWT">Current ZWT</A></H2>
+<P>Use the field labeled "Current ZWT", to change which image is currently
+displayed in the image window.  The first value in the field is the z index
+of the current image.  The second value is the wavelength index.  The third
+value is the time index.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="MatrixDisplay">Matrix Display</A></H2>
+
+<P>Use this field to split up the window into multiple images.  The
+two numbers in this field set the number of columns and rows respectively.
+The images are displayed in order of increasing index from left to right
+and from bottom to top.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="MatrixLayout">Matrix Layout</A></H2>
+<P>Use the menu labeled, "Layout", to change the ordering of images when
+the image window displays multiple images in a grid.  The first option in
+the menu, "Data", places the first image in the lower left corner and the
+last image in the upper right corner.  The image index increases from left to
+right and then from bottom to top.  The second option in the menu, "Text",
+places the first image in the upper left corner and the last image in the
+lower right corner.  The image index increases from left to right and then
+from top to botoom.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="Step_Inc">Step Increment</A></H2>
+
+<P>This field sets the number of images skipped when moving to the
+next or previous image.
+
+<H2><A NAME="StepDirection">Step Direction</A></H2>
+
+<P>This menu controls which subset of images are displayed as you step through
+the images or display multiple images at once using the option for
+<A HREF="#MatrixDisplay">matrix display</A>.  There are four available options:
+<DL>
+  <DT>Section<DD>Step through all the images in the order they are stored.
+  <DT>Z<DD>Step through z sections for the current time point.
+  <DT>Time<DD>Step through time points for the current z section.
+  <DT>Wavelength<DD>Step through the different wavelengths for the current
+    time point and z section.
+</DL>
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="Interpolation">Interpolate Zoom</A></H2>
+
+<P>When on, enlarged images (zoom greater than one) are displayed
+using a bilinear interpolation.  Otherwise, no interpolation is
+applied and a pixel value from the unenlarged image is used unmodified
+for a square set of pixels in the enlarged version.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="BufferImage">Buffer Image</A></H2>
+
+<P>When on, the data after scaling is stored to save time if
+the image needs to be redisplayed.  To reduce the amount of memory
+used, you can turn off the buffering of the scaled data.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="ShowImage">Show Image</A></H2>
+
+<P>When off, images are not shown in the window.  This can be useful
+if you just want to see the overlayed graphics.  Typically, however,
+you will want the image display to be switched on.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="ShowGraphics">Show Graphics</A></H2>
+
+<P>When off, any graphics overlayed on the image are not shown (with the
+exception of the section number display).  Typically, you will want the
+graphics switched on.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="ScalingAlgorithm">Scaling Algorithm</A></H2>
+
+<P>Two choices of scaling algorithm are offered.  The <EM>Fast</EM> option
+uses a lookup table to speed the scaling process with the drawback that
+it becomes increasingly inaccurate for scaling floating point or complex
+data as the scaling exponent gets farther away from one.  The
+<EM>Accurate</EM> option takes roughly twice as much time but accurately
+does the scaling in nonlinear cases.  Generally, the <EM>Fast</EM> option
+is reasonable for most work.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="ComplexDataDisOpt">Complex Data</A></H2>
+
+<P>When displaying complex data, the quantity displayed as an image intensity
+can be the real component, the imaginary component, the magnitude, or the
+phase (in radians) of the complex number.  This menu allows you to select
+which of these options is used.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="WaveSynching">Wave Synching</A></H2>
+
+<P>This pulldown gives you control over which section is displayed when
+you switch waves after changing the section displayed.  With
+<EM>Same Z Section</EM>, when you change waves the z and time index of the
+data shown will not change:  the different waves remain in sync.  With
+<EM>Independent</EM>, when you change waves the data displayed will be
+the data that was last displayed for that wave:  scrolling through the
+data in one wave has no effect on the section that will be displayed after
+you switch to displaying another wave.   With <EM>Coupled</EM>, when you
+step forward in one wave, you will also step forward.  This behavior is
+similar to what happens with <EM>Same Z Section</EM>; the difference is
+that the <EM>Coupled</EM> option doesn't force the z and time index to be
+the same when waves are switched.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="ScaleBar">Scale Bar</A></H2>
+
+<P>Use this to control whether or not the scale bar, a line to indicate
+the physical dimensions of the image, is shown.  The <EM>Label</EM> option
+currently just has the same effect as <EM>On</EM>.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="Width">Scale Bar Width</A></H2>
+
+<P>This entry specifies the thickness of the scale bar in pixels.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="Color">Scale Bar Color</A></H2>
+
+<P>Use this menu to select the color of the scale bar.  The color options
+can be changed by using <A HREF="ChangeColors.html">ChangeColors</A>.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="Length">Scale Bar Length</A></H2>
+
+<P>This field sets the length of the scale bar in terms of the physical
+units for dimensions the data set, i.e. angstroms for electron microscope
+data and microns for optical microscope data.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="Direction">Scale Bar Direction</A></H2>
+
+<P>Toggles whether the scale bar is shown horizontally or vertically.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="Position">Scale Bar Position</A></H2>
+
+<P>This field sets the x and y position of the scale bar, in pixels, as
+measured from the lower lefthand corner of the image window.  For horizontal
+scale bars, this position is the center of the left edge of the scale bar;
+for vertical scale bars, this position is the middle of the bottom edge of
+the scale bar.
+
+<P>You can select the position of the scale bar by pressing the <EM>Select
+with Mouse</EM> button and then clicking on the desired position in the
+image window with the right mouse button.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>Display Attributes runs in one of two modes.  If started with this
+command line, <CODE>DisplayAttr</CODE> <VAR>window_number</VAR>, Display
+Attributes will display a graphical user interface for viewing and modifying
+the parameters for image window numbered <VAR>window_number</VAR>.  If one or
+more additional entries appear after <VAR>window_number</VAR> on the command
+line, Display Attributes will not display the graphical interface.  Instead,
+it will perform the actions which specified by the command line options and
+then exit.  The exit status will be zero if all of the actions were successful.
+The exit status will be one if one or more of the actions failed.  The
+command line options that Display Attributes understands in the second mode
+are:
+<DL>
+  <DT><CODE>-buffer</CODE> or <CODE>-no-buffer</CODE>
+  <DD>The first turns on image buffering for the image window.  The second
+      turns off image buffering.
+
+  <DT><CODE>-complex=</CODE><VAR>conversion</VAR>
+  <DD>Specifies how the image window will convert complex-valued data to
+    a single quantity for display as an image.  <VAR>conversion</VAR> must be
+    real, imag, amp, or phase.  'real' causes the image to display the real
+    component of the data.  'imag' causes the image to display the imaginary
+    component of the data.  'amp' causes the image to display the amplitude
+    of the data.  'phase' causes the image to dipslay the phase, in radians,
+    of the data.
+
+  <DT><CODE>-graphics</CODE> or <CODE>-no-graphics</CODE>
+  <DD>The first turns on graphics overlayed on the images.  The second turns
+    off those graphics.
+
+  <DT><CODE>-grrange=</CODE><VAR>zneg</VAR><CODE>:</CODE><VAR>zpos</VAR><CODE>:</CODE><VAR>tneg</VAR><CODE>:</CODE><VAR>tpos</VAR>
+  <DD>Sets the display range for graphics overlayed on the images.  If the
+    current section's z and time indices are zc and tc, any graphic whose z
+    index is between zc - <VAR>zneg</VAR> and zc + <VAR>zpos</VAR> and whose
+    time index is between tc - <VAR>tneg</VAR> and tc + <VAR>tpos</VAR> will
+    appear on the current section.
+
+  <DT><CODE>-image</CODE> or <CODE>-no-image</CODE>
+  <DD>The first turns on image display in the image window.  The second turns
+    off image display (only the overlayed graphics, if any, will be shown).
+
+  <DT><CODE>-interpolate</CODE> or <CODE>-no-interpolate</CODE>
+  <DD>The first turns on bilinear interpolation for images shown with a zoom
+    factor greater than 1.  The second turns off interpolation for zoomed in
+    images.
+
+  <DT><CODE>-layout=data</CODE> or <CODE>-layout=text</CODE>
+  <DD>Sets how the image window orders the images when multiple images are
+    displayed in a grid.  The first form, <CODE>-layout=data</CODE>, places the
+    first image in the lower left and the last image in the upper right.  The
+    image index increases left to right and from bottom to top.  The second
+    form, <CODE>-layout=text</CODE>, places the first image in the upper left
+    and the last image in the lower right.  The image index increases from left
+    to right and from top to bottom.
+
+  <DT><CODE>-matrix=</CODE><VAR>num_columns</VAR><CODE>:</CODE><VAR>num_rows</VAR>
+  <DD>Sets the image window to display up to <VAR>num_columns</VAR> times
+    <VAR>num_rows</VAR> images simultaneously in a grid with
+    <VAR>num_rows</VAR> rows and <VAR>num_columns</VAR> columns.
+    <VAR>num_columns</VAR> and <VAR>num_rows</VAR> must be integers.  You may
+    omit <VAR>num_rows</VAR> and the separating colon:  in that case,
+    Display Attributes will assume that you want one row.
+
+  <DT><CODE>-position=</CODE><VAR>xpos</VAR><CODE>:</CODE><VAR>ypos</VAR>
+  <DD>Sets the screen position, in pixels, of the image window's lower left
+    corner.  The position (0, 0) corresponds to the lower left corner of the
+    screen.  The x position increases as one moves across the screen to the
+    right.  The y position increases as one moves up the screen.
+    <VAR>xpos</VAR> and <VAR>ypos</VAR> must be integers.
+
+  <DT><CODE>-query</CODE>
+  <DD>Prints the current attributes of the image window to standard output.
+    The topic, <A HREF="#QueryOutput">"Query Output"</A>, describes what is
+    printed.
+
+  <DT><CODE>-res=</CODE><VAR>i</VAR>
+  <DD>Sets the index of the currently displayed resolution level to be
+    <VAR>i</VAR>.  <VAR>i</VAR> must be an integer greater than or equal to
+    zero and less than the number of resolutions.
+
+  <DT><CODE>-scalebar</CODE> or <CODE>-scalebar-labeled</CODE> or <CODE>-no-scalebar</CODE>
+  <DD>The first turns on the display of the scale bar without a label.  The
+    second turns on display of the scale bar with a label indicating the length
+    of the scale bar.  The third turns off display of the scale bar.
+
+  <DT><CODE>-scaling=</CODE><VAR>algorithm</VAR>
+  <DD>Selects the scaling algorithm to use.  If <VAR>algorithm</VAR> is
+    <CODE>fast</CODE> the window will use a lookup table that sacrifices
+    accuracy for speed when working with floating-point or complex-valued data
+    and the scaling exponent is different from one.  If <VAR>algorithm</VAR>
+    is <CODE>accurate</CODE>, the image window will not use a lookup table
+    when the data is floating-point or complex-values and the scaling exponent
+    is different than one.
+
+  <DT><CODE>-scbcolor=</CODE><VAR>c</VAR>
+  <DD>Sets the color for the scale bar.  The color must be one of the twelve
+    colors selected for overlay graphics.  <VAR>c</VAR> may be the color's
+    index, an integer between zero and eleven, or the color's name.
+
+  <DT><CODE>-scblength=</CODE>
+  <DD>Sets the length of the scale bar to be <VAR>l</VAR> of whatever units
+    are used for the pixel spacing of the image.  <VAR>l</VAR> must be a
+    floating-point value.
+
+  <DT><CODE>-scbpos=</CODE><VAR>xpos</VAR><CODE>:</CODE><VAR>ypos</VAR>
+  <DD>Sets the position of the scale bar within the image display.  A position
+    of (0, 0) corresponds to the lower left corner of the image display.  The
+    x coordinate increases as one moves right across the display.  The y
+    coordinate increases as one moves up the image display.  For a horizontal
+    scale bar, the specified position is the location for the middle of the
+    scale bar's left edge.  For a vertical scale bar, the specified position
+    is the middle of the scale bar's bottom edge.
+
+  <DT><CODE>-scbthick=</CODE><VAR>t</VAR>
+  <DD>Sets the scale bar to be <VAR>t</VAR> pixels thick.  <VAR>t</VAR> must
+    be an integer.
+
+  <DT><CODE>-scb-horizontal</CODE> or <CODE>-scb-vertical</CODE>
+  <DD>The first selects a horizontal scale bar.  The second selects a vertical
+    scale bar.
+
+  <DT><CODE>-scl1=</CODE><VAR>sclmin</VAR><CODE>:</CODE><VAR>sclmax</VAR><CODE>:</CODE><VAR>sclexp</VAR><CODE>:</CODE><VAR>sclflag</VAR>
+  <DD>Sets the scaling parameters for the first wavelength.  The scaling
+    parameters have the same meaning as the parameters do for the
+    <A HREF="Scale.html">Image-&gt;Scale dialog</A> for the image window.
+    The parameters must be floating-point values.  <CODE>-scl2=</CODE>,
+    <CODE>-scl3=</CODE>, <CODE>-scl4=</CODE>, and <CODE>-scl5=</CODE> are
+    similar to <CODE>-scl1=</CODE> but affect the second through fifth
+    wavelengths, respectively.
+
+  <DT><CODE>-secnum</CODE> or <CODE>-no-secnum</CODE>
+  <DD>The first turns on display of the section number on each image.  The
+    second turns off display of the section number on each image.
+
+  <DT><CODE>-size=</CODE><VAR>width</VAR><CODE>:</CODE><VAR>height</VAR>
+  <DD>Sets the width and height, in pixels for the image window.  The
+    width and height must be integers.
+
+  <DT><CODE>-sncolor=</CODE><VAR>c</VAR>
+  <DD>Sets the color for the section number display.  The color, <VAR>c</VAR>,
+    may be the color's index, an integer between zero and eleven, or the
+    color's name.
+
+  <DT><CODE>-step=</CODE><VAR>dir</VAR>
+  <DD>Selects the direction to use when stepping through the data with
+    the mouse buttons, mouse scroll wheel, scroll bar control in the image
+    window display, or the gridded image display option (i.e. -matrix).
+    <VAR>dir</VAR> must be <CODE>s</CODE>, <CODE>section</CODE>,
+    <CODE>z</CODE>, <CODE>t</CODE>, <CODE>time</CODE>, <CODE>w</CODE>,
+    <CODE>wave</CODE>, or <CODE>wavelength</CODE>.  <CODE>s</CODE> or
+    <CODE>section</CODE> cause the image window to step through the images in
+    the order they are stored.  <CODE>z</CODE> causes the image window to step
+    through images by their z index.  <CODE>t</CODE> or <CODE>time</CODE>
+    cause the image window to step through the images by their time index.
+    <CODE>w</CODE>, <CODE>wave</CODE>, or <CODE>wavelength</CODE> cause the
+    image window to step through the images by their wavelength index.
+
+  <DT><CODE>-stepsize=</CODE><VAR>s</VAR>
+  <DD>Sets the number of images to move in the chosen direction in response to
+    one mouse press, click in the scroll bar, or step in the matrix display.
+    <VAR>s</VAR> must be an integer.
+
+  <DT><CODE>-sync=</CODE><VAR>m</VAR>
+  <DD><CODE>-sync=same</CODE> sets the image window to force the current
+    image for each wavelength to have the same z and time indices.
+    <CODE>-sync=none</CODE> or <CODE>-sync=independent</CODE> causes the
+    image window to not enforce any relationship between the z and time
+    indices for the current images in different wavelengths.
+    <CODE>-sync=coupled</CODE> sets the image window so that a change of
+    <VAR>dz</VAR> and <VAR>dt</VAR> to the z and time indices of one
+    wavelength's current image adds <VAR>dz</VAR> and <VAR>dt</VAR> to the
+    indices of the current image in all other wavelengths (those indices
+    are then coerced to fall within the bounds of the data set).
+
+  <DT><CODE>-zoom=</CODE><VAR>zf</VAR> or
+    <CODE>-zoom=1/</CODE><VAR>f</VAR>
+  <DD>The first form sets the zoom factor for the image to be <VAR>zf</VAR>
+    where <VAR>zf</VAR> must be a floating-point value.  The second form sets
+    the zoom factor for the image to be 1 / <VAR>f</VAR> where <VAR>f</VAR>
+    must be a positive integer.
+
+  <DT><CODE>-zwt=</CODE><VAR>zindex</VAR><CODE>:</CODE><VAR>waveindex</VAR><CODE>:</CODE><VAR>timeindex</VAR>
+  <DD>Sets the current section for the image window to have a zindex equal to
+    <VAR>zindex</VAR>, a wavelength index equal to <VAR>waveindex</VAR>, and
+    a time point index equal to <VAR>timeindex</VAR>.  <VAR>zindex</VAR>,
+    <CODE>waveindex</CODE>, and <VAR>timeindex</VAR> must be integers.
+</DL>
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+<H2><A NAME="QueryOutput">Query Output</A></H2>
+<P>The output generated by the -query command-line option consists of serveral
+lines, each starting with the name (a combination of digits and lower- or
+uppercase letters) of the attribute, followed immediately by a colon, followed
+by the attribute's values which are separated from the colon and each other
+by white space.  The attributes currently printed and the format of their
+values are:
+<DL>
+  <DT>WindowNumber
+  <DD>integer for the image's number
+
+  <DT>GraphicsDisplayed
+  <DD>no or yes
+
+  <DT>ImageDisplayed
+  <DD>no or yes
+
+  <DT>InterpolatedZoom
+  <DD>no or yes
+
+  <DT>Position
+  <DD>x and y position, as integers with units of pixels, of the image window
+    on the screen
+
+  <DT>Size
+  <DD>width and height, as integers with units of pixels, of the image window
+    on the screen
+
+  <DT>Matrix
+  <DD>number of columns followed by the number of rows, both as integers
+
+  <DT>MatrixLayout
+  <DD>data, text, or an integer indicating an unrecognized layout mode
+
+  <DT>StepDirection
+  <DD>section, z, time, wavelength, or an integer indicating an unrecognized
+    direction
+
+  <DT>StepSize
+  <DD>the step size as an integer
+
+  <DT>Synchronization
+  <DD>same, none, coupled, or an integer indicating an unrecognized
+    synchronization mode
+
+  <DT>Zoom
+  <DD>the image zoom factor as a floating-point value
+
+  <DT>ZWT
+  <DD>the z, wavelength, and time indices, as integers and in that order,
+    for the current image
+
+  <DT>ScaleBar
+  <DD>no, yes, labeled, or an integer indicating an unrecognized scale bar mode
+
+  <DT>ScaleBarColor
+  <DD>the color index as an integer followed by the corresponding color name
+
+  <DT>ScaleBarDirection
+  <DD>horizontal, vertical, or an integer indicating an unrecognized direction
+
+  <DT>ScaleBarLength
+  <DD>the scale bar length, in the same units as the image's pixel spacing, as
+    a floating-point value
+
+  <DT>ScaleBarThickness
+  <DD>the scale bar thickness, in pixels, as an integer
+
+  <DT>ScaleBarPosition
+  <DD>the x and y position, in pixels, as integers
+
+  <DT>GraphicsDisplayRange
+  <DD>zneg, zpos, tneg, and tpos as integers
+
+  <DT>ScalingAlgorithm
+  <DD>fast, accurate, or an integer indicating an unrecognized algorithm
+
+  <DT>ComplexDisplay
+  <DD>amplitude, imaginary, phase, real, or an integer indicating an
+    unrecognized conversion mode
+
+  <DT>Scale1
+  <DD>scale minimum, scale maximum, scale exponent, and scale flag as
+    floating-point values
+
+  <DT>ResolutionLevel
+  <DD>integer index, greater than or equal to zero and less than the number
+    of resolutions, for the currently displayed resolution level
+
+  <DT>SectionNumber
+  <DD>no, yes, or an integer indicating an unrecognized section number display
+    mode
+
+  <DT>SectionNumberColor
+  <DD>the color index as an integer followed by the corresponding color
+    name
+</DL>
+
+<P>If the window has more than one wavelength, the attributes can include
+Scale2, Scale3, Scale4, and Scale5 to present the scaling parameters for the
+other wavelengths.
+
+<P><A HREF="#DisplayAttr">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

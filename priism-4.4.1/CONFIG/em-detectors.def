@@ -1,0 +1,51 @@
+# Defines the transfer functions of detectors used on transmission electron
+# microscopes.  An individual user can supplement this configuration file by
+# creating a em-detectors.def file in the .iveprefs subdirectory of the user's
+# home directory.
+#
+# The format is (optional parts are listed in brackets):
+#
+#     [whitespace] "detector_name" "short_name" whitespace is_default whitespace "form" whitespace form_parameters [whitespace or comment]
+#
+# configuration_name is the name displayed in the graphical user interface.
+# The different configurations all must have unique values for
+# configuration_name.  short_name is the name to use to select the
+# configuration from the command-line (ideally that name should be short and
+# not contain any characters, like whitespace, which have special meaning to
+# the shell).  is_default must be an integer value.  If it is non-zero, the
+# microscope configuration on that line will be used as the default
+# configuration.  If multiple microscope configurations have been marked as the
+# default configuration, the one that appears last takes precedence.
+#
+# Currently only one value for form is allowed, sumexp2, which models the
+# transfer function as the series
+#
+#      n
+#     sum  a(m) * exp(-b(m) * k^2)
+#    m = 1
+#
+# where n, a(1), ..., a(n), b(1), ..., b(n) are parameters and k is the
+# amplitude of the spatial frequency in cycles/sample.  For the sumexp form,
+# form_parameters has this format:
+#
+#     n [whitespace] a1 [whitespace] b1 [whitespace] ... an [whitespace] bn
+#
+# n must be a positive integer and a1, ..., an, b1, ..., bn, may be any
+# set of floating-point values.
+#
+# Lines which only contain whitespace or comments are allowed.
+
+# This is for the unbinned Ultracam detector on UCSF's TF30 Polara.  The
+# values are from David Agard's focusramp4.f where they were accompanied by
+# the comment, "updated with March 08 300kV MTF curves".
+"Polara Ultracam A Unbinned" "ultracam-a" 0 "sumexp2" 2 .44647 55.166 .42259 9.7247
+
+# This is for the x2 binned (either on the chip or computationally after the
+# fact)  Ultracam detector on UCSF's TF30 Polara.  The values are derived from
+# the unbinned values by scaling by the change in effective pixel size.
+"Polara Ultracam A x2 Binning" "ultracam-a-x2" 1 "sumexp2" 2 .44647 13.7915 .42259 2.431175
+
+# This is for the x4 binned (either on the chip or computationally after the
+# fact)  Ultracam detector on UCSF's TF30 Polara.  The values are derived from
+# the unbinned values by scaling by the change in effective pixel size.
+"Polara Ultracam A x4 Binning" "ultracam-a-x4" 0 "sumexp2" 2 .44647 3.447875 .42259 .60779375

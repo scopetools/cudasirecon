@@ -1,0 +1,116 @@
+KEYWORD
+    xfact yfact interpolation padding
+
+DESCRIPTION IncreaseRes
+        This application creates a new dataset which is a
+        magnified version (pixels in the original are
+        interpolated at a finer grid spacing) of another
+        dataset.  The magnification factors must be positive
+        integers, but they can be different for the x, y,
+        and z dimensions.
+
+        IncreaseRes accepts the command-line arguments
+        described in Region.hlp.  In addition, it accepts
+        the following options:
+
+            -factor=xf:yf:zf
+                Sets the x magnification factor to be xf,
+                the y magnification factor to be yf, and
+                the z magnification factor to be zf.  If
+                you do not specify this option, IncreaseRes
+                uses a magnification factor of 2 in each
+                dimension.
+
+            -pad=xp:yp:zp
+                Specifies that xp elements are added (or
+                removed if xp is negative) at the end of
+                each line, yp elements added (or removed
+                if yp is negative) at the top of each
+                column, and zp section are added (or
+                removed if zp is negative) after the
+                last z section.  If you do not specify
+                this option, IncreaseRes does not pad
+                or trim the output.
+
+            -interp=method
+                Specifies the interpolation method to use.
+                method may be one of the following:
+
+                nn      Use nearest-neighbor interpolation.
+                linear  Use linear interpolation.  This is
+                        the default.
+                cubic   Use cubic interpolation.
+                cubic+  Use cubic interpolation; any
+                        interpolated values that are
+                        negative are forced to be zero.
+
+        As an example, the following command magnifies
+        tilts_2.dat by a factor of 2 in x and y using cubic
+        interpolation with positivity enforced:
+
+            ResUp tilts_2.dat tilts.dat -factor=2:2:1 -interp=cubic+
+
+xfact
+        The resolution along the x dimension of the output
+        dataset is increased by the factor shown in the
+        "x factor" field.  The factor must be a positive
+        integer.
+
+yfact
+        The resolution along the y dimension of the output
+        dataset is increased by the factor shown in the
+        "y factor" field.  The factor must be a positive
+        integer.
+
+zfact
+        The resolution along the z dimension of the output
+        dataset is increased by the factor shown in the
+        "z factor" field.  The factor must be a positive
+        integer.
+
+interpolation
+        The "interpolation" menu controls how the values
+        in the magnified data set are computed from the
+        original data.  You have four choices:
+
+            nearest neighbor
+                For each point in the original data set,
+                copies the point's value to the corresponding
+                region in the new data set.  This is the
+                fastest method.
+
+            linear
+                Linearly interpolates (using a bilinear
+                interpolation method in two dimensions or
+                a trilinear interpolation method in three
+                dimensions) values from the input data to
+                generate the new values.
+
+            cubic
+                Uses a cubic interpolation scheme to generate
+                the new values.  This is substantially slower
+                than the linear or nearest neighbor methods.
+
+            cubic with positivity
+                This is similar to the cubic method, but if the
+                interpolated value is less than zero, uses zero
+                instead.
+
+padding
+        The values in the "padding" field affect the size of
+        the generated dataset.  For the x dimension, the number
+        of pixels is the first value in the "padding" field
+        plus the product of the x magnification factor and the
+        number of pixels in the x dimension of the input region.
+        For the y dimension, the number of pixels is the second
+        value in the "padding" field plus the product of the
+        y magnification factor and the number of pixels in the
+        y dimension of the input region.  For the z dimension,
+        the number of pixels is the second value in the
+        "padding" field plus the product of the z magnification
+        factor and the number of pixels in the z dimension of
+        the input region.
+
+        To trim pixels from one dimension of the output, use a
+        negative value for the corresponding entry in the
+        "padding" field.

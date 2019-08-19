@@ -1,0 +1,340 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: 2D Plot</TITLE>
+  <META NAME="Description" CONTENT="On-line help for application to view and print 2D graphs.">
+  <META NAME="Keywords" CONTENT="Priism,plot,line,scatter">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="2d_plot">2D Plot</A></H1>
+<H2>Overview</H2>
+
+<P>This is a general xy plotting program. There can be an unlimited number
+of graphs loaded into the program at one time.  Multiple curves can be drawn
+on each graph.  Various attributes of the graphs can be controlled from the
+user interface or command line.  Initial curve attributes are set from
+information stored in the input data file.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#Input File">Input file</A> |
+   <A HREF="#graph_#">Graph settings</A> |
+   <A HREF="#Mouse">Mouse</A> |
+   <A HREF="#curve_#">Curve attributes</A> |
+   <A HREF="#Scaling">Scaling</A> |
+   <A HREF="#Command_Line">Command line</A> |
+   <A HREF="#Print">Printing</A>
+
+<H3>Related Priism topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="Input File">Input File</A></H2>
+<P>To load a file enter its name in the field next to the "Plot filename"
+button, or press the "Plot filename" button to browse for the file.  The
+file is expected to be in ASCII format with one line for each x/y coordinate
+pair and some special lines which are used to declare the start of a new plot,
+declare the start of each curve, and provide labels for the plot and axes.
+The nature of the special lines is set by the first character on the line;
+the special lines that are recognized are:
+
+<DL>
+  <DT><STRONG>T</STRONG><DD>Signals the creation of a new plot.  The rest of
+    the line is used as the title of the plot.
+  <DT><STRONG>Y</STRONG><DD>Everything appearing on the line after the initial
+    Y is used as the y axis label.
+  <DT><STRONG>X</STRONG><DD>Everything appearing on the line after the initial
+    X is used as the x axis label.
+  <DT><STRONG>L</STRONG><DD>Signals the creation of a new curve within the
+    current plot.  Everything between the initial L and the first exclamation
+    point (if any) is used as the label for the curve.  If there is no
+    exclamation point on the line, the points that make up the curve are not
+    specially marked but are connected with a solid line.  If there is
+    an exclamation point on the line, it should be followed with a single
+    character, another exclamation point, and then either the character '0' or
+    the character '1'.  The character between the exclamation points is
+    used to mark each location of a point in the curve.  The points are
+    connected with a solid line if the character after the second exclamation
+    point is '1' and are not connected with a line if it is not.
+</DL>
+
+<P>For one plot containing a single curve, the minimal input file would have
+its first line starting with T (to create the plot), the second line starting
+with L (to create the curve), and then the pairs of x and y coordinate data,
+one per line, after that.  A slightly more involved example with labels
+and one plot with three curves (one solid, two shown as scatter plots) is
+show below:
+
+<PRE>
+THeat Shock Response
+XTime in heat shock (minutes)
+YProbe intensity (counts)
+LWild type
+0   60
+10  50
+20  750
+30  1000
+40  1100
+LStrain a!a!0
+0   50
+10  60
+20  45
+30  65
+40  70
+LStrain b!b!0
+0   57
+10  400
+20  850
+30  1200
+40  1150
+</PRE>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#2d_plot">Overview</A> |
+   Input file |
+   <A HREF="#graph_#">Graph settings</A> |
+   <A HREF="#Mouse">Mouse</A> |
+   <A HREF="#curve_#">Curve attributes</A> |
+   <A HREF="#Scaling">Scaling</A> |
+   <A HREF="#Command_Line">Command line</A> |
+   <A HREF="#Print">Printing</A>
+<HR>
+
+<H2><A NAME="graph_#">Graph Settings</A></H2>
+<P>Use the controls which appear just to the right of the "Graph #" button
+to jump between the different graphs that are present in the input file.
+The index of the plot currently on view is displayed in the text field and
+may be modified in order to jump directly to another graph.  Alternatively,
+press the arrow key to the left of the text field to cause the previous
+graph to be displayed or the arrow key to the right of the text field to
+cause the next graph to be displayed.  Rather than using the arrow buttons,
+the middle and right mouse buttons may be used while the pointer is in the
+graph window.
+
+<P>If the "all graphs" toggle is on, changes made to any curve
+attributes will be applied to all the graphs.  When it is off, only the
+current graph will be changed.
+
+<P>If the "show legend" toggle is on, a legend, listing the labels for all
+curves in the graph and the corresponding combination of color and marker
+type, is shown at the bottom of the graph window.  When the toggle is off
+the legend is not shown.
+
+<P>Use the <A HREF="#Scaling">"Scale..." button</A> to the far right of
+the "Graph #" button to open a dialog with controls for the axis bounds,
+number of tick marks, and format of the tick mark labels.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#2d_plot">Overview</A> |
+   <A HREF="#Input File">Input file</A> |
+   Graph settings |
+   <A HREF="#Mouse">Mouse</A> |
+   <A HREF="#curve_#">Curve attributes</A> |
+   <A HREF="#Scaling">Scaling</A> |
+   <A HREF="#Command_Line">Command line</A> |
+   <A HREF="#Print">Printing</A>
+<HR>
+
+<H2><A NAME="Mouse">Mouse</A></H2>
+<P>While the mouse is over the graph window, the mouse buttons have the
+following effects:
+
+<DL>
+  <DT>Left<DD>Pressing the left mouse button and moving the mouse will shift
+    the image display.  This is useful when you want to view the legend,
+    but because the plot has a large number of curves, the legend extends
+    off the bottom edge of the plot window.
+  <DT>Middle<DD>Click the middle mouse button to view the previous graph.
+  <DT>Right<DD>Click the right mouse button to view the next graph.
+</DL>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#2d_plot">Overview</A> |
+   <A HREF="#Input File">Input file</A> |
+   <A HREF="#graph_#">Graph settings</A> |
+   Mouse |
+   <A HREF="#curve_#">Curve attributes</A> |
+   <A HREF="#Scaling">Scaling</A> |
+   <A HREF="#Command_Line">Command line</A> |
+   <A HREF="#Print">Printing</A>
+<HR>
+
+<H2><A NAME="curve_#">Curve attributes</A></H2>
+<P>Use the controls to the right of the "Curve #" button to modify the
+attributes for a curve.  Immediately to the right of the "Curve #" button
+is a menu which shows the number of curve; the attributes of that curve are
+reflected in all the remaining controls on the line.  If you select a
+different curve from the menu, then the attributes of the new curve will
+be shown.
+
+<P>The second menu displays the color used for the markers and lines belonging
+to the current curve and may be used to modify that color.  The third menu
+displays the style of line used for the current curve and may be used to
+modify the style.  There are two options available:
+
+<DL>
+  <DT>line<DD>With this option, points on the curve are connected with a solid
+    line.
+  <DT>no line<DD>With this option, points on the curve are not connected.
+</DL>
+
+<P>The fourth menu, immediately to the right of the "Symbol" button, displays
+the style of marker used for points on the current curve and may be used to
+change that style.  There are four options available:
+
+<DL>
+  <DT>None<DD>With this option, no marker appears at the location of each
+    point in the curve.
+  <DT>Character<DD>With this option, each point in the curve is marked with
+    a single character.  The character used is shown in the field next
+    to the menu and that field may be used to change the character.
+  <DT>Triangle<DD>With this option, each point in the curve is marked with
+    a triangle.
+  <DT>Box<DD>With this option, each point in the curve is marked with a
+    square.
+</DL>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#2d_plot">Overview</A> |
+   <A HREF="#Input File">Input file</A> |
+   <A HREF="#graph_#">Graph settings</A> |
+   <A HREF="#Mouse">Mouse</A> |
+   Curve attributes |
+   <A HREF="#Scaling">Scaling</A> |
+   <A HREF="#Command_Line">Command line</A> |
+   <A HREF="#Print">Printing</A>
+<HR>
+
+<H2><A NAME="Scaling">Scaling</A></H2>
+<P>The scaling dialog (to open it press the "Scale..." button in 2D Plot's
+main dialog) can be used to modify the range covered by the axes, the
+number of tick marks along each axis, and the labeling style for the
+tick marks.  The "Reset" button in the scaling dialog restores the bounds
+for the x and y axes to their default values.
+
+<P>The number of decimal places specified for the tick mark labels is ignored
+when the tick mark labels are formatted as integers or the format is
+automatically chosen.  To have the application automatically select the
+number of decimal places to use, use a value of -1 for the number of
+decimal places.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#2d_plot">Overview</A> |
+   <A HREF="#Input File">Input file</A> |
+   <A HREF="#graph_#">Graph settings</A> |
+   <A HREF="#Mouse">Mouse</A> |
+   <A HREF="#curve_#">Curve attributes</A> |
+   <A HREF="#Scaling">Scaling</A> |
+   <A HREF="#Command_Line">Command line</A> |
+   <A HREF="#Print">Printing</A>
+<HR>
+
+<H2><A NAME="Command_Line">Command line</A></H2>
+<P>The allowed format for 2D Plot's command line is (optional parameters or
+arguments are show in brackets):<BR>
+<CODE>2d_plot</CODE> [<VAR>filename</VAR>] [<CODE>-nxtick</CODE> <VAR>nx</VAR>] [<CODE>-nytick</CODE> <VAR>ny</VAR>] [<CODE>-xminmax</CODE> <VAR>x_min</VAR> <VAR>x_max</VAR>]<BR>
+[<CODE>-yminmax</CODE> <VAR>y_min</VAR> <VAR>y_max</VAR>] [<CODE>-xticklab</CODE> <VAR>x_style</VAR>] [<CODE>-yticklab</CODE> <VAR>y_style</VAR>] [<CODE>-xtickdec</CODE> <VAR>number</VAR>] [<CODE>ytickdec</CODE> <VAR>number</VAR>]
+
+<P>The meanings of the different arguments and options are:
+
+<DL>
+  <DT><VAR>filename</VAR><DD>The file named <VAR>filename</VAR> will be opened
+    and displayed when 2d_plot starts.
+  <DT><CODE>-nxtick</CODE><DD>If this option is present, the next argument sets
+    the number of tick marks to use along the x axis.
+  <DT><CODE>-nytick</CODE><DD>If this option is present, the next argument sets
+    the number of tick marks to use along the y axis.
+  <DT><CODE>-xminmax</CODE><DD>If this option is present, the next argument
+    sets the lower bound on the x axis and the argument after that sets the
+    upper bound on the x axis.  This only has an effect if a file is specified
+    on the command line and it only affects the first graph in that file.
+  <DT><CODE>-yminmax</CODE><DD>If this option is present, the next argument
+    sets the lower bound on the y axis and the argument after that sets the
+    upper bound on the y axis.  This only has an effect if a file is specified
+    on the command line and it only affects the first graph in that file.
+  <DT><CODE>-xticklab</CODE><DD>If this option is present, the next argument
+    sets the style used for the tick mark labels on the x axis.  There are
+    four possible styles:  0 which causes the labels to be displayed as
+    integers, 1 which causes the labels to be displayed as real values in
+    a fixed-point format, 2 which causes the labels to be displayed as real
+    values in an exponential format, and any other value which causes the
+    format to be chosen dynamically depending on the bounds and increment
+    between ticks.
+  <DT><CODE>-yticklab</CODE><DD>Is identical to <CODE>-xticklab</CODE> but
+    affects the style used for the tick mark labels on the y axis.
+  <DT><CODE>-xtickdec</CODE><DD>If this option is present, the next argument
+    sets the number of decimal places to use for tick mark labels along the x
+    axis.  This has no effect if the tick mark labels are dynamically
+    formatted or formatted as integers.  If the number of decimal places is
+    negative, the application will dynamically choose an appropriate value.
+  <DT><CODE>-ytickdec</CODE><DD>Is identical to <CODE>-xtickdec</CODE> but
+    affects the number of decimal places in tick mark labels along the y axis.
+</DL>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#2d_plot">Overview</A> |
+   <A HREF="#Input File">Input file</A> |
+   <A HREF="#graph_#">Graph settings</A> |
+   <A HREF="#Mouse">Mouse</A> |
+   <A HREF="#curve_#">Curve attributes</A> |
+   <A HREF="#Scaling">Scaling</A> |
+   Command line |
+   <A HREF="#Print">Printing</A>
+<HR>
+
+<H2><A NAME="Print">Printing</A></H2>
+<P>The printing dialog (to open it press the "Print..." button in 2D Plot's
+main dialog) can be used to generate a PostScript copy of the plot or print
+the plot.  The controls in the dialog are:
+
+<DL>
+  <DT>Left/right/top/bottom margin<DD>The field next to this button can be
+    used to modify the settings for the margins.  All values are in inches.
+    Increasing the margin on top to 1.5 shows the title of the plot.
+  <DT>Margin default<DD>Press this button to restore the default margin
+    settings (left and right margins of one inch and top and bottom margins
+    of one and a half inches).
+  <DT>Color<DD>If this toggle button is on, a color PostScript version of the
+    graph is generated.  Otherwise, all lines, markers, and labels are drawn in
+    black.
+  <DT>Print to file<DD>If the "Print to file" toggle button is on, pressing
+    the "Print" button will generate a PostScript file rather than send the
+    PostScript result directly to a printer.  On Linux and Mac OS X, this
+    toggle button is always on:  2d_plot has not been fixed to interact with
+    the printing mechanisms for those operating systems.
+  <DT>Preview<DD>Pressing the "Preview" button will display on the monitor what
+    the printed output would look like.  On Linux and Mac OS X, this button
+    is always disable since 2d_plot has not been fixed to recognize the
+    native PostScript viewer.
+  <DT>Print<DD>If the "Print to file" toggle button is off, pressing the
+    "Print" button opens a dialog to send the PostScript version of the plot
+    directly to a printer; otherwise, a file selection dialog is displayed to
+    choose the name of the file in which to store the PostScript output.
+  <DT>Close<DD>Closes the printing dialog.
+</DL>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#2d_plot">Overview</A> |
+   <A HREF="#Input File">Input file</A> |
+   <A HREF="#graph_#">Graph settings</A> |
+   <A HREF="#Mouse">Mouse</A> |
+   <A HREF="#curve_#">Curve attributes</A> |
+   <A HREF="#Scaling">Scaling</A> |
+   <A HREF="#Command_Line">Command line</A> |
+   Printing
+<HR>
+
+</BODY>
+</HTML>

@@ -1,0 +1,96 @@
+KEYWORD
+    Method Range
+
+DESCRIPTION Normalize
+    This application linearly scales the input data to fall
+    in a set range.  The scaling is done by determining a
+    range of input values to scale based on the Method input
+    parameter and then linearly scaling them (and coercing
+    the values outside of the input range) to the output
+    range set by NDiv.
+
+    The other inputs select which region of the input file
+    is processed.  See Region.hlp for more details.
+
+    Normalize accepts the command-line arguments described
+    in Region.hlp.  In addition, Normalize has the following
+    options:
+
+    -scale_calculation=method
+        Sets how Normalize calculates the intensity bounds
+        used when normalizing the data.  Valid values for
+        method are listed below; if -scale_calculation does
+        not appear on the command line, Normalize uses the
+        volume_bounds method.
+
+        volume_bounds
+            The bounds Normalize uses to scale a section
+            are the minimum and maximum intensity values
+            from the x/y/z volume containing the section.
+
+        middle_section_bounds
+            The bounds Normalize uses to scale a section
+            are the minimum and maximum intensity values
+            from the middle section of the x/y/z volume
+            containing the section to scale.
+
+        2d
+            The bounds Normalize uses to scale a section
+            are the minimum and maximum intensity values
+            from that section
+
+    -scale_multiplier=n
+        Sets the multiplier applied by Normalize after
+        scaling the input data to have intensity values
+        between zero and one.  n must be an integer.
+        Normalize uses 1024 for the multiplier if
+        -scale_multiplier does not appear on the command
+        line.
+
+    As an example, if you wanted to convert a 3D floating-
+    point file, x.dat, to 16-bit integers by scaling the
+    data so that the full range of intensities in the
+    input mapped to the range of 0 to 32767 in the output,
+    y.dat, then the following is what you would execute:
+
+        Normalize x.dat y.dat -mode=short \
+            -scale_calculation=volume_bounds \
+            -scale_multiplier=32767
+
+Method
+    The Method parameter sets the range of intensities in
+    the input data that are linearly scaled to the output
+    range of intensities.  Input pixels with intensities
+    outside of the range are mapped to one of the two
+    endpoints of the output range.
+
+    There are three options for setting the input range to
+    scale:
+  
+    vol min and max
+        With this option the input range is the same for
+        all sections in the same wavelength and at the
+        same time point (a z stack).  The minimum for the
+        input range is the minimum intensity in the z
+        stack, and the maximum for the input range is the
+        maximum intensity in the z stack.
+
+    mid sec min and max
+        Like the above option, the same input range is
+        used for all sections in the same z stack.  The
+        minimum and maximum for the range are set differently.
+        They are the minimum and maximum for the middle
+        section in the z stack (when numbering the sections
+        in the stack from zero to nz minus one, the middle
+        section is nz divided by two and rounded down).
+
+    2D
+        With this option, the range to scale is different
+        for each input section.  The minimum for the range
+        is the minimum of the section to scale, and the
+        maximum for the range is the maximum of the section
+        to scale.
+
+Range
+    The output of Normalize will have intensities between
+    zero and NDiv, inclusive.  NDiv may be negative.

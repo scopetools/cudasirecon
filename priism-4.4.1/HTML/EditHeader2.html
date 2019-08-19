@@ -1,0 +1,375 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: EditHeader2</TITLE>
+  <META NAME="Description" CONTENT="On-line help for application which can display and edit the header of files using variants of the MRC file format.">
+  <META NAME="Keywords" CONTENT="Priism,header,MRC,Image2000,CCP4">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="EditHeader2">EditHeader2</A></H1>
+<H2>Overview</H2>
+
+<P>EditHeader2 is similar to Priism's <A HREF="EditHeader.html">EditHeader</A>
+but allows working with the headers of files that use other variants of the
+MRC file format, include Image 2000 and CCP4 files.
+
+<P>The EditHeader2 dialog consists of two main parts.  Along the top is
+a menu bar for invoking the available operations.  The body of the dialog
+displays the values in the header, with the exception of the labels,
+common to all MRC variants.  You can change those values as you wish.  To
+learn more about the header fields displayed, consult the
+<A HREF="#BaselineFields">"Baseline Fields"  section</A> below.
+
+<P>The operations available in the menu bar are:
+
+<UL>
+  <LI>File
+    <DL>
+      <DT>Open...<DD>Selects a new file to work with.
+      <DT>Save<DD>Saves the header and extended header to the currently
+        selected file.
+      <DT>Exit<DD>Closes EditHeader2.
+    </DL>
+  <LI>View
+    <DL>
+      <DT>Extension fields...<DD>For the currently selected MRC variant (set
+        by the "Extension format" menu entry in this menu), displays the
+        header parts that are specific to that format.
+      <DT>Labels...<DD>Displays the number of labels and the labels
+        from the MRC header.  The <A HREF="#Labels">"Labels" section</A>
+        describes the details.
+      <DT>Extension format<DD>Selects how to interpret the parts of the
+        header that vary between the variants for the MRC format.
+    </DL>
+  <LI>Log
+    <DL>
+      <DT>View...<DD>Displays messages generated when reading a new file or
+        saving the header.
+      <DT>Clear<DD>Clears the accumulated messages in the log.
+      <DT>Save as text...<DD>Writes the accumulated messages in the log as a
+        text file.
+    </DL>
+  <LI>Configure
+    <DL>
+      <DT>Set defaults...<DD>Modifies the assumptions that EditHeader2 makes
+        when reading a file or generating a new header from scratch.  The
+        <A HREF="#Defaults">"Defaults" section</A> describes the details.
+      <DT>Save<DD>Saves the default settings so they will be used when you
+        run EditHeader2 in the future.
+    </DL>
+  <LI>Help
+    <DL>
+      <DT>Overview...<DD>Displays this documentation.
+    </DL>
+</UL>
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#BaselineFields">Baseline fields</A> |
+   <A HREF="#ExtensionFields">Extension fields</A> |
+   <A HREF="#Labels">Labels</A> |
+   <A HREF="#Defaults">Defaults</A>
+
+<H3>Related Priism Topics</H3>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="EditHeader.html">EditHeader</A> |
+   <A HREF="priism_mrc_header.html">Priism's variant of the MRC format</A> |
+   <A HREF="em_mrc_header.html">Priism's EM variant of the MRC format</A> |
+<HR>
+
+<H2><A NAME="BaselineFields">Baseline Fields</A></H2>
+<P>EditHeader2 displays the values from the MRC header common to all variants
+within EditHeader2's main dialog (the one exception is the labels and number
+of labels; to see those, use the <A HREF="#Labels">"Labels..." option</A> from
+the View menu).
+
+<P>The values common to all the header variants are:
+
+<DL>
+  <DT><A NAME="NumberOfColumns">Number of columns</A><DD>Is the number of
+    elements along the fastest-varying (i.e. stored adjacent to each other
+    in the file) dimension of the data set.
+  <DT><A NAME="StartColumn">Start column</A><DD>Relates the data set stored
+    in the file to a larger data set; this is the column index within the
+    larger data set for the first column stored in this file.
+  <DT><A NAME="ColumnMapping">Column mapping</A><DD>Specifies which spatial
+    axis (X, Y, or Z) corresponds to moving from column to column in the file.
+    If the value in the field is one of the expected values (1, 2, or 3), the
+    menu displays the axis name; otherwise, the menu will show "Nonstandard".
+    The field adjacent to the menu displays the actual value from the header.
+  <DT><A NAME="NumberOfRows">Number of rows</A><DD>Is the number of
+    elements along the second fastest-varying dimension of the data set.
+  <DT><A NAME="StartRow">Start row</A><DD>Relates the data set stored
+    in the file to a larger data set; this is the row index within the
+    larger data set for the first row stored in this file.
+  <DT><A NAME="RowMapping">Row mapping</A><DD>Specifies which spatial
+    axis (X, Y, or Z) corresponds to moving from row to row in the file.
+    If the value in the field is one of the expected values (1, 2, or 3), the
+    menu displays the axis name; otherwise, the menu will show "Nonstandard".
+    The field adjacent to the menu displays the actual value from the header.
+  <DT><A NAME="NumberOfSections">Number of sections</A><DD>Is the number of
+    elements along the slowest-varying dimension of the data set.
+  <DT><A NAME="StartSection">Start section</A><DD>Relates the data set stored
+    in the file to a larger data set; this is the section index within the
+    larger data set for the first section stored in this file.
+  <DT><A NAME="SectionMapping">Section mapping</A><DD>Specifies which spatial
+    axis (X, Y, or Z) corresponds to moving from section to section in the
+    file.  If the value in the field is one of the expected values (1, 2, or
+    3), the menu displays the axis name; otherwise, the menu will show
+    "Nonstandard".    The field adjacent to the menu displays the actual value
+    from the header.
+  <DT><A NAME="DataType">Data type</A><DD>Indicates how each element of the
+    data set is stored within the file.  If the format corresponds to one of
+    the formats EditHeader2 recognizes, the menu lists the name of the format.
+    For unrecognized formats, EditHeader2 will display "Nonstandard" in the
+    menu.  EditHeader2 uses the field next to the menu to display  the numeric
+    code used in the header to represent the data type.
+  <DT><A NAME="NumberOfXIntervals">Number of x intervals</A><DD>Displays the
+    number of intervals along the x spatial dimension.
+  <DT><A NAME="XLength">X length</A><DD>Displays the cell dimension in the x
+    dimension.
+  <DT><A NAME="XSpacing">X spacing</A><DD>Displays the cell dimension in the
+    x dimension divided by the number of intervals in the x dimension.  The
+    spacing is a derived quantity that is not directly stored in the header.
+    When you adjust the spacing, EditHeader2 will adjust the cell dimension
+    while leaving the number of intervals constant.  When the number of
+    intervals is zero, EditHeader2 disables the spacing field.
+  <DT><A NAME="NumberOfYIntervals">Number of y intervals</A><DD>Displays the
+    number of intervals along the y spatial dimension.
+  <DT><A NAME="YLength">Y length</A><DD>Displays the cell dimension in the y
+    dimension.
+  <DT><A NAME="YSpacing">Y spacing</A><DD>Displays the cell dimension in the
+    y dimension divided by the number of intervals in the y dimension.  The
+    spacing is a derived quantity that is not directly stored in the header.
+    When you adjust the spacing, EditHeader2 will adjust the cell dimension
+    while leaving the number of intervals constant.  When the number of
+    intervals is zero, EditHeader2 disables the spacing field.
+  <DT><A NAME="NumberOfZIntervals">Number of z intervals</A><DD>Displays the
+    number of intervals along the z spatial dimension.
+  <DT><A NAME="ZLength">Z length</A><DD>Displays the cell dimension in the z
+    dimension.
+  <DT><A NAME="ZSpacing">Z spacing</A><DD>Displays the cell dimension in the
+    z dimension divided by the number of intervals in the z dimension.  The
+    spacing is a derived quantity that is not directly stored in the header.
+    When you adjust the spacing, EditHeader2 will adjust the cell dimension
+    while leaving the number of intervals constant.  When the number of
+    intervals is zero, EditHeader2 disables the spacing field.
+  <DT><A NAME="AxesAngles">Axes angles</A><DD>Display the angles (in degrees,
+    by convention) between the axes of the unit cell.
+  <DT><A NAME="IntensityStatistics">Intensity statistics</A><DD>Displays the
+    minimum, maximum, and average element values for the data set, as
+    recorded in the header.
+  <DT><A NAME="SpaceGroup">Space group</A><DD>Displays the space group number
+    recorded in the header.
+  <DT><A NAME="ExtendedHeaderSize">Extended header size</A><DD>Displays the
+    number of bytes of extended header that immediately follows the 1024-byte
+    fixed header in the file.
+</DL>
+
+<P><A HREF="#EditHeader2">Return to overview</A>
+<HR>
+
+<H2><A NAME="ExtensionFields">Extension Fields</A></H2>
+<P>To view the portions of the header that vary between the different
+variants of the MRC format, use the "Extension fields..." option in the
+View menu of EditHeader2's main dialog.  EditHeader2 displays those
+portions of the header according to the format you've selected in the
+"Extension format" option of the View menu.
+
+<P>For the Image 2000 extensions the additional header fields are:
+<DL>
+  <DT><A NAME="Image2000Origin">Origin</A><DD>Displays the x, y, and z
+    coordinates for the origin of the data set.
+  <DT><A NAME="Image2000RMS">RMS</A><DD>Displays the root mean square deviation
+    from the mean intensity of the data set, as recorded in the header.
+</DL>
+
+<P>For the CCP4 extensions the additional header fields are:
+<DL>
+  <DT><A NAME="CCP4SkewFlag">Has skew</A><DD>Indicates whether a skew
+    transformation is specified by the header (a nonzero value) or not (a
+    zero value).  EditHeader will display the toggle button in an on state
+    when the skew transformation is included.  EditHeader2 displays the actual
+    value from the header in the adjacent text field.
+  <DT><A NAME="CCP4SkewMatrix">Matrix</A><DD>Displays the 3 x 3 transform
+    matrix for the skew transformation.  The first row are, from left
+    to right, the s11, s12, and s13 components of the matrix.  The
+    second row are, from left to right, the s21, s22, and s23 components.
+    The third row are, from left to right, the s31, s23, and s33 components.
+  <DT><A NAME="CCP4SkewTranslation">Translation</A><DD>Displays the three
+    components of the translation vector for the skew transformation.
+  <DT><A NAME="CCP4RMS">RMS</A><DD>Displays the root mean square deviation
+    from the mean intensity of the data set, as recorded in the header.
+</DL>
+
+<P>For the Priism extensions the additional header fields are:
+<DL>
+  <DT><A NAME="PriismOrigin">Origin</A><DD>Displays the three components
+    (x, y, z) of a translation vector to relate the data set coordinates to
+    another frame of reference.
+  <DT><A NAME="PriismTiltAngles">Tilt angles</A><DD>Displays the three
+    rotation angles (about x, y, and z; by convention, measured in degrees)
+    to relate the data set coordinates to another frame of reference.
+  <DT><A NAME="PriismNTimes"># of times</A><DD>Displays the number of time
+    points included in the file.  Only used by the original Priism format.
+  <DT><A NAME="PriismStartTime">Start time</A><DD>Relates the time points
+    stored in the file to a longer time series.  The value shown in this
+    fields is the time point index within the longer time series for the
+    first time point stored in the file.
+  <DT><A NAME="PriismNWavelengths"># of wavelengths</A><DD>Displays the number
+    of wavelengths included in the file.  Only used by the original Priism
+    format.
+  <DT><A NAME="PriismWavelengths">Wavelengths</A><DD>Displays the wavelengths
+    (in nanometers, by convention) for each of the wavelengths in the file.
+    The header has space to store the wavelengths for up to five wavelengths.
+    Only used by the original Priism format.
+  <DT><A NAME="PriismInterleaving">Interleaving</A><DD>Displays the storage
+    order of z, wavelength, and time within the file.  There are three
+    recognized options, ZTW (z varies fastest, time varies second fastest, and
+    wavelength varies slowest), WZT (wavelength varies fastest, z varies
+    second fastest, and time varies slowest), or ZWT (z varies fastest,
+    wavelength varies second fastest, and time varies slowest).  If the
+    value in the header is an unrecognized value, EditHeader2 will display
+    "Other" in the menu.  EditHeader2 displays the actual value from the
+    header in the text field adjacent to the menu.  Only used by the original
+    Priism format.
+  <DT><A NAME="PriismIntensityStatistics">Minimum and maximum intensities</A><DD>Displays
+    the minimum and maximum intensity in each wavelength other than the first
+    (the statistics for the first wavelength use the standard MRC fields
+    in the header for intensity statistics), as recorded in the header.  The
+    header has space to store the statistics for up to five wavelengths.
+    Only used by the original Priism format.
+  <DT><A NAME="PriismNResolutions"># of resolutions</A><DD>Displays the
+    total number of resolutions (different versions of the data) present
+    in the file.
+  <DT><A NAME="PriismZFactor">Z downsampling</A><DD>Displays the downsampling
+    factor used in the z dimension applied to each lower resolution data set.
+  <DT><A NAME="PriismExtendedHeader">Extended header</A><DD>For
+    non-crystallographic data, the Priism extended header (if present)
+    contains a set of integer and floating-point attributes for each section
+    of data.  The number of integer parameters and floating-point parameters
+    per section is displayed here.
+  <DT><A NAME="PriismImageType">Image type</A><DD>The Priism header has a field
+    to indicate how the data should be interpreted and four fields (two
+    integers and two fixed point values) for attributes of the data.  If the
+    image type indicated in the header is recognized by EditHeader2, it will
+    display a correspond name in the menu next to the "Image type" button;
+    otherwise, EditHeader2 will display "Other" in that menu.  EditHeader2
+    will display the numeric code for the image type in the text field adjacent
+    to the menu.
+  <DT><A NAME="PriismLensNumber">Lens number</A><DD>Displays the identification
+    number for the lens used when collecting the data.
+  <DT><A NAME="PriismCreatorID">Creator ID</A><DD>Displays the identification
+    tag for the data collection or processing software that generated the
+    data set.  Only used by the original Priism format.
+  <DT><A NAME="PriismRMS">RMS</A><DD>Displays the value stored in the header
+    for the root mean squared deviation from the mean of the data set.  Only
+    used by the EM variant of the Priism format.
+</DL>
+
+<P><A HREF="#EditHeader2">Return to overview</A>
+<HR>
+
+<H2><A NAME="Labels">Labels</A></H2>
+<P>To display the number of labels and the contents of the labels from
+the header, select the "Labels..." option from the View menu in EditHeader2's
+main dialog.  That will open a dialog with the number of labels shown at the
+top, and the contents of the 10 labels displayed one per line below that.
+For the display of the labels, EditHeader2 converts any non-printable character
+to a backslash followed by three digits where the three digits are the
+character's value as an unsigned decimal value.  EditHeader2 also converts
+any backslash to two backslashes.
+
+<P>Use the "Shift up..." button at the bottom of the dialog to shift the
+contents of the labels to increasing label number (i.e. move the contents
+of label nine to label ten, label eight to label nine, ...) and use the
+"Shift down..." button at the bottom of the dialog to shift the contents
+of the labels to decreasing label number (i.e. more the contents of label two
+to label one, label three to label two, ...).  Either button displays
+a dialog where you can enter which labels are shifted and the size of the
+shift.
+
+<P><A HREF="#EditHeader2">Return to overview</A>
+<HR>
+
+<H2><A NAME="Defaults">Defaults</A></H2>
+<P>Because it is not always possible to distinguish different variants
+of the MRC format, EditHeader2 makes assumptions about the format when it
+opens a file.  To change the assumptions that EditHeader2 will make when
+opening files, use the "Set defaults..." option from the Configure menu in
+EditHeader2's main dialog.  Also use that option to change how EditHeader2
+detects the ordering of bytes in 2- and 4- byte quantities in the header
+and the format EditHeader2 uses for new headers.
+
+<P>One key factor affecting EditHeader2's assumptions about an existing
+file is the 53rd 4-byte word of the file (where the first word in the
+file is numbered one).  The Image2000, CCP4, and Priism (EM) formats put
+"MAP " in that word.  The Priism format does not.
+
+<P>The "Set defaults" option opens a new dialog which displays the
+current set of defaults.  You can edit those values.  To apply the changes,
+press the "Apply" button at the bottom of the dialog.  Pressing the "Close"
+button at the bottom of the dialog will discard any changes and close the
+dialog.  If you want EditHeader2 to make the same assumptions when you
+run it in the future, use the "Save" option from the Configure menu in
+EditHeader2's main dialog.
+
+<P>The controls at the top of the defaults dialog control how EditHeader2
+detects the ordering of multibyte quantities when it opens a file.  If
+the file does not have the characters "MAP " in the 53rd 4-byte word
+of the file, EditHeader2 chooses the byte ordering depending on how you set
+the "without MAP field" menu.  The available options are:
+<DL>
+  <DT>big endian<DD>Always assume the file is big endian.  That is the
+    native byte ordering for IRIX systems and Mac OS X systems with PowerPC
+    processors.
+  <DT>little endian<DD>Always assume the file is little endian.  That is
+    the native byte ordering for systems with Intel or AMD Athlon processors.
+  <DT>autodetect<DD>If the number of columns (the first 4-byte word in the
+    file) and the number of rows (the second 4-byte word in the file) are
+    either negative or greater than 65535 when not byte-swapped, assume
+    that all the header entries must be byte-swapped; otherwise, assume the
+    header does not require byte-swapping.
+</DL>
+
+<P>If the file does have the characters "MAP " in the 53rd 4-byte word
+of the file, EditHeader2 chooses the byte ordering depending on how you set
+the "with MAP field" menu.  The options are the same as above, but the
+autodetection algorithm works differently.  When autodetecting the byte
+order, EditHeader2 will first look at the first byte of the 54th word in the
+header and assume the file is big endian if that byte is 17 or little endian
+if that byte is 68.  For any other value in that byte, EditHeader2 will apply
+the autodetection algorithm for files without "MAP " in the header.
+
+<P>The controls at the bottom of the defaults dialog control how EditHeader2
+interprets the values in the header which are not in common to all variants
+of the MRC format.  The menu labeled "new files" controls how EditHeader2
+initializes those values when generating a new header.  The menu labeled
+"old files without MAP field" controls how EditHeader2 interprets existing
+files without "MAP " in the 53rd 4-byte word of the file.  The menu labeled
+"old files with MAP field" controls how EditHeader2 interprets existing files
+with "MAP " in the 53rd 4-byte word of the file.  For all three, the available
+options are:
+<DL>
+  <DT>Baseline<DD>Assume nothing about the 25th through 55th four-byte words
+    in the header.  When creating a new header, fill those values with zeroes.
+  <DT>Image2000<DD>Assume the header of the file is laid out as described
+    at <A HREF="http://www2.mrc-lmb.cam.ac.uk/image2000.html" TARGET="_top">http://www2.mrc-lmb.cam.ac.uk/image2000.html</A>.
+  <DT>CCP4<DD>Assume the header of the file is laid out as described at
+    <A HREF="http://www.ccp4.ac.uk/dist/html/maplib.html#description" TARGET="_top">http://www.ccp4.ac.uk/dist/html/maplib.html#description</A>.
+  <DT>Priism<DD>Assume the header of the file is laid out as described at
+    <A HREF="priism_mrc_header.html">http://msg.ucsf.edu/IVE/IVE4_HTML/priism_mrc_header.html</A>.
+  <DT>Priism (EM)<DD>Assume the header of the file is laid out as described at
+    <A HREF="em_mrc_header.html">http://msg.ucsf.edu/IVE/IVE4_HTML/em_mrc_header.html</A>.
+</DL>
+
+<P><A HREF="#EditHeader2">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

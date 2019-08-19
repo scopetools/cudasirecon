@@ -1,0 +1,156 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Applycal</TITLE>
+  <META NAME="Description" CONTENT="On-line help for application to calibrate data if the calibration was not done during data collection.">
+  <META NAME="Keywords" CONTENT="Priism,calibration">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Overview">Applycal</A></H1>
+<H2>Overview</H2>
+
+<P>Normally, image data is calibrated and bad pixels are edited out during
+the process of data collection; alternatively, you can use applycal to
+perform these operations after data collection.
+
+<P>applycal is a command-line application.  There's a graphical front-end,
+applycal_i, which will generate a suitable command file for running
+applycal.  Options for specifying the region to process and aspects
+of the graphical front-end are the same for applycal as for many other
+applications.  See <A HREF="BatchRegion.html">BatchRegion.html</A> for
+a description of these common elements.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#WaveFiles">Calibration/bad pixel files</A> |
+   <A HREF="#Float">Forcing floating-point output</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="BatchRegion.html">BatchRegion.html</A> |
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="WaveFiles">Calibration/Bad Pixel Files</A></H2>
+
+<P>For each wave processed, applycal takes the name of a calibration
+file for that wave and the name of a file containing a list of pixels
+which should be edited out.  For any wave, the calibration file can
+be omitted and no calibration will be performed on that wave's data;
+similarly, you can omit the bad pixel list for any wave so that pixel
+editing isn't applied to the data in that wave.
+
+<P>The calibration files must be image files in MRC format with at least two
+images.  The number of samples in x and y in those images must match the full
+size of the input data to be corrected.  The first image in the calibration
+file is used as an offset and the second image in the calibration file is used
+as a gain factor.  applycal's result after correcting the input for the
+calibration file is the result of multiplying the difference between the input
+and the offset by the gain factor.
+
+<P>The bad pixel files must be text files.  The first line in a bad pixel file
+must be " badpixel_number:" followed by the number of bad pixels in the file.
+The remainder of the file must have one line per bad pixel with three integer
+values separated by white space on each line.  The first integer is the
+one-dimensional coordinate of the pixel to correct.  The second two integers
+are the one-dimensional coordinates of the pixels to use to in the correction.
+If the third integer is less than zero or greater than or equal to the number
+of x samples times the number of y samples, the corrected pixel is equal to
+the value at the first pixel to use for the correction.  Otherwise, the
+corrected pixel is equal to the average of the values at the two pixels
+to use for correction.  The one-dimensional coordinate of a pixel whose
+x and y indices in the full image are <VAR>ix</VAR> and <VAR>iy</VAR>
+(<VAR>ix</VAR> is an integer greater than or equal to zero and less than the
+number of samples in x, <VAR>nx</VAR>, and <VAR>iy</VAR> is an integer greater
+than or equal to zero and less than the number of samples in y) is
+<VAR>ix</VAR> + <VAR>iy</VAR> * <VAR>nx</VAR>.  applycal will automatically
+adjust the bad pixel list for the subset of the image in x or y that you
+selected to correct.  When it does so, applycal will not use pixels outside of
+the subset to correct pixels in the subset.
+
+<P>In the graphical front-end for applycal, the calibration file and
+bad pixel list are grouped by wave.  Next to each is a toggle which
+when on indicates that that file should be used in the processing;
+you can select a file by entering its name directly or by pressing
+a <EM>Calibration file</EM> or <EM>Bad pixels file</EM> button to
+launch a file selection dialog.  Selecting a file with the file selection
+dialog will automatically set the toggle to indicate that file will
+be used in processing.
+
+<P>On the command-line, the calibration files are specified by an
+argument of the form
+
+<PRE>
+     -calfiles=file_1:file_2:file_3:file_4:file_5
+</PRE>
+
+<P>where <EM>file_x</EM> is the calibration file for the xth wave in the
+input file.  Any of the files can be omitted (the separating colons must still
+be included), or you can omit one or more entries from the end.
+For instance,
+
+<PRE>
+     -calfiles=/usr/tmp/dapi_480x480.CAL
+</PRE>
+
+<P>specifies that wave one in the input file will be calibrated with
+/usr/tmp/dapi_480x480.CAL and that no other waves will be calibrated.
+
+<PRE>
+     -calfiles=:/usr/tmp/dapi_480x480.CAL:/usr/tmp/rhod_480x480.CAL::
+</PRE>
+
+<P>specifies that wave one won't be calibrated, wave two will be calibrated
+with /usr/tmp/dapi_480x480.CAL, wave three will be calibrated with
+/usr/tmp/rhod_480x480.CAL, and no other waves will be calibrated.  The
+argument
+
+<PRE>
+     -calfiles=:/usr/tmp/dapi_480x480.CAL:/usr/tmp/rhod_480x480.CAL
+</PRE>
+
+<P>has the same effect.
+
+<P>If no <EM>-calfiles</EM> argument appears on the command-line, applycal
+will prompt for the filenames and read them from standard input.
+
+<P>The bad pixel lists are specified with
+
+<PRE>
+    -pixfiles=file_1:file_2:file_3:file_4:file_5
+</PRE>
+
+<P>Such an argument (or its absence) is handled just as <EM>-calfiles</EM>
+is handled.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Overview">Overview</A> |
+   Calibration/bad pixel files |
+   <A HREF="#Float">Forcing floating-point output</A>
+<HR>
+
+<H2><A NAME="Float">Forcing Floating-point Output</A></H2>
+
+<P>By default, applycal uses the same representation (byte, short, float)
+for an output pixel's data as was used for an input pixel.  Setting the
+<EM>Force floating-point output</EM> toggle in the graphical front-end or
+specifying <EM>-float</EM> on the command-line will cause applycal to
+use a floating-point representation for the output data.
+
+<P>applycal's internal calculations are always done in floating-point
+arithmetic regardless of the format of the input or output.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Overview">Overview</A> |
+   <A HREF="#WaveFiles">Calibration/bad pixel files</A> |
+   Forcing floating-point output
+<HR>
+
+</BODY>
+</HTML>

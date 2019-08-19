@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: AppendRes</TITLE>
+  <META NAME="Description" CONTENT="On-line help for application to append low-resolution data to an existing dataset.">
+  <META NAME="Keywords" CONTENT="Priism,resolution">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="AppendRes">Append Low-Resolution Data</A></H1>
+<H2>Overview</H2>
+<P>This application takes an existing dataset and appends to it
+one or more low-resolution versions of the data.  Each low-resolution
+data set is scaled down a factor of 2 in x and y from the previous set.
+The z-resolution of the low-resolution data can also be scaled down.
+
+<P>Enter the dataset to which you want to append low-resolution data in
+the first line.  The next line will then display the x, y, and z sizes of the
+data.  The following line will display the number of resolutions and z-scaling
+factor currently in effect for the data set.  Enter the desired number of
+resolutions and z-scaling factor in the <EM><A HREF="#NResolutions"># of
+Resolutions</A></EM> and <EM><A HREF="#ZScaling">Z Scaling</A></EM> fields
+respectively.  Then press the <EM>DoIt</EM> button to append the low
+resolution data.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#NResolutions"># Resolutions</A> |
+   <A HREF="#ZScaling">Z Scaling</A> |
+   <A HREF="#Limitations">Limitations</A> |
+   <A HREF="#CommandLine">Command Line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="NResolutions"># of Resolutions</A></H2>
+<P>The text field next to this button shows the number of resolutions
+to store.  Allowed values are integers from 1 to n where 2^(n-1) is
+less than or equal to the number of pixels in x and y in the dataset.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#AppendRes">Overview</A> |
+   # Resolutions |
+   <A HREF="#ZScaling">Z Scaling</A> |
+   <A HREF="#Limitations">Limitations</A> |
+   <A HREF="#CommandLine">Command Line</A>
+<HR>
+
+<H2><A NAME="ZScaling">Z Scaling</A></H2>
+<P>The text field next to this button shows the number by which the
+low-resolutions sets are scaled down in their z resolution.
+Allowed values are integers from 1 to n where n^(# of resolutions - 1)
+is less than or equal to the number of z sections in the dataset.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#AppendRes">Overview</A> |
+   <A HREF="#NResolutions"># Resolutions</A> |
+   Z Scaling |
+   <A HREF="#Limitations">Limitations</A> |
+   <A HREF="#CommandLine">Command Line</A>
+<HR>
+
+<H2><A NAME="Limitations">Limitations</A></H2>
+<P>This application can reduce the amount of low-resolution data that
+appears to be present in a file but can not decrease the actual size of
+the file.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#AppendRes">Overview</A> |
+   <A HREF="#NResolutions"># Resolutions</A> |
+   <A HREF="#ZScaling">Z Scaling</A> |
+   Limitations |
+   <A HREF="#CommandLine">Command Line</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>The syntax for invoking AppendRes from the command line is
+
+<PRE>
+    AppendRes <VAR>dataset</VAR> <VAR>nres</VAR> <VAR>zfactor</VAR>
+</PRE>
+
+<P>where <VAR>dataset</VAR> is the name of the file (or image window number)
+to modify, <VAR>nres</VAR> is the total number of resolutions desired, and
+<VAR>zfactor</VAR> is the z downsampling factor.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#AppendRes">Overview</A> |
+   <A HREF="#NResolutions"># Resolutions</A> |
+   <A HREF="#ZScaling">Z Scaling</A> |
+   <A HREF="#Limitations">Limitations</A> |
+   Command Line
+<HR>
+
+</BODY>
+</HTML>

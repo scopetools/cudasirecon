@@ -1,0 +1,63 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD 3.2 HTML//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Find Border</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to trace a contour at a given threshold.">
+  <META NAME="Keywords" CONTENT="Priism,threshold,segmentation">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Overview">Find Border</A></H1>
+<H2>Overview</H2>
+<P>Find Border creates lines between values less than a given threshold and
+values greater than the threshold. The output is a binary image (contains
+only 1's and 0's). The output image may then be used in the modeling process
+by the <A HREF="2DObjFinder.html">2D Object Finder</A> to create polygons on
+2D sections.
+
+<P>For notes on how to approach the Modeling process, see
+<A HREF="3DModelStrategies.html">3D Modeling Strategies</A>.
+
+<P>The controls for selecting the input file, output file, and region to
+process are shared with many other Priism applications and are described
+<A HREF="Region.html">elsewhere</A>.  The controls specific to Find Border
+are described below.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Threshold">Threshold</A> |
+  <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="2DObjFinder.html">2D Object Finder</A> |
+  <A HREF="3DModelStrategies.html">3D Modeling Strategies</A> |
+  <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="Threshold">Threshold</A></H2>
+<P>Find Border will create a line between values greater than and values
+less than the value in this field.
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>Find Border accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>, including the
+<CODE>-prompt</CODE> option to operate in a text-only mode.  To set
+the threshold level from the command line, include
+<PRE>
+    -threshold=<VAR>level</VAR>
+</PRE>
+<P>in the options where <VAR>level</VAR> should be replaced by the
+intensity threshold value.
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

@@ -1,0 +1,45 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Decimate</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to construct a new data set which is a downsampled version of another data set.">
+  <META NAME="Keywords" CONTENT="Priism">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Decimate">Decimate</A></H1>
+<H2>Overview</H2>
+<P>This application creates a new data set by taking every <VAR>xf</VAR> sample
+in the x dimension and every <VAR>yf</VAR> sample in the y dimension from an
+existing data set.  In the graphical user interface, <VAR>xf</VAR> is the
+first value in the field labeled "Downsampling", and <VAR>yf</VAR> is the
+second value in the field labeled "Downsampling".  Both <VAR>xf</VAR> and
+<VAR>yf</VAR> must be positive integers.
+
+<P>Decimate accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, it accepts the
+following option:
+
+<DL>
+  <DT><CODE>-factor=</CODE><VAR>xf</VAR><CODE>:</CODE><VAR>yf</VAR>
+  <DD>Sets the downsampling factor in x to be <VAR>xf</VAR> and the
+    downsampling factor in y to be <VAR>yf</VAR>.  Both <VAR>xf</VAR> and
+    <VAR>yf</VAR> must be positive integers.  If you do not use this option,
+    Decimate will downsample x and y by a factor of two.
+</DL>
+
+<H2>Related Priism Topics</H2>
+<P>
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="AppendRes.html">AppendRes</A> |
+  <A HREF="ResDown.html">ReduceRes</A> |
+  <A HREF="ResUp.html">IncreaseRes</A> |
+  <A HREF="Resample2D.html">Resample2D</A> |
+  <A HREF="Rotate3D.html">Rotate3D</A> |
+  <A HREF="Priism.html">Priism</A>
+<HR>
+
+</BODY>
+</HTML>

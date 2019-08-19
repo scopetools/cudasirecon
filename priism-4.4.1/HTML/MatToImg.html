@@ -1,0 +1,56 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: MatToImg</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to convert from a MATLAB workspace (MAT format) to an MRC file.">
+  <META NAME="Keywords" CONTENT="Priism,conversion,MATLAB">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="MatToImg">MatToImg</A></H1>
+<H2>Overview</H2>
+
+<P>MatToImg takes a MATLAB workspace file and converts it to Priism's native
+format for image stacks.  MATLAB workspace files typically have a <EM>.mat</EM>
+extension and are created with MATLAB's <EM>save</EM> command.  The conversion
+takes only two parameters:  <EM>MAT file</EM> is the name of the MATLAB
+workspace file to read and <EM>IVE file</EM> is the name of the Priism file
+to generate.
+
+<P>If MatToImg is invoked with something other than two arguments, it
+will display a graphical user interface for entering the MAT file name
+and IVE file name.  If it is invoked with two arguments, no user interface
+will be displayed: the first argument is used as name of the MAT file to read
+and the second is used as the name of the IVE file to generate.
+
+<P>MatToImg uses the MATLAB shared libraries and those will have to present
+on your computer for MatToImg to be able to convert files.  The easiest way to
+configure MatToImg so that it finds the shared libraries is to rerun the
+<A HREF="PriismInstallation.html#Step2">post-installation script for Priism</A>;
+that script will ask you the location of the directory that contains MATLAB.
+
+<P>The output file is a three-dimensional data stack where each
+two-dimensional z section represents a two-dimensional matrix stored
+in the workspace file or a slice (where the first two dimensions vary)
+through a three- or higher dimensional matrix.  The sections in the output
+are filled by taking (and slicing as necessary) the matrices in the order
+in which they appear in the workspace file.  The slices from higher
+dimensional matrices appear in adjacent z-sections.  The matrices must
+all have the same first two dimensions and must all be real-valued represented
+as double-precision floating-point or must all be complex-valued represented
+as double-precision floating-point.  If these conditions are not met, MatToImg
+will issue a warning about not being able to read the workspace file.
+
+<P>The inverse of MatToImg, <A HREF="ImgToMat.html">ImgToMat</A>, generates
+workspace files which can be used as input to MatToImg.
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="ImgToMat.html">ImgToMat</A>
+<HR>
+
+</BODY>
+</HTML>

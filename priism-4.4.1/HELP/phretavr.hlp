@@ -1,0 +1,257 @@
+KEYWORD
+
+DESCRIPTION phretavr
+
+    phretavr computes an image of the pupil function from a
+    series of z slices through the point spread function (PSF).
+    The computed pupil function can then be used directly as
+    a characterization of the imaging system for deconvolution
+    or can first be parameterized by a series of Zernike
+    polynomials (you can use pffit to calculate the parameter-
+    ization).
+
+    To use phretavr, invoke it from the command line.  The
+    expected form of the command line is (optional parts are
+    shown in brackets):
+
+        phretavr psf_input output [-x=start[:end]] \
+            [-y=start[:end]] [-z=start[:end[:step]]] \
+            [-w=w1[:w2...]] [-cofm=x:y[:z]] [-delz=dz] \
+            [-guess=name] [-lens=n] [-MSEfile=name] \
+            [-MSEopt=opt] [-MSEsec] [-na=n] [-ncycl=n] \
+            [-nimm=n] [-nsmod=n] [-nxy=nxp[:nyp]] \
+            [-nzpos=zshift] [-pcfac=r] [-qtw=n] [-regfac=r] \
+            [-reversez] [-rollfac=r] [-smooth=a] \
+            [-sub=b1[:b2...]] [-term] [-twall=opt] \
+            [-wv=w1[:w2...]]
+
+    or
+
+        phretavr -h
+
+    where the latter form simply prints a description of the
+    expected input parameters and then exits.  The meanings of
+    the different entries on the command line are:
+
+    psf_input
+        psf_input is expected to be the name of the Priism image
+        file which holds the PSF measurement slices.
+
+    output
+        output is the name of the file to use for the output
+        image results.
+
+    -x=start:end
+        Limits the range of x pixels to process.  start is the
+        zero-based index for the first pixel to process and must
+        be greater than or equal to zero.  end is the zero-based
+        index for the last pixel to process and must be greater
+        than or equal to start.  If you omit end, phretavr will
+        process from start to the end of the line.  By default,
+        phretavr processes the full x range of the input.
+
+    -y=start:end
+        Limits the range of y pixels to process.  start is the
+        zero-based index for the first pixel to process and must
+        be greater than or equal to zero.  end is the zero-based
+        index for the last pixel to process and must be greater
+        than or equal to start.  If you omit end, phretavr will
+        process from start to the end of the column.  By
+        default, phretavr processes the full y range of the
+        input.
+
+    -z=start:end:step
+        Limits the set of z sections to process.  phretavr will
+        process the z sections with zero-based indices, start,
+        start + step, ..., start + k * step where k is the
+        largest integer such that start + k * step is less than
+        or equal to end.  start must be greater than or equal
+        to zero.  end must be greater than or equal to start.
+        step must be greater than zero.  If you omit step,
+        phretavr will use a step size of one.  If you omit end,
+        phretavr will use the number of z sections minus one as
+        end.  By default, phretavr processes the full z range of
+        the input.
+
+    -w=w1[:w2...]
+        Limits the wavelengths to process.  Wavelengths are
+        processed in the order listed and may be specified by
+        its zero-based index in the input file or by its
+        wavelength.  By default, phretavr processes all
+        wavelengths in the input.
+
+    -cofm=x:y:z
+        Specifies the pixel coordinates (relative to the full
+        input size) for the center of the input PSFs.  By
+        default, phretavr assumes the center is at (x0 +
+        (x1 - x0) / 2, y0 + (y1 - y0) / 2, z0 + (z1 - z0) /
+        (2 * zstep)) where x0, x1, y0, y1, z0, and z1 are the
+        bounds of the processed region and zstep is the z
+        increment of the selected region.  To set the center
+        for a specific wavelength, use -cofm1, -cofm2, -cofm3,
+        -cofm4, or -cofm5 which have the same format as -cofm.
+
+    -delz=dz
+        Specifies the pixel spacing, in microns, to assume for
+        the input PSF.  By default, phretavr uses the z pixel
+        spacing recorded in the PSF file.
+
+    -guess=name
+        Specifies the name of a pupil function file to use as
+        the initial guess for the pupil function.  By default
+        phretavr internally generates the initial guess.
+
+    -lens=lens
+        If specified, phretavr sets the lens number in the output
+        pupil file to be n; otherwise, phretavr uses the lens
+        number from the header of the input PSF file.
+
+    -MSEfile=name
+        Causes phretavr to write out the mean square error
+        results to a file named name in addition to writing them
+        to standard output.
+
+    -MSEopt=opt
+        If you also set a file with -MSEfile, controls whether
+        phretavr writes the mean square error for the intensity
+        or the amplitude to that file.  If opt is zero, phretavr
+        writes the result for the intensity; otherwise, phretavr
+        writes the result for the amplitude.  -MSEopt has no
+        effect if you do not set -MSEfile.  If you do not specify
+        -MSEopt, phretavr writes the intensity result.
+
+    -MSEsec
+        If specified, phretavr writes out the mean square error
+        results on a section-by-section basis in addition to the
+        combined result for all sections.  By default, phretavr
+        does not write out the error measures for the individual
+        sections.
+
+    -na=n
+        Sets the numerical aperture of the lens used when
+        collecting the PSF.  By default, phretavr assumes a
+        numerical aperture of 1.3.
+
+    -ncycl=n
+        Specifies the number of iterations of phase retrieval.
+        By default, phretavr will use a single iteration.
+
+    -nimm=n
+        Sets the refractive index for the immersion media used
+        with the lens when collecting the PSF.  By default,
+        phretavr assumes the immersion media has a refractive
+        index of 1.518.
+
+    -nsmod=n
+        Causes phretavr to apply a smoothing filter to the phase
+        retrieval result after every n iterations.  If n is less
+        or equal to zero, phretavr does not apply a smoothing
+        filter.  By default, phretavr smoothes the phase retrieval
+        result after every five iterations.
+
+    -nxy=nxp:nyp
+        Sets the x and y dimensions, in pixels, of the padded
+        array.  If nyp is omitted phretavr assumes it has the
+        same value as nxp.  By default phretavr does not pad in
+        x or y.
+
+    -nzpos=zshift
+        Specifies that the center of the PSF has pixel coordinates
+        (relative to the full input) of cx, cy, cz - zshift where
+        cx, cy, and cz are either set implicitly or by one of the
+        -cofm options.  By default, phretavr assumes a zshift of
+        zero pixels.  To set the shift for a specific wavelength,
+        use -nzpos1, -nzpos2, -nzpos3, -nzpos4, or -nzpos5 which
+        have the same format as -nzpos.
+
+    -pcfac=r
+        Controls how the limit set by the numerical aperture is
+        handled.  If r is less than or equal to 1 x 10^-8 (the
+        default), pupil function components at frequencies
+        higher than the limit set by the numerical aperture
+        are set to zero.  Otherwise, components at the
+        frequencies higher than the limit are multiplied by
+        e^(-r*(k-kmax)) where k is the spatial frequency (in
+        cycles/micron) for the component and kmax is the
+        limit imposed by the numerical aperture.
+
+    -qtw=n
+        If n is not zero, processing stops after the absolute
+        value of n iterations.  If n is greater than zero the
+        first PSF slice and modified pupil are written prior
+        to the update during the nth iteration.  If n is less
+        than zero the first PSF slice and modified pupil are
+        written the update for the abs(n)th iteration.  When
+        n is zero, phretavr runs normally.  The -twall
+        option takes precedence over -qtw.
+
+    -regfac=r
+        Sets the regularization factor used during the update
+        step.  r should be between zero and one.  The default
+        value is one.
+
+    -reversez
+        By default, phretavr assumes the first z section in
+        the PSF input is the deepest (farthest from the cover
+        slip).  If you supply the -reversez option, phretavr
+        assumes the first section is closest to the cover slip.
+
+    -rollfac=r
+        Controls how the PSF calculated from the guess pupil is
+        updated in areas where the measured PSF has been padded
+        (the -nxy option sets the padding).  If r is less than
+        or equal to zero, those areas are set to zero.  If r is
+        greater than zero, pixels from those areas are scaled
+        by e^(-r * d) where d is the distance (in pixels) from
+        the pixel to the area covered by the measured PSF.  By
+        default, those areas outside of the measured PSF are set
+        to zero.
+
+    -smooth=a
+        Controls the shape of the smoothing filter.  If a is
+        greater than zero, the filter has a profile of
+        e^(-a * r^2) where r is the distance in pixels from the
+        PSF center.  If a is less than zero, phretavr does not
+        apply a smoothing filter.  By default, phretavr uses
+        0.0001 for a.
+
+    -sub=b1[:b2...]
+        Specifies a constant to be subtracted from all input PSF
+        values in a wavelength before applying the phase retrieval
+        process.  By phretavr assumes a background level of zero
+        for each wavelength.
+
+    -term
+        If specified, phretavr will terminate iterations early if
+        the error measure increases.  By default, phretavr
+        performs the number of iterations set by -ncycl.
+
+    -twall=opt
+        Controls what is written to the output image file (by
+        default, the final pupil function estimate is written).
+        Overrides any -qtw option.  opt must be one of the
+        following values:
+
+        0    The output is the final pupil function estimate.
+        1    The output is the pupil function estimate prior to
+             update for each section and each iteration.
+        2    The output is the amplitude PSF calculated from the
+             pupil function estimate at each iteration.
+        3    The output is the intensity PSF calculated from the
+             pupil function estimate at each iteration.
+        4    The output is the difference between the measured PSF
+             and the calculated intensity PSF at each iteration.
+        5    The output is the pupil function estimate after update
+             for each section and each iteration.
+        6    The output is the amplitude PSF after update at each
+             iteration.
+        7    The output is the average pupil function at each
+             iteration.
+
+    -wv=w1[:w2...]
+        Specifies the emission wavelengths to use for each
+        wavelength of the output file.  If a wavelength value is
+        less than ten, phretavr assumes it is specified in units
+        of microns; otherwise, phretavr assumes the wavelength
+        has units of nanometers.  By default, phretavr uses the
+        wavelengths recorded in the input PSF file.

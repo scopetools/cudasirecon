@@ -1,0 +1,401 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Muthuvel Arigovindan's ER-Decon I</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's implementation of Muthuvel Arigovindan's ER-Decon I algorithm for 3D deconvolution">
+  <META NAME="Keywords" CONTENT="Priism,deconvolution">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="core_decon">Muthuvel Arigovindan's ER-Decon I</A></H1>
+<H2>Overview</H2>
+<P>Muthuvel Arigovindan has devised two new 3D deconvolution algorithms;
+this documentation describes Priism's implementation of the first one,
+ER-Decon I.  ER-Decon I should be easier to use than Muthuvel Arigovindan's
+other algorithm, ER-Decon II, because you should only need to tune one
+parameter, but, when appropriately tuned, ER-Decon II should generate better
+quality deconvolutions.
+
+<P>ER-Decon I has three required parameters:  the name of the file with the
+data to deconvolve, the name of the file which has the optical transfer
+function (OTF) for the imaging system, and the name of the file to use for
+recording the deconvolution result. You can use the procedure described in
+<A HREF="OTFAndPupil.html#measuring_otf">OTFAndPupil.html#measuring_otf</A>
+to prepare the OTF.  There are additional parameters that affect the
+algorithm, but the only one that likely needs to be tuned for your data is
+the <A HREF="#Smoothing">smoothing parameter</A>.
+
+<P>The deconvolution application can be accessed from either the graphical
+user interface or directly from the command line.  To bring up the graphical
+user interface, use the Processing-&gt;OM Processing-&gt;ER-Decon I
+option in the Priism menus.  That will generate a dialog with fields for the
+three required file names at the top of the dialog.  Immediately below that are
+controls to select a region to process from the measurement.  For further
+information about those controls, look at
+ <A HREF="BatchRegion.html">BatchRegion.html</A>.  The remaining fields in the
+dialog are for the ER-Decon I algorithm parameters; you can find more
+information about those parameters below.  At the bottom of the dialog
+is a "Do It" button; pressing that button will start the processing with
+the currently selected parameters.  The "Options" button at the bottom of the
+dialog brings up another dialog where you can control certain aspects of
+what happens when you press the "Do It" button.  You can find more information
+about the "Do It" and "Options" buttons in
+<A HREF="BatchRegion.html">BatchRegion.html</A>.  You can find the syntax
+for the command-line interface for the deconvolution application in the
+<A HREF="#CommandLine">"Command line"</A> topic of this document.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#NumberOfProcessors">Number of processors</A> |
+   <A HREF="#Background">Background</A> |
+   <A HREF="#Smoothing">Smoothing</A> |
+   <A HREF="#PaddedZSize">Padded z size</A> |
+   <A HREF="#NumericalAperture">Numerical aperture</A> |
+   <A HREF="#RefractiveIndex">Refractive index</A> |
+   <A HREF="#IterationCount">Iteration count</A> |
+   <A HREF="#Positivity">Positivity</A> |
+   <A HREF="#Plotfile">Plot file</A>
+   <A HREF="#Ratio">Ratio</A> |
+   <A HREF="#MissingConeWeight">Missing cone weight</A> |
+   <A HREF="#AuxiliarySmoothing">Auxiliary smoothing</A> |
+   <A HREF="#Relaxation">Relaxation</A> |
+   <A HREF="#Nonlinearity">Nonlinearity</A> |
+   <A HREF="#HighCutoff">HighCutoff</A> |
+   <A HREF="#Tolerance">Tolerance</A> |
+   <A HREF="#NormalizeOTF">Normalize OTF</A> |
+   <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="BatchRegion.html">Batch processing</A> |
+   <A HREF="CCDCor.html">Raw data correction</A> |
+   <A HREF="OTFAndPupil.html">OTF and pupil function documentation</A> |
+   <A HREF="core2_decon.html">ER-Decon II</A> |
+   <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="NumberOfProcessors">Number of Processors</A></H2>
+<P>The deconvolution can be performed with multiple threads of execution.
+On a system with multiple processors (or processor cores), using multiple
+threads can reduce the time needed to complete the calculations.
+
+<P>From the graphical user interface you can select a number of threads
+to use using the "Number of Processors" field.  When the toggle button,
+labeled "default", next to that field is on, the field will be disabled
+and the number of threads to use will be determined by the destination
+for the reconstruction job.  To adjust the value, you can turn the toggle
+button off and enter the desired number of threads to use in the field.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="Background">Background</A></H2>
+<P>ER-Decon I gives you two ways to handle a constant background
+signal in your data.  In the first, the application computes an estimate of
+what the background is for each wavelength and then, prior to deconvolving
+a wavelength, subtracts off that estimated background for that wavelength
+multiplied by a value that you supply.  To set up that mode of operation from
+the graphical user interface, turn off the toggle button (labeled
+"absolute") next to the field labeled "Background" and then enter the value
+for each wavelength that will multiply the estimated background level.
+
+<P>In the second method for handling a constant background signal, you supply
+the value to subtract from each wavelength and the application does not perform
+its estimate of the background.  To set up that mode of operation from the
+graphical user interface, turn on the toggle button next to the field labeled
+"Background" and then enter the value for each wavelength that you want to
+subtract from the input data.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="Smoothing">Smoothing</A></H2>
+<P>The value in the "Smoothing" field is the one parameter that you will
+likely have to tune for your data.  An appropriate choice for the value will
+depend on the noise level of the data.  Any positive value is allowed.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="PaddedZSize">Padded Z Size</A></H2>
+<P>Prior to deconvolution, the data will be padded in Z so that
+it has the number of samples given in the field labeled "Padded Z Size".
+When the adjacent toggle button labeled "Default" is on (i.e. pushed in),
+the number of samples will be automatically calculated from the size in Z
+of the region to process.  When that adjacent toggle button is off, you
+are free to change the value for the padded size.  The value should be
+positive and greater than or equal to the Z size of the processed region.
+A value that is the product of small prime numbers (for instance a power of 2),
+will improve how fast the deconvolution can be done and reduce round-off
+errors in the processing.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="NumericalAperture">Numerical Aperture</A></H2>
+<P>The algorithm compensates for the range of rays not observed by the
+objective lens.  To specify the range of rays observed by the objective lens
+for your data, enter the effective numerical aperture of the lens in the field
+labeled "Numerical aperture" which is in the "Special Parameters" dialog.
+The default value for the numerical aperture is 1.4; any positive value less
+than or equal to the
+<A HREF="#RefractiveIndex">refractive index of the immersion media</A> is
+allowed.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="RefractiveIndex">Refractive Index</A></H2>
+<P>The algorithm compensates for the range of rays not observed by the
+objective lens which is determined by the
+<A HREF="#NumericalAperture">effective numerical aperture</A> and the
+refractive index of the immersion media.  To specify the refractive index of
+the immersion media, enter the refractive index in the field labeled
+"Refractive index" which is in the "Special Parameters" dialog.  The default
+value for the refractive index is 1.512; any positive value is allowed.  If you
+enter a value that is less than the current numerical aperture, the graphical
+user interface will coerce the numerical aperture to be equal to the refractive
+index.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="IterationCount">Iteration Count</A></H2>
+<P>Sets the maximum number of iterations to perform.  If the calculations
+satisfy your selected <A HREF="#Tolerance">level of tolerance</A> before the
+maximum number of iterations has been performed, then the full number of
+iterations will not be used.  The default value for the number of iterations
+is fifty; any positive value is allowed.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="Positivity">Positivity</A></H2>
+<P>The value in the field labeled "Positivity" controls the size of the
+corrections applied to keep values in the deconvolved result greater than or
+equal to zero.  When the value in the "Positivity" field is zero, no
+corrections will be made to keep values in the deconvolved result greater than
+zero.  The default value in the "Positivity" field is one hundred and any
+value greater than or equal to zero will be accepted.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="Plotfile">Plot File</A></H2>
+<P>If you enter a file name that is not "none" or nothing at all, in the field
+labeled "Plot file", a history of the values for the termination criteria will
+be written to that file in a form viewable with
+<A HREF="2d_plot.html">2D Plot</A>.
+
+<P><A HREF="#core2_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="Ratio">Ratio</A></H2>
+<P>ER-Decon I employs regularization based on the signal itself and the
+second derivatives.  The relative contribution of the those two components is
+controlled by the ratio parameter.  Valid values range from zero to one with
+higher values decreasing the weight given to the second derivatives.  The
+default value for the ratio parameter is 0.5.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="MissingConeWeight">Missing Cone Weight</A></H2>
+<P>The ER-Decon I algorithm has a mechanism (the missing cone filter)
+for compensating for the range of angles not observed by the objective lens.
+The missing cone weight is a scaling factor for that compensation mechanism.
+Any non-negative value is a valid value for the weight; the default value is
+one hundred.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="AuxiliarySmoothing">Auxiliary Smoothing</A></H2>
+<P>The auxiliary smoothing parameter multiplies the
+<A HREF="#Smoothing">smoothing parameter</A> in one portion (the computation
+of the Tikhonov solution) of the deconvolution calculations.  Any
+positive value is a valid value for the auxiliary smoothing parameter.
+The default value is one hundred.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="Relaxation">Relaxation</A></H2>
+<P>In the iterative portion of the calculation, the relaxation parameter
+is used to scale the correction term before it is added to the previous
+iteration's result to give the result for the current iteration.  Any positive
+value for the relaxation parameter is accepted.  The default value is 0.8.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="Nonlinearity">Nonlinearity</A></H2>
+<P>The nonlinearity parameter applies to the regularization calculations.
+The default value is one thousand.  Any value greater than or equal to zero
+is accepted.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="HighCutoff">High Cutoff</A></H2>
+<P>The default values for many of the deconvolution parameters were chosen
+for data which had values ranging from zero to one.  To reduce how sensitive
+good choices for those parameters are to the range of data values in your
+data, each volume is automatically scaled prior to applying the deconvolution
+and then the inverse of the scale factor is applied to the deconvolution
+result before saving it.  After the automatic scaling, a rescaled intensity of
+one matches the intensity at which the fraction, <VAR>f</VAR>, of
+the original volume has larger intensity values.  The default value of
+<VAR>f</VAR> is .001; valid values are greater than or equal to zero and less
+than one.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="Tolerance">Tolerance</A></H2>
+<P>In the iterative portion of the calculation, the iterations will stop
+early if the RMS difference between the prediction and the goal is less than
+or equal to the tolerance value.  Any non-negative value for the tolerance
+is accepted.  The default value is 0.001.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="NormalizeOTF">Normalize OTF</A></H2>
+<P>For transfer functions that have not been radially averaged, the
+deconvolution application normally rescales all the values of the transfer
+function by the value of the transfer function at zero frequency.  To prevent
+rescaling of the transfer function, turn off the "Normalize OTF" toggle button
+in the special parameters dialog, or on the command line, include
+<CODE>-nonorm_otf</CODE> in the options.
+
+<P>Radially averaged transfer functions are never rescaled.
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>The command-line syntax for the ER-Decon I application is (optional
+parts are in brackets):
+<PRE>
+    <CODE>core_decon</CODE> <VAR>measurement_file</VAR> <VAR>result_file</VAR> <VAR>otf_file</VAR> [<VAR>options</VAR>]
+</PRE>
+<P>where options can be zero or more of the following in any order (if an
+option appears multiple times the one appearing last on the command line takes
+precedence):
+
+<DL>
+  <DT><CODE>-abs_background</CODE><DD>If you supply this option,
+    any values supplied by the <CODE>-sub</CODE> option are subtracted directly
+    from the input data, and the application does not compute its estimate of
+    the background.  When you do not supply the <CODE>-abs_background</CODE>
+    option, the application computes an estimate of the background for each
+    wavelength and multiplies that estimate by the value supplied by the
+    <CODE>-sub</CODE> option for that wavelength to arrive at the value that
+    will be subtracted from the input data.
+  <DT><CODE>-alpha=</CODE><VAR>a</VAR><DD>Sets the
+    <A HREF="#Nonlinearity">nonlinearity parameter's value</A> to be
+    <VAR>a</VAR>.
+  <DT><CODE>-cuth</CODE><VAR>t</VAR><DD>Sets the
+    <A HREF="#HighCutoff">high cutoff</A> to be <VAR>t</VAR>.
+  <DT><CODE>-lamf=</CODE><VAR>f</VAR><DD>Sets the
+    <A HREF="#Smoothing">smoothing parameter's value</A> to be <VAR>f</VAR>.
+  <DT><CODE>-lamratio=</CODE><VAR>r</VAR><DD>Sets the
+    <A HREF="#Ratio">ratio parameter's value</A> to be <VAR>r</VAR>.
+  <DT><CODE>-lampc=</CODE><VAR>p</VAR><DD>Sets the
+    <A HREF="#MissingConeWeight">missing cone weight</A> to be <VAR>p</VAR>.
+  <DT><CODE>-lampos=</CODE><VAR>p</VAR><DD>Sets the value of the
+    <A HREF="#Positivity">positivity parameter</A> to be <VAR>p</VAR>.
+  <DT><CODE>-lamsmooth=</CODE><VAR>s</VAR><DD>Sets the value of the
+    <A HREF="#AuxiliarySmoothing">auxiliary smoothing parameter</A> to be
+    <VAR>s</VAR>.
+  <DT><CODE>-na=</CODE><VAR>v</VAR><DD>Sets the
+    <A HREF="#NumericalAperture">numerical aperture</A> to be <VAR>v</VAR>.
+  <DT><CODE>-ncycl=</CODE><VAR>n</VAR><DD>Sets the
+    <A HREF="#IterationCount">maximum number of iterations</A> to be
+    <VAR>n</VAR>.
+  <DT><CODE>-nimm=</CODE><VAR>n</VAR><DD>Sets the
+    <A HREF="#RefractiveIndex">refractive index of the immersion media</A> to
+    be <VAR>n</VAR>.
+  <DT><CODE>-nonorm_otf</CODE><DD>Normally the transfer function will be
+    rescaled to have a zero frequency response of one.  This option disables
+    that rescaling for non-radially averaged transfer functions (radially
+    averaged transfer functions are never rescaled).
+  <DT><CODE>-np=</CODE><VAR>np</VAR><DD>Sets the number of threads to use
+    to be <VAR>n</VAR>.  <VAR>n</VAR> must be a positive integer.  This option
+    will be ignored if the environment variable, NSLOTS, is set.  When you
+    do not supply this option, the number of threads will be the larger of one
+    and the value of the environment variable, NSLOTS.  If that environment
+    variable is not set or is not set to an integer, the number of threads
+    will equal the number of processors on the machine.
+  <DT><CODE>-nzpad=</CODE><VAR>n</VAR><DD>Sets the
+    <A HREF="#PaddedZSize">size (in samples) in z after padding</A> to be
+    <VAR>n</VAR>.
+  <DT><CODE>-omega=</CODE><VAR>o</VAR><DD>Sets the
+    <A HREF="#Relaxation">relaxation parameter's value</A> to be <VAR>o</VAR>.
+  <DT><CODE>-oplotfile=</CODE><VAR>pltname</VAR><DD>Specifies that the
+    values tested for the termination criteria be recorded in a file named
+    <VAR>pltname</VAR>.  The file is plain text and can be viewed with
+    <A HREF="2d_plot.html">2D Plot</A>.
+  <DT><CODE>-sub=</CODE><VAR>b1</VAR>[<CODE>:</CODE><VAR>b2</VAR>...]<DD>The
+    behavior of this option depends on whether the <CODE>-abs_background</CODE>
+    has also been specified on the command line.  When
+    <CODE>-abs_background</CODE> does not appear on the command line, the
+    program computes an internal estimate of the background for each
+    wavelength, multiplies that estimate by the value (<VAR>b1</VAR> for
+    wavelength 1, <VAR>b2</VAR> for wavelength 2, ...) supplied by the
+    <CODE>-sub</CODE> option, and then subtracts the result from the incoming
+    data.  If the <CODE>-sub</CODE> option does not appear on the command line
+    or does not set the value for a wavelength, the program acts as if the
+    value for that wavelength is one.  When <CODE>-abs_background</CODE> option
+    appears on the command line, the program directly subtracts the value
+    supplied by the <CODE>-sub</CODE> option (b1 for wavelength 1, b2 for
+    wavelength2, ...) from the incoming data.  In that case, if the
+    <CODE>-sub</CODE> option does not appear on the command line or does not
+    set the value for a wavelength, the program acts as if the value for that
+    wavelength is zero.
+  <DT><CODE>-t=</CODE><VAR>start</VAR>[<CODE>:</CODE><VAR>stop</VAR>[<CODE>:</CODE><VAR>step</VAR>]
+    <DD>Selects the range of points in time to process from the input file.
+    The default is to process the entire range present in the input.
+    <VAR>start</VAR> and <VAR>stop</VAR> must be non-negative integers less
+    than the number of time points in the input file.  Also, <VAR>start</VAR>
+    must be less than or equal to <VAR>stop</VAR> and <VAR>step</VAR> must
+    be greater than zero.
+  <DT><CODE>-tol=</CODE><VAR>t</VAR><DD>Sets the
+    <A HREF="#Tolerance">termination tolerance</A> to be <VAR>t</VAR>.
+  <DT><CODE>-w=</CODE><VAR>w0</VAR>[<CODE>:</CODE><VAR>w1</VAR>...]<DD>Selects
+    the wavelengths to process from the input file.  In the colon-separated
+    list of wavelengths, you can select a wavelength by giving the wavelength
+    position index (between zero and four, inclusive) in the input file or,
+    if the wavelength in the header is greater than 200.5 and less than 1999.5
+    nanometers, by the wavelength in nanometers rounded to the nearest
+    integer.  If you do not specify this option, all wavelengths present in
+    the input file will be processed.
+  <DT><CODE>-x=</CODE><VAR>start</VAR>[<CODE>:</CODE><VAR>stop</VAR>]
+    <DD>Selects the range of pixels in x to process from the input file.
+    The default is to process the entire range present in the input.
+    <VAR>start</VAR> and <VAR>stop</VAR> must be non-negative integers less
+    than the number of pixels in the x dimension of the input file.  Also,
+    <VAR>start</VAR> must be less than or equal to <VAR>stop</VAR>.
+  <DT><CODE>-y=</CODE><VAR>start</VAR>[<CODE>:</CODE><VAR>stop</VAR>]
+    <DD>Selects the range of pixels in y to process from the input file.
+    The default is to process the entire range present in the input.
+    <VAR>start</VAR> and <VAR>stop</VAR> must be non-negative integers less
+    than the number of pixels in the y dimension of the input file.  Also,
+    <VAR>start</VAR> must be less than or equal to <VAR>stop</VAR>.
+  <DT><CODE>-z=</CODE><VAR>start</VAR>[<CODE>:</CODE><VAR>stop</VAR>]
+    <DD>Selects the range of pixels in z to process from the input file.
+    The default is to process the entire range present in the input.
+    <VAR>start</VAR> and <VAR>stop</VAR> must be non-negative integers less
+    than the number of pixels in the z dimension of the input file.  Also,
+    <VAR>start</VAR> must be less than or equal to <VAR>stop</VAR>.
+</DL>
+
+<P><A HREF="#core_decon">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

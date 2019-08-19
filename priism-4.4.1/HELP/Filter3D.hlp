@@ -1,0 +1,260 @@
+KEYWORD
+       Method SwapZT Enhance Sigma IntensitySigma KernelSize Iterations
+
+DESCRIPTION Filter3D
+   Filter3D provides a set of three-dimensional filters, operations
+   which for each pixel in the output calculate an intensity based
+   on the input intensities in a box-shaped region about the pixel.
+   The same filters are available as in Filter 2D, including mean
+   and median filters.  The size of the region is set by the
+   XY and Z kernel size fields.  The three dimensions used for
+   filtering can either be x, y, and z or x, y, and time.  You
+   can switch between the two with the toggle button labeled
+   "swap z/time".  Filtering over x, y, and z is the default when
+   the input file has more than one z section per time point or
+   only one time point.
+
+   Filter 3D's user interface uses the same set of controls for
+   selecting and processing a region as other Priism applications.
+   See Region.hlp for details.
+
+   Filter 3D accepts the command-line arguments described in
+   Region.hlp.  In addition, Filter 3D has the following options
+   (optional parts are shown in brackets):
+
+        -3d=z or -3d=t
+             Selects which dimension to use as the third
+             dimension for processing.  The first form
+             selects the z dimension as the third dimension;
+             the second form selects the time dimension as the
+             third dimension.  If you do not specify either
+             form, the program uses the z dimension as the
+             third dimension when the input file has multiple
+             z sections per time point or only one time point.
+             Otherwise, the program uses the time dimension as
+             the third dimension for filtering.
+
+        -enhance
+             If specified, the result of each iteration of
+             filtering is the input data for that iteration
+             minus what the result would be without -enhance
+             specified.  The average deviation filter is an
+             exception to this.
+
+        -iterations=n
+             Specifies that the filtering should be performed
+             for n iterations.  If the command line does not
+             contain -iterations, one iteration of filtering
+             is performed.
+
+        -kernel_size=nx[:ny:nz]
+             Sets the size of the kernel to be nx by ny by
+             nz (or, if ny and nz are not specified, nx by
+             nx by nx).  If -kernel_size is not supplied on
+             the command-line, the kernel size will be determined
+             from the sigma values (see below) for the Gaussian,
+             Laplacian (LoG), and bilateral filters and will
+             be 3x3x3 for all other filter types.
+
+        -method=filter_type
+             Sets what form of filtering to apply.  Possible
+             values for filter_type are:
+
+                  median
+                  mean
+                  gaussian
+                  laplacian
+                  avgdev
+                  wghtmean
+                  minimum
+                  maximum
+                  bilateral
+
+        -scale=value
+            Sets the scale factor used when -enhance is used
+            and the filter is not an average deviation filter.
+            If not supplied, the scale factor defaults to one.
+
+        -sigma=sigma_x[:sigma_y:sigma_z]
+             Sets how rapidly the Gaussian, Laplacian (LoG),
+             and bilateral filters fall off to zero.  If
+             sigma_y and sigma_z are not supplied, they are
+             set to the value of sigma_x.  If -sigma is not
+             specified on the command-line, the default
+             value of sigma in all three directions is one.
+
+   As an example, the following command-line applies two iterations
+   of a 5x5x3 mean filter to raw.dat and places the results in
+   image window 1:
+
+        Filter3D raw.dat 1 -method=mean -kernel_size=5:5:3
+
+Method
+   The available filter types are listed below.  More details and
+   examples of the results on two-dimensional data can be found in
+   Filter2D.hlp.
+
+
+                            Median
+
+   The median filter looks at the image intensities within a
+   box-shaped region around each pixel and selects the median
+   value for the resulting image.  When the enhance toggle is on,
+   the result is the input times a scale factor minus the selected
+   median.
+
+
+                             Mean
+
+   The mean filter is similar to the median filter except that
+   the mean value is used instead of the median.
+
+
+                            Gaussian
+
+   When the enhance toggle is off, the Gaussian filter replaces a
+   value with the weighted average of it and the neighboring pixels;
+   the weights fall off exponentially as the square of the distance
+   divided by 2 times the square of sigma.  When the enhance toggle
+   is on, the result is the input times a scale factor minus the
+   weighted average.
+
+
+                         Laplacian (LoG)
+
+   The Laplacian filter implemented here is an approximation to
+   the negative of the Laplacian operator.  The Laplacian operator
+   has the useful property that a location where the output
+   values change sign marks the position of an edge.  The Laplacian
+   operator involves the computation of differences and therefore
+   tends to amplify noise.  If sigma is greater than zero, the
+   Laplacian is combined with a Gaussian smoothing step to give
+   what is known as the Laplacian of Gaussian or LoG filter; this
+   is useful for reducing the amount of noise introduced.
+
+   When the Enhance toggle is on, the scale factor times the input
+   minus the result of the of the filter is computed.  This is one
+   way to enhance edges in an image; another, likely better,
+   method is to use the EdgeEnh application.
+
+
+                         Avg. Deviation
+
+   When the enhance toggle is off, the output is an unbiased
+   estimate of the average absolute deviation from the local
+   mean.  When the enhance toggle is on, the output is the
+   average absolute deviation from the input intensity at that
+   point.
+
+
+                         Weighted Mean
+
+   See the Filter 2D documentation (Filter2D.hlp) for how this
+   filter is defined - the name is probably a misnomer but it is
+   what was used in previous versions of Filter 2D.  If you know a
+   use or a rationale for this particular filter, let the Priism
+   maintainers know.
+
+
+                            Minimum
+
+   When the enhance toggle is off, the minimum filter replaces a
+   value with the minimum value in the neighborhood.  If the
+   input is a binary image (values are either one or zero), the
+   minimum filter is equivalent to the morphological erosion
+   operator with a square structuring element.  When the enhance
+   toggle is on, the result is the input times a scale factor
+   minus the neighborhood minimum.
+
+
+                            Maximum
+
+   When the enhance toggle is off, the maximum filter replaces a
+   value with the maximum value in the neighborhood.  If the
+   input is a binary image (values are either one or zero), the
+   maximum filter is equivalent to the morphological dilation
+   operator with a square structuring element.  When the enhance
+   toggle is on, the result is the input times a scale factor
+   minus the neighborhood maximum.
+
+
+                           Bilateral
+
+   The bilateral filter implements the filter described in
+
+       Tomasi, C. and Manduchi, R.  "Bilateral Filtering for
+       Gray and Color Images."  Proceedings of the 1998 IEEE
+       International Conference on Computer Vision, Bombay,
+       India.  Pages 839 - 846.
+
+   The filter replaces the value at a pixel, (i, j, k), with
+   a weighted sum of the pixel values in the neighborhood.
+   Each weight is the product of a factor dependent on the
+   distance (in pixels) to (i, j, k) and another factor
+   dependent on the difference in intensity with the pixel
+   at (i, j, k).  This implementation of the bilateral
+   filter uses Gaussian functions for both components
+   of the weight.  The values in the "Sigma XY/Z (pix)"
+   field control the standard deviations for the Gaussian
+   weighting as a function of distance, and the value
+   in the "Intensity sigma" field controls the standard
+   deviation for the Gaussian weighting as a function of
+   intensity difference.
+
+SwapZT
+   The three dimensions used for filtering can either be
+   x, y, and z or x, y, and time.  When the toggle button
+   labeled "swap z/time" is off, the program uses x, y,
+   and z as the dimensions to filter.  When that toggle
+   button is on, the program uses x, y, and time as the
+   dimensions to filter.  When you select a new input
+   file, the program will automatically select the
+   dimension to use as the third dimension.  If the file
+   has more than one z section or only one time point,
+   the program will use the z dimension as the third
+   dimension; otherwise, it will use the time dimension
+   as the third dimension.
+
+Enhance
+   When the "Enhance" toggle is on the result for each iteration
+   is the input data for that iteration times a scale factor
+   minus what the result would be when the toggle was off.  The
+   average deviation filter is an exception to this.
+
+ScaleFactor
+   If the Enhance toggle is on and the filter is not an average
+   deviation filter, the result of an iteration is the input
+   data for that iteration times the scale factor minus the
+   filtered input data.
+
+Sigma
+   For the Gaussian, Laplacian (LoG), and bilateral filters,
+   the width is controlled by the value of sigma in a given
+   dimension.  Larger values of sigma give broader filters.
+   The values of sigma for the x and y directions are the
+   same; in the z (or time) direction the value of sigma can
+   be given a different value.
+
+   When the autosize toggle is on, any changes to the sigma
+   values will automatically calculate a kernel size to give
+   a reasonable approximation for the filter.
+
+IntensitySigma
+   The value in the "Intensity sigma" field only affects the
+   bilateral filter.  The bilateral filter tends to reduce
+   the magnitude of intensity changes that are less than the
+   intensity sigma and preserve the magnitude of intensity
+   changes that are much greater than the intensity sigma.
+
+KernelSize
+   The kernel size is the size, in pixels, of the box used to
+   calculate the filtered images.  The box has a square cross
+   section in x and y; the square has a side length given by
+   the value in the "XY kernel size" field.  The height of the
+   box (i.e. the width of the filter in the z or time dimension)
+   is given by the value in the "Z kernel size" field.
+
+Iterations
+   The filter is applied repeatedly with the output from the
+   previous pass becoming the input for the next.  The number
+   of passes is shown in the "Iterations" field.

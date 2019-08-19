@@ -1,0 +1,892 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: A. N. Diffusion</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's nonlinear anisotropic diffusion filter.">
+  <META NAME="Keywords" CONTENT="Priism,anisotropic,nonlinear,diffusion,enhancement">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="ANDiffusion">A. N. Diffusion</A></H1>
+<H2>Overview</H2>
+<P>Nonlinear anisotropic diffusion filtering is a technique for smoothing
+data.  Unlike the smoothing filters (with the exception of the bilateral
+filter) in <A HREF="Filter2D.html">Filter 2D</A> and
+<A HREF="Filter3D.html">Filter 3D</A>, nonlinear anisotropic diffusion
+filtering adjusts the filter for local variations in structure so that
+important features are better preserved during the smoothing process.
+This implementation of nonlinear anisotropic diffusion filtering derives
+from the algorithms described in Fern&aacute;ndez, JJ. and Li, S. (2003), "An
+improved algorithm for anisotropic nonlinear diffusion for denoising
+cryo-tomograms", Journal of Structural Biology, 144:  152-161 and from
+source code provided by Dr. Jos&eacute;-Jes&uacute;s Fern&aacute;ndez for
+a filter implementing the edge enhancing algorithm and another implementing
+a hybrid algorithm.  The <A HREF="#Algorithm">Algorithm section</A> describes
+the details of the algorithm.
+
+<P>There are a large number of parameters that you can modify to control
+the operation of the filter.  Important ones are:
+<DL>
+  <DT><A HREF="#2D">2D processing</A>
+  <DD>Use 2D processing if you want the filtering applied separately to each
+    section rather than processing xyz volumes as a whole.
+  <DT><A HREF="#Normalize">Normalize</A>
+  <DD>This is a preprocessing step to convert the intensities to a fixed range
+    (0 - 255).  This may make it easier to choose values for the
+    <A HREF="#ContrastThreshold">contrast threshold</A> and
+    <A HREF="#StructureThreshold">structure threshold</A> parameters.
+  <DT><A HREF="#Method">Method</A><DD>Fern&aacute;ndez and Li (2003) outline
+    three approaches to nonlinear anisotropic diffusion filtering:
+    edge enhancing diffusion (EED), coherence enhancing diffusion (CED), and a
+    hybrid approach.  This parameter selects which approach to use.
+  <DT><A HREF="#NoiseAveraging">Noise averaging</A>
+  <DD>Controls the amount of averaging done before characterizing local
+    structures.  An optimal setting is one that minimizes the degradation of
+    the local structure information from the combined effects of the noise
+    and the averaging process.
+  <DT><A HREF="#NumberOfIterations">Number of iterations</A>
+  <DD>More iterations gives a smoother result; more iterations also require
+    more computation time.
+  <DT><A HREF="#ContrastThreshold">Contrast threshold</A> and <A HREF="#StructureThreshold">structure threshold</A>
+  <DD>These parameters control the amount of smoothing as a function of the
+    strength of the local structural properties.  The edge enhancing diffusion
+    method uses the contrast threshold.  The coherence enhancing method uses
+    the structure threshold.  The hybrid method uses both.
+  <DT><A HREF="#StructureAveraging">Structure averaging</A>
+  <DD>The coherence enhancing diffusion and hybrid methods use an averaged
+    structure tensor calculated by averaging the structure tensors over a local
+    area.  The structure averaging parameters control the size of the
+    neighborhood over which the structure tensors are averaged.
+  <DT><A HREF="#NoiseArea">Noise area</A>
+  <DD>If you use the <A HREF="#Method">hybrid method</A> or allow
+    <A HREF="#RelativeNoiseVarianceLimit">early termination based on the
+    variance of the noise</A>, the filtering process uses a portion of each
+    volume (or section if processing in 2D) to estimate the properties of the
+    noise.  The noise area parameters set the region used when calculating
+    the estimates.
+</DL>
+
+<H3>Topics</H3>
+<P>
+  Overview |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#2D">2D processing</A> |
+  <A HREF="#Normalize">Normalize</A> |
+  <A HREF="#Method">Method</A> |
+  <A HREF="#NoiseAveraging">Noise averaging</A> |
+  <A HREF="#NumberOfIterations"># of iterations</A> |
+  <A HREF="#RelativeVarianceLimit">Variance limit</A> |
+  <A HREF="#RelativeNoiseVarianceLimit">Noise variance limit</A> |
+  <A HREF="#ContrastThreshold">Contrast threshold</A> |
+  <A HREF="#StructureThreshold">Structure threshold</A> |
+  <A HREF="#StructureAveraging">Structure averaging</A> |
+  <A HREF="#NoiseArea">Noise area</A> |
+  <A HREF="#PixelSpacing">Pixel spacing</A> |
+  <A HREF="#DiscretizationInterval">Discretization interval</A> |
+  <A HREF="#DiffusionProportion">Diffusion proportion</A> |
+  <A HREF="#Regularization">Regularization</A> |
+  <A HREF="#Balance">Balance</A> |
+  <A HREF="#EigenvalueThreshold">Eigenvalue threshold</A> |
+  <A HREF="#FilterTruncation">Filter truncation</A> |
+  <A HREF="#CommandLine">Command line</A> |
+  <A HREF="#Algorithm">Algorithm</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="Filter2D.html">Filter 2D</A> |
+  <A HREF="Filter3D.html">Filter 3D</A> |
+  <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="2D">2D Processing</A></H2>
+<P>This implementation of nonlinear anisotropic diffusion filtering can
+process either a series of 3D volumes (xyz) where each volume is processed
+independently or a series of 2D slices (xy) where each slice is processed
+independently.  Beware that 3D processing can require a large amount of
+memory:  enough to hold the selected volume when stored as 32-bit
+floating-point values plus some extra space for calculations (see the
+<A HREF="#Algorithm">Algorithm section</A> for more precise statements about
+the amount of memory needed).  From the graphical user interface, turn on the
+"2D processing" toggle button to process each 2D slice independently; turn
+that button off when you want to process each 3D volume independently.  By
+default, processing is done on volumes unless the data has a z dimension size
+of one.  Every time you select a new input file, the setting for whether or
+not to perform 2D processing is reset to the default value.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="Normalize">Normalize</A></H2>
+<P>The filtering process includes an optional preliminary step that
+linearly scales the intensity values within <VAR>n</VAR> standard deviations
+of the mean so that they fall within the range of 0 to 255.  Intensities
+less than the mean intensity minus <VAR>n</VAR> standard deviations are set
+to zero, and intensities greater than the mean intensity plus <VAR>n</VAR>
+standard deviations are set to 255.  When 2D processing is done, the
+normalization step treats each 2D slice independently; when 3D processing
+is done, the normalization step treats each 3D volume independently.
+
+<P>One reason to normalize the data is to make it easier to compare and set the
+<A HREF="#ContrastThreshold">contrast threshold</A> and
+<A HREF="#StructureThreshold">structure threshold</A> parameters when
+working with different data sets.  However, if your data consists of
+a series of sections (for 2D processing) or volumes (for 3D processing) that
+you want to have on a consistent intensity scale, you should not use the
+normalization step.
+
+<P>From the graphical user interface, turn on the "Normalize" toggle button
+to enable the normalization step or turn that toggle button off to disable
+the normalization step.  To change the value of <VAR>n</VAR>, the number of
+standard deviations from the mean to retain without saturation, adjust the
+value in the field immediately to the right of the "Normalize" toggle button.
+By default, the data will be normalized, and values more than four standard
+deviations from the mean saturate.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="Method">Method</A></H2>
+<P>This implementation provides three different approaches to calculating
+the diffusion tensor used in the nonlinear anisotropic diffusion filtering;
+these are the three approaches described in Fern&aacute;ndez and Li (2003):
+
+<DL>
+  <DT>edge enhancing<DD>Primarily enhances or preserves edges.  Has fewer
+    user parameters than the other approaches and uses less memory.
+  <DT>coherence enhancing<DD>Intended to enhance flow-like features and
+    complete interrupted lines.
+  <DT>hybrid<DD>Dynamically switches between the edge enhancing and coherence
+    enhancing approaches based on local structure properties.  Has the most
+    user parameters (all the parameters for the edge enhancing and coherence
+    enhancing methods and some more in addition) and requires the most memory
+    during processing.
+</DL>
+
+<P>For more information about the calculation of the diffusion tensor with
+the different methods, see the <A HREF="#Algorithm">Algorithm section</A>.
+In the graphical user interface, use the "Method" menu to select which
+algorithm to use.  The hybrid algorithm is the default.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="NoiseAveraging">Noise Averaging</A></H2>
+<P>Nonlinear anisotropic diffusion filtering characterizes structures by
+calculating structure tensors from the local intensity gradients.  Because
+calculating the gradients involves calculating differences, those calculations
+are sensitive to noise present in the data.  For that reason, there is an
+option to apply a Gaussian smoothing filter to the intensities before computing
+the structure tensor.  You control the Gaussian filter by specifying the
+sigmas, in units of pixels, for each of the three coordinate dimensions (only
+the first two are relevant when you do <A HREF="#2D">2D processing</A>).  In
+a given dimension, the filter will extend <VAR>n</VAR> pixels to either side
+of a point where <VAR>n</VAR> is the smallest integer larger than or equal to
+the <A HREF="#FilterTruncation">filter truncation value</A> times the sigma.
+A sigma of zero for a particular direction results in no smoothing along that
+direction.  Appropriate values for the sigmas will depend on your data:  larger
+sigmas should help when the amount of noise relative to signal increases but
+unduly large sigmas will suppress the sensitivity to local variations in
+structure.  Also, larger sigmas incur additional computation time for
+computations in the smoothing step and more memory needed for auxiliary
+storage.
+
+<P>In the graphical user interface, you can set the sigmas by changing the
+values in the "Noise averaging" field.  The first value is the sigma for the
+x direction, the second is the sigma for the y direction, and the third is
+the sigma for the z direction.  By default, all three have values of 0.625.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="NumberOfIterations"># of Iterations</A></H2>
+<P>The number of iterations of filtering controls how smooth the result
+is:  as the number of iterations increases the result becomes smoother.
+The amount of computation time also increases linearly with the number
+of iterations.  For the default value of the
+<A HREF="#DiscretizationInterval">discretization interval</A> (0.4), Dr.
+Fern&aacute;ndez recommended five to ten iterations.
+
+<P>In the graphical user interface, edit the value in the "# of Iterations"
+field to change the number of iterations performed.  By default, five
+iterations will be performed.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="RelativeVarianceLimit">Variance Limit</A></H2>
+<P>In addition to the <A HREF="#NumberOfIterations">limit on the number of
+iterations</A>, you can specify that processing terminate early if the
+variance of the block (a slice in 2D processing or a volume in 3D processing)
+processed falls below a given fraction of its original variance.
+
+<P>In the graphical user interface, you can turn on or off early termination
+based on the relative variance by turning on or off the "Variance limit"
+toggle button.  Immediately to the right of that button is a field where you
+can set the desired relative variance level as a fraction (zero to one).
+By default, early termination is not enabled, and the threshold relative
+variance level is 0.4.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="RelativeNoiseVarianceLimit">Noise Variance Limit</A></H2>
+<P>In addition to the <A HREF="#NumberOfIterations">limit on the number of
+iterations</A>, you can specify that processing terminate early if the
+variance of the <A HREF="#NoiseArea">area used to estimate the noise
+statistics</A> falls below a given fraction of its original variance.
+
+<P>In the graphical user interface, you can turn on or off early termination
+based on the relative noise variance by turning on or off the
+"Noise variance limit" toggle button.  Immediately to the right of that button
+is a field where you can set the desired relative noise variance level as a
+fraction (zero to one).  By default, early termination is not enabled, and the
+threshold relative noise variance level is 0.1.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="ContrastThreshold">Contrast Threshold</A></H2>
+<P>The contrast threshold, which is the same as the parameter K in
+Fern&aacute;ndez and Li (2003), is the key parameter affecting how the
+<A HREF="#Method">edge enhancing</A> approach and the edge enhancing component
+of the hybrid method interpret local structures.  Areas where the length of
+the gradient vector is greater than the contrast threshold are regarded as
+edges; areas where the length of the gradient vector is less than the contrast
+threshold are interior regions.  For <A HREF="#Normalize">normalized</A> data,
+Dr. Fern&aacute;ndez found values of the contrast threshold between one and
+four to be useful.
+
+<P>In the graphical user interface, change the value in the
+"Contrast threshold" field to set the contrast threshold.  The default value
+is 2.5.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="StructureThreshold">Structure Threshold</A></H2>
+<P>The structure threshold, which is the same as the parameter C in
+Fern&aacute;ndez and Li (2003), is an important parameter affecting how
+the <A HREF="#Method">coherence enhancing</A> approach and the coherence
+enhancing component of the hybrid method interpret local structures.  When
+the difference squared between the largest and smallest eigenvalues of the
+averaged structure tensor is greater than the structure threshold, the
+structure is treated as a line-like or plane-like pattern with smoothing
+along the line or plane.  For <A HREF="#Normalize">normalized</A> data,
+Dr. Fern&aacute;ndez found values of the structure threshold between one
+and eight to be useful.
+
+<P>In the graphical user interface, change the value in the "Structure
+threshold" field to set the structure threshold.  The default value is 4.5.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="StructureAveraging">Structure Averaging</A></H2>
+<P>The coherence enhancing and hybrid methods use structure tensors that
+have been averaged over a local area.  The structure averaging parameters
+are the sigmas for the Gaussian weighting function which defines the
+neighborhood for averaging.  In a given direction, the neighborhood will
+extend <VAR>n</VAR> pixels to each side where <VAR>n</VAR> is the smallest
+integer larger than or equal to the
+<A HREF="#FilterTruncation">filter truncation value</A> times sigma in that
+direction.
+
+<P>In the graphical user interface, the sigmas for the weighting function
+are displayed in the field labeled "Structure averaging".  The first value
+is the sigma in the x direction, the second value is the sigma in the y
+direction, and the third value, only used for 3D processing, is the sigma
+in the z direction.  By default, each of the sigmas has a value of .625.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="NoiseArea">Noise Area</A></H2>
+<P>For the <A HREF="#Method">hybrid method</A> or when you specify a
+termination criteria based on the
+<A HREF="#RelativeNoiseVarianceLimit">relative noise variance</A>, a portion
+of each slice or volume processed is used for estimating the statistics
+of the noise.  The region is box shaped and specified using a bottom lower
+left corner and a size in each dimension.  In the graphical user interface,
+use the field labeled "Noise area origin" to specify the bottom lower left
+corner of the region:  the first value is the x coordinate, the second is the
+y coordinate, and the third, ignored in 2D processing, is the z coordinate.
+These coordinates must be integers and are expected in zero-based pixel
+units relative to the full data set size.  Use the field labeled "Noise area
+size" to specify the dimensions of the region:  the first value is the x size,
+the second is the y size, and the third, ignored in 2D processing, is the z
+size.  By default, the 10 x 10 x 10 volume in the bottom lower left corner of
+each volume (or, for 2D processing, the 10 x 10 box in the lower left corner
+of each slice) is used for estimating the noise statistics.  If the area for
+the noise statistics does not fall within the bounds of the region selected
+for processing, an error message will be displayed when you start processing
+the data and the processing will stop.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="PixelSpacing">Pixel Spacing</A></H2>
+<P>The computation of derivatives for the anisotropic nonlinear diffusion
+filter takes into account the sampling of the data.  By default, the filter
+uses the sampling as recorded in the header of the input data.  If you want
+to use a different sampling, change the values in the "Pixel sampling" field.
+The first value in the field is the x sampling, the second is the y sampling,
+and the third is the z sampling.  The field is in the "other parameters"
+dialog and not in the main dialog; press the "Other parameters..." button in
+the main dialog to open the "other parameters" dialog.  Note that only the
+relative values for the sampling matter:  the filter will divide the samplings
+by the minimum sampling value (if you are using 2D processing, the minimum of
+the x and y sampling values) when determining the scale factors for the
+derivatives.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="DiscretizationInterval">Discretization Interval</A></H2>
+<P>The discretization interval is the time step corresponding to each
+iteration.  When adjusting the input parameters to optimize the result
+with your data, you should leave this parameter as is.  Its intended use
+is for experiments to evaluate how large of a discretization interval
+still allows for a stable discretization of the partial differential equation.
+From the graphical user interface, use the field labeled
+"Discretization interval" to set the discretization interval.  That field is
+in the "other parameters" dialog and not in the main dialog; press the "Other
+parameters..." button in the main dialog to open the "other parameters"
+dialog.  The default value for the discretization interval is 0.4.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="DiffusionProportion">Diffusion Proportion</A></H2>
+<P>Fern&aacute;ndez and Li (2003) modified the coherence enhancing diffusion
+method to treat line-like and plane-like features differently.  For plane-like
+features, the diffusion proportion parameter controls the amount of diffusion
+along the second in-plane direction and is only relevant when processing in
+3D.  Allowable values for the diffusion proportion parameter are in the range
+of zero to one where one is the value used by Fern&aacute;ndez and Li (2003)
+and a value of zero corresponds to a traditional coherence enhancing method
+that treats all features as line-like.  From the graphical user interface, use
+the field labeled "Diffusion proportion" to set the diffusion proportion.  That
+field is in the "other parameters" dialog and not in the main dialog; press
+the "Other parameters..." button in the main dialog to open the "other
+parameters" dialog.  The default value for the diffusion proportion is 0.5.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="Regularization">Regularization</A></H2>
+<P>The regularization parameter is the alpha in Fern&aacute;ndez and Li
+(2003) and puts a lower bound on the eigenvalues of the diffusion tensor for
+the coherence enhancing method and for the coherence enhancing component of
+the hybrid method.  Allowable values for the regularization parameter range
+from zero to one.  From the graphical user interface, use the field labeled
+"Regularization" to set the regularization parameter.  That field is in the
+"other parameters" dialog and not in the main dialog; press the "Other
+parameters..." button in the main dialog to open the "other parameters"
+dialog.  The default value for the regularization parameter is 0.0001.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="Balance">Balance</A></H2>
+<P>The balance parameter affects when the hybrid method uses the edge
+enhancing approach or the coherence enhancing approach.  At positions
+where the difference between the largest and smallest eigenvalues of
+the structure tensor is greater than the balance parameter times the
+largest difference between the largest and smallest eigenvalues for
+the structure tensors of the <A HREF="#NoiseArea">noise area</A>, the hybrid
+method will use the coherence enhancing approach; otherwise, the hybrid
+method will use the edge enhancing approach.  The balance parameter must be
+greater than or equal to zero:  with a value of zero the hybrid method will
+always use the coherence enhancing approach.  From the graphical user
+interface, use the field labeled "Balance" to set the balance parameter.
+That field is in the "other parameters" dialog and not in the main dialog;
+press the "Other parameters..." button in the main dialog to open the "other
+parameters" dialog.  The default value for the balance parameter is one.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="EigenvalueThreshold">Eigenvalue Threshold</A></H2>
+<P>The eigenvalue threshold is only relevant for the hybrid method.  If the
+largest eigenvalue for the structure tensor at a point is less than the
+eigenvalue threshold times the average largest eigenvalue for the structure
+tensors in the <A HREF="#NoiseArea">noise area</A>, then the hybrid method
+will use an isotropic diffusion tensor at that point rather than the
+coherence enhancing or edge enhancing approaches.
+
+<P>The eigenvalue threshold must be greater than or equal to zero.  From the
+graphical user interface, use the field labeled "Eigenvalue threshold" to set
+the eigenvalue threshold.  That field is in the "other parameters" dialog and
+not in the main dialog; press the "Other parameters..." button in the main
+dialog to open the "other parameters" dialog.  The default value for the
+eigenvalue threshold is one.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="FilterTruncation">Filter Truncation</A></H2>
+<P>Gaussian filters are used to smooth the data before computing local
+structure properties and, in the coherence enhancing or hybrid methods, when
+averaging local structure tensors.  When evaluating those filters, the spatial
+extent is limited to a fixed number of standard deviations.  To set that limit
+from the graphical user interface, use the field labeled "Filter truncation".
+That field is in the "other parameters" dialog and not in the main dialog;
+press the "Other parameters..." button in the main dialog to open the "other
+parameters" dialog.  By default, the extent of the filters is limited to
+two standard deviations.  Because of the limits of 32-bit floating-point
+arithmetic, there is no value to setting the limit larger than thirteen
+standard deviations.  Larger values for the limit increase the amount of
+time necessary to perform the processing and also increase the amount of
+memory used.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>The nonlinear anisotropic diffusion application accepts the command-line
+arguments described in <A HREF="Region.html#COMMANDLINE">Region.html</A>.
+The <CODE>-logging=debug</CODE> option described there has the additional
+effect causing each iteration's statistics to be written to standard output.
+In addition, the nonlinear anisotropic diffusion application has the following
+options (brackets are used to indicate parts that may be omitted):
+
+<DL>
+  <DT><CODE>-2D</CODE>
+  <DD>Turns on <A HREF="#2D">2D processing</A>; the default is to use 3D
+    processing.
+
+  <DT><CODE>-area=</CODE><VAR>fx</VAR><CODE>:</CODE><VAR>lx</VAR><CODE>:</CODE><VAR>fy</VAR><CODE>:</CODE><VAR>ly</VAR>[<CODE>:</CODE><VAR>fz</VAR><CODE>:</CODE><VAR>lz</VAR>]
+  <DD>Sets the <A HREF="#NoiseArea">region used for estimating the statistics
+    of the noise</A>.  The bottom lower left corner of the region will be
+    (<VAR>fx</VAR>, <VAR>fy</VAR>, <VAR>fz</VAR>) and the top upper left
+    corner of the region will be (<VAR>lx</VAR>, <VAR>ly</VAR>, <VAR>lz</VAR>).
+    <VAR>fx</VAR>, <VAR>fy</VAR>, <VAR>fz</VAR>, <VAR>lx</VAR>, <VAR>ly</VAR>,
+    and <VAR>lz</VAR> must be integers and are referenced to a zero-based
+    pixel coordinate system, i.e. the lower left corner of the data set is
+    at (0, 0, 0) and the upper left corner of the data set is at
+    (<VAR>nx</VAR>-1, <VAR>ny</VAR>-1, <VAR>nz</VAR>-1) where <VAR>nx</VAR>,
+    <VAR>ny</VAR>, <VAR>nz</VAR> are the dimensions, in pixels, of the data
+    set.  If the region for noise statistics does not fit within the region
+    selected for processing, processing will terminate with an error.  You can
+    omit <VAR>fz</VAR> and <VAR>lz</VAR>:  that is equivalent to setting
+    <VAR>fz</VAR> equal to zero and <VAR>lz</VAR> equal to nine.  By default,
+    the region for noise statistics has its bottom lower left corner at
+    (0, 0, 0) and its top upper right corner at (9, 9, 9).
+
+  <DT><CODE>-balance=</CODE><VAR>b</VAR>
+  <DD>Sets the <A HREF="#Balance">balance parameter</A> to be <VAR>b</VAR>.
+    <VAR>b</VAR> must be a value greater than or equal to zero.  The default
+    value is one.
+
+  <DT><CODE>-cthresh=</CODE><VAR>k</VAR>
+  <DD>Sets the <A HREF="#ContrastThreshold">contrast threshold</A> to be
+    <VAR>k</VAR>.  <VAR>k</VAR> must be a value greater than zero.  The
+    contrast threshold is 2.5 by default.
+
+  <DT><CODE>-ethresh=</CODE><VAR>e</VAR>
+  <DD>Sets the <A HREF="#EigenvalueThreshold">eigenvalue threshold</A> to
+    be <VAR>e</VAR>.  <VAR>e</VAR> must be a value greater than or equal
+    to zero.  The eigenvalue threshold is one by default.
+
+  <DT><CODE>-ftrunc=</CODE><VAR>c</VAR>
+  <DD>Causes the <A HREF="#FilterTruncation">Gaussian filters to be
+    truncated</A> at <VAR>c</VAR> standard deviations.  <VAR>c</VAR> must
+    be greater than or equal to zero.  By default, the Gaussian filters
+    are truncated at two standard deviations.
+
+  <DT><CODE>-interval=</CODE><VAR>d</VAR>
+  <DD>Sets the <A HREF="#DiscretizationInterval">discretization interval</A>
+    to be <VAR>d</VAR>.  <VAR>d</VAR> must be a value greater than zero.
+    The discretization interval is 0.4 by default.
+
+  <DT><CODE>-iterations=</CODE><VAR>n</VAR>
+  <DD>Sets the maximum <A HREF="#NumberOfIterations">number of iterations</A>
+    to perform to be <VAR>n</VAR>.  By default, at most five iterations are
+    used.
+
+  <DT><CODE>-method=</CODE><VAR>m</VAR>
+  <DD>Selects which of the <A HREF="#Method">three possible algorithms</A> to
+    use for computing the diffusion tensor.  <VAR>m</VAR> must be one of the
+    following:
+    <DL>
+      <DT>ced<DD>coherence enhancing algorithm
+      <DT>eed<DD>edge enhancing algorithm
+      <DT>hybrid<DD>hybrid algorithm
+    </DL>
+
+  <DT><CODE>-normalize=</CODE><VAR>c</VAR>
+  <DD>Enables <A HREF="#Normalize">normalization</A> of the input data using
+    a cutoff level of <VAR>c</VAR> standard deviations.  <VAR>c</VAR> must
+    be greater than or equal to zero.  When run from the command line,
+    normalization of the input data is off by default.
+
+  <DT><CODE>-prced=</CODE><VAR>p</VAR>
+  <DD>Sets the <A HREF="#DiffusionProportion">diffusion proportion parameter</A>
+    to be <VAR>p</VAR>.  <VAR>p</VAR> must be a value between zero and one.
+    By default, the diffusion proportion is 0.5.
+
+  <DT><CODE>-regfac=</CODE><VAR>r</VAR>
+  <DD>Sets the <A HREF="#Regularization">regularization factor</A> to be
+    <VAR>r</VAR>.  <VAR>r</VAR> must be a value between zero and one.  By
+    default, the regularization factor is 0.0001.
+
+  <DT><CODE>-rv=</CODE><VAR>c</VAR>
+  <DD>Enables early termination before the maximum number of iterations is
+    reached if the variance of the slice (if 2D) or volume (if 3D) falls
+    below <VAR>c</VAR> times its original variance.  <VAR>c</VAR> must be
+    greater than zero and less than or equal to one.
+
+  <DT><CODE>-rnv=</CODE><VAR>c</VAR>
+  <DD>Enables early termination before the maximum number of iterations is
+    reached if the variance of region used for noise statistics falls
+    below <VAR>c</VAR> times its original variance.  <VAR>c</VAR> must be
+    greater than zero and less than or equal to one.
+
+  <DT><CODE>-smooth=</CODE><VAR>sx</VAR><CODE>:</CODE><VAR>sy</VAR>[<CODE>:</CODE><VAR>sz</VAR>]
+  <DD>Sets the sigmas for the <A HREF="#NoiseAveraging">Gaussian filter
+    used during computation of the structure tensors</A>.  <VAR>sx</VAR> is the
+    sigma, in pixels, for the x direction, <VAR>sy</VAR> is the sigma, in
+    pixels, for the y direction, and <VAR>sz</VAR> is the sigma, in pixels, for
+    the z direction.  <VAR>sx</VAR>, <VAR>sy</VAR>, and <VAR>sz</VAR> must be
+    greater than or equal to zero.  You can omit <VAR>sz</VAR> which is
+    equivalent to setting <VAR>sz</VAR> equal to 0.625.  By default,
+    the sigmas all have values of 0.625.
+
+  <DT><CODE>-spacing=</CODE><VAR>sx</VAR><CODE>:</CODE><VAR>sy</VAR>[<CODE>:</CODE><VAR>sz</VAR>]
+  <DD>Sets the pixel spacing to use when computing derivatives.  If you omit
+    this option, the pixel spacings recorded in the header are used.
+
+  <DT><CODE>-ssmooth=</CODE><VAR>sx</VAR><CODE>:</CODE><VAR>sy</VAR>[<CODE>:</CODE><VAR>sz</VAR>]
+  <DD>Sets the sigmas for the <A HREF="#StructureAveraging">Gaussian filter
+    used for computation of the average structure tensor</A> in the coherence
+    enhancing and hybrid methods.  <VAR>sx</VAR> is the sigma, in pixels, for
+    the x direction, <VAR>sy</VAR> is the sigma, in pixels, for the y
+    direction, and <VAR>sz</VAR> is the sigma, in pixels, for the z direction.
+    <VAR>sx</VAR>, <VAR>sy</VAR>, and <VAR>sz</VAR> must be greater than or
+    equal to zero.  You can omit <VAR>sz</VAR> which is equivalent to setting
+    <VAR>sz</VAR> equal to 0.625.  By default, the sigmas all have values of
+    0.625.
+
+  <DT><CODE>-sthresh=</CODE><VAR>c</VAR>
+  <DD>Sets the <A HREF="#StructureThreshold">structure threshold</A> to be
+    <VAR>c</VAR>.  <VAR>c</VAR> must be a value greater than or equal to zero.
+    By default, the structure threshold is 4.5.
+</DL>
+
+<P>The following example applies ten iterations of the edge enhancing method
+to in.dat to generate out.dat; the contrast threshold is set at three.
+
+<PRE>
+    ANDiffusion in.dat out.dat -method=eed -cthresh=3
+</PRE>
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+<H2><A NAME="Algorithm">Algorithm</A></H2>
+<P>The algorithm used is based on the description in Fern&aacute;ndez and Li
+(2003) and source code provided by Dr. Fern&aacute;ndez.  One design goal for
+the algorithm was to reduce the amount of memory necessary for typical cases
+without introducing undue amounts of extra computation.
+
+<H3>Shifting Windows</H3>
+<P>To reduce the amount of memory used, the algorithm employs shifting
+windows.  One holds the image data from the previous iteration.  Another
+holds smoothed image data for calculating structure tensors.  A third holds
+the flux vector, the product of the diffusion tensor and the gradient
+vector.  For the coherence enhancing algorithm and hybrid algorithm, there is
+a fourth shifting window for the averaged structure tensors.  The hybrid
+algorithm has a fifth shifting window for the structure tensors.  The total
+memory requirements for those shifting windows, the volume or slice to process,
+and working space for the smoothing filters are listed below.  <VAR>nx</VAR>,
+<VAR>ny</VAR>, and <VAR>nz</VAR> are the dimensions of the volume to be
+processed.  <VAR>nny</VAR> is the smallest integer greater than or equal to
+two times the y sigma for the <A HREF="#NoiseAveraging">noise averaging
+Gaussian filter</A>.  <VAR>nnz</VAR> is the smallest integer greater than or
+equal to two times the z sigma for the noise averaging Gaussian filter.
+<VAR>nsy</VAR> is the smallest integer greater than or equal to two times the
+y sigma for the <A HREF="#StructureAveraging">Gaussian filter used to compute
+the average structure tensor</A>.  <VAR>nsz</VAR> is the smallest integer
+greater than or equal to two times the z sigma for the Gaussian filter used to
+compute the average structure tensor.  min(<VAR>a</VAR>,<VAR>b</VAR>) returns
+<VAR>a</VAR> if <VAR>a</VAR> is less than <VAR>b</VAR> and otherwise returns
+<VAR>b</VAR>.
+
+<UL>
+  <LI>For 2D processing with the edge enhancing algorithm the memory
+    requirement is <VAR>nx</VAR> * <VAR>ny</VAR> + (<VAR>nx</VAR> + 4) *
+    (3 * <VAR>nny</VAR> + 8 + min(<VAR>ny</VAR>, <VAR>nny</VAR> + 2)) +
+    6 * (<VAR>nx</VAR> + 2) 32-bit floating-point values.
+  <LI>For 3D processing with the edge enhancing algorithm the memory
+    requirement is <VAR>nx</VAR> * <VAR>ny</VAR> * <VAR>nz</VAR> +
+    (<VAR>nx</VAR> + 4) * (1 + <VAR>ny</VAR> * (3 * <VAR>nnz</VAR> + 8 +
+    min(<VAR>nz</VAR>, <VAR>nnz</VAR> + 2))) + 9 * (<VAR>nx</VAR> + 2) *
+    (<VAR>ny</VAR> + 2) 32-bit floating-point values.
+  <LI>For 2D processing with the coherence enhancing algorithm the memory
+    requirement is <VAR>nx</VAR> * <VAR>ny</VAR> + (<VAR>nx</VAR> + 4) *
+    (3 * <VAR>nny</VAR> + 4 * <VAR>nsy</VAR> + 8 + min(<VAR>ny</VAR>,
+    <VAR>nny</VAR> + 2)) + 6 * (<VAR>nx</VAR> + 2) + 3 * <VAR>nx</VAR> *
+    (2 * <VAR>nsy</VAR> + 2) 32-bit floating-point values.
+  <LI>For 3D processing with the coherence enhancing algorithm the memory
+    requirement is <VAR>nx</VAR> * <VAR>ny</VAR> * <VAR>nz</VAR> +
+    (<VAR>nx</VAR> + 4) * (1 + <VAR>ny</VAR> * (3 * <VAR>nnz</VAR> +
+    4 * <VAR>nsz</VAR> + 8 + min(<VAR>nz</VAR>, <VAR>nnz</VAR> + 2))) +
+    9 * (<VAR>nx</VAR> + 2) * (<VAR>ny</VAR> + 2) + 6 * <VAR>nx</VAR> *
+    (1 + <VAR>ny</VAR> * (2 * <VAR>nsz</VAR> + 2)) 32-bit floating-point
+     values.
+  <LI>For 2D processing with the hybrid algorithm the memory requirement
+    is <VAR>nx</VAR> * <VAR>ny</VAR> + (<VAR>nx</VAR> + 4) *
+    (3 * <VAR>nny</VAR> + 4 * <VAR>nsy</VAR> + 8 + min(<VAR>ny</VAR>,
+    <VAR>nny</VAR> + 2)) + 6 * (<VAR>nx</VAR> + 2) + 3 * <VAR>nx</VAR> *
+    (3 * <VAR>nsy</VAR> + 2) 32-bit floating-point values.
+  <LI>For 3D processing with the hybrid algorithm the memory requirement is
+    <VAR>nx</VAR> * <VAR>ny</VAR> * <VAR>nz</VAR> + (<VAR>nx</VAR> + 4) *
+    (1 + <VAR>ny</VAR> * (3 * <VAR>nnz</VAR> + 4 * <VAR>nsz</VAR> + 8
+    + min(<VAR>nz</VAR>, <VAR>nnz</VAR> + 2))) + 9 * (<VAR>nx</VAR> + 2) *
+    (<VAR>ny</VAR> + 2) + 6 * <VAR>nx</VAR> *
+    (1 + <VAR>ny</VAR> * (3 * <VAR>nsz</VAR> + 2)) 32-bit floating-point values
+</UL>
+
+<P>As implemented, the shifting windows introduce at least one instance of
+repeated calculations:  the smoothed data and structure tensors for the
+<A HREF="#NoiseArea">region used to estimate the noise statistics</A> are
+calculated twice every iteration (once for the statistics and a second time
+in the computations for the diffusion tensor).
+
+<H3>Approximating Derivatives</H3>
+<P>To approximate the derivatives, the algorithm uses the approach described
+in Weickert, J. and Scharr, H. (2002), "A Scheme for Coherence-Enhancing
+Diffusion Filtering with Optimized Rotation Invariance", Journal of Visual
+Communication and Image Representation, 13:  103-118 and Fern&aacute;ndez and
+Li (2003) where a central difference kernel, (-0.5 / <VAR>d</VAR>, 0,
+0.5 / <VAR>d</VAR>) in the direction of the derivative, is convolved with
+smoothing kernels, (0.174654, 0.650692, 0.174654), in the other directions.
+<VAR>d</VAR> is the sampling interval in the direction of the derivative
+divided by the smallest of the sampling intervals from all the coordinate
+directions (x and y only for 2D processing; x, y, and z for 3D processing).
+The right hand side of the diffusion equation, the divergence of the
+product of the diffusion tensor and the gradient vector, is approximated, as
+described in Weickert and Scharr (2002), by two applications of the derivative
+filter:  one to compute the gradient and another to compute the divergence of
+the flux vector.
+
+<H3>Boundary Conditions</H3>
+<P>Reflecting boundary conditions are imposed on the image data.  As
+a consequence of that and the way the structure tensor is defined, the
+structure tensors and averaged structure tensors have the following boundary
+condition:  the components of a structure tensor at some position are equal to
+the components of the structure tensor at that position reflected across the
+boundary except that the off-diagonal components coming from derivatives
+perpendicular to the boundary are negated.  For similar reasons, the flux
+vectors (the product of the diffusion tensor and gradient vector) have the
+following boundary condition:  the components of a flux vector at some
+position are equal to the components of the flux vector at that position
+reflected across the boundary except that the component of the vector
+perpendicular to the boundary is negated.
+
+<H3>Diffusion Tensor</H3>
+<P>The calculation of the diffusion tensor is intended to be the same as
+the approach in Dr. Fern&aacute;ndez's source code for the edge enhancing
+algorithm and the hybrid algorithm with the following differences:
+
+<UL>
+  <LI>The relationship between the eigenvalues for the diffusion tensor
+    and the length of the gradient vector (or equivalently, the square root
+    of the sum of the diagonal elements of the structure tensor) for the
+    edge enhancing method and the edge enhancing component of the hybrid
+    method uses the function given in Fern&aacute;ndez and Li (2003).
+  <LI>There is a stand-alone coherence enhancing implementation without the
+    additional features and parameters of the hybrid method.
+  <LI>There are 2D versions as well.
+</UL>
+
+<P>In all that follows, <VAR>e1</VAR>, <VAR>e2</VAR>, and
+<VAR>e3</VAR> are the eigenvalues of the structure tensor where <VAR>e1</VAR>
+is greater than or equal to <VAR>e2</VAR> and <VAR>e2</VAR> is greater than or
+equal to <VAR>e3</VAR>; the corresponding eigenvectors are
+(<VAR>ev11</VAR>, <VAR>ev12</VAR>, <VAR>ev13</VAR>),
+(<VAR>ev21</VAR>, <VAR>ev22</VAR>, <VAR>ev23</VAR>), and (<VAR>ev31</VAR>,
+<VAR>ev32</VAR>, <VAR>ev33</VAR>).  As Dr. Fern&aacute;ndez noted to us
+in a personal communication, the definition of the structure tensor implies
+that e2 and e3 are zero and the corresponding eigenvectors are perpendicular to
+the gradient.  We take advantage of that property below.  <VAR>a1</VAR>,
+<VAR>a2</VAR>, and <VAR>a3</VAR> are the eigenvalues of the averaged structure
+tensor where <VAR>a1</VAR> is greater than or equal to <VAR>a2</VAR> and
+<VAR>a2</VAR> is greater than or equal to <VAR>a3</VAR>, and the corresponding
+eigenvectors are (<VAR>av11</VAR>, <VAR>av12</VAR>, <VAR>av13</VAR>),
+(<VAR>av21</VAR>, <VAR>av22</VAR>, <VAR>av23</VAR>), and
+(<VAR>av31</VAR>, <VAR>av32</VAR>, <VAR>av33</VAR>).  <VAR>d1</VAR>,
+<VAR>d2</VAR>, and <VAR>d3</VAR> are the eigenvalues of the diffusion tensor,
+and (<VAR>dv11</VAR>, <VAR>dv12</VAR>, <VAR>dv13</VAR>),
+(<VAR>dv21</VAR>, <VAR>dv22</VAR>, <VAR>dv23</VAR>),
+(<VAR>dv31</VAR>, <VAR>dv32</VAR>, <VAR>dv33</VAR>) are the corresponding
+eigenvectors.  In the three dimensional case, the diffusion tensor is then
+the matrix product
+
+<PRE>
+    [ dv11  dv21  dv32 ]   [ d1   0   0 ]   [ dv11  dv12  dv13 ]
+    [ dv12  dv22  dv32 ] * [  0  d2   0 ] * [ dv21  dv22  dv23 ]
+    [ dv13  dv23  dv33 ]   [  0   0  d3 ]   [ dv31  dv32  dv33 ]
+</PRE>
+
+<P>For the two dimensional case, the diffusion tensor is the matrix product
+
+<PRE>
+    [ dv11  dv21 ]   [ d1   0 ]   [ dv11  dv12 ]
+    [            ] * [        ] * [            ]
+    [ dv12  dv22 ]   [  0  d2 ]   [ dv21  dv22 ]
+</PRE>
+
+<H4>Edge Enhancing Diffusion (EED)</H4>
+<P>For the edge enhancing algorithm in two dimensions, the eigenvalues and
+eigenvectors of the diffusion tensor are
+
+<PRE>
+         { g    e1 &gt; 0
+    d1 = {
+         { 1    otherwise
+
+    dv11 = ev11; dv12 = ev12
+
+    d2 = 1
+
+    dv21 = ev21; dv22 = ev22
+</PRE>
+
+<P>where g is
+
+<PRE>
+    g = 1 - e^(-3.31488 / (e1^0.5 / K)^8)
+</PRE>
+
+<P>and K is the <A HREF="#ContrastThreshold">contrast threshold parameter</A>.
+For the edge enhancing algorithm in three dimensions, the eigenvalues and
+eigenvectors of the diffusion tensor are
+
+<PRE>
+         { g    e1 &gt; 0
+    d1 = {
+         { 1    otherwise
+
+    dv11 = ev11; dv12 = ev12; dv13 = ev13
+
+    d2 = 1
+
+    dv21 = ev21; dv22 = ev22; dv23 = ev23
+
+    d3 = 1
+
+    dv31 = ev31; dv32 = ev32; dv33 = ev33
+</PRE>
+
+<P>where g is
+
+<PRE>
+    g = 1 - e^(-3.31488 / ((e1 + e2 + e3)^0.5 / K)^8)
+</PRE>
+
+<H4>Coherence Enhancing Diffusion (CED)</H4>
+<P>For the coherence enhancing algorithm in two dimensions, the eigenvalues
+and eigenvectors of the diffusion tensor are
+
+<PRE>
+    d1 = a
+
+    dv11 = av11; dv12 = av12
+
+         { a + (1 - a) * e^(-C / (a1 - a2)^2)    a1 &gt; a2
+    d2 = {
+         { a                                     otherwise
+
+    dv21 = av21; dv22 = av22
+</PRE>
+
+<P>where a is the <A HREF="#Regularization">regularization parameter</A> and
+C is the <A HREF="#StructureThreshold">structure threshold parameter</A>.
+
+<P>For the coherence enhancing algorithm in three dimensions, the eigenvalues
+and eigenvectors of the diffusion tensor are
+
+<PRE>
+    d1 = a
+
+    dv11 = av11; av12 = av12; av13 = av13
+
+         { a + (1 - a) * e^(-C / (a1 - a2)^2)    a1 != 0 and
+         {                                       (a1 - a2) / a1 &gt; (a2 - a3) / a1 and
+    d2 = {                                       (a1 - a2) / a1 &gt; a3 / a1
+         {
+         { a                                     otherwise
+
+    dv21 = av21; dv22 = av22; dv23 = av23
+
+         { a + (1 - a) * e^(-C / (a1 - a3)^2)    a1 != 0 and
+         {                                       (((a1 - a2) / a1 &gt; (a2 - a3) / a1 and
+         {                                        (a1 - a2) / a1 &gt; a3 / a1)) or
+         {                                        (a2 - a3) / a1 &gt; (a1 - a2) / a1 and
+    d3 = {                                        (a2 - a3) / a1 &gt; a3 / a1)
+         {
+         {
+         { a                                     otherwise
+
+    dv21 = av31; dv22 = av32; dv23 = av33
+</PRE>
+
+<H4>Hybrid</H4>
+<P>The hybrid algorithm uses an isotropic diffusion tensor when <VAR>e1</VAR>
+is less than the <A HREF="#EigenvalueThreshold">eigenvalue threshold</A> times
+the mean largest eigenvalue for the structure tensors in the
+<A HREF="#NoiseArea">region used to estimate the noise statistics</A>.  In
+two dimensions, the eigenvalues and eigenvectors for the isotropic diffusion
+tensor are
+
+<PRE>
+    d1 = 1
+
+    dv11 = ev11; dv12 = ev12
+
+    d2 = 1
+
+    dv21 = ev21; dv22 = ev22
+</PRE>
+
+<P>In three dimensions, the eigenvalues and eigenvectors for the isotropic
+diffusion tensor are
+
+<PRE>
+    d1 = 1
+
+    dv11 = ev11; dv12 = ev12; dv13 = ev13
+
+    d2 = 1
+
+    dv21 = ev21; dv22 = ev22; dv23 = ev23
+
+    d3 = 1
+
+    dv31 = ev31; dv32 = ev32; dv33 = ev33
+</PRE>
+
+<P>When <VAR>e1</VAR> is greater than or equal to the
+<A HREF="#EigenvalueThreshold">eigenvalue threshold</A> times the mean largest
+eigenvalue for the structure tensors in the
+<A HREF="#NoiseArea">region used to estimate the noise statistics</A>,
+the hybrid algorithm adopts a CED or EED approach.  When the largest eigenvalue
+of the structure tensor minus the smallest eigenvalue of the structure tensor
+(<VAR>e1</VAR> minus <VAR>e2</VAR> in two dimensions; <VAR>e1</VAR> minus
+<VAR>e3</VAR> in three dimensions) is greater than the
+<A HREF="#Balance">balance parameter</A> times the largest difference
+between the largest and smallest eigenvalues for structure tensors in
+the <A HREF="#NoiseArea">region used to estimate the noise statistics</A>,
+the hybrid algorithm uses a CED approach; otherwise the hybrid algorithm
+uses an EED approach.  The CED and EED approaches for calculating the
+diffusion tensor are the same as described above for the stand-alone
+implementations.
+
+<P><A HREF="#ANDiffusion">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

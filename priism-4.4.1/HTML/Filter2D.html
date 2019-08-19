@@ -1,0 +1,477 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Filter 2D</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to implement several two-dimensional filters (median, mean, ...).">
+  <META NAME="Keywords" CONTENT="Priism,filtering,median">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Filter2D">Filter 2D</A></H1>
+<H2>Overview</H2>
+
+<P>Filter2D provides a set of two-dimensional filters, operations which for
+each pixel in the output calculate an intensity based on the input intensities
+in a square region about the pixel.  <A HREF="#MedianFilter">Median</A> and
+<A HREF="#MeanFilter">mean</A> filters are among those available.  The size of
+the square region is set by the <A HREF="#KernelSize">kernel size field</A>.
+
+<P>Filter 2D's user interface uses the <A HREF="Region.html">same set of
+controls</A> for selecting and processing a region as other Priism
+applications.
+
+<H3>Topics</H3>
+<P>
+  Overview |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Method">Method (filter types)</A> |
+  <A HREF="#Enhance">Enhance</A> |
+  <A HREF="#ScaleFactor">Scale factor</A> |
+  <A HREF="#Sigma">Sigma</A> |
+  <A HREF="#IntensitySigma">Intensity sigma</A> |
+  <A HREF="#KernelSize">Kernel size</A> |
+  <A HREF="#Iterations">Iterations</A> |
+  <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="Priism.html">Priism</A> |
+  <A HREF="Filter3D.html">Filter 3D</A> |
+  <A HREF="NewConvolution.html">Convolution</A>
+<HR>
+
+<H2><A NAME="Method">Method</A></H2>
+<P>The available filter types are listed below.
+
+<H3><A NAME="MedianFilter">Median</A></H3>
+<P>The median filter looks at the image intensities within a box-shaped region
+around each pixel and selects the median value for the resulting image.
+The example below shows the results of a 3x3 median filter on a 5x5 image;
+the last of the three is the result that is calculated when the
+<A HREF="#Enhance">enhance toggle</A> is on and a
+<A HREF="#ScaleFactor">scale factor</A> of one is used.
+<PRE>
+    Measured Image      Median Filtered Image        1 * Measured - Median
+  1   3   2   2   2    2.5  2.0  2.0  2.0  2.0   -1.5   1.0   0.0   0.0   0.0
+  2  12   1   2   4    3.0  3.0  2.0  2.0  2.0   -1.0   9.0  -1.0   0.0   2.0
+  3   3   3   2   1    2.5  2.0  2.0  2.0  2.0    0.5   1.0   1.0   0.0  -1.0
+  2   2   1   2   1    2.5  2.0  2.0  2.0  1.5   -0.5   0.0  -1.0   0.0  -0.5
+  3   2   2   1   2    2.0  2.0  2.0  1.5  1.5    1.0   0.0   0.0  -0.5   0.5
+</PRE>
+<P>Probably the best use of the median filter is to remove pixels with
+noise-like intensity.  In the example above, the pixel with intensity 12 is
+removed from the filtered image.  In fact, the pixel value of 12 doesn't
+affect the filtered image at all!
+
+<H3><A NAME="MeanFilter">Mean</A></H3>
+<P>The mean filter is similar to the median filter except that the mean value
+is used instead of the median. For example, a 3x3 mean filter applied to
+the same measured image as above yields (rounded to the nearest integer):
+<PRE>
+     Measured Image       Mean Filtered Image          1 * Measured - Mean
+   1   3   2   2   2    4.5  3.5  3.7  2.2  2.5   -3.5  -0.5  -1.7  -0.2  -0.5
+   2  12   1   2   4    4.0  3.3  3.3  2.1  2.2   -2.0   8.7  -2.3  -0.1   1.8
+   3   3   3   2   1    4.0  3.2  3.1  1.9  2.0   -1.0  -0.2  -0.1   0.1  -1.0
+   2   2   1   2   1    2.5  2.3  2.0  1.7  1.5   -0.5  -0.3  -1.0   0.3  -0.5
+   3   2   2   1   2    2.3  2.0  1.7  1.5  1.5    0.8   0.0   0.3  -0.5   0.5
+</PRE>
+<P>Unlike the median filter, however, the mean filter is more sensitive
+to noise. The pixel with value 9 elevates the filtered intensities throughout
+the 3x3 region. Compare the results from the mean filter with those from the
+median filter.
+
+<P>The third result is the output when the mean filter is applied and
+the <A HREF="#Enhance">enhance toggle</A> is on and a scale factor of
+one is used.  The 3x3 mean filter with the enhance toggle on and a scale
+factor of one is the same (except for an overall multiplier of one-ninth)
+as a commonly used 3x3 approximation to the Laplacian operator.  The 3x3
+mean filter with the enhance toggle on and a scale factor of 1.1111 is the
+same (except for an overall multiplier of one-ninth) as the 3x3 approximation
+to the Laplacian added to the original data.
+
+<H3><A NAME="GaussianFilter">Gaussian</A></H3>
+<P>When the <A HREF="#Enhance">enhance toggle</A> is off, the Gaussian
+filter replaces a value with the weighted average of it and the neighboring
+pixels; the weights fall off exponentially as the square of the distance
+divided by 2 times the square of <A HREF="#Sigma">sigma</A>.  When the
+enhance toggle is on, the result is the input times a
+<A HREF="#ScaleFactor">scale factor</A> minus the weighted average.  Below are
+the results for a 3 x 3 Gaussian filter with a sigma of 1.
+<PRE>
+     Measured Image          Filtered Image          1 * Measured - Filtered
+   1   3   2   2   2    3.3  3.7  3.0  2.1  2.5   -2.3  -0.7  -1.0  -0.1  -0.5
+   2  12   1   2   4    3.9  4.2  3.3  2.1  2.4   -1.9   7.8  -2.3  -0.1   1.6
+   3   3   3   2   1    3.5  3.5  2.8  1.9  1.9   -0.5  -0.5   0.2   0.1  -0.9
+   2   2   1   2   1    2.4  2.2  1.9  1.6  1.4   -0.4  -0.2  -0.9   0.4  -0.4
+   3   2   2   1   2    2.4  2.1  1.7  1.5  1.5    0.6  -0.1   0.3  -0.5   0.5
+</PRE>
+
+<H3><A NAME="LaplacianFilter">Laplacian (LoG)</A></H3>
+<P>The Laplacian filter implemented here is an approximation to the negative of
+the Laplacian operator.  The Laplacian operator has the useful property that a
+location where the output values change sign marks the position of an edge.
+The Laplacian operator involves the computation of differences and therefore
+tends to amplify noise.  If <A HREF="#Sigma">sigma</A> is greater than zero,
+the Laplacian is combined with a Gaussian smoothing step to give what is
+known as the Laplacian of Gaussian or LoG filter; this is useful for reducing
+the amount of noise introduced.
+
+<P>When the <A HREF="#Enhance">Enhance toggle</A> is on, the
+<A HREF="#ScaleFactor">scale factor</A> times the input minus the result of
+the of the filter is computed.  This is one way to enhance edges in an image;
+another, likely better, method is to use the
+<A HREF="Edge.html">EdgeEnh application</A>.
+
+<H3><A NAME="AvgDevFilter">Avg. Deviation</A></H3>
+<P>When the <A HREF="#Enhance">enhance toggle</A> is off, the output is
+an unbiased estimate of the average absolute deviation from the local mean:
+
+<PRE>
+    output(i0,j0) =      sum       abs(input(i,j) - a(i0,j0)) / (n^2-1)
+                    i,j in kernel
+
+         a(i0,j0) =      sum       input(i,j) / n^2
+                    i,j in kernel
+
+                n = kernel size
+</PRE>
+
+<P>When the <A HREF="#Enhance">enhance toggle</A> is on, the output is
+the average absolute deviation from the input intensity at that point:
+
+<PRE>
+    output(i0,j0) =      sum       abs(input(i,j) - input(i0,j0)) / (n^2 - 1)
+                    i,j in kernel
+</PRE>
+
+<P>Below are the results for the 3x3 filter applied to a 5x5 sample image:
+
+<PRE>
+     Measured Image             Filtered              Filtered, enhance on
+   1   3   2   2   2    5.0  3.4  3.3  0.7  1.0     4.7  3.0  2.4  0.6  0.7
+   2  12   1   2   4    3.2  2.2  2.2  0.7  0.7     2.8  9.8  2.6  0.6  2.2
+   3   3   3   2   1    3.2  2.2  2.2  0.9  0.8     2.4  2.0  2.1  0.9  1.2
+   2   2   1   2   1    0.6  0.7  0.5  0.7  0.6     0.6  0.6  1.1  0.6  0.6
+   3   2   2   1   2    0.5  0.4  0.5  0.6  0.7     1.0  0.4  0.4  0.6  0.7
+</PRE>
+
+<P>Previous versions of this program had a similar filter type mislabeled,
+<EM>Variance</EM>; the only difference between that filter and the one above
+is that the former did not divide by the number of elements in the kernel
+minus one.
+
+<H3><A NAME="WeightedMeanFilter">Weighted Mean</A></H3>
+<P>The input and output of this filter are related by:
+<PRE>
+    output(i0,j0) = (a(i0,j0) - input(i0,j0) - x(i0,j0) / y(i0,j0)) / (n^2 - 2)
+
+         a(i0,j0) =      sum       input(i,j) / n^2
+                    i,j in kernel
+
+         x(i0,j0) =      sum       input(i,j) * (input(i,j) - input(i0,j0))^2
+                    i,j in kernel
+
+         y(i0,j0) =      sum       (input(i,j) - input(i0,j0))^2
+                    i,j in kernel
+</PRE>
+
+<P>If you know a use or a rationale for this particular filter, let the Priism
+maintainers know.</P>
+
+<H3><A NAME="MinimumFilter">Minimum</A></H3>
+<P>When the <A HREF="#Enhance">enhance toggle</A> is off, the minimum
+filter replaces a value with the minimum value in the neighborhood.  If the
+input is a binary image (values are either one or zero), the minimum filter
+is equivalent to the morphological erosion operator with a square structuring
+element.  When the enhance toggle is on, the result is the input times a
+<A HREF="#ScaleFactor">scale factor</A> minus the neighborhood minimum.
+Below are the results for a 3 x 3 minimum filter.
+
+<PRE>
+                                                 Filtered, enhance on,
+     Measured Image             Filtered         scale factor = 1
+   1   3   2   2   2      1   1   1   1   2      0   2   1   1   0
+   2  12   1   2   4      1   1   1   1   1      1  11   0   1   3
+   3   3   3   2   1      2   1   1   1   1      1   2   2   1   0
+   2   2   1   2   1      2   1   1   1   1      0   1   0   1   0
+   3   2   2   1   2      2   1   1   1   1      1   1   1   0   1
+</PRE>
+
+<H3><A NAME="MaximumFilter">Maximum</A></H3>
+<P>When the <A HREF="#Enhance">enhance toggle</A> is off, the maximum
+filter replaces a value with the maximum value in the neighborhood.  If the
+input is a binary image (values are either one or zero), the maximum filter
+is equivalent to the morphological dilation operator with a square structuring
+element.  When the enhance toggle is on, the result is the input times a
+<A HREF="#ScaleFactor">scale factor</A> minus the neighborhood maximum.  Below
+are the results for a 3 x 3 maximum filter.
+
+<PRE>
+                                                Filtered, enhance on,
+     Measured Image             Filtered          scale factor = 1
+   1   3   2   2   2     12  12  12   4   4     -11  -9 -10  -2  -2
+   2  12   1   2   4     12  12  12   4   4     -10   0 -11  -2   0
+   3   3   3   2   1     12  12  12   4   4      -9  -9  -9  -2  -3
+   2   2   1   2   1      3   3   3   3   2      -1  -1  -2  -1  -1
+   3   2   2   1   2      3   3   2   2   2       0  -1   0  -1  -1
+</PRE>
+
+<H3><A NAME="BilateralFilter">Bilateral</A></H3>
+<P>The bilateral filter implements the filter described in
+
+<BLOCKQUOTE>
+  Tomasi, C. and Manduchi, R.  "Bilateral Filtering for Gray and Color
+  Images."  Proceedings of the 1998 IEEE International Conference on
+  Computer Vision, Bombay, India.  Pages 839 - 846.
+</BLOCKQUOTE>
+
+<P>The filter replaces the value at a pixel, (<VAR>i</VAR>, <VAR>j</VAR>),
+with a weighted sum of the pixel values in the neighborhood.  Each weight
+is the product of a factor dependent on the distance (in pixels) to
+(<VAR>i</VAR>, <VAR>j</VAR>) and another factor dependent on the difference
+in intensity with the pixel at (<VAR>i</VAR>, <VAR>j</VAR>).  This
+implementation of the bilateral filter uses Gaussian functions for both
+components of the weight.  The value in the
+<A HREF="#Sigma">"Sigma (pix)" field</A> controls the standard deviation for
+the Gaussian weighting as a function of distance, and the value in the
+<A HREF="#IntensitySigma">"Intensity sigma" field</A> controls the standard
+deviation for the Gaussian weighting as a function of intensity difference.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#Filter2D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  Method (filter types) |
+  <A HREF="#Enhance">Enhance</A> |
+  <A HREF="#ScaleFactor">Scale factor</A> |
+  <A HREF="#Sigma">Sigma</A> |
+  <A HREF="#IntensitySigma">Intensity sigma</A> |
+  <A HREF="#KernelSize">Kernel size</A> |
+  <A HREF="#Iterations">Iterations</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Enhance">Enhance</A></H2>
+<P>When the <EM>Enhance</EM> toggle is on the result for
+each <A HREF="#Iterations">iteration</A> is the input data for that iteration
+times a <A HREF="#ScaleFactor">scale factor</A> minus what the result would be
+when the toggle was off.  The <A HREF="#AvgDevFilter">average deviation</A>
+filter is an exception to this.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#Filter2D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Method">Method (filter types)</A> |
+  Enhance |
+  <A HREF="#ScaleFactor">Scale factor</A> |
+  <A HREF="#Sigma">Sigma</A> |
+  <A HREF="#IntensitySigma">Intensity sigma</A> |
+  <A HREF="#KernelSize">Kernel size</A> |
+  <A HREF="#Iterations">Iterations</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="ScaleFactor">Scale Factor</A></H2>
+<P>If the <A HREF="#Enhance">Enhance toggle</A> is on and the filter is not
+an <A HREF="#AvgDevFilter">average deviation filter</A>, the result of
+an iteration is the input data for that iteration times the scale factor
+minus the filtered input data.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#Filter2D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Method">Method (filter types)</A> |
+  <A HREF="#Enhance">Enhance</A> |
+  Scale factor |
+  <A HREF="#Sigma">Sigma</A> |
+  <A HREF="#IntensitySigma">Intensity sigma</A> |
+  <A HREF="#KernelSize">Kernel size</A> |
+  <A HREF="#Iterations">Iterations</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Sigma">Sigma</A></H2>
+<P>For the <A HREF="#GaussianFilter">Gaussian</A>,
+<A HREF="#LaplacianFilter">Laplacian (LoG)</A>, and
+<A HREF="#BilateralFilter">bilateral</A> filters, the width is
+controlled by the value of sigma.  Larger values of sigma give broader filters.
+
+<P>When the <EM>autosize</EM> toggle is on, any changes to the value
+of sigma will automatically calculate a kernel size to give a reasonable
+approximation for the filter.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#Filter2D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Method">Method (filter types)</A> |
+  <A HREF="#Enhance">Enhance</A> |
+  <A HREF="#ScaleFactor">Scale factor</A> |
+  Sigma |
+  <A HREF="#IntensitySigma">Intensity sigma</A> |
+  <A HREF="#KernelSize">Kernel size</A> |
+  <A HREF="#Iterations">Iterations</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="IntensitySigma">Intensity Sigma</A></H2>
+<P>The value in the "Intensity sigma" field only affects the
+<A HREF="#BilateralFilter">bilateral filter</A>.  The bilateral filter tends
+to reduce the magnitude of intensity changes that are less than the intensity
+sigma and preserve the magnitude of intensity changes that are much greater
+than the intensity sigma.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#Filter2D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Method">Method (filter types)</A> |
+  <A HREF="#Enhance">Enhance</A> |
+  <A HREF="#ScaleFactor">Scale factor</A> |
+  <A HREF="#Sigma">Sigma</A> |
+  Intensity sigma |
+  <A HREF="#KernelSize">Kernel size</A> |
+  <A HREF="#Iterations">Iterations</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="KernelSize">Kernel Size</A></H2>
+<P>The kernel size is the size, in pixels, of the square box used to
+calculate the filtered images.  Increasing the kernel size will then increase
+the size of the local region used to calculate the filtered image.  Kernel
+sizes of 3 and 5 are frequently used.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#Filter2D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Method">Method (filter types)</A> |
+  <A HREF="#Enhance">Enhance</A> |
+  <A HREF="#ScaleFactor">Scale factor</A> |
+  <A HREF="#Sigma">Sigma</A> |
+  <A HREF="#IntensitySigma">Intensity sigma</A> |
+  Kernel size |
+  <A HREF="#Iterations">Iterations</A> |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="Iterations">Iterations</A></H2>
+<P>The filter is applied repeatedly with the output from the previous pass
+becoming the input for the next.  The number of passes is shown in the
+<EM>Iterations</EM> field.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#Filter2D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Method">Method (filter types)</A> |
+  <A HREF="#Enhance">Enhance</A> |
+  <A HREF="#ScaleFactor">Scale factor</A> |
+  <A HREF="#Sigma">Sigma</A> |
+  <A HREF="#IntensitySigma">Intensity sigma</A> |
+  <A HREF="#KernelSize">Kernel size</A> |
+  Iterations |
+  <A HREF="#CommandLine">Command line</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>Filter 2D accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, Filter 2D
+has the following options (optional parts are shown in brackets):
+
+<DL>
+  <DT><CODE>-enhance</CODE>
+  <DD>If specified, the result of each iteration of filtering is the input data
+    for that iteration minus what the result would be without
+    <CODE>-enhance</CODE> specified.  The
+    <A HREF="#AvgDevFilter">average deviation</A> filter is an exception to
+    this.
+
+  <DT><CODE>-iterations=</CODE><VAR>n</VAR>
+  <DD>Specifies that the filtering should be performed for <VAR>n</VAR>
+    iterations.  If the command line does not contain <CODE>-iterations</CODE>,
+    one iteration of filtering is performed.
+
+  <DT><CODE>-kernel_size=</CODE><VAR>nx</VAR>[<CODE>:</CODE><VAR>ny</VAR>]
+  <DD>Sets the size of the kernel to be <VAR>nx</VAR> by <VAR>ny</VAR> (or,
+    if <VAR>ny</VAR> is not specified, <VAR>nx</VAR> by <VAR>nx</VAR>).
+    If <CODE>-kernel_size</CODE> is not supplied on the command-line,
+    the kernel size will be determined from the sigma values (see below)
+    for the <A HREF="#GaussianFilter">Gaussian</A>,
+    <A HREF="#LaplacianFilter">Laplacian (LoG)</A>, and
+    <A HREF="#BilateralFilter">bilateral</A> filters and will be 5x5 for all
+    other filter types.
+
+  <DT><CODE>-method=</CODE><VAR>filter_type</VAR>
+  <DD>Sets what form of filtering to apply.  Possible values for
+    <VAR>filter_type</VAR> are:
+    <DL>
+      <DT><CODE>median</CODE>
+      <DD>Use a <A HREF="#MedianFilter">median filter</A>.
+      <DT><CODE>mean</CODE>
+      <DD>Use a <A HREF="#MeanFilter">mean filter</A>.
+      <DT><CODE>gaussian</CODE>
+      <DD>Use a <A HREF="#GaussianFilter">Gaussian filter</A>.
+      <DT><CODE>laplacian</CODE>
+      <DD>Use a <A HREF="#LaplacianFilter">Laplacian (LoG) filter</A>.
+      <DT><CODE>avgdev</CODE>
+      <DD>Use an <A HREF="#AvgDevFilter">average deviation filter</A>.
+      <DT><CODE>wghtmean</CODE>
+      <DD>Use a <A HREF="#WeightedMeanFilter">weighted mean filter</A>.
+      <DT><CODE>minimum</CODE>
+      <DD>Use a <A HREF="#MinimumFilter">minimum filter</A>.
+      <DT><CODE>maximum</CODE>
+      <DD>Use a <A HREF="#MaximumFilter">maximum filter</A>.
+      <DT><CODE>bilateral</CODE>
+      <DD>Use a <A HREF="#BilateralFilter">bilateral filter</A>.
+    </DL>
+
+  <DT><CODE>-scale=</CODE><VAR>value</VAR>
+  <DD>Sets the <A HREF="#ScaleFactor">scale factor</A> used when
+    <CODE>-enhance</CODE> is used and the filter is not an average
+    deviation filter.  If not supplied, the scale factor defaults
+    to one.
+
+  <DT><CODE>-sigma=</CODE><VAR>sigma_x</VAR>[<CODE>:</CODE><VAR>sigma_y</VAR>]
+  <DD>Sets how rapidly the <A HREF="#GaussianFilter">Gaussian</A>,
+    <A HREF="#LaplacianFilter">Laplacian (LoG)</A>, and
+    <A HREF="#BilateralFilter">bilateral</A> filters fall off to
+    zero.  If <VAR>sigma_y</VAR> is not supplied, it is set to the value of
+    <VAR>sigma_x</VAR>.  If <CODE>-sigma</CODE> is not specified on the
+    command-line, the default value of sigma in both directions is one.
+
+  <DT><CODE>-sigma_inten=</CODE><VAR>s</VAR>
+  <DD>Sets the <A HREF="#IntensitySigma">intensity sigma</A>, the
+    standard deviation of the Gaussian for the intensity weighting
+    component of the <A HREF="#BilateralFilter">bilateral filter</A>.
+    <VAR>s</VAR> must be a number greater than or equal to zero.  If you
+    do not specify the -sigma_inten option on the command line, Filter2D
+    uses a value of five for the intensity sigma.
+</DL>
+
+<P>As an example, the following command-line applies a 7x7 median filter
+ to raw.dat and places the results in image window 1:
+<PRE>
+    Filter2D raw.dat 1 -method=median -kernel_size=7
+</PRE>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#Filter2D">Overview</A> |
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#Method">Method (filter types)</A> |
+  <A HREF="#Enhance">Enhance</A> |
+  <A HREF="#ScaleFactor">Scale factor</A> |
+  <A HREF="#Sigma">Sigma</A> |
+  <A HREF="#IntensitySigma">Intensity sigma</A> |
+  <A HREF="#KernelSize">Kernel size</A> |
+  <A HREF="#Iterations">Iterations</A> |
+  Command line
+<HR>
+
+</BODY>
+</HTML>

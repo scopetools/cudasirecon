@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEPtrToRep</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVEPtrToRep.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEPtrToRep</H1>
+<H2>Overview</H2>
+<P>Given a pointer to a location in an <A HREF="IVEArena.html">IVEArena</A>,
+converts the pointer to a form that may be safely exchanged (i.e. by storing
+it in the arena) with other processes that are attached to the arena.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_shm.h"</CODE>
+<BR><CODE>IVEPtrRep IVEPtrToRep(void* ptr, IVEArena arena);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P>There is no Fortran interface.
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>ptr</VAR><DD><VAR>ptr</VAR> is the pointer to convert.
+  <DT><VAR>arena</VAR><DD><VAR>arena</VAR> is the shared memory segment into
+    which <VAR>ptr</VAR> points.
+</DL>
+<H2>Return value</H2>
+<P>If <VAR>ptr</VAR> is non-zero (i.e. not NULL), returns a non-zero value;
+otherwise returns zero.  To convert the result back into a pointer, use
+<A HREF="IVERepToPtr.html">IVERepToPtr</A>.
+<H2>Example</H2>
+<P>The code below shows one possible implementation for a stack of integers
+that will be stored in shared memory.  A singly linked list is used to
+represent the stack.
+<PRE>
+#include "ive_shm.h"
+
+typedef struct Stack {
+    IVEPtrRep head_off;
+    IVEArena arena;
+} Stack;
+
+typedef struct StackElem {
+    IVEPtrRep next_off;
+    int data;
+} StackElem;
+
+
+Stack* create_stack(IVEArena arena)
+{
+    Stack* p = IVEShmAlloc(sizeof(Stack), arena);
+
+    if (p == 0) {
+        return p;
+    }
+
+    p-&gt;head_off = 0;
+    p-&gt;arena = arena;
+}
+
+
+void destroy_stack(Stack* p_stack)
+{
+    if (p_stack == 0) {
+        return;
+    }
+
+    while (1) {
+        StackElem* p_head = (StackElem*) IVERepToPtr(p_stack-&gt;head_off);
+
+        if (p_head == 0) {
+            break;
+        }
+        p_stack-&gt;head_off = p_head-&gt;next_off;
+        IVEShmDealloc(p_head, p_stack-&gt;arena);
+    }
+
+    IVEShmDealloc(p_stack, p_stack-&gt;arena);
+}
+
+
+int push(int data, Stack* p_stack)
+{
+    StackElem* p_head = IVEShmAlloc(sizeof(StackElem), p_stack-&gt;arena);
+
+    if (p_head == 0) {
+        return 1;
+    }
+
+    p_head-&gt;next_off = p_stack-&gt;head_off;
+    p_head-&gt;data = data;
+    p_stack-&gt;head_off = IVEPtrToRep(p_head, p_stack-&gt;arena);
+
+    return 0;
+}
+
+
+int pop(int* p_data, Stack* p_stack)
+{
+    StackElem* p_head;
+    if (p_stack-&gt;head_off == 0) {
+        return 1;
+    }
+
+    p_head = (StackElem*) IVERepToPtr(p_stack-&gt;head_off, p_stack-&gt;arena);
+    *p_data = p_head-&gt;data;
+    p_stack-&gt;head_off = p_head-&gt;next_off;
+    IVEShmDealloc(p_head, p_stack-&gt;arena);
+
+    return 0;
+}
+</PRE>
+<H2>Cross references</H2>
+<P><A HREF="IVERepToPtr.html">IVERepToPtr</A>,
+<A HREF="IVEArena.html">IVEArena</A>,
+<A HREF="IVEPtrRep.html">IVEPtrRep</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified July 1, 2001
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

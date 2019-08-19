@@ -1,0 +1,462 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: BEAD_FINDER</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the interactive application to perform a least-squares fit of the locations of reference markers (gold beads) to determine alignment parameters for a tilt series.">
+  <META NAME="Keywords" CONTENT="Priism,EM,tomography,alignment,gold beads">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="BEAD_ALIGN">Interactive BEAD_ALIGN</A></H1>
+<H2>Overview</H2>
+<P>BEAD_ALIGN, in either its automatic or interactive versions, is the
+last step in the alignment process.  The interactive mode of BEAD_ALIGN
+provides a platform to solve "in vivo" any potential problems in bead
+alignment.  There are three dialogs that are used when working with interactive
+BEAD_ALIGN:
+<UL>
+<LI>The first is the <A HREF="BALIGN.html">main control dialog</A> for the
+  alignment process.  From it, you set the input parameters and start
+  BEAD_ALIGN.  The input parameters are the same for the interactive and
+  automatic versions of BEAD_ALIGN, except for
+  <A HREF="BEAD_ALIGN.html#dMax2">dMax2</A> which is not used by the
+  interactive version.  For more information about the input parameters
+  consult <A HREF="BEAD_ALIGN.html">BEAD_ALIGN.html</A>.
+<LI>The second dialog is displayed after interactive BEAD_ALIGN was launched
+  and the initial round of least-squares fitting was completed.  This dialog
+  has a bar chart display of the difference between the fit and the input
+  positions for each bead and projection.  It also has controls to start
+  additional rounds of fitting and to limit which beads are included in the
+  fit.
+<LI>The third is an image window for the data stack.  From the second
+  dialog, set the <A HREF="#Image">Image toggle</A> on to attach to this
+  window if it is already open or to create it.  The input and fitted
+  bead positions will be overlayed on the image data.  Using the mouse,
+  you can add, delete, or change the input bead positions for the next
+  round of fitting.
+</UL>
+
+<P>The advantages of the interactive version of BEAD_ALIGN over the automatic
+one are:
+
+<UL>
+  <LI>You're provided with graphical feedback about the results of the fit,
+    and can use that information to adjust the input bead locations or
+    exclusion thresholds without restarting the program.
+  <LI>You can edit the input bead list and refit; this is somewhat easier
+    than using <A HREF="PEdit.html">the bead list editor</A> to make the
+    changes and then running the automatic version of BEAD_ALIGN.
+  <LI>You have more control over which beads are included in the fit, i.e.
+    you can exclude any bead from the fit, which can not be done with
+    the automatic version unless a new input bead list is created.
+</UL>
+
+<H3>Topics</H3>
+<P>
+  Overview |
+  <A HREF="#Fitting">Fitting procedure</A> |
+  <A HREF="#BeadDisplay">Bead display</A> |
+  <A HREF="#Recipe">Recipe for use</A> |
+  <A HREF="#InterfaceItems">Interface items</A>
+
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="../Priism.html">Priism</A> |
+   <A HREF="BALIGN.html">Alignment</A> |
+   <A HREF="BEAD_FINDER.html">Bead finder</A> |
+   <A HREF="BEAD_MATCHER.html">Bead matcher</A> |
+   <A HREF="BEAD_CHASER.html">Bead chaser</A> |
+   <A HREF="BEAD_ALIGN.html">Bead align</A> |
+   <A HREF="PEdit.html">Bead list editor</A> |
+   <A HREF="EMTAR.html">Reconstruction</A>
+
+<HR>
+
+<H2><A NAME="Fitting">Fitting</A></H2>
+<P>There are four steps in each round of fitting:
+<OL>
+  <LI>If this is the first round of fitting (BEAD_ALIGN was just
+    started or the <A HREF="#Restart">Restart</A> button was pressed),
+    an initial guess for the fit parameters is calculated.  This
+    is done by setting the in-plane rotation angles to the linear
+    function set with the <A HREF="BEAD_ALIGN.html#rot0">rot0 input
+    parameter</A>, setting the magnification to one for all the projections,
+    and estimating the image shifts by looking for beads common to
+    nearby sections.  This process can fail if there are insufficient
+    common beads between a section and its neighbors or if there aren't
+    a sufficient number of beads on the
+    <A HREF="BEAD_ALIGN.html#*iRef">reference section</A>.  If the
+    initialization fails and the program was just started, it will quit,
+    and you'll need to use the <A HREF="PEdit.html">bead list editor</A>
+    to add more bead locations (in some instances you may be able to resolve
+    the problem by increasing the <A HREF="BEAD_ALIGN.html#*nSkip">nSkip</A>
+    input parameter.  If it fails after the <A HREF="#Restart">Restart</A>
+    button was used, you'll be left with the result of the previous fit,
+    and should add more bead positions (see
+    <A HREF="#BeadDisplay">Bead display</A> for details).
+  <LI>If the first step wasn't performed (i.e. have the results of a
+    previous round of fitting to use), then the bead list is scanned to
+    find those locations that match the criteria for exclusion from the fit:
+    <UL>
+      <LI>Any bead which has been toggled off in the interactive BEAD_ALIGN
+        dialog is not used in the fit.
+      <LI>Any input location that is more than <A HREF="#thPuri">thPuri</A>
+        pixels from the fit location is not included in the fit
+      <LI>Any bead which has more than a given number of locations rejected
+        by the distance criteria is excluded from the fit.  The threshold
+        for the number of locations is set by the
+        <A HREF="BEAD_ALIGN.html#dMax1">dMax1</A> option when the program is
+        started.  It can not be changed without restarting the program.
+      <LI>Any bead that appears in fewer than a given number of projections
+        is excluded.  This limit is also set by the
+        <A HREF="BEAD_ALIGN.html#dMax1">dMax1</A> option and can not be
+        changed after the program is started.
+    </UL>
+  <LI>The positions available for fitting are then examined to verify that
+    there are a sufficient number of data points to determine the
+    alignment parameters.  If there are not (one reason why this would
+    be the case is that there were fewer than four beads that were fit
+    on any one section), the fitting process will terminate and either
+    the initial guess from the first step or the last fit result will
+    be reported.  To obtain a successful fit, you'll either have to
+    relax the criteria for excluding bead positions (increasing
+    <A HREF="#thPuri">thPuri</A> is the typical way to do this) or add
+    more bead positions (see <A HREF="#BeadDisplay">Bead display</A> for
+    details).
+  <LI>The final step is to do the least-squares fit of the selected bead
+    positions.  On rare occasions this can fail, and the result will be the
+    last estimate of the alignment parameters.  One cause of failure is
+    that the maximum number of iterations (set by the
+    <A HREF="BEAD_ALIGN.html#*cycles">cycles input option</A>) was exceeded.
+    A possible solution is to do another round of fitting; it may be that the
+    initial guess was sufficiently far from the best fit that a large number of
+    iterations was needed.  In other cases, the combination of the input
+    bead list and the starting values for the alignment parameters is not
+    allowing the algorithm to converge.  If it wasn't the first round of
+    fitting, you might try the <A HREF="#Restart">Restart button</A> to see
+    what happens with a different initial guess for the alignment parameters.
+    Otherwise, you'll want to check the input bead list and correct any
+    inconsistencies.
+</OL>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#BEAD_ALIGN">Overview</A> |
+  Fitting procedure
+  <A HREF="#BeadDisplay">Bead display</A> |
+  <A HREF="#Recipe">Recipe for use</A> |
+  <A HREF="#InterfaceItems">Interface items</A>
+
+<HR>
+
+<H2><A NAME="BeadDisplay">Bead display</A></H2>
+<P>Information about the bead positions and the positions resulting from
+the fit of the alignment parameters is displayed in a bar chart form, and
+when enabled with the <A HREF="#Image">Image toggle</A> the positions are
+overlayed on the image data from the data stack.
+
+<P>The bar chart displays the difference (in pixels) between the input
+position for a bead and the result from fitting the alignment parameters.
+The positions for a single bead are shown on a single row in the chart;
+the bead locations on one section appear in a single column on the chart.
+
+<P>If a bead is not present in a section, no bar is shown in the corresponding
+chart entry.  A full-height bar in the chart is equivalent to a distance of
+<A HREF="#thDisp">thDisp</A> pixels; differences larger than the maximum
+value are just shown as the maximum value.  The amount by which any
+difference exceeds the distance threshold, <A HREF="#thPuri">thPuri</A>,
+for excluding a bead from the next round of fitting is shown in red.  If
+<A HREF="#thPuri">thPuri</A> is greater than the maximum distance shown,
+the red portion will not be visible; its good practice to set the maximum
+distance shown larger than the exclusion threshold.
+
+<P>Along the top of the chart, the tilt angle for each section and the index
+of each section is shown above the column corresponding to that column.
+The index of every tenth section is highlighted in a light blue.  At the
+bottom of the chart, the index of the section and the number of bead positions
+on the section which are below the exclusion threshold are shown.  Any
+section where the number of beads below the threshold is less than the minimum
+needed for fitting is highlighted in red.  Any section where the bead positions
+have been edited since the last round of fitting is highlighted in purple.
+
+<P>With the mouse, there are three actions you can perform with elements of
+the bar chart.  The toggles on the left hand side of the chart control
+whether or not a bead is included in the next round of fitting.  When
+the <A HREF="#Image">Image toggle</A> is on, clicking the left mouse button
+while the cursor is over a bar will cause the image window to display the
+section and circle the bead position for that bar.  When the mouse button
+is over one of the number of bead position for fitting at the bottom of the
+chart, clicking with the left mouse button will cause the image display
+window to display that section.
+
+<P>In the image display window, the fitted positions of the beads are shown
+with green Xs.  The fitted positions are labeled by the bead number.  The
+significance of the color of the label is:
+<DL>
+  <DT>red
+  <DD>This bead will be used in the next round of fitting (set by the
+    toggles to the right of the bar chart), and it has a position on this
+    section recorded in the input bead list.
+
+  <DT>green
+  <DD>This bead will be used in the next round of fitting, but no position
+    for this section is available in the input bead list.
+
+  <DT>pink
+  <DD>This bead will not be used in the next round of fitting.  The
+    input bead list has a position for this bead on this section.
+
+  <DT>blue
+  <DD>This bead will not be used in the next round of fitting.  The
+    input bead list does not have a position for this bead on this section.
+</DL>
+
+<P>When the image window has the bead position overlayed on it, you can
+edit the positions of the beads with the mouse.  To move a position which
+is present in the input bead list (i.e. shown as a red X), make sure the
+<A HREF="#delBPos">del BPos toggle</A> (delete position toggle) is off in
+the interactive BEAD_ALIGN dialog, position the cursor over the bead
+location to be moved, depress and hold the left mouse button while moving
+the cursor to the desired location, and then release the left mouse button.
+The procedure for adding a position which is not present in the input bead
+list is similar:  make sure the delete position toggle is off, position the
+mouse over the fitted location of the bead (marked with a green X), depress
+and hold the the left mouse button while moving the cursor to the desired
+location, and release the mouse button.  To remove a position present in
+the input bead list, make sure the delete position toggle is on, position
+the cursor over the input position (red X) to be removed, and click the
+left mouse button.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#BEAD_ALIGN">Overview</A> |
+  <A HREF="#Fitting">Fitting procedure</A> |
+  BeadDisplay |
+  <A HREF="#Recipe">Recipe for use</A> |
+  <A HREF="#InterfaceItems">Interface items</A>
+
+<HR>
+
+<H2><A NAME="Recipe">Recipe for Use</A></H2>
+<P>This is the typical procedure used with interactive BEAD_ALIGN:
+<OL>
+<LI>Set the input parameters in the <A HREF="BALIGN.html">main alignment
+  dialog</A>.  The input parameters are described in
+  <A HREF="BEAD_ALIGN.html">BEAD_ALIGN.html</A>.
+<LI>Select the interactive mode for BEAD_ALIGN in the main alignment dialog
+  (i.e. the <A HREF="BALIGN.html#interactive">interactive toggle</A> is on)
+  and turn on BEAD_ALIGN (the toggle to the left of the <EM>BEAD_ALIGN</EM>
+  button.  Then press the <EM>DoIt</EM> button to start interactive BEAD_ALIGN.
+<LI>Examine the results in the bar chart display.  Each bar represents the
+  distance between an input position and the fit result.  A full-height bar
+  represents a distance of <A HREF="#thDisp">thDisp</A> pixels, and
+  larger distances are just shown as the maximum distance.  If a position
+  is not present in  the input, no bar will be shown.  The bead positions
+  which would be excluded from the next round of fitting based on the
+  distance threshold, <A HREF="#thPuri">thPuri</A>, will have part of their
+  bar displayed in red (if <A HREF="#thPuri">thPuri</A> is greater than or
+  equal to <A HREF="#thDisp">thDisp</A>, this red part will not be visible;
+  you'll want to set <A HREF="#thDisp">thDisp</A> to be more than the
+  exclusion threshold).  The number of non-excluded bead positions is
+  on each section is shown at the bottom of the bar chart; for sections where
+  it is less than four (the minimum needed), the number is highlighted in
+  red.
+<LI>If the errors in the fit are excessive (a rule of thumb is that they
+  should be less than one pixel), adjust bead positions and the exclusion
+  threshold, <A HREF="#thPuri">thPuri</A> for the next round of fitting.
+  Editing of the bead list is described in more detail in
+  <A HREF="#BeadDisplay">Bead display</A>.  At a minimum, you'll need to
+  make sufficient adjustments so that no sections have fewer than four
+  bead locations that will be fit.
+<LI>If you want another round of fitting and the thresholds and positions
+  have been adjusted, press the <A HREF="#Fit">Fit button</A> to start
+  from the current estimates of the alignment parameters.  The
+  <A HREF="#Restart">Restart button</A> will also start another round of
+  fitting, but it does not use the current estimates for the alignment
+  parameters as its starting point and it does not exclude bead positions
+  based on the distance threshold.  It is useful if you can not set a
+  reasonable threshold for <A HREF="#thPuri">thPuri</A> and have enough
+  beads locations on each section of if starting from the current alignment
+  estimates does not cause the fit algorithm to converge appropriately.
+<LI>Repeat steps three through five until you are satisfied with the errors
+  in the fit.    At any point you can use the <A HREF="#Save">"Save" button</A>
+  to record the current alignment parameters and bead positions.  Use the
+  <A HREF="#Exit">"Exit" button</A> to quit.
+</OL>
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#BEAD_ALIGN">Overview</A> |
+  <A HREF="#Fitting">Fitting procedure</A> |
+  <A HREF="#BeadDisplay">Bead display</A> |
+  Recipe for use |
+  <A HREF="#InterfaceItems">Interface items</A>
+
+<HR>
+
+<H2><A NAME="InterfaceItems">Interface Items</A></H2>
+<P>For a description of the bar chart and how to use the bead positions
+overlayed on an image window, see <A HREF="#BeadDisplay">Bead display</A>.
+The links below describe the buttons and fields located on the left edge of the
+interactive BEAD_ALIGN dialog.
+
+<H3>Buttons and Fields</H3>
+<P>
+  <A HREF="#Image">Image</A> |
+  <A HREF="#delBPos">del BPos</A> |
+  <A HREF="#Window">Window</A> |
+  <A HREF="#Merge">Merge</A> |
+  <A HREF="#thDisp">thDisp</A> |
+  <A HREF="#thPuri">thPuri</A> |
+  <A HREF="#Fit">Fit</A> |
+  <A HREF="#Restart">Restart</A> |
+  <A HREF="#Save">Save</A> |
+  <A HREF="#Exit">Exit</A>
+
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#BEAD_ALIGN">Overview</A> |
+  <A HREF="#Fitting">Fitting procedure</A> |
+  <A HREF="#BeadDisplay">Bead display</A> |
+  <A HREF="#Recipe">Recipe for use</A> |
+  Interface items
+
+<HR>
+
+<H2><A NAME="Image">Image Toggle</A></H2>
+<P>When this toggle is on, the bead positions from the input list and the
+result of fitting the alignment parameters are displayed in the input
+window whose number is shown in the <A HREF="#Window">Window field</A>.
+<A HREF="#BeadDisplay">Bead display</A> has a description of the coloring
+scheme used and how to edit the bead positions with the mouse.
+
+<P>When this toggle is off, the bead positions are not displayed in an
+image window.  When you turn the toggle on, the program will connect to
+an existing window which displays the data stack (it does this by looking
+for it by name; the name it uses is specified by the
+<A HREF="BEAD_ALIGN.html#IdatFile">IdatFile</A>); if the data stack has
+not been loaded into an image window, you'll be presented with a dialog to
+perform the load.
+
+<P><A HREF="#InterfaceItems">Return to the list of interface items</A>
+<HR>
+
+<H2><A NAME="delBPos">del BPos Toggle</A></H2>
+<P>When this toggle is off, you can either change or add bead positions
+in the input bead list.  When it is on, you can delete positions from the
+input bead list.  <A HREF="#BeadDisplay">Bead display</A> has more information
+about how to perform these operations.
+
+<P><A HREF="#InterfaceItems">Return to the list of interface items</A>
+<HR>
+
+<H2><A NAME="Window">Window Field</A></H2>
+<P>When the <A HREF="#Image">Image toggle</A> is on, this field shows the
+number of the image window on which the bead positions are overlayed.  When
+the image toggle is off and is turned on, the number in this field is the
+window number that will be created by default if the data stack is not
+already open.
+
+<P><A HREF="#InterfaceItems">Return to the list of interface items</A>
+<HR>
+
+<H2><A NAME="Merge">Merge Field</A></H2>
+<P>Sorry, this hasn't been documented yet.
+
+<P><A HREF="#InterfaceItems">Return to the list of interface items</A>
+<HR>
+
+<H2><A NAME="thDisp">thDisp Field</A></H2>
+<P>This field shows the distance in pixels that corresponds to a full-height
+bar in the bar chart display.  For bead positions where the distance between
+the input bead position and the fitted position exceeds this value, a
+full-height bar is used.  After each round of fitting, the distance
+corresponding to a full-height bar is reset to two times the average distance
+between input and fitted bead positions.
+
+<P><A HREF="#InterfaceItems">Return to the list of interface items</A>
+<HR>
+
+<H2><A NAME="thPuri">thPuri Field</A></H2>
+<P>The value shown in this field is the distance threshold for using a
+bead position in the next round of fitting; positions where the input
+bead position and the previous fit result are separated by more than this
+number of pixels are not included in the fit.  Such bead positions will
+have the upper part of their bars in the bar chart painted red (the red
+part will only be visible if <A HREF="#thDisp">thDisp</A> is larger than
+the distance threshold).
+
+<P>An appropriate value for the distance threshold should be chosen before
+starting the next round of fitting.  If there are not enough beads (fewer than
+four) on a section which do not exceed the threshold, there will be
+insufficient data to perform the fit.  All sections where this condition holds
+are flagged with a red entry on the <EM>nb</EM> line at the bottom of the
+bar chart.  You can either choose a more generous distance threshold or
+edit bead positions to remedy the problem.
+
+<P><A HREF="#InterfaceItems">Return to the list of interface items</A>
+<HR>
+
+<H2><A NAME="Fit">Fit Button</A></H2>
+<P>Use this button to start a new round of fitting using the current
+estimate of the alignment parameters as the starting point.  For details
+about the fitting process, see <A HREF="#Fitting">Fitting</A>.
+
+<P>Once the fit completes successfully, the bar chart and
+<A HREF="#thDisp">thDisp</A> level will be updated to reflect the new
+differences between the input positions and the fit results.  A *.out
+file (the name is set by the <A HREF="BEAD_ALIGN.html#OdocFile">OdocFile</A>
+argument when the program is started) will have a record of the initial
+and final alignment parameters for the fit, 3D bead locations, sum of the
+squares of the differences between the fit and the input data, and the
+input and fitted positions for the beads in each section.
+
+<P><A HREF="#InterfaceItems">Return to the list of interface items</A>
+<HR>
+
+<H2><A NAME="Restart">Restart</A></H2>
+<P>This button can be used to do another round of fitting just as the
+<A HREF="#Fit">Fit button</A> does, but it is different in two important
+ways:
+
+<UL>
+  <LI>Beads are not excluded from the fit based on the distance from the
+    input bead position to the position based on the initial estimate
+    of the alignment parameters.  The toggles next to the bar chart for
+    excluding a bead from the fit are also ignored.
+  <LI>The starting point for the fit is not the most recent fit results
+    for the alignment parameters, but a calculated guess
+    (<A HREF="#Fitting">the section on fitting</A> has some information on
+    how this guess is obtained).
+</UL>
+
+<P>Using <EM>Restart</EM> rather than <EM>Fit</EM> is useful when the
+previous round of fitting failed leaving you in a situation where you
+can not set a reasonable distance threshold, <A HREF="#thPuri">thPuri</A>,
+or the fit algorithm is unable to progress from the initial conditions
+left by the last round of fitting.
+
+<P><A HREF="#InterfaceItems">Return to the list of interface items</A>
+<HR>
+
+<H2><A NAME="Save">Save Button</A></H2>
+<P>Use this button to save the current alignment parameters and bead positions.
+The previous bead positions are copied to a *.sl_old file.
+
+<P><A HREF="#InterfaceItems">Return to the list of interface items</A>
+<HR>
+
+<H2><A NAME="Exit">Exit Button</A></H2>
+<P>Use this button to exit the program.  If there are modifications to the
+alignment parameters or bead positions which have not been saved, you will be
+asked if you really want to exit the program.
+
+<P><A HREF="#InterfaceItems">Return to the list of interface items</A>
+<HR>
+
+</BODY>
+</HTML>

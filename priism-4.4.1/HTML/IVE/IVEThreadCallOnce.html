@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEThreadCallOnce</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVEThreadCallOnce.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEThreadCallOnce</H1>
+<H2>Overview</H2>
+<P>When multiple threads call IVEThreadCallOnce with a pointer to the same
+IVEThreadOnceFlag variable, it is guaranteed that the initialization function
+registered with IVEThreadCallOnce will be invoked once and that none
+of the threads will return until after the initialization function has been
+completed.  This is useful for lazy initialization of something which may
+be used by multiple threads.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_standards.h"</CODE>
+<BR><CODE>#include "ive_thread.h"</CODE>
+<BR><CODE>void IVEThreadCallOnce(void (*init_routine)(void), IVEThreadOnceFlag* p_once);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P>There is no Fortran interface.
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>init_routine</VAR><DD>The procedure pointed to by
+    <VAR>init_routine</VAR> is only called when multiple threads call
+    IVEThreadCallOnce with the same value for <VAR>p_once</VAR>.
+  <DT><VAR>p_once</VAR><DD><VAR>p_once</VAR> points to the initialization
+    variable.  To ensure that <VAR>init_routine</VAR> is called exactly once,
+    all calls to IVEThreadCallOnce with <VAR>init_routine</VAR> should have
+    <VAR>p_once</VAR> point to the same initialization variable.
+</DL>
+<H2>Example</H2>
+<P>The code fragment below guarantees that initialize_lut() is called only
+once no matter how many timers get_lut() is called.
+<PRE>
+#include "ive_standards.h"
+#include "ive_thread.h"
+static void initialize_lut(void);
+static float* g_lut;
+
+float*
+get_lut(void)
+{
+    static IVEThreadOnceFlag flag = IVE_ONCE_INIT;
+
+    IVEThreadCallOnce(initialize_lut, &flag);
+    return g_lut;
+}
+
+static
+void
+initialize_lut(void)
+{
+    /*
+     * Initialize g_lut here.
+     */
+}
+</PRE>
+<H2>Side effects</H2>
+<P>Inclusion of ive_standards.h sets certain feature-set macros.  It is
+safest to include it before any other headers to avoid inconsistent
+definitions.
+<H2>Cross references</H2>
+<P><A HREF="IVEThreadOnceFlag.html">IVEThreadOnceFlag</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified May 7, 2002
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

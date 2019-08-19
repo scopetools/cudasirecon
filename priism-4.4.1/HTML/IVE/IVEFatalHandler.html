@@ -1,0 +1,49 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEFatalHandler</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the IVEFatalHandler type.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEFatalHandler</H1>
+<H2>Overview</H2>
+<P>In C, IVEFatalHandler is the prototype for the callback routine registered
+with <A HREF="IVESetFatalHandler.html">IVESetFatalHandler</A>.  Such a routine
+is called when <A HREF="IVEReportFatal.html">IVEReportFatal</A> is called.  It
+is expected that the routine does not return.
+<H2>Prototype (C)</H2>
+<P><CODE>typedef void (*IVEFatalHandler)(const char* message, size_t length)</CODE>
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>message</VAR><DD><VAR>message</VAR> is a message of
+    <VAR>length</VAR> bytes which the routine is expected to display or log
+    in some manner.  <VAR>message</VAR> may not be terminated by a null
+    character.
+  <DT><VAR>length</VAR><DD><VAR>length</VAR> is the number of bytes in
+    <VAR>message</VAR>.
+</DL>
+<H2>Cross references</H2>
+<P><A HREF="IVESetFatalHandler.html">IVESetFatalHandler</A>,
+<A HREF="IVEGetFatalHandler.html">IVEGetFatalHandler</A>, and
+<A HREF="IVEReportFatal.html">IVEReportFatal</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified May 7, 2002
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

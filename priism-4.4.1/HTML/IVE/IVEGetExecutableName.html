@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVEGetExecutableName</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVEGetExecutableName.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVEGetExecutableName</H1>
+<H2>Overview</H2>
+<P>IVEGetExecutableName determines the path of the caller's executable.  The
+returned path may be a symbolic link to the executable and not the executable
+file itself.  IVEGetExecutableName may not operate reliably under the following
+conditions:
+<UL>
+    <LI>IVEGetExecutableName is called from a multithreaded process and the
+      process's initial thread has exited.
+    <LI>On operating systems where there is not a direct call to get the
+      executable path, IVEGetExecutableName has to infer the path from the
+      argument, <VAR>argv0</VAR>, assumed to be the value of argv[0] passed
+      to the application when it started.  If argv[0] was not set to the
+      executable name when the process was launched, inferring the appropriate
+      path name will not be possible.  If argv[0] was set to the executable
+      name but it is not a full path, the path inferred will depend on the
+      values for the current working directory and search path which may not
+      match what they were for the environment when the process was launched.
+</UL>
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_file.h"</CODE>
+<BR><CODE>size_t IVEGetExecutableName(const char* argv0, size_t length, char* name);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P><CODE>integer IVEGetExecutableName(argv0, name)</CODE>
+<BR><CODE>character*(*) argv0, name</CODE>
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>argv0</VAR><DD>(in) If the operating system does not provide a
+    direct way to determine the executable name, the value of this argument
+    will be used to try and infer the executable name.  If calling from C, you
+    would normally pass the value of argv[0] passed to main() for
+    <VAR>argv0</VAR>.  If calling from Fortran, you would normally get the
+    value of <VAR>argv0</VAR> with <CODE>call getarg(0, argv0)</CODE>.  You
+    can pass an empty string or, if calling from C, a null pointer, for
+    <VAR>argv0</VAR>.  In that case, IVEGetExecutableName will only use the
+    operating system's direct method to determine the executable name.  If the
+    operating system does not have a direct method and <VAR>name</VAR> can hold
+    at least one character, IVEGetExecutableName will return zero and set name
+    to an empty string.
+  <DT><VAR>length</VAR><DD>(in) Is the maximum number of characters (including
+    the terminating null character in C) that can be stored in <VAR>name</VAR>.
+  <DT><VAR>name</VAR><DD>(out) Upon completion, IVEGetExecutableName will fill
+    <VAR>name</VAR> with the path to the caller's executable if that path will
+    fit in <VAR>name</VAR>.  Otherwise, the contents of <VAR>name</VAR> are not
+    specified when IVEGetExecutableName returns.
+</DL>
+<H2>Return value</H2>
+<P>IVEGetExecutableName will return zero and fill <VAR>name</VAR> with the
+path to the caller's executable if <VAR>name</VAR> has sufficient space to
+hold the path.  Otherwise, IVEGetExecutableName will return the amount of
+space needed to hold the path.
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified April 5, 2011
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

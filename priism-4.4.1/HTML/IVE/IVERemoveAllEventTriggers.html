@@ -1,0 +1,64 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVERemoveAllEventTriggers</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVERemoveAllEventTriggers.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVERemoveAllEventTriggers</H1>
+<H2>Overview</H2>
+<P>Removes any callbacks installed with
+<A HREF="IVEAddInput.html">IVEAddInput</A>,
+<A HREF="IVEAddSignal.html">IVEAddSignal</A>,
+<A HREF="IVEAddTimer.html">IVEAddTimer</A>,
+<A HREF="IVEAddWorkProc.html">IVEAddWorkProc</A>, or
+<A HREF="IVESetMessageHandler.html">IVESetMessageHandler</A> for one event
+context.  The IDs associated with any of the canceled callbacks must not
+be used in subsequent calls to
+<A HREF="IVERemoveInput.html">IVERemoveInput</A>,
+<A HREF="IVERemoveSignal.html">IVERemoveSignal</A>,
+<A HREF="IVERemoveTimer.html">IVERemoveTimer</A>,
+or <A HREF="IVERemoveWorkProc.html">IVERemoveWorkProc</A>.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_eventloop.h"</CODE>
+<BR><CODE>void IVERemoveAllEventTriggers(IVEEventContext context);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P><CODE>subroutine IVERemoveAllEventTriggers(context)</CODE>
+<BR><CODE>integer context</CODE>
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>context</VAR><DD><VAR>context</VAR> is the context to modify.
+</DL>
+<H2>Cross references</H2>
+<P>
+<A HREF="IVEAddInput.html">IVEAddInput</A>,
+<A HREF="IVEAddSignal.html">IVEAddSignal</A>,
+<A HREF="IVEAddTimer.html">IVEAddTimer</A>,
+<A HREF="IVEAddWorkProc.html">IVEAddWorkProc</A>,
+<A HREF="IVERemoveInput.html">IVERemoveInput</A>,
+<A HREF="IVERemoveSignal.html">IVERemoveSignal</A>,
+<A HREF="IVERemoveTimer.html">IVERemoveTimer</A>,
+<A HREF="IVERemoveWorkProc.html">IVERemoveWorkProc</A>,
+<A HREF="IVESetMessageHandler.html">IVESetMessageHandler</A>, and
+<A HREF="IVEEventContext.html">IVEEventContext</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified September 21, 2007
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

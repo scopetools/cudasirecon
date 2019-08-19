@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Insert Tilts</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the applications to insert tilt angles into an MRC file.">
+  <META NAME="Keywords" CONTENT="Priism,EM,tomography">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="insert_tilts">Insert Tilts</A></H1>
+<H2>Overview</H2>
+
+<P>The applications in Priism for aligning EM tomograms and computing the
+3D reconstruction from the tomograms expect the tilt angles for the tomographic
+series to be stored in the extended header for the MRC data.  If your data
+does not have the tilt angles in the extended header you can use the "Insert
+Tilts" application to add them.  One way of checking the contents of a data
+set's extended header is to use the
+<A HREF="../EditHeader.html">Edit Header</A> application in Priism's
+DataViews-&gt;DataInfo menu.
+
+<H2>Graphical Interface</H2>
+<P>To access the graphical interface, select "Processing", then
+"EM Processing", and, finally, "Insert Tilts" from the Priism menus.  That
+will display a dialog.  The first line in the dialog is for selecting your
+data which does not include the tilt angles.  You can press the "Input"
+button to select the file with a file browser or directly enter the name
+of the file in the adjacent field.  The second line in the dialog controls
+the name of the output MRC file.  If your data does not already have space
+for the extended header, the tilt angles can not be inserted into it.  Instead,
+the data will be copied to a new file which has space for the extended header;
+to select the name of the new file use the "Output" button to open a file
+browser or enter the name directly in the adjacent field.  If your data has
+space for an extended header, you have the option of creating a new file
+with the updated tilt angles or modifying the existing file:  turn on the
+"in place" button to modify the existing file or turn it off to create a new
+file.
+
+<P>The values for the inserted tilt angles are controlled by the third
+and fourth lines in the dialog.  If the tilt angles are linearly spaced,
+you can turn on the "Linear spacing" button and enter the tilt angle, in
+degrees, for the first projection in the "Start" field and enter the tilt
+angle increment, in degrees, in the "Step" field.  For other arrangements
+of the tilt angles, you will have to import the tilt angles from a text
+file by turning off the "Linear spacing" button and then pressing the
+"Tilt file" button to select a file or entering the name of the file directly
+in the adjacent field.  The text file must have the tilt angles, in degrees,
+separated by whitespace and in the same order as the projections in the
+MRC file.
+
+<P>Once you have selected the input file, tilt angles, and, if necessary,
+the output file, press the "DoIt" button at the bottom of the dialog to
+insert the tilt angles.  You can use "Close" button at the bottom of the dialog
+to dismiss the dialog.
+
+<H2>Command Line Interface</H2>
+<P>The command to copy the contents of <VAR>infile</VAR> to <VAR>outfile</VAR>
+and insert linearly varying tilt angles which start with <VAR>t</VAR> degrees
+and have an increment of <VAR>s</VAR> degrees is
+
+<PRE>
+    insert_tilts <VAR>infile</VAR> <VAR>outfile</VAR> -linear=<VAR>t</VAR>:<VAR>s</VAR>
+</PRE>
+
+<P>To use the tilt angles read from the text file, <VAR>tfile</VAR>, instead
+of linearly varying tilt angles, you would use the following command:
+
+<PRE>
+    insert_tilts <VAR>infile</VAR> <VAR>outfile</VAR> -tilt_file=<VAR>tfile</VAR>
+</PRE>
+
+<P>To read the tilt angles from standard input, use the above command with
+a file name of "-" for the file with the tilt angles, i.e.:
+
+<PRE>
+    insert_tilts <VAR>infile</VAR> <VAR>outfile</VAR> -tilt_file=-
+</PRE>
+
+<P>If <VAR>infile</VAR> already had space for an extended header, the
+command to insert a linearly varying set of tilt angles is
+
+<PRE>
+    insert_tilts <VAR>infile</VAR> -linear=<VAR>t</VAR>:<VAR>s</VAR>
+</PRE>
+
+<P>and the command to insert the tilt angles read from a text file is
+
+<PRE>
+    insert_tilts <VAR>infile</VAR> -tilt_file=<VAR>tfile</VAR>
+</PRE>
+
+<P>The example below copies the data from a.dat to a_h.dat and inserts
+tilt angles that start from 65 degrees and have an increment of -1 degrees:
+
+<PRE>
+    insert_tilts a.dat b.dat -linear=65:-1
+</PRE>
+
+<H2>Related Priism Topics</H2>
+<P>
+    <A HREF="../Priism.html">Priism</A> |
+    <A HREF="../EditHeader.html">Edit Header</A> |
+    <A HREF="BALIGN.html">Bead alignment</A> |
+    <A HREF="EMTAR.html">Alignment and reconstruction</A> |
+    <A HREF="EMTIAR.html">Iterative alignment and reconstruction</A>    
+</BODY>
+</HTML>

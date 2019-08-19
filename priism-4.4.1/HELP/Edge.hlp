@@ -1,0 +1,70 @@
+KEYWORD
+    Atan Fraction MinMax
+
+DESCRIPTION Edge
+    Edge Enhancement uses the image intensity gradient to
+    enhance object boundaries.  At any pixel, i, the
+    result at that pixel is given by
+
+         result(i) = input(i) * (fraction + (1 - fraction) *
+              gradient(F(input))(i))
+
+    where fraction is a number between 0 and 1 and F is
+    either a linear or an arctangent function.
+
+
+    Edge Enhancement accepts the command-line arguments
+    described in Region.hlp.  In addition, Edge Enhancement
+    has the following options (optional parts are shown in
+    brackets):
+
+         -atan
+              If present on the command line, this option causes
+              the arctangent of the input data (after clamping
+              to the range given by the minimum and maximum
+              values) to be used.  The default is to use the
+              clamped input data without further modification.
+
+         -fraction=weight
+              Sets the weighting factor for combining the gradient
+              of the input data and the input data.  Valid values
+              for weight are between zero and one with larger
+              values giving a result that is closer to the input
+              data.
+
+         -scl1=min[:max]
+              Sets the minimum and maximum used to clamp the
+              first wavelength's data before calculating the
+              gradient.  The default is to use the minimum
+              and maximum values recorded in the input's header.
+              There are similar options (-scl2, -scl3, -scl4,
+              and -scl5 to set the range for values drawn from
+              other input wavelengths).
+
+     As an example, the following writes the gradient amplitude
+     to gradient.dat for every other of the first thirty time
+     points in series.dat; the arctangent is taken before
+     computing the gradient:
+
+          Edge series.dat gradient.dat -atan -t=0:29:2
+
+Atan
+    When this toggle is on, the arctangent of the input (after
+    scaling it with the given minimum and maximum values).
+    When the toggle is off, the input is simply restricted
+    by the minimum and maximum values.
+
+    In some cases, applying the arctangent function gives
+    improved edge enhancement.
+
+Fraction
+    This is a weighting factor between zero and one which
+    determines the relative contributions of the original
+    image and the gradient of the original.  With a larger
+    weighting factor, the result of the edge enhancement will
+    look more like the input image.
+
+MinMax
+    In the gradient calculation, the input image values are
+    restricted to fall in the given range.  Values outside the
+    range are taken to be the value of the closest endpoint.

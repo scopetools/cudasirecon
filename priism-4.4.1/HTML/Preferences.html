@@ -1,0 +1,454 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Preferences</TITLE>
+  <META NAME="Description" CONTENT="On-line help for IVE Preferences.">
+  <META NAME="Keywords" CONTENT="Priism,IVE,image window parameters">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Preferences">Preferences</A></H1>
+<H2>Overview</H2>
+
+<P>This dialog allows you to view and edit the settings which
+control the behavior of the help system and the initial appearance and
+behavior of <A HREF="Monitor.html">image windows</A>.  Once an image window is
+started, its controls and the <A HREF="DisplayAttr.html">Display Attributes</A>
+application can be used to customize it.
+
+<P>You can have different versions of the preferences and switch between them
+using the selection widget near the top of the dialog.  Each version is
+referred of the settings is referred to as a <EM>profile</EM>.  For more
+information on profiles and their management see
+<A HREF="#Profiles">Managing Profiles</A>.
+
+<P>To view and edit a subset of the settings, select a category from the
+<EM>Preferences</EM> menu (the second menu at the top of the dialog).
+After selecting a category, a dialog will appear in which you can examine and
+change the values.  Changes are not saved and will not take effect until the
+<EM>Save</EM> is selected from the <EM>File</EM> menu.  You can remove any
+changes made since the last save by selecting <EM>Restore</EM> from the
+<EM>File</EM> menu.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#Profiles">Managing profiles</A> |
+   <A HREF="#SettingsCategory">Settings (by category)</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="Monitor.html">Image windows</A> |
+   <A HREF="DisplayAttr.html">Display Attributes</A>
+<HR>
+
+<H2><A NAME="Profiles">Managing Profiles</A></H2>
+
+<P>Each profile is a complete set of the parameters available for
+controlling an image window and the help system.  The profiles currently
+defined are listed in the selection box near the top of the dialog, and the
+one currently in use is highlighted and also shown below the dialog.  The
+following paragraphs describe how to use the <EM>Preferences dialog</EM> to
+switch, create, and delete profiles.
+
+<P>To switch profiles, simply choose one of the other choices in the
+selection box.  If you made any changes to the current profile, you
+will be asked if you want to switch and discard the changes.  A switch takes
+effect immediately and affects all windows launched after the switch (except
+for the parameters in the "Startup" category; changes there only take effect
+if you exit and restart Priism).
+
+<P>Select <EM>New...</EM> from the <EM>File</EM> menu to create a new profile.
+You will be prompted for the name of the profile (this can not be the same as
+the name of an existing profile), whether to use the current profile as the
+starting values for the new one (otherwise the unmodified system defaults
+are used), and, if changes have been made to the current profile, whether
+or not to save those changes before switching to the new one.  Profiles
+are saved as text files in the .iveprefs subdirectory of your home directory.
+The files with the .ivepref extension contain the image window preferences,
+and the files with the .helppref extension contain the help system preferences.
+
+<P>Select <EM>Delete</EM> from the <EM>File</EM> menu to delete the
+current profile and associated disk file.  The new current profile will be the
+system defaults.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Preferences">Overview</A> |
+   Managing profiles |
+   <A HREF="#SettingsCategory">Settings (by category)</A> |
+<HR>
+
+<H2><A NAME="SettingsCategory">Settings by Category</A></H2>
+
+<DL>
+  <DT><STRONG>Startup</STRONG>
+  <DD>
+    <DL>
+      <DT><A NAME="PseudoOffset">Pseudocolor offset</A>
+      <DD>When displaying pseudocolor images, Priism has the option to
+        offset its color table at the expense of addition computation in
+        order to avoid colormap flashing when you switch from Priism to
+        another application.  On SGIs when no offset is applied, colormap
+        flashing always happens when running SGI GL applications (jot,
+        showcase, snapshot) and Priism simultaneously;  using an offset
+        greater than 256 (1000 has been used in the past) will avoid this
+        except on Indys with 8 bit graphics.  The offset has no effect when
+        using the default colormap or when emulating pseudocolor.
+
+      <DT><A NAME="NumberOfImageColors"># of image colors</A>
+      <DD>This is the maximum number of colors that Priism will use when
+        displaying images in pseudocolor (i.e. if the image is displayed with
+        a grey colormap then this is the number of greys used).  You may want
+        to limit this number if you simultaneously use Priism and other
+        applications that require many colors and allocate them from the
+        default colormap.  You may specify that the maximum number of colors
+        used is the default number (read from CONFIG/Monitor.def in the Priism
+        directories), the maximum number possible, or the value that you enter.
+        When pseudocolor is emulated, the maximum number of pseudo colors is
+        always used.
+
+      <DT><A NAME="UseDefaultColormap">Use default colormap</A>
+      <DD>If your hardware only supports a small number of installed
+        colormaps (you can determine this number by looking at the output
+        of xdpyinfo) and you want to use the additional colormaps for
+        applications other than Priism, turn on the toggle labeled
+        "Use default colormap".  This causes Priism to attempt to allocate
+        its colors from the default colormap.  You will also likely want to
+        reduce the number of pseudocolors that Priism attempts to allocate.
+        If the hardware only supports one installed colormap, Priism always
+        attempts to use the default colormap.
+
+      <DT><A NAME="EmulatePseudo">Emulate pseudocolor</A>
+      <DD>By turning on the toggle labeled "Emulate pseudocolor", displaying
+        images in pseudocolor will be done using an RGB visual rather than
+        a colormapped one.  This eliminates potential color table conflicts
+        with other applications but will likely slow down image display.
+
+      <DT><A NAME="EnableStereoInWindow">Stereo in window</A>
+      <DD>When the toggle labeled "Stereo in window" is on, Priism will
+        prefer visuals capable of displaying stereo images in a window if the
+        hardware provides them.  If the toggle is off, Priism will prefer
+        visuals that are not capable of stereo images in a window.  This is
+        off by default because using stereo-capable visuals causes display
+        problems on some Macs.
+
+      <DT><A NAME="PreferDoubleBuffer">Prefer double buffer</A>
+      <DD>When the toggle labeled "Prefer double buffer" is on, Priism
+        will preferentially use double-buffered visuals.  For most uses
+        that is desirable because it allows for smoother updates of displayed
+        images.  When the toggle is off, Priism will prefer single-buffered
+        visuals.  That may be useful for testing or benchmarking, to reduce
+        the resources Priism uses, or to work around problems with
+        double-buffered visuals and the system's graphics drivers.
+    </DL>
+  <DT><STRONG>Image color</STRONG>
+  <DD>
+    <DL>
+      <DT><A NAME="ImageColor">Display mode</A>
+      <DD>Specifies whether images are composed of one wavelength
+        in false color (psuedocolor mode) or of one to three
+        wavelengths where each wavelength is represented by a
+        different color component (RGB mode).
+
+      <DT><A NAME="WaveColor">Wave 0, Wave 1, Wave 2, Wave 3, Wave 4</A>
+      <DD>These menus specify the colors used for each wavelength
+        when the image window is in RGB mode.  In RGB mode,
+        the image displayed contains the data from one to three
+        wavelengths each represented by different color components.
+
+      <DT><A NAME="BkgColor">Background</A>
+      <DD>Specifies the color for regions not covered by the image.
+    </DL>
+
+  <DT><STRONG>Zoom / resolution</STRONG>
+  <DD>
+    <DL>
+      <DT><A NAME="Zoom">Zoom factor</A>
+      <DD>Scales the size of the displayed images.
+
+      <DT><A NAME="Interp">Interpolate zoomed images</A>
+      <DD>For zoom factors greater than one, specifies whether to bilinearly
+         interpolate the image.
+
+      <DT><A NAME="Resolution">Resolution level</A>
+      <DD>When multiple resolutions are available, selects the resolution
+         used by default when the zoom factor is one.  One is the highest
+         resolution; each higher value lowers the resolution in x and y by a
+         factor of two.
+    </DL>
+
+  <DT><STRONG>Scale bar</STRONG>
+  <DD>
+    <DL>
+      <DT><A NAME="Scalebar">Display mode</A>
+      <DD>Selects whether to display a line to demonstrate the physical
+        scale of the image; the <EM>Label</EM> option adds a label for
+        the length of the line.
+
+      <DT><A NAME="ScalebarColor">Color</A>
+      <DD>Selects the color of the scale bar line and label.  The color
+        options are set by the current set of graphics' colors.
+
+      <DT><A NAME="ScalebarDir">Direction</A>
+      <DD>Selects whether the scale bar line should be oriented vertically
+        or horizontally.
+
+      <DT><A NAME="ScalebarThick">Thickness</A>
+      <DD>Specifies the width of the scale bar line in pixels.
+
+      <DT><A NAME="ScalebarLength">Length</A>
+      <DD>Specifies the length of the scale bar in physical units
+        (typically microns for optical microscopy data and angstroms
+        for electron microscopy).
+
+      <DT><A NAME="ScalebarPos">Position</A>
+      <DD>Specifies the location (of the center of the left edge for
+        horizontal scale bars and of the middle of the bottom edge for
+        vertical scale bars) of the scale bar relative to lower lefthand
+        corner of the image window.
+    </DL>
+
+  <DT><STRONG>Window graphics</STRONG>
+  <DD>
+    <DL>
+      <DT><A NAME="ShowGraph">Show graphics</A>
+      <DD>Specifies whether or not graphics are overlayed on the image.
+        This does not affect the section number display.
+
+      <DT><A NAME="GrDisRange">Display range</A>
+      <DD>When an image window displays a section of data, the graphics
+        from nearby z slices and time points can be included in the
+        display.  Let f1, f2, f3, and f4 be the four values shown
+        in the "Display range" field.  Then the section with z index,
+        z0, and time point index, t0, will include the graphics
+        from sections whose z index is between z0 minus f1 and z0
+        plus f2 and whose time point index is between t0 minus f3
+        and t0 plus f4.
+
+      <DT><A NAME="ColorList">Color list</A>
+      <DD>Specifies the set of graphics' colors used.  These sets can
+        be created or modified using
+        <A HREF="ChangeColors.html">Change Colors</A>.
+    </DL>
+
+  <DT><STRONG>Window geometry</STRONG>
+  <DD>
+    <DL>
+      <DT><A NAME="ImageWindowSize">Size</A>
+      <DD>Specifies the size of image portion of the monitor window.  This
+        differs from <A HREF="DisplayAttr.html#WinGeom">Display Attributes</A>
+        where the size of the entire monitor window is set.
+
+      <DT><A NAME="Border">Decorations</A>
+      <DD>Specifies the border drawn around the monitor window.
+
+      <DT><A NAME="ShowTools">Show tools</A>
+      <DD>Specifies whether or not to show the controls displayed along the
+        left side of the monitor window.
+    </DL>
+
+  <DT><STRONG>Multiple image display / step</STRONG>
+  <DD>
+    <DL>
+      <DT><A NAME="MultDisplay"># columns</A>
+      <DD>Specifies the number of columns of images to be displayed at
+        once in each monitor window.
+
+      <DT># rows
+      <DD>Specifies the number of rows of images to be displayed at
+        once in each monitor window.
+
+      <DT>Order
+      <DD>When multiple images are displayed in a monitor, specifies the
+        order in which the grid of images is filled.  With the
+        <EM>Bottom to top</EM> option (also referred to as the
+        <EM>data format</EM>, the current section is displayed
+        in the lower lefthand corner and the grid is filled from left to
+        right and from bottom to top.  With the <EM>Top to bottom</EM>
+        option (also referred to as the <EM>text format</EM>, the current
+        section is displayed in the upper lefthand corner and the grid is
+        filled from left to right and from top to bottom.  In either case
+        as the grid is filled, the next section is determined on the basis
+        of the <A HREF="#Step">step parameters</A>.
+
+      <DT><A NAME="Step">Increment</A>
+      <DD>Specifies the number of sections to jump when scrolling though
+        sections in the monitor window or when displaying multiple sections
+        at once.
+
+      <DT>Dimension
+      <DD>Specifies the dimension along which the user can move when
+        scrolling through sections or along which the user can view the
+        data set when displaying multiple sections at once.  The
+        <EM>Section</EM> option specifies that the data be scrolled through
+        in the order in which it is stored in the data file; the other
+        options specify to use the z, time, or wave dimension of the data
+        for scrolling.
+
+      <DT>Wave synching
+      <DD>Specifies what happens when a user scrolls through sections
+        in one (or more) waves and then switches to view a wave that wasn't
+        in view.  The <EM>Same Z Sec</EM> option specifies that when
+        waves are switched, the z and time indices for the section do not
+        change.  With the <EM>Independent</EM> option, the next section
+        to view in a wave is not changed by scrolling through the other
+        waves:  when waves are switched the last section viewed in the new
+        wave is the one that is displayed.  With the <EM>Coupled</EM> option,
+        scrolling in a wave or waves causes the next section to view in
+        all other waves to be changed by the same amount; it differs from
+        the <EM>Same Z Sec</EM> option in that it does not force the next
+        section to be the same (only changes are coupled).
+    </DL>
+
+  <DT><STRONG>Keyboard and mouse settings</STRONG>
+  <DD>
+    <DL>
+      <DT><A NAME="AutoRepeat">Autorepeat</A>
+      <DD>When interacting with the image window, pressing and holding a key
+        or pressing and holding a mouse button can repeat an action until the
+        key or mouse button is released.  Two parameters affect the repetition:
+        the autorepeat delay is the time the key or mouse must be held before
+        the action is repeated for the first time and the autorepeat interval
+        is the time that elapses between each subsequent repetition after the
+        first.
+    </DL>
+
+  <DT><STRONG>Miscellaneous settings</STRONG>
+  <DD>
+    <DL>
+      <DT><A NAME="ShowImg">Show image</A>
+      <DD>Specifies whether or not images are shown in monitor windows
+        (this may be useful if you want to see the overlayed graphics
+        more clearly).
+
+      <DT><A NAME="BufferImg">Buffer image</A>
+      <DD>Controls whether or not the scaled data used to draw images
+        is buffered.  When on, monitor windows can typically respond
+        faster when redisplaying an image at the expense of increased
+        memory usage.
+
+      <DT><A NAME="Complex">Complex data as</A>
+      <DD>Specifies how to convert complex data to a single value per
+        pixel so it can be displayed as an image.  The options include
+        using the magnitude, phase, real component, or imaginary component
+        as the displayed quantity.
+
+      <DT><A NAME="ScalingMethod">Scaling method</A>
+      <DD>Specifies which algorithm to use when scaling data for an
+        image.  The <EM>Fast</EM> method is about twice as fast as
+        the <EM>Accurate</EM> one, but with floating point or
+        complex data, the <EM>Fast</EM> method is subject to increasingly
+        severe rounding problems (missing intensity levels in the image)
+        as the scaling becomes more nonlinear.  For linear scales and
+        non-complex integer data, there is no difference between the
+        two methods.
+    </DL>
+
+  <DT><STRONG>Help browser</STRONG>
+  <DD>
+    <DL>
+      <DT><A NAME="HelpButtonsActive">Help buttons active</A>
+      <DD>Most graphical user interfaces in Priism use a type of button
+        as labels.  If the "Help buttons active" toggle is on, pressing
+        one of those buttons causes the related help topic to be displayed;
+        otherwise pressing one of those buttons has no effect.
+
+      <DT><A NAME="HelpBrowsingMethod">Method</A>
+      <DD>The "Method" menu controls the mechanism used to display help
+        information.  The available options (which are controlled by the
+        help_browser.def configuration file in Priism's CONFIG directory)
+        are:
+        <DL>
+          <DT>Internal .hlp Viewer<DD>Uses a primitive browser to display
+            help files in the .hlp format.  This works on all systems but
+            some of the .hlp files are out of date and the .hlp format does
+            not allow for links or embedded images.
+          <DT>X Windows Netscape Compatible<DD>For Linux or IRIX systems, uses
+            a web browser which is compatible with the remote control features
+            of Netscape for X Windows to display HTML help content.  Web
+            browsers which are compatible with this mechanism are Firefox,
+            Opera, Mozilla, and Netscape; you can adjust which browser is
+            invoked by entering the executable name for the browser in the
+            <A HREF="#HelpBrowserName">Browser field</A>.  The default is
+            an executable provided by Priism, ive_netscape_wrapper, which will
+            use either Firefox, Mozilla, or Netscape depending on what is
+            installed on your system.
+          <DT>AppleScript OpenURL<DD>For Macintoshes, uses a web browser
+            which supports the OpenURL command to display HTML help content.
+            Many web browsers (including Internet Explorer 5.2 and Mozilla 1.3)
+            understand and correctly handle the OpenURL command.  Known
+            exceptions are Safari (does not understand OpenURL) and Netscape 7
+            (displays a blank page for file URLs). You can adjust which
+            browser is invoked by entering the executable name for the browser
+            in the <A HREF="#HelpBrowserName">Browser field</A>.
+          <DT>Konqueror (KDE 3)<DD>Uses the KDE 3 version of Konqueror to
+            display HTML help content.  This method assumes that the KDE
+            communication server (dcopserver) is running.
+          <DT>Safari<DD>For Macintoshes, invokes Apple's Safari to display
+            HTML help content.  At a minimum, requires the second beta version
+            or newer.
+          <DT>Custom<DD>To display the help in a web browser not handled
+            by one of the above methods, use the Custom method which will
+            allow you to set any of the configurable parameters for
+            invoking the browser.
+        </DL>
+
+      <DT><A NAME="HelpBrowserName">Browser</A>
+      <DD>The contents of the Browser field are substituted for the first
+        occurrence of %b in the commands to contact an existing browser or
+        to launch a new one.  For some methods, the contents of the Browser
+        field are fixed; other methods allow you to change the name of
+        the browser.
+
+      <DT><A NAME="ContactBrowserCommand">Contact</A>
+      <DD>If the Contact field is not empty, the help system replaces
+        the first occurrence of %b in the field with the browser name and
+        the first occurrence of %s with the name of the content to display
+        (if you want a %b or %s that will not be expanded, use %%b or %%s).
+        The help system then uses the result as a command to display the
+        help content.  If the command fails (by returning a nonzero exit
+        status), then the help system will attempt to use the command, if
+        any, given in the <A HREF="#LaunchBrowserCommand">Launch field</A>.
+        As an example, if you wanted to use a text-mode browser like lynx,
+        you could use<BR><CODE>xterm -e '%b' '%s'</CODE><BR>
+        as the contact command, nothing for the launch command, and enter
+        the executable name for the browser in the browser field.  For
+        other examples of contact and launch commands, look at the
+        help_browser.def file within the CONFIG directory of the Priism
+        distribution.
+
+      <DT><A NAME="LaunchBrowserCommand">Launch</A>
+      <DD>If the Launch field is not empty and the Contact field is empty
+        or the attempt to display the help content with the contact command
+        failed, the help system replaces the first occurrence of %b in the
+        field with the browser name and the first occurrence of %s with the
+        name of the content to display (if you want a %b or %s that will not
+        be expanded, use %%b or %%s).  The help system then uses the result
+        as a command to display the help content.  The description of the
+        <A HREF="#ContactBrowserCommand">Contact field</A> describes where to
+        find examples of contact and launch commands.
+
+      <DT><A NAME="HelpBrowserUsesHTML">Use HTML</A>
+      <DD>If this toggle is on, the browser displays HTML content
+        and the help system will pass the browser a URL in the form
+        <CODE>file:///</CODE><VAR>file_name</VAR><CODE>#</CODE><VAR>topic_name</VAR>;
+        otherwise, the browser displays content in the .hlp format and
+        the help system will indicate the content to display by passing
+        <VAR>file_name</VAR><CODE>#</CODE><VAR>topic_name</VAR>.  In both
+        cases, the topic name and leading pound sign may or may not be present.
+    </DL>
+</DL>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Preferences">Overview</A> |
+   <A HREF="#Profiles">Managing Profiles</A> |
+   Settings (by category)
+<HR>
+
+</BODY>
+</HTML>

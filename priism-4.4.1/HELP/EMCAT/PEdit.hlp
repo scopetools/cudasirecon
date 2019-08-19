@@ -1,0 +1,260 @@
+KEYWORD
+      IdatFile IplFile OplFile InteractiveEditing NX:NY:NV
+      Point_List Display Color (x-c)_peak Min_Peak Section <-_->
+      CurrentPoint MatchedPointCount Merge Save ClearAll Exit
+
+DESCRIPTION
+                         *** PEdit: Overview ***
+      PEdit is a general purpose point editing program.  It adds
+      and deletes points overlaid onto a stack of images
+      interactively (correction of a point is achieved by the
+      coupled actions of adding/deletion). There are two classes
+      of point lists PEdit can edit:
+        1) Matched point list: Any point P(ib,iv) is indexed
+           by two parameters, i.e., the section iv it belongs
+           to and the labeled number ib in that section.
+           Examples are the matched bead list generated from
+           @BEAD_MATCHER or @BEAD_CHASER, with each bead ib being
+           traced through projections of different view angles.
+           Note that not all P(ib,iv) are available.
+        2) Unmatched point list: a sub-list of points Pi(iv)
+           belong to a section iv, but there is no inter-section
+           indexing.  An example is the list bead-like features
+           generated from @BEAD_FINDER.
+
+      In the case where a point list could not be loaded or you
+      cleared the current point list, PEdit creates an empty list.
+      If you select points in the image window, that empty list
+      becomes an unmatched point list.  To force the empty list
+      to become a matched point list, enter a non-zero
+      in the field for the matched number of points.
+
+                   *** PEdit: Command Line Arguments ***
+      Instead of providing the file names for the the graphical
+      interface, the file names and average bead radius can be provided
+      as command line arguments.  The command line syntax is:
+
+        PEdit IdatFile IplFile OplFile bead_radius
+
+      If you do want to provide one of the files on the command
+      line but want to specify one of the arguments that appears
+      after it, use a name with just one letter since filenames
+      with one letter are ignored.
+
+IdatFile
+      IdatFile is the image data stack.  When the file name is
+      selected (either through command line or from widget),
+      you will be prompted to load this file into a image
+      window if it is not already displayed.  After loading
+      it, you will also need to register to its loaded window
+      and bank by pressing the Display button to start
+      displaying and editing the point list.
+
+IplFile
+      IplFile is the input point list file.  When the file
+      name is entered (either from the command line or
+      through the graphical interface):
+
+        * Read in a point list in an existing file to a image
+          window. Then you need to display and start editing the
+          point list by pressing 'Display' button.
+        * If the data set is already loaded in an image window,
+          you can immediately start changing the bead list in
+          that image window.  The "Window" field shows the number
+          of the image window to use.
+        * If IplFile has a name of one letter long, PEdit will
+          create a new empty list; for a more intuitive way to
+          do the same thing, use the "Clear All" button.
+
+OplFile
+      OplFile is the output point list file.
+
+InteractiveEditing
+      When the "Interactive Editing" toggle is off, PEdit only
+      displays the point list and does not allow selection of
+      points in the image window.  This is useful when you
+      want another application (including another instance
+      of PEdit) to respond to the interaction of the mouse
+      with the image window.
+
+      The interactive editing that PEdit allows on an unmatched
+      list is:
+
+        * Using the left mouse button to click on or near a
+          point that is already marked deletes that point.
+        * Using the left mouse button to click on the image away
+          from a point that is already marked adds a new point
+
+      The interactive editing that PEdit allows on a matched
+      list is:
+
+        * If no point is currently selected (the words
+          "Select point" are displayed in the upper right
+          corner of the image display area and the "Current
+          Point" field in PEdit's dialog is zero), using
+          the left mouse button to click on or near a point
+          makes that point the selected point.
+
+        * If a point is currently selected (the point number
+          is displayed in the upper right corner of the image
+          display area followed by the total number of beads
+          and an indication whether or not that point has been
+          assigned a position in this section; the point number
+          is also shown in the "Current Point" field), using
+          the left mouse button to click on the image moves
+          the currently selected point to that location.  Using
+          the left mouse button to click between the edge of
+          the image and the boundaries of the image display
+          area causes the currently selected point to not have
+          an assigned position for the section.
+
+        * While the mouse pointer is over the image, pressing
+          the "n" key increases the currently selected point
+          number by one; if the currently selected point is
+          the last point, sets the currently selected point
+          to be the first point.
+
+        * While the mouse pointer is over the image, pressing
+          the "p" key decreases the currently selected point
+          number by one; if the currently selected point is
+          the first point, sets the currently selected point
+          to be the last point.
+
+        * While the mouse pointer is over the image and a
+          point is currently selected, pressing the "r" key
+          causes the point to not have an assigned position
+          for the section.
+
+NX:NY:NV
+      The first two values in this field are the x and y
+      dimensions of the data set specified by IdatFile.
+      The third value is the number of sections in that file.
+
+Point_List
+      This field shows whether IplFile is a unmatched point
+      list (simply a list of the points on each section),
+      a matched point list where points on different sections
+      have been identified as belonging to the same feature,
+      or an empty point list.
+
+Display
+      When this toggle is on, the point list is displayed
+      as an overlay in the window whose number is the first
+      value shown in the Window field.  By changing the
+      number in this field, you can display the point list
+      in a different window (alternatively you can select a
+      new IdatFile).
+
+Color
+      Use this pulldown to select the color which is used
+      when the point list is displayed.
+
+(x-c)_peak
+      When editing a point list, you select point positions
+      in an image window by moving the cursor to them and
+      clicking the left mouse button.  When the "(x-c) Peak"
+      toggle is off, the selected position is used without
+      modification.  When the toggle is on, a search in the
+      vicinity of the selected point is done for the actual
+      point to use.  One of two criteria is used for that
+      search:
+
+        1.  If the bead radius shown in the menu is greater
+            than one, the search is performed on the cross-
+            correlation of the image data and a model circular
+            bead with the bead radius specified in the menu.
+            The peak of the cross-correlation within two bead
+            radii of the selected point is found, and a three
+            point polynomial interpolation of the cross-
+            correlation values with respect to x and y is done
+            to obtain the coordinates of the point used. The
+            left pulldown widget provides the option of minimum
+            or maximum peak searching.
+        2.  If the bead radius is less than or equal to one,
+            the search is for a peak in the image data within
+            six pixels of the selected point.
+
+Min_Peak
+      Use this pulldown to select whether or a minimum peak or
+      maximum peak search is performed then the"(x-c) Peak toggle"
+      is on.
+
+Section
+      The Section toggle button and controls on the same line
+      are only enabled for unmatched lists.  When the Section
+      toggle button is on, the three numbers in the adjacent
+      field set the range and increment for the set of sections
+      saved to OplFile.  This is useful when merging new points
+      with an existing list since the merge option uses the
+      section selected here to decide which points are taken
+      from the old list and which points are taken from the new.
+      When the Section toggle is off, points on all sections are
+      saved to the Oplfile.
+
+<-_->
+      Press the left button to display the previous section (as
+      set by the section field; press the right button to display
+      the next section.
+
+MatchedPointCount
+      The "Matched Point Count" field is only enabled for matched
+      lists.  For a matched list, PEdit displays the number of
+      points per section in the "Matched Point Count" field.  You
+      can change the number of points per section by editing the
+      value.  When increased, PEdit will add the appropriate number
+      of unassigned points to each section (currently PEdit allows
+      a maximum of 50 points per section because of limitations in
+      what Bead Chaser and Bead Align can handle).  If decreased,
+      PEdit will delete the highest numbered points so the count
+      matches what was entered.  Setting the number of points to
+      zero has the same affect as pressing the "Clear All" button
+      but does not check for unsaved changes.
+
+CurrentPoint
+      The "Current Point" field is only enabled for matched
+      lists.  When working with a matched list, PEdit will
+      display the number of the currently selected point in
+      the "Current Point" field or will put a zero there if
+      no point is currently selected.  Which point is
+      current is important while interactively editing the
+      list (the InteractiveEditing topic describes how to
+      do so in more detail); you can change the value shown
+      in the "Current Point" field to select a new current
+      point.
+
+Merge
+      The Merge toggle button is only enabled when the list is
+      an unmatched list.  If the Merge toggle is on and you save
+      the list, PEdit will save the points belonging to the
+      selected sections to the new OplFile (that has the
+      same name as the existing OplFile), it will also check
+      the point list in the existing OplFile to see if it has
+      points on sections other than the selected ones.
+      When this toggle is on and the point list is saved, PEdit
+      will save the points belonging to the selected sections
+      to the new OplFile (that has the same name as the
+      existing OplFile), it will also check the point list
+      in the existing OplFile to see if it has points on
+      sections other than the selected ones.   If it does,
+      PEdit will save these points as well to the new OplFile.
+
+Save
+      Use this button to save the point list to OplFile.
+      The existing OplFile will be merged with the point list
+      if the merge toggle is on.
+
+ClearAll
+      Pressing the "Clear All" button will remove the current
+      point selections from memory (if changes have been made
+      you will be asked whether or not to continue) and
+      create an empty list.  If you want the empty list to be
+      an unmatched list, start selecting point positions in the
+      image window.  If you want the empty list to be a matched
+      list, first set the the number of points in the list with
+      the "Matched Point Count" field and then edit the
+      positions of the new points.
+
+Exit
+      Use this button to quit PEdit.  If there has been
+      any change in the point list, you will be prompted to
+      save the point list before the program exits.

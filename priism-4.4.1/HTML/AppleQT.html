@@ -1,0 +1,205 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: QuickTime Plugin</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the Priism plugin to generate QuickTime movies on the Mac.">
+  <META NAME="Keywords" CONTENT="Priism,QuickTime,video">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="QuickTime">QuickTime Plugin</A></H1>
+<H2>Overview</H2>
+<P>On Macintosh systems, a plugin is available to save data as QuickTime
+movies.
+
+<H3>Topics</H3>
+<P>
+    Overview |
+    <A HREF="#FrameRate">Frame rate</A> |
+    <A HREF="#Compression">Compression</A> |
+    <A HREF="#CompressionImplementation">Implementation</A> |
+    <A HREF="#Quality">Quality</A> |
+    <A HREF="#TemporalCompression">Temporal compression</A> |
+    <A HREF="#KeyFrameInterval">Key frame interval</A> |
+    <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+    <A HREF="ImageCapture.html">Image Capture</A> |
+    <A HREF="3DModel.html">3D Model</A> |
+    <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="FrameRate">Frame rate</A></H2>
+<P>Use the frame rate option to specify the number of frames per second for
+the generated movie.
+
+<P><A HREF="#QuickTime">Return to overview</A>
+<HR>
+
+<H2><A NAME="Compression">Compression</A></H2>
+<P>The compression schemes available will depend on which compression
+components are installed on your system.  Listed below are compression
+components that Apple included with QuickTime 1.6 and have been included with
+subsequent versions of QuickTime.  By default, the plugin will use the Photo
+(JPEG) compression scheme.
+
+<DL>
+  <DT>Animation<DD>Compresses the movie with a lossless (run-length
+    encoding) scheme appropriate for sequences of drawings.
+  <DT>Cinepak<DD>Is like the Video scheme but decompresses more quickly
+    at the expense of much longer compression times.   The compression
+    algorithm is affected by the <A HREF="#Quality">quality</A> and
+    <A HREF="#KeyFrameInterval">key frame interval</A> parameters.
+  <DT>Photo (JPEG)<DD>Compresses each frame of the movie separately with
+    the standard JPEG lossy compression algorithm.  The
+    <A HREF="#Quality">quality parameter</A> controls the lossiness of
+    the compression.
+  <DT>Graphics<DD>This is a lossless compression algorithm which, in
+    comparison to the Animation compression scheme, is more effective at
+    compression but takes longer to decompress. 
+  <DT>Video<DD>Compresses the movie with a lossy compression scheme
+    designed for desktop video.  The <A HREF="#Quality">quality parameter</A>
+    affects lossiness of the compression.
+</DL>
+
+<P><A HREF="#QuickTime">Return to overview</A>
+<HR>
+
+<H2><A NAME="CompressionImplementation">Compression Implementation</A></H2>
+<P>In some instances, more than one component implementing the same compression
+scheme may be installed on your system.  Use the implementation parameter
+to set the heuristic the plugin uses to choose the component.  The available
+options are:
+
+<DL>
+  <DT>Any<DD>Use the first component which implements the compression scheme.
+  <DT>Best Speed<DD>Use the fastest component which implements the compression
+    scheme.
+  <DT>Best Fidelity<DD>Use the most accurate component which implements the
+    compression scheme.
+  <DT>Best Size<DD>Use the component which will produce the smallest
+    compressed output.
+</DL>
+
+<P><A HREF="#QuickTime">Return to overview</A>
+<HR>
+
+<H2><A NAME="Quality">Quality</A></H2>
+<P>The quality parameter controls how much the decompressed version of the
+compressed data differs from the original data.  Allowing greater deviations
+can decrease the size of the compressed output.  Some compression schemes do
+not allow control over the amount of deviation and ignore this parameter.  The
+available options are:
+
+<DL>
+  <DT>Minimum<DD>Allows the most deviations from the original.
+  <DT>Low<DD>Allows the most deviations from the original while still
+    maintaining "acceptable" display characteristics.
+  <DT>Normal<DD>Allows an amount of deviations acceptable for normal image
+    quality.
+  <DT>High<DD>Allows the smallest amount of deviation possible while
+    maintaining "reasonable" performance.
+  <DT>Maximum<DD>Allows the fewest possible deviations.
+  <DT>Lossless<DD>If the compression scheme supports lossless compression,
+    then this option is available to allow no deviation from the original.
+</DL>
+
+<P><A HREF="#QuickTime">Return to overview</A>
+<HR>
+
+<H2><A NAME="TemporalCompression">Temporal Compression</A></H2>
+<P>Some compression schemes can do more than treat each image in a sequence
+independently.  For those compression schemes, you can turn on the
+"Temporal Compression" toggle to allow the compression scheme to use the
+similarities and differences between images to improve compression.  When
+temporal compression is enabled, the
+<A HREF="#KeyFrameInterval">key frame interval</A> also affects the compressed
+results.
+
+<P><A HREF="#QuickTime">Return to overview</A>
+<HR>
+
+<H2><A NAME="KeyFrameInterval">Key Frame Interval</A></H2>
+<P>A larger interval between key frames will give a higher level of
+compression and quicker playback than a smaller key frame interval.  A
+smaller key frame interval is useful if you wish to stop and start the
+movie to examine individual frames.  Key frame intervals in the range of
+1 to 60 frames are allowed.
+
+<P><A HREF="#QuickTime">Return to overview</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>When Image Capture is run from the command line on Mac OS X, you can use
+
+<PRE>
+    -format=qt
+</PRE>
+
+<P>as an option to Image Capture to have it generate a QuickTime movie.  To
+further control the QuickTime output, you can append any of the following to
+the -format=qt option (when appending first insert a comma: i.e.
+
+<PRE>
+    -format=qt,frate=5,compress="Sorenson Video 3",temporal
+</PRE>
+
+<P>):
+
+<DL>
+  <DT><CODE>frate=</CODE><VAR>frames_per_second</VAR>
+  <DD>Sets the suggested playback rate; <VAR>frames_per_second</VAR> can
+    be any value between 0.25 and 99.   When you do not set the playback rate,
+    the playback rate for the generated movie will be 15 frames per second.
+
+  <DT><CODE>compress=</CODE><VAR>algorithm_name</VAR>
+  <DD>Sets the compression algorithm to use.  The allowed names are the
+    same as those listed in the Image Capture user interface and will
+    vary depending on which compression components are installed on your
+    system.   Some of the names contain spaces or the other characters which
+    may have special meaning to the shell so quote the name if necessary.  The
+    algorithms that Apple included with QuickTime 1.6 and have been
+    included with subsequent versions of QuickTime are:  Animation, Cinepak,
+    Photo (JPEG), Graphics, and Video (consult the
+    <A HREF="#Compression">compression topic</A> for more details about those
+    algorithms).  If you do not specify a compress algorithm, the Photo (JPEG)
+    algorithm will be used.
+
+  <DT><CODE>select=</CODE><VAR>criteria</VAR>
+  <DD>Sets which compression component is used if you have more than one
+    component installed which implements the compression algorithm you
+    selected.  The allowed values for <VAR>criteria</VAR> are any,
+    best_speed, best_fidelity, and best_size; for more details about what
+    those choices mean, consult the
+    <A HREF="#CompressionImplementation">compression implementation topic</A>.
+    Unless you specify otherwise, the first implementation (i.e. the "any"
+    option) of an algorithm will be the implementation that is used.
+
+  <DT><CODE>qual=</CODE><VAR>quality</VAR>
+  <DD>Sets the quality of the output when the QuickTime movie is decompressed.
+    The allowed values for <VAR>quality</VAR> are min, low, normal, high, max,
+    and lossless; for more information about what those choices mean, consult
+    the <A HREF="#Quality">quality topic</A>.  If you do not specify the
+    quality, the movie will have "normal" quality when decompressed.
+
+  <DT><CODE>temporal</CODE>
+  <DD>Include this option to enable
+    <A HREF="#TemporalCompression">temporal compression</A>.  For compression
+    schemes that always treat each frame independently, this option has no
+    effect.
+
+  <DT><CODE>kdist=</CODE><VAR>key_frame_interval</VAR>
+  <DD>Sets the <A HREF="#KeyFrameInterval">key frame interval</A> to use
+    when temporal compression is enabled.  <VAR>key_frame_interval</VAR>
+    can be any integer value between 1 and 60.  If you do not set the key
+    frame interval, the generated movie will use a key frame interval of 5.
+</DL>
+
+<P><A HREF="#QuickTime">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

@@ -1,0 +1,324 @@
+KEYWORD
+       Method Enhance Sigma IntensitySigma KernelSize Iterations
+
+DESCRIPTION Filter2D
+   Filter2D provides a set of two-dimensional filters, operations
+   which for each pixel in the output calculate an intensity based
+   on the input intensities in a square region about the pixel.
+   Median and mean filters are among those available.  The size of
+   the square region is set by the kernel size field.
+
+   Filter2D's user interface uses the same set of controls for
+   selecting and processing a region as other Priism applications.
+
+   Filter 2D accepts the command-line arguments described in
+   Region.hlp.  In addition, Filter 2D has the following options
+   (optional parts are shown in brackets):
+
+        -enhance
+             If specified, the result of each iteration of
+             filtering is the input data for that iteration
+             minus what the result would be without -enhance
+             specified.  The average deviation filter is an
+             exception to this.
+
+        -iterations=n
+             Specifies that the filtering should be performed for
+             n iterations.  If the command line does not contain
+             -iterations, one iteration of filtering is performed.
+
+        -kernel_size=nx[:ny]
+             Sets the size of the kernel to be nx by ny (or, if
+             ny is not specified, nx by nx).  If -kernel_size is
+             not supplied on the command-line, the kernel size
+             will be determined from the sigma values (see below)
+             for the Gaussian, Laplacian (LoG), and bilateral
+             filters and will be 5x5 for all other filter types.
+
+        -method=filter_type
+             Sets what form of filtering to apply.  Possible values
+             for filter_type are:
+
+                  median
+                  mean
+                  gaussian
+                  laplacian
+                  avgdev
+                  wghtmean
+                  minimum
+                  maximum
+                  bilateral
+
+        -scale=value
+            Sets the scale factor used when -enhance is used
+            and the filter is not an average deviation filter.
+            If not supplied, the scale factor defaults to one.
+
+        -sigma=sigma_x[:sigma_y]
+             Sets how rapidly the Gaussian, Laplacian (LoG),
+             and bilateral filters fall off to zero.  If
+             sigma_y is not supplied, it is set to the value
+             of sigma_x.  If -sigma is not specified on the
+             command-line, the default value of sigma in both
+             directions is one.
+
+        -sigma_inten=s
+             Sets the intensity sigma, the standard
+             deviation of the Gaussian for the intensity
+             weighting component of the bilateral filter.
+             s must be a number greater than or equal to
+             zero.  If you do not specify the -sigma_inten
+             option on the command line, Filter2D uses a
+             value of five for the intensity sigma.
+
+   As an example, the following command-line applies a 7x7
+   median filter to raw.dat and places the results in image
+   window 1:
+
+        Filter2D raw.dat 1 -method=median -kernel_size=7
+
+Method
+   The available filter types are listed below.
+
+
+                            Median
+
+   The median filter looks at the image intensities within a
+   box-shaped region around each pixel and selects the median
+   value for the resulting image.  The example below shows the
+   results of a 3x3 median filter on a 5x5 image; the last of
+   the three is the result that is calculated when the enhance
+   toggle is on and a scale factor of one is used.
+
+    Measured Image      Median Filtered Image        1 * Measured - Median
+  1   3   2   2   2    2.5  2.0  2.0  2.0  2.0   -1.5   1.0   0.0   0.0   0.0
+  2  12   1   2   4    3.0  3.0  2.0  2.0  2.0   -1.0   9.0  -1.0   0.0   2.0
+  3   3   3   2   1    2.5  2.0  2.0  2.0  2.0    0.5   1.0   1.0   0.0  -1.0
+  2   2   1   2   1    2.5  2.0  2.0  2.0  1.5   -0.5   0.0  -1.0   0.0  -0.5
+  3   2   2   1   2    2.0  2.0  2.0  1.5  1.5    1.0   0.0   0.0  -0.5   0.5
+
+   Probably the best use of the median filter is to remove pixels
+   with noise-like intensity.  In the example above, the pixel with
+   intensity 12 is removed from the filtered image.  In fact, the
+   pixel value of 12 doesn't affect the filtered image at all!
+
+
+                             Mean
+
+   The mean filter is similar to the median filter except that the
+   mean value is used instead of the median. For example, a 3x3
+   mean filter applied to the same measured image as above yields
+   (rounded to the nearest integer):
+
+     Measured Image       Mean Filtered Image          1 * Measured - Mean
+   1   3   2   2   2    4.5  3.5  3.7  2.2  2.5   -3.5  -0.5  -1.7  -0.2  -0.5
+   2  12   1   2   4    4.0  3.3  3.3  2.1  2.2   -2.0   8.7  -2.3  -0.1   1.8
+   3   3   3   2   1    4.0  3.2  3.1  1.9  2.0   -1.0  -0.2  -0.1   0.1  -1.0
+   2   2   1   2   1    2.5  2.3  2.0  1.7  1.5   -0.5  -0.3  -1.0   0.3  -0.5
+   3   2   2   1   2    2.3  2.0  1.7  1.5  1.5    0.8   0.0   0.3  -0.5   0.5
+
+   Unlike the median filter, however, the mean filter is more
+   sensitive to noise. The pixel with value 9 elevates the
+   filtered intensities throughout the 3x3 region. Compare the
+   results from the mean filter with those from the median filter.
+
+   The third result is the output when the mean filter is applied
+   and the enhance toggle is on and a scale factor of one is used.
+   The 3x3 mean filter with the enhance toggle on and a scale
+   factor of one is the same (except for an overall multiplier
+   of one-ninth) as a commonly used 3x3 approximation to the
+   Laplacian operator.  The 3x3 mean filter with the enhance toggle
+   on and a scale factor of 1.1111 is the same (except for an
+   overall multiplier of one-ninth) as the 3x3 approximation
+   to the Laplacian added to the original data.
+
+                            Gaussian
+
+   When the enhance toggle is off, the Gaussian filter replaces a
+   value with the weighted average of it and the neighboring pixels;
+   the weights fall off exponentially as the square of the distance
+   divided by 2 times the square of sigma.  When the enhance toggle
+   is on, the result is the input minus the weighted average.
+   Below are the results for a 3 x 3 Gaussian filter with a sigma of 1.
+
+     Measured Image          Filtered Image          1 * Measured - Filtered
+   1   3   2   2   2    3.3  3.7  3.0  2.1  2.5   -2.3  -0.7  -1.0  -0.1  -0.5
+   2  12   1   2   4    3.9  4.2  3.3  2.1  2.4   -1.9   7.8  -2.3  -0.1   1.6
+   3   3   3   2   1    3.5  3.5  2.8  1.9  1.9   -0.5  -0.5   0.2   0.1  -0.9
+   2   2   1   2   1    2.4  2.2  1.9  1.6  1.4   -0.4  -0.2  -0.9   0.4  -0.4
+   3   2   2   1   2    2.4  2.1  1.7  1.5  1.5    0.6  -0.1   0.3  -0.5   0.5
+
+
+                          Laplacian (LoG)
+
+   The Laplacian filter implemented here is an approximation to
+   the negative of the Laplacian operator.  The Laplacian operator
+   has the useful property that a location where the output
+   values change sign marks the position of an edge.  The Laplacian
+   operator involves the computation of differences and therefore
+   tends to amplify noise.  If sigma is greater than zero, the
+   Laplacian is combined with a Gaussian smoothing step to give
+   what is known as the Laplacian of Gaussian or LoG filter; this
+   is useful for reducing the amount of noise introduced.
+
+   When the Enhance toggle is on, the scale factor times the input
+   minus the result of the of the filter is computed.  This is one
+   way to enhance edges in an image; another, likely better,
+   method is to use the EdgeEnh application.
+
+
+                           Avg. Deviation
+
+   When the enhance toggle is off, the output is an unbiased estimate
+   of the average absolute deviation from the local mean:
+
+    output(i0,j0) =      sum       abs(input(i,j) - a(i0,j0)) / (n^2-1)
+                    i,j in kernel
+
+         a(i0,j0) =      sum       input(i,j) / n^2
+                    i,j in kernel
+
+                n = kernel size
+
+   When the enhance toggle is on, the output is the average absolute
+   deviation from the input intensity at that point:
+
+    output(i0,j0) =      sum       abs(input(i,j) - input(i0,j0)) / (n^2 - 1)
+                    i,j in kernel
+
+   Below are the results for the 3x3 filter applied to a 5x5 sample
+   image:
+
+    Measured Image             Filtered               Filtered, enhance on
+   1   3   2   2   2    5.0  3.4  3.3  0.7  1.0     4.7  3.0  2.4  0.6  0.7
+   2  12   1   2   4    3.2  2.2  2.2  0.7  0.7     2.8  9.8  2.6  0.6  2.2
+   3   3   3   2   1    3.2  2.2  2.2  0.9  0.8     2.4  2.0  2.1  0.9  1.2
+   2   2   1   2   1    0.6  0.7  0.5  0.7  0.6     0.6  0.6  1.1  0.6  0.6
+   3   2   2   1   2    0.5  0.4  0.5  0.6  0.7     1.0  0.4  0.4  0.6  0.7
+
+   Previous versions of this program had a similar filter type
+   mislabeled, "Variance"; the only difference between that filter
+   and the one above is that the former did not divide by the
+   number of elements in the kernel minus one.
+
+
+                           Weighted Mean
+
+   The input and output of this filter are related by:
+
+    output(i0,j0) = (a(i0,j0) - input(i0,j0) - x(i0,j0) / y(i0,j0)) / (n^2 - 2)
+
+         a(i0,j0) =      sum       input(i,j) / n^2
+                    i,j in kernel
+
+         x(i0,j0) =      sum       input(i,j) * (input(i,j) - input(i0,j0))^2
+                    i,j in kernel
+
+         y(i0,j0) =      sum       (input(i,j) - input(i0,j0))^2
+                    i,j in kernel
+
+   If you know a use or a rationale for this particular filter, let
+   the Priism maintainers know.
+
+
+                             Minimum
+
+   When the enhance toggle is off, the minimum filter replaces a
+   value with the minimum value in the neighborhood.  If the input
+   is a binary image (values are either one or zero), the minimum
+   filter is equivalent to the morphological erosion operator
+   with a square structuring element.  When the enhance toggle is
+   on, the result is the input times a scale factor minus the
+   neighborhood minimum.  Below are the results for a 3 x 3 minimum
+   filter.
+
+                                                 Filtered, enhance on,
+     Measured Image             Filtered         scale factor = 1
+   1   3   2   2   2      1   1   1   1   2      0   2   1   1   0
+   2  12   1   2   4      1   1   1   1   1      1  11   0   1   3
+   3   3   3   2   1      2   1   1   1   1      1   2   2   1   0
+   2   2   1   2   1      2   1   1   1   1      0   1   0   1   0
+   3   2   2   1   2      2   1   1   1   1      1   1   1   0   1
+
+
+                             Maximum
+
+   When the enhance toggle is off, the maximum filter replaces a
+   value with the maximum value in the neighborhood.  If the input
+   is a binary image (values are either one or zero), the maximum
+   filter is equivalent to the morphological dilation operator
+   with a square structuring element.  When the enhance toggle is
+   on, the result is the input times a scale factor minus the
+   neighborhood maximum.  Below are the results for a 3 x 3
+   maximum filter.
+
+                                                Filtered, enhance on,
+     Measured Image             Filtered          scale factor = 1
+   1   3   2   2   2     12  12  12   4   4     -11  -9 -10  -2  -2
+   2  12   1   2   4     12  12  12   4   4     -10   0 -11  -2   0
+   3   3   3   2   1     12  12  12   4   4      -9  -9  -9  -2  -3
+   2   2   1   2   1      3   3   3   3   2      -1  -1  -2  -1  -1
+   3   2   2   1   2      3   3   2   2   2       0  -1   0  -1  -1
+
+
+                            Bilateral
+
+   The bilateral filter implements the filter described in
+
+       Tomasi, C. and Manduchi, R.  "Bilateral Filtering for
+       Gray and Color Images."  Proceedings of the 1998 IEEE
+       International Conference of Computer Vision, Bombay,
+       India.  Pages 839 - 846.
+
+   The filter replaces the value at a pixel, (i, j), with a
+   weighted sum of the pixel values in the neighborhood.  Each
+   weight is the product of a factor dependent on the distance
+   (in pixels) to (i, j) and another factor dependent on the
+   difference in intensity with the pixel at (i, j).  This
+   implementation of the bilateral filter uses Gaussian
+   functions for both components of the weight.  The value
+   in the "Sigma (pix)" field controls the standard
+   deviation for the Gaussian weighting as a function of
+   distance, and the value in the "Intensity sigma" field
+   controls the standard deviation for the Gaussian
+   weighting as a function of intensity difference.
+
+Enhance
+   When the "Enhance" toggle is on the result for each iteration
+   is the input data for that iteration times a scale factor
+   minus what the result would be when the toggle was off.  The
+   average deviation filter is an exception to this.
+
+ScaleFactor
+   If the Enhance toggle is on and the filter is not an average
+   deviation filter, the result of an iteration is the input
+   data for that iteration times the scale factor minus the
+   filtered input data.
+
+Sigma
+   For the Gaussian, Laplacian (LoG), and bilateral filters,
+   the width is controlled by the value of sigma.  Larger
+   values of sigma give broader filters.
+
+   When the autosize toggle is on, any changes to the value
+   of sigma will automatically calculate a kernel size to
+   give a reasonable approximation for the filter.
+
+KernelSize
+   The kernel size is the size, in pixels, of the square box
+   used to calculate the filtered images.  Increasing the kernel
+   size will then increase the size of the local region used to
+   calculate the filtered image.  Kernel sizes of 3 and 5 are
+   frequently used.
+
+IntensitySigma
+   The value in the "Intensity sigma" field only affects the
+   bilateral filter.  The bilateral filter tends to reduce the
+   magnitude of intensity changes that are less than the
+   intensity sigma and preserve the magnitude of intensity
+   changes that are much greater than the intensity sigma.
+
+Iterations
+   The filter is applied repeatedly with the output from the
+   previous pass becoming the input for the next.  The number
+   of passes is shown in the "Iterations" field.

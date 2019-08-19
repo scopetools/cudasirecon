@@ -1,0 +1,12 @@
+The software (the Materials) included within the intel subdirectory of this
+directory is covered by the following terms:
+
+a.  Title to the Materials and any copies thereof remain with Intel and its
+suppliers.  Those materials are copyrighted and protected by United States
+copyright laws and international treaty provisions.  You will not remove any
+copyright notice from the Materials.  You agree to prevent any unauthorized
+copying of the Materials.  Except as expressly provided herein, Intel does not
+grant any express or implied right to you under Intel patents, copyrights,
+trademarks, or trade secret information.
+
+b.  Disassembly or reverse engineering of the Materials is prohibited.

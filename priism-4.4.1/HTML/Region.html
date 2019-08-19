@@ -1,0 +1,797 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Region Processing Interface</TITLE>
+  <META NAME="Description" CONTENT="On-line help for user interface layout shared by many Priism applications.">
+  <META NAME="Keywords" CONTENT="Priism">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Region">Region Processing Interface</A></H1>
+<H2>Overview</H2>
+
+<P>Many Priism applications share a common layout for their user interface.
+The shared dialog elements are at the top and bottom of the dialog, and
+application-specific elements appear in the middle.
+
+<P>At the top of the dialog, there is one line for each input data stack and
+one line for each output data stack.  For each line, the current file or window
+selection is shown in the text field.  You can change the selection by
+editing the text or using the button next to the field to open a file
+selection dialog.  The line for an output data stack has an
+<A HREF="#MODE">additional menu</A> which you may use to select the data type
+used to store each pixel's intensity.  Some applications may not allow the
+data type to be changed; in that case, the menu will be disabled.
+
+<P>Below the lines for the input and output files, the dimensions of the first
+input stack and controls for selecting a subset of that input are shown.
+See the <A HREF="#XYZ">XYZ</A>, <A HREF="#W">W</A>, <A HREF="#T">T</A>,
+<A HREF="#R">R</A>, and <A HREF="#SELECT_REGION">Select Region</A> topics for
+more about selecting a subset of an input.  If the application has more than
+one input data stack, the application may allow the user to independently
+select the region used for two or more of the outputs.  If that is the case,
+additional controls will be shown for each input data stack which allows
+region selection.  Input data stacks for which the application does not allow
+user control of the region will use the same region as the first input data
+stack.
+
+<P>The portion of the dialog between the <A HREF="#W">wavelength toggles</A>
+for the last input and the <A HREF="#TITLE">Title</A> button varies from
+application to application. Consult the <A HREF="Applications.html">application-specific help</A>
+for more information.
+
+<P>The bottom part of the dialog contains the <EM>DoIt</EM> button for starting
+processing.  When processing is in progress, the <A HREF="#STATUS">Status</A>
+field displays how far along the processing is; the <EM>Interrupt</EM> button
+(which appears in place of the <EM>DoIt</EM> button) can be used to stop
+processing.  The <EM>Quit</EM> button closes the dialog and stops the
+application.  Use the <A HREF="#TITLE">Title</A> field to add descriptive
+information to the header of the output.
+
+<P>Some applications supply a special mode for <A HREF="#TRIAL_RUN">performing
+a trial run</A> of the input parameters on a single section.  If the
+application provides this feature, the application will have an
+<EM>Options</EM> menu next to the <EM>Quit</EM> button, and that menu
+will have the <EM>Toggle trial run</EM> and
+<A HREF="#SCRATCH_SIZE">Set scratch depth...</A> options enabled.
+
+<P>Some applications can generate a command file from the currently entered
+inputs; this command file could then be used to perform the processing
+in the background or in a batch queue.  The command file is also useful
+as a model when writing a script to run the application non-interactively.
+Applications which allow generation of a command file have an <EM>Options</EM>
+menu next to the <EM>Quit</EM> button, and that menu will have the
+<A HREF="#BATCH">Create batch job...</A> option enabled.  All the applications
+that support the option to generate a command file can be run from the
+command line and not use a graphical user interface.  The
+<A HREF="#COMMANDLINE">Command line topic</A> describes the format of the
+command-line and the common command-line parameters that these applications
+share.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#XYZ">XYZ</A> |
+   <A HREF="#W">W</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#R">R</A> |
+   <A HREF="#SELECT_REGION">Select region</A> |
+   <A HREF="#MODE">Mode</A> |
+   <A HREF="#TITLE">Title</A> |
+   <A HREF="#STATUS">Status</A> |
+   <A HREF="#TRIAL_RUN">Trial Run</A> |
+   <A HREF="#SCRATCH_SIZE">Scratch size</A> |
+   <A HREF="#BATCH">Batch jobs</A> |
+   <A HREF="#COMMANDLINE">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="IP.html">IP Framework</A>
+<HR>
+
+<H2><A NAME="XYZ">XY and Z Range Selection</A></H2>
+<P>The first two values in the XY field are the starting x and y indices
+for the subset of the data to process.  The lower left-hand corner of a
+displayed image corresponds to x and y indices of 0.  The second two values
+are the x and y sizes for the subset.  By default, the full XY extent of the
+input data is processed.  You change this by changing the values in this field
+or using the <A HREF="#SELECT_REGION">Select Region</A> button.
+
+<P>The 3 values in the z field are the index of the first section to process,
+the index of the last section to process, and the index increment.
+
+<P>Regardless of the <A HREF="#R">resolution</A> you select, the sizes and
+bounds for region selection are in terms of the coordinates for the highest
+resolution data set.  If you do process a lower resolution where the z
+dimension is also downsampled, the z index increment will be the smallest
+multiple of the z downsampling factor that is greater than or equal to the
+z increment you specify.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Region">Overview</A> |
+   XYZ |
+   <A HREF="#W">W</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#R">R</A> |
+   <A HREF="#SELECT_REGION">Select region</A> |
+   <A HREF="#MODE">Mode</A> |
+   <A HREF="#TITLE">Title</A> |
+   <A HREF="#STATUS">Status</A> |
+   <A HREF="#TRIAL_RUN">Trial run</A> |
+   <A HREF="#SCRATCH_SIZE">Scratch size</A> |
+   <A HREF="#BATCH">Batch jobs</A> |
+   <A HREF="#COMMANDLINE">Command line</A>
+<HR>
+
+<H2><A NAME="W">Waves Selection</A></H2>
+<P>Use these toggles to choose which waves to load.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Region">Overview</A> |
+   <A HREF="#XYZ">XYZ</A> |
+   W |
+   <A HREF="#T">T</A> |
+   <A HREF="#R">R</A> |
+   <A HREF="#SELECT_REGION">Select region</A> |
+   <A HREF="#MODE">Mode</A> |
+   <A HREF="#TITLE">Title</A> |
+   <A HREF="#STATUS">Status</A> |
+   <A HREF="#TRIAL_RUN">Trial run</A> |
+   <A HREF="#SCRATCH_SIZE">Scratch size</A> |
+   <A HREF="#BATCH">Batch jobs</A> |
+   <A HREF="#COMMANDLINE">Command line</A>
+
+<HR>
+
+
+<H2><A NAME="T">Time Selection</A></H2>
+<P>This is the time range that will be loaded.  The three values in the
+field are the index of the first time to process, the index of the last
+time to process, and the index increment.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Region">Overview</A> |
+   <A HREF="#XYZ">XYZ</A> |
+   <A HREF="#W">W</A> |
+   T |
+   <A HREF="#R">R</A> |
+   <A HREF="#SELECT_REGION">Select region</A> |
+   <A HREF="#MODE">Mode</A> |
+   <A HREF="#TITLE">Title</A> |
+   <A HREF="#STATUS">Status</A> |
+   <A HREF="#TRIAL_RUN">Trial Run</A> |
+   <A HREF="#SCRATCH_SIZE">Scratch size</A> |
+   <A HREF="#BATCH">Batch jobs</A> |
+   <A HREF="#COMMANDLINE">Command line</A>
+
+<HR>
+
+<H2><A NAME="R">Resolution Selection</A></H2>
+<P>By default, the application will process the highest resolution data
+set from each input.  Some applications will allow you to select which
+resolution to process.  Those applications will include a menu next
+to the time field in which you can select the resolution:  zero is
+highest resolution, one is the next highest resolution, and so on.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Region">Overview</A> |
+   <A HREF="#XYZ">XYZ</A> |
+   <A HREF="#W">W</A> |
+   <A HREF="#T">T</A> |
+   R |
+   <A HREF="#SELECT_REGION">Select region</A> |
+   <A HREF="#MODE">Mode</A> |
+   <A HREF="#TITLE">Title</A> |
+   <A HREF="#STATUS">Status</A> |
+   <A HREF="#TRIAL_RUN">Trial Run</A> |
+   <A HREF="#SCRATCH_SIZE">Scratch size</A> |
+   <A HREF="#BATCH">Batch jobs</A> |
+   <A HREF="#COMMANDLINE">Command line</A>
+
+<HR>
+
+<H2><A NAME="SELECT_REGION">Interactive Region Selection</A></H2>
+<P>If your input is an image window, you can select the region to
+load using the mouse.  Pushing the <EM>Select Region</EM> button activates
+the image window so you can select a region; it remains active until the
+first time the pointer leaves the window after the left mouse button has been
+pressed and released in the image window.
+
+<P>While the window is active, you can select a new region by positioning
+the pointer inside the image window and outside any existing selection
+region (displayed as a rectangle).  Then depress the left mouse button
+and drag the mouse to select the region.  Release the left mouse button
+to fix the rectangular region at its current size.
+
+<P>Also while the window is active, you can use two ways of editing
+the selection rectangle with the mouse.  By positioning the pointer in the
+selection rectangle and depressing the left mouse button, you can
+move the selection rectangle by moving the mouse.  Release the left mouse
+button to fix the rectangle in its current position.  By positioning the
+pointer on an edge or corner of the selection rectangle and depressing the
+left mouse button, you can resize the rectangle by moving the mouse.
+Releasing the left mouse button fixes the rectangle at its current size.
+
+<P>If the image window is in matrix mode (displaying several images at once
+in a tabular arrangement), the selection rectangle will be displayed on all
+the images, but only the image in the lower left corner of the window should
+be used for changing the selection rectangle with the mouse.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Region">Overview</A> |
+   <A HREF="#XYZ">XYZ</A> |
+   <A HREF="#W">W</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#R">R</A> |
+   Select region |
+   <A HREF="#MODE">Mode</A> |
+   <A HREF="#TITLE">Title</A> |
+   <A HREF="#STATUS">Status</A> |
+   <A HREF="#TRIAL_RUN">Trial run</A> |
+   <A HREF="#SCRATCH_SIZE">Scratch size</A> |
+   <A HREF="#BATCH">Batch jobs</A> |
+   <A HREF="#COMMANDLINE">Command line</A>
+<HR>
+
+<H2><A NAME="MODE">Output Data Mode</A></H2>
+<P>For each output data stack there is a pulldown menu to control the data
+format for that stack.  The available choices are (note that some applications
+may not allow the output format to be varied or may only allow a subset of
+the choices shown below):
+
+<DL>
+  <DT>Default<DD>Causes the output to have the same format as the first input.
+  <DT>Byte<DD>Causes each pixel to be stored as an integer with a maximum
+    allowable range of 0 to 255, inclusive.
+  <DT>Short<DD>Causes each pixel to be stored as an integer with a maximum
+    allowable range of -32678 to 32767.
+  <DT>Float<DD>Causes each pixel to be stored as a floating-point value which
+    can represent quantities in the range of -1 x 10^38 to 1 x 10^38 (roughly)
+    with approximately 6 significant digits.
+  <DT>Complex<DD>Causes each pixel to be stored as a complex value.  The value
+    is represented by two floating-point values: one for the real component
+    and another for the imaginary component.
+  <DT>C. Short<DD>This is similar to the Complex option, but the two components
+    are integers (range -32768 to 32767) rather than floating-point values.
+  <DT>UShort<DD>Causes each pixel to be stored as an integer with a maximum
+    allowable range of 0 to 65535.
+  <DT>Long<DD>Causes each pixel to be stored as an integer with a maximum
+    allowable range of -2147483648 to 2147483647.
+  <DT>U4Bit<DD>Causes each pixel to be stored as an integer with a maximum
+    allowable range of 0 to 15.  Two pixels are packed together to form a
+    single byte in the output file.
+</DL>
+
+<P>When choosing an output format, you should consider the range and
+accuracy you need for the output.  Space and time constraints and
+compatibility with other applications can also be important.
+
+<P>Some types of calculations (projections for instance) can easily exceed
+the range of the integer (Byte, Short, UShort, Long, and U4Bit) formats.
+Values which fall outside of the allowed range are generally coerced (a value
+less than the minimum accepted value is recorded as the minimum accepted
+value; a value greater than the maximum accepted value is recorded as
+the maximum accepted value).
+
+<P>If the "true" output would involve non-integral values, use of one
+of the integer formats will generally cause those values to be rounded
+to the nearest integer.
+
+<P>For a data stack with the same dimensions, a file which uses the
+Short or UShort format takes up twice as much space as a file that
+uses the Byte format and would typically take twice as long to read.  A
+file which uses the Float or Long format takes up four times as much space
+as a file that uses the Byte format and would typically take four times as
+long to read.
+
+<P>Complex-valued data, i.e. the Complex and C. Short options, is
+frequently not handled or is not handled correctly (either as input or
+output) by many Priism applications.  Support for the Complex format
+is better than for C. Short.
+
+<P>Support for the UShort and Long formats is new in IVE 4.  Support for the
+U4Bit format is new in IVE 4.4.  Previous versions of IVE and other
+applications which use the MRC format will generally not be able to use data
+written with the UShort, Long, or U4Bit formats.
+
+<P>Priism image files use a modified MRC file format.  That file format
+has as standard output types the Byte, Short, Float, Complex, and C. Short
+options.  If you wish to use your data with another application that uses
+the MRC file format, then you should use one of those output types.  The
+other application may only accept a subset of those standard types (for
+instance, CCP4 normally only uses the Float and Byte formats).
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Region">Overview</A> |
+   <A HREF="#XYZ">XYZ</A> |
+   <A HREF="#W">W</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#R">R</A> |
+   <A HREF="#SELECT_REGION">Select region</A> |
+   Mode |
+   <A HREF="#TITLE">Title</A> |
+   <A HREF="#STATUS">Status</A> |
+   <A HREF="#TRIAL_RUN">Trial Run</A> |
+   <A HREF="#SCRATCH_SIZE">Scratch size</A> |
+   <A HREF="#BATCH">Batch jobs</A> |
+   <A HREF="#COMMANDLINE">Command line</A>
+<HR>
+
+<H2><A NAME="TITLE">Output Title</A></H2>
+<P>If this toggle button is on, the text in the adjacent field will be
+appended to the titles in the header of the output data stacks.  No title is
+appended if the toggle button is not on.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Region">Overview</A> |
+   <A HREF="#XYZ">XYZ</A> |
+   <A HREF="#W">W</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#R">R</A> |
+   <A HREF="#SELECT_REGION">Select region</A> |
+   <A HREF="#MODE">Mode</A> |
+   Title |
+   <A HREF="#STATUS">Status</A> |
+   <A HREF="#TRIAL_RUN">Trial run</A> |
+   <A HREF="#SCRATCH_SIZE">Scratch size</A> |
+   <A HREF="#BATCH">Batch jobs</A> |
+   <A HREF="#COMMANDLINE">Command line</A>
+
+<HR>
+
+<H2><A NAME="STATUS">Processing Status</A></H2>
+<P>This field is blank when no processing is being done.  When processing is
+in progress, the current section being processed is displayed.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Region">Overview</A> |
+   <A HREF="#XYZ">XYZ</A> |
+   <A HREF="#W">W</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#R">R</A> |
+   <A HREF="#SELECT_REGION">Select region</A> |
+   <A HREF="#MODE">Mode</A> |
+   <A HREF="#TITLE">Title</A> |
+   Status |
+   <A HREF="#TRIAL_RUN">Trial run</A> |
+   <A HREF="#SCRATCH_SIZE">Scratch size</A> |
+   <A HREF="#BATCH">Batch jobs</A> |
+   <A HREF="#COMMANDLINE">Command line</A>
+<HR>
+
+<H2><A NAME="TRIAL_RUN">Doing a Trial Run</A></H2>
+<P>If the application's main dialog has an <EM>Options</EM> menu next to
+the <EM>Quit</EM> button and that menu has the <EM>Toggle trial run</EM> entry
+enabled, then the application can be run in a special mode in which the
+current settings are used to process just one section.
+
+<P>To use this mode, select <EM>Toggle trial run</EM> from the <EM>Options</EM>
+menu at the bottom of the main dialog.  Then change the output file to be a
+window (if the window exists it will be automatically overwritten unless it
+is a scratch window, in which case it may be possible to append to it).  The
+section that will be processed is the first section if the input is a file or
+the currently displayed section if the input is a window; so if the input is a
+window, adjust it to display the section to process.  Then press the
+<EM>DoSec</EM> button to do the processing.
+
+<P>The result is displayed in a scratch window.  If you change the input
+section or another input parameter and do the processing again, the new result
+will be displayed as the second section and the previous results will remain
+in the first section.  In general, the scratch window will store the last
+<VAR>n</VAR> results (<VAR>n</VAR> defaults to 10 and can be changed by
+selecting <A HREF="#SCRATCH_SIZE">Set scratch size...</A> from the
+<EM>Options</EM> menu).
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Region">Overview</A> |
+   <A HREF="#XYZ">XYZ</A> |
+   <A HREF="#W">W</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#R">R</A> |
+   <A HREF="#SELECT_REGION">Select region</A> |
+   <A HREF="#MODE">Mode</A> |
+   <A HREF="#TITLE">Title</A> |
+   <A HREF="#STATUS">Status</A> |
+   Trial run |
+   <A HREF="#SCRATCH_SIZE">Scratch size</A> |
+   <A HREF="#BATCH">Batch jobs</A> |
+   <A HREF="#COMMANDLINE">Command line</A>
+<HR>
+
+<H2><A NAME="SCRATCH_SIZE">Scratch Size</A></H2>
+<P>The scratch size only affects processing when the special mode for
+<A HREF="#TRIAL_RUN">testing input parameters on a single section</A> is used.
+In that situation, the result of processing a section is added to a scratch
+window where the last <VAR>n</VAR> sections are saved.  The value of
+<VAR>n</VAR> can be set selecting <EM>Set scratch size...</EM> from the
+<EM>Options</EM> menu in the main dialog and then entering the desired
+value of <VAR>n</VAR> in the dialog that appears.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Region">Overview</A> |
+   <A HREF="#XYZ">XYZ</A> |
+   <A HREF="#W">W</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#R">R</A> |
+   <A HREF="#SELECT_REGION">Select region</A> |
+   <A HREF="#MODE">Mode</A> |
+   <A HREF="#TITLE">Title</A> |
+   <A HREF="#STATUS">Status</A> |
+   <A HREF="#TRIAL_RUN">Trial run</A> |
+   Scratch size |
+   <A HREF="#BATCH">Batch jobs</A> |
+   <A HREF="#COMMANDLINE">Command line</A>
+<HR>
+
+<H2><A NAME="BATCH">Creating a command file</A></H2>
+<P>If the application's main dialog has an <EM>Options</EM> menu next to
+the <EM>Quit</EM> button and that menu has the <EM>Create batch job...</EM>
+entry enabled, then the application can generate a command file from the
+currently entered inputs.
+
+<P>Selecting <EM>Create batch job...</EM> from the <EM>Options</EM> menu
+displays a dialog with the following entries:
+
+<DL>
+  <DT>Log file<DD>When a command file is executed, it can generate text
+    output.  If the <EM>Log file</EM> field is empty, then this text will
+    not be redirected in any way.  Otherwise, the text will be redirected
+    to a file with the name shown in the <EM>Log file</EM> field.  To change
+    the file name shown. you may directly edit it or press the <EM>Log file</EM>
+    button to open a file browser.
+  <DT>Command file<DD>Enter the name of the command file to use in this field
+    or press the <EM>Command file</EM> button to select a command file with
+    a file browser.
+  <DT>Queue<DD>This option menu indicates what will be done when the dialog's
+    <EM>Do It</EM> button is pressed.  If the <EM>run locally</EM> option
+    is selected, pressing the <EM>Do It</EM> button generates the command file
+    and, if the <EM>skip execution</EM> toggle button is off, executes it on
+    the current machine.  Until execution completes, the <EM>Do It</EM> button
+    will be labeled <EM>Cancel</EM> and pressing it will terminate execution.  
+    Other entries may appear in the <EM>Queue</EM> menu.  These entries can be
+    customized (consult the <A HREF="BatchRegion.html#queue">Queue topic</A> in
+    <A HREF="BatchRegion.html">BatchRegion.html</A> for details).  Commonly,
+    if one of the additional entries is selected, the command file is submitted
+    to a batch queue when the <EM>Do It</EM> button is pressed and the
+    <EM>skip execution</EM> toggle button is off.
+  <DT>append to log file<DD>If this toggle button is on, the commands
+    written to the command file will append any text output they generate
+    to the log file rather than overwriting the log file.
+  <DT>skip execution<DD>If this toggle button is off, pressing the
+    <EM>Do It</EM> button both generates a script and either executes it
+    directly or submits it to a batch queue.  If this toggle button is on,
+    pressing the <EM>Do It</EM> button only generates the script.
+  <DT>Close<DD>Pressing this button dismisses the dialog.
+  <DT>Do It<DD>Pressing this button causes the command file to be updated
+    and, depending on how the <EM>Queue</EM> menu is set, executed as well.
+    If the command file already exists, you will have the option to either
+    append the new command to it or to overwrite its current contents.
+</DL>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Region">Overview</A> |
+   <A HREF="#XYZ">XYZ</A> |
+   <A HREF="#W">W</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#R">R</A> |
+   <A HREF="#SELECT_REGION">Select region</A> |
+   <A HREF="#MODE">Mode</A> |
+   <A HREF="#TITLE">Title</A> |
+   <A HREF="#STATUS">Status</A> |
+   <A HREF="#TRIAL_RUN">Trial run</A> |
+   <A HREF="#SCRATCH_SIZE">Scratch size</A> |
+   Batch jobs |
+   <A HREF="#COMMANDLINE">Command line</A>
+<HR>
+
+<H2><A NAME="COMMANDLINE">Command Line</A></H2>
+<P>If an application has <VAR>n</VAR> input data stacks and <VAR>m</VAR>
+output data stacks (these are the same data stacks which are controlled
+by the fields at the top of the applications graphical user interface), then
+the command-line syntax is:
+
+<PRE>
+<VAR>application_name</VAR> <VAR>input1_name</VAR> ... <VAR>inputn_name</VAR> \
+    <VAR>output1_name</VAR> ... <VAR>outputm_name</VAR> <VAR>options</VAR>
+</PRE>
+
+<P>The ordering of the data stack names from right to left on the command line
+is the same as the top to bottom ordering of the data stack fields in the
+user interface.  Names for all the data stacks must be supplied; if a data
+stack is optional and you do not want to specify one, use an empty string
+(i.e. '' or "") for the command-line argument.  The <VAR>options</VAR> may
+zero or more of the options described below or options which are specific
+to the application (for those, consult the application's documentation).
+Unlike the data stack names, options may appear in any order.
+
+<P>The command-line options shared by all the region processing applications
+that support a command-line interface are listed below.  Options which take
+arguments have an equals sign between the option name and the arguments, and
+if there is more than one argument to the option, they are separated by colons.
+Some options interact.  It is not possible to specify more than one of
+<CODE>-no_overwrite</CODE>, <CODE>-append_z</CODE>, <CODE>-append_w</CODE>,
+or <CODE>-append_t</CODE> for the same output data stack, and specifying
+<CODE>-menu</CODE> will render <CODE>-no_overwrite</CODE>,
+<CODE>-append_z</CODE>, <CODE>-append_w</CODE>, <CODE>-append_t</CODE>,
+and <CODE>-logstamp</CODE> options ineffective.
+
+<DL>
+  <DT><CODE>-x=</CODE><VAR>start</VAR><CODE>:</CODE><VAR>stop</VAR>
+  <DD>Sets the range of x indices to process from the first input data stack.
+    The first argument is required and is the starting index (zero-based).
+    The second argument is optional and is the end index; if the second
+    argument is omitted, the end index is the same as the starting index.
+    Both arguments must be non-negative and less than the x size of the first
+    data set or processing will stop with an error.  If <CODE>-x</CODE> (or
+    its synonym, <CODE>-x1</CODE>) is not specified, the entire x range of the
+    first input data stack is processed.
+
+  <DT><CODE>-x1=</CODE><VAR>start</VAR>:<VAR>stop</VAR>
+  <DD>This is a synonym for <CODE>-x</CODE>.
+
+  <DT><CODE>-y=</CODE><VAR>start</VAR><CODE>:</CODE><VAR>stop</VAR>
+  <DD>Is similar to <CODE>-x</CODE> but controls the range of y indices
+    to process from the first data set.
+
+  <DT><CODE>-y1=</CODE><VAR>start</VAR>:<VAR>stop</VAR>
+  <DD>This is a synonym for <CODE>-y</CODE>.
+
+  <DT><CODE>-z=</CODE><VAR>start</VAR><CODE>:</CODE><VAR>stop</VAR><CODE>:</CODE><VAR>step</VAR>
+  <DD>Sets the z sections processed from the first input data stack.  The
+    first argument is required and specifies the index (zero-based) of the
+    first section to process.  The first argument must be non-negative and
+    less then the number of z sections in the first data stack.  The second
+    and third arguments are optional.  The second argument specifies the
+    upper bound on the z section indices processed.  If not specified, its
+    value is set to be the same as the first argument; otherwise, it must be
+    greater than or equal to the first argument and less than the number of
+    z sections in the first input data stack.  The third argument specifies
+    the index increment between sections processed.  If not supplied, its
+    value is set to one; otherwise it must be a positive integer.  If
+    <CODE>-z</CODE> (or its synonym, <CODE>-z1</CODE>) is not supplied, the
+    entire z range of the first input data stack is processed.
+
+  <DT><CODE>-z1=</CODE><VAR>start</VAR><CODE>:</CODE><VAR>stop</VAR><CODE>:</CODE><VAR>step</VAR>
+  <DD>This is a synonym for <CODE>-z</CODE>.
+
+  <DT><CODE>-t=</CODE><VAR>start</VAR><CODE>:</CODE><VAR>stop</VAR><CODE>:</CODE><VAR>step</VAR>
+  <DD>Is similar to <CODE>-z</CODE> but controls the range of time indices
+    processed.
+
+  <DT><CODE>-t1=</CODE><VAR>start</VAR><CODE>:</CODE><VAR>stop</VAR><CODE>:</CODE><VAR>step</VAR>
+  <DD>This is a synonym for <CODE>-t</CODE>.
+
+  <DT><CODE>-res=</CODE><VAR>ires</VAR>
+  <DD>Selects the resolution to process from the first data set.  Zero is the
+    highest resolution, one is the next highest, and so on.  An application
+    will only accept this option if the application's graphical user interface
+    also allows selection of the resolution to process.  Regardless of which
+    resolution you select, the sizes and bounds for region selection are
+    always in the coordinates of the highest resolution data set.
+
+  <DT><CODE>-res1=</CODE><VAR>ires</VAR>
+  <DD>This is a synonym for <CODE>-res</CODE>.
+
+  <DT><CODE>-w=</CODE><VAR>wv1</VAR>...
+  <DD>Sets which wavelengths to process from the first input data stack.
+    Supply one argument for each wavelength to process.  The argument must
+    either be the index of a wavelength (i.e. a value greater than or equal
+    to zero and less than the number of wavelengths in the first input data
+    stack) or the wavelength value in nanometers stored in the data stack's
+    header (this second option is only possible if the wavelength value is
+    greater than or equal to 200 and less than 1000).  The ordering of the
+    arguments from left to right is the order in which the wavelengths will
+    be processed.  Wavelengths may be repeated or appear in a different order
+    than in the input data stack.  If <CODE>-w</CODE> (or its synonym,
+    <CODE>-w1</CODE>) is not supplied, then all wavelengths from the first
+    input stack are processed in order.
+
+  <DT><CODE>-w1=</CODE><VAR>wv1</VAR>...
+  <DD>This is a synonym for <CODE>-w</CODE>.
+
+  <DT><CODE>-mode=</CODE><VAR>format</VAR>
+  <DD>If the application has an output data stack and allows the representation
+    of values in that data stack to be modified, use the <CODE>-mode1</CODE>
+    option to specify the representation of values in the first output.  If
+    <CODE>-mode</CODE> (or its synonym, <CODE>-mode1</CODE>) is not supplied,
+    the representation of values in the output data stack is the same as in
+    the first data stack unless the application has set a different default
+    representation.  This option requires one argument and it must be one of
+    the following:
+    <DL>
+      <DT>as_first<DD>Store each pixel value using the representation from the
+        first input data stack.
+      <DT>byte<DD>Store each pixel value as an 8-bit unsigned integer.
+      <DT>short<DD>Store each pixel value as a 16-bit signed integer.
+      <DT>float<DD>Store each pixel value as a 32-bit IEEE floating-point
+        value.
+      <DT>complex<DD>Store each pixel value as a complex quantity.  The
+        value is represented by two 32-bit IEEE floating-point values:  one
+        for the real part and another for the imaginary part.
+      <DT>cshort<DD>Store each pixel value as a complex quantity.  The
+        value is represented by two 16-bit signed integers:  one for the
+        real part and another for the imaginary part.
+      <DT>ushort<DD>Store each pixel value as a 16-bit unsigned integer.
+      <DT>long<DD>Store each pixel value as a 32-bit signed integer.
+      <DT>u4bit<DD>Store each pixel value as a 4-bit unsigned integer.
+    </DL>
+
+  <DT><CODE>-mode1=</CODE><VAR>format</VAR>
+  <DD>This is a synonym for <CODE>-mode</CODE>.
+
+  <DT><CODE>-title=</CODE><VAR>label</VAR>
+  <DD>Specifies a title that is added to the labels of the output data stacks,
+    if any.
+
+  <DT><CODE>-scratch</CODE>
+  <DD>If the application supports <A HREF="#TRIAL_RUN">trial runs</A>, then
+    supplying this option will cause the application to run in that mode.
+
+  <DT><CODE>-scratch=</CODE><VAR>depth</VAR>
+  <DD>Has the same function as <CODE>-scratch</CODE>, but requires one argument
+    to specify the depth of the scratch window used.  This depth must be a
+    positive integer.
+
+  <DT><CODE>-no_overwrite</CODE>
+  <DD>If the name of one of the output data stacks is already in use, the
+    application will, by default, attempt to overwrite the data associated
+    with that name when run from the command-line.  You may specify the
+    <CODE>-no_overwrite</CODE> so that if the name for the first output data
+    stack is already in use, the application terminates with an error before
+    damaging the existing data.
+
+  <DT><CODE>-no_overwrite=</CODE><VAR>o1</VAR>...
+  <DD>This option is an alternative to <CODE>-no_overwrite</CODE> that is
+    useful if the application has more than one output data stack.  The
+    required argument may be <CODE>all</CODE> which will cause the application
+    to exit if the names used for any of the output data stacks are already in
+    use.  Alternatively, the argument may be a colon separated list of the
+    indices (one-based) for the output data stacks for which overwriting is
+    not to be allowed.
+
+  <DT><CODE>-append_z</CODE>
+  <DD>If this option is specified, the application will attempt to append to
+    the first output data stack along the z dimension.  If there is no
+    output data stack or its name is not already in use, this option has no
+    effect.
+
+  <DT><CODE>-append_z=</CODE><VAR>o1</VAR>...
+  <DD>This option is an alternative to <CODE>-append_z</CODE> that is
+    useful if the application has more than one output data stack.  The
+    required argument may be <CODE>all</CODE> which will cause the application
+    to attempt to append to all output data stacks along the z dimension.
+    Alternatively, the argument may be a colon separated list of the
+    indices (one-based) for the output data stacks which are to be appended to
+    along the z dimension.
+
+  <DT><CODE>-append_w</CODE>
+  <DD>If this option is specified, the application will attempt to append to
+    the first output data stack along the wavelength dimension.  If there is no
+    output data stack or its name is not already in use, this option has no
+    effect.
+
+  <DT><CODE>-append_w=</CODE><VAR>o1</VAR>...
+  <DD>This option is similar to <CODE>-append_z=</CODE> but specifies the
+    output data stacks which are to be appended to along the wavelength
+    dimension.
+
+  <DT><CODE>-append_t</CODE>
+  <DD>If this option is specified, the application will attempt to append to
+    the first output data stack along the time dimension.  If there is no
+    output data stack or its name is not already in use, this option has no
+    effect.
+
+  <DT><CODE>-append_t=</CODE><VAR>o1</VAR>...
+  <DD>This option is similar to <CODE>-append_t=</CODE> but specifies the
+    output data stacks which are to be appended to along the time
+    dimension.
+
+  <DT><CODE>-logging=</CODE><VAR>level</VAR>
+  <DD>This option specifies which messages the application will display as
+    it runs.  Messages are assigned a priority and all messages at or above the
+    <VAR>level</VAR> given will be displayed.  Valid values for
+    <VAR>level</VAR>, in order of decreasing priority, are:
+    <DL>
+      <DT>error<DD>Is for messages which indicate a fatal error:  the
+        application is not able to proceed.
+      <DT>warning<DD>Is for messages for conditions that may be serious,
+        but the application is able to proceed.
+      <DT>info<DD>Is for messages which may be useful but are, as far as
+        the application is concerned, not a necessary part of the output.
+        This is the default level when the application does not display a
+        graphical user interface.
+      <DT>progress<DD>Is for messages which would be written to the
+        <A HREF="#STATUS">Status field</A> in the graphical user interface:
+        i.e. messages used to indicate the current stage of processing.  This
+        is the default level when the application displays a graphical
+        interface.
+      <DT>debug<DD>Is for messages which would only be of interest when
+        debugging.
+    </DL>
+
+  <DT><CODE>-logstamp</CODE>
+  <DD>If this option is supplied, extra information (date and time, message
+    priority level as an integer, application name, and process ID) will be
+    displayed before each message.
+
+  <DT><CODE>-menu</CODE>
+  <DD>Normally when command-line options are supplied, the application
+    will read them, perform processing, and then exit.  If the
+    <CODE>-menu</CODE> is supplied, the application will read the command-line
+    parameters but then proceed to display its graphical interface and function
+    as it normally does when the graphical interface is displayed.
+</DL>
+
+<P>If the application has more than one input data stack and it allows for
+regions to be specified separately for the different input stacks, the
+application will accept additional options:  <CODE>-x2</CODE>,
+<CODE>-y2</CODE>, <CODE>-z2</CODE>, <CODE>-w2</CODE>, <CODE>-t2</CODE>,
+<CODE>-res2</CODE>, and so on. These options are analogous to the
+<CODE>-x</CODE>, <CODE>-y</CODE>, <CODE>-z</CODE>, <CODE>-w</CODE>,
+<CODE>-t</CODE>, <CODE>-res</CODE> options but select the region for the
+additional input stacks.  Any bounds that are not set for the additional
+inputs are the same as those for the first input.
+
+<P>If the application has more than one output data stack and allows the
+pixel value representation top be changed for those data stacks, the
+application will accept additional options (<CODE>-mode2</CODE> and so on)
+that are similar to <CODE>-mode</CODE> but set the pixel representation for
+the additional outputs.
+
+<P>As an example, the following command line would extract a 100 x 100
+rectangle from the 450 nm and 640 nm data in.dat (the lower left corner of the
+rectangle is at (35, 50)), convert the data values to floating-point, and
+write the result to out.dat:
+
+<PRE>
+CopyRegion in.dat out.dat -x=35:134 -y=50:149 -w=450:640 -mode=float
+</PRE>
+
+<P>If the 450 nm data is the fifth wavelength in in.dat and the 640 nm data
+is the second wavelength in in.dat, the command line below is equivalent to the
+one above:
+
+<PRE>
+CopyRegion in.dat out.dat -x=35:134 -y=50:149 -w=4:1 -mode=float
+</PRE>
+
+<P>Some applications support an alternate interface that prompts for inputs
+at the command-line.  If supported, this interface can be accessed with:
+
+<PRE>
+<VAR>application_name</VAR> -prompt
+</PRE>
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Region">Overview</A> |
+   <A HREF="#XYZ">XYZ</A> |
+   <A HREF="#W">W</A> |
+   <A HREF="#T">T</A> |
+   <A HREF="#R">R</A> |
+   <A HREF="#SELECT_REGION">Select region</A> |
+   <A HREF="#MODE">Mode</A> |
+   <A HREF="#TITLE">Title</A> |
+   <A HREF="#STATUS">Status</A> |
+   <A HREF="#TRIAL_RUN">Trial run</A> |
+   <A HREF="#SCRATCH_SIZE">Scratch size</A> |
+   <A HREF="#BATCH">Batch jobs</A> |
+   Command line
+<HR>
+
+</BODY>
+</HTML>

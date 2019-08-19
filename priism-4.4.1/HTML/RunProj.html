@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD 3.2 HTML//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: RunProj</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Priism's application to combine (project) information from multiple z sections.">
+  <META NAME="Keywords" CONTENT="Priism,projection">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Overview">RunProj</A></H1>
+<H2>Overview</H2>
+<P>RunProj can be used to quickly combine information from multiple parallel
+slices through a data set.  Typically, the slices are perpendicular to the z
+axis, but you can also choose to use slices that are perpendicular to the x
+or y axes.  When the slices are perpendicular to the x or y axes, RunProj
+proceeds as if the data had been processed by <A HREF="Flip.html">Flip</A> to
+swap the projection axis with the z axis and then projects the data along the
+new z axis.  A common use for RunProj is to combine all of the slices along
+an axis as a quick volume rendering of the data set as if a camera were pointed
+along the projection axis.  The <A HREF="Region.html">controls for selecting
+and processing a region</A> are the same as in many other applications.  There
+are additional controls to set the
+<A HREF="#group_size">number of sequential slices combined</A>,
+the <A HREF="#step_size">slice number increment</A> from the beginning
+of one group of combined slices to the next, the
+<A HREF="#Method">method for combining intensity information</A> from
+different slices, and the <A HREF="#Axis">projection axis</A>.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="Region.html">Region processing</A> |
+  <A HREF="#step_size">Step size</A> |
+  <A HREF="#group_size">Group size</A> |
+  <A HREF="#Method">Method</A> |
+  <A HREF="#Axis">Axis</A> |
+  <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="T-RunProj.html">T-RunProj</A> |
+  <A HREF="VolumeViewer.html">Volume Viewer</A> |
+  <A HREF="Flip.html">Flip</A> |
+  <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="step_size">Step Size</A></H2>
+<P>Use this text field to indicate how many slices to move ahead from the
+first slice in one combined group to the first slice in the next combined
+group.  For instance, if you selected a step size of 4 and project along the
+z axis, regardless of how many z sections are grouped into one projection, the
+projected groups would start at <VAR>zstart</VAR>, <VAR>zstart</VAR>+4,
+<VAR>zstart</VAR>+8, ....  <VAR>zstart</VAR> is the starting z section from the
+<A HREF="Region.html#XYZ">Z field</A>.
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+<H3><A NAME="group_size">Group Size</A></H3>
+<P>Use this text field to indicate how many slices to combine for each
+projected image.  For example, if the number of slices to combine is three
+and x is the projection axis, then the columns with the indices,
+<VAR>xstart</VAR>, <VAR>xstart</VAR>+1, and <VAR>xstart</VAR>+2, would be
+combined to form the first projection image in the output.  <VAR>xstart</VAR>
+is the starting x index from the <A HREF="Region.html#XYZ">XY field</A>.  If
+the <A HREF="#step_size">step size</A> was also three, then the columns,
+<VAR>xstart</VAR>+3, <VAR>xstart</VAR>+4, and <VAR>xstart</VAR>+5, would be
+combined to create the second image in the output.  If the
+<A HREF="#step_size">step size</A> was two, than the second image in the
+output would be a combination of the columns, <VAR>xstart</VAR>+2,
+<VAR>xstart</VAR>+3, and <VAR>xstart</VAR>+4.
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+<H3><A NAME="Method">Method</A></H3>
+<P>Use the menu next to the "Method" button to select how different slices are
+combined.  You can choose one of these:
+
+<DL>
+  <DT>Sum<DD>Simply adds the intensities from the slices to
+    determine the output value.  If the output file uses integers for the
+    pixel values (this is set with the
+    <A HREF="Region.html#MODE">Mode menu</A> and defaults to be the
+    same format as the input file), the result can overflow giving strange
+    looking output.
+  <DT>Average<DD>Performs an unweighted average of the slices to determine
+     the output value.
+  <DT>Max<DD>The output value is set to the maximum intensity from the
+    slices.
+</DL>
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+<H3><A NAME="Axis">Axis</A></H3>
+<P>Use the menu next to the "Axis" button to select the axis along which
+to perform the projection.  When you project along the z axis, the default,
+you have the same point of view as in the original data.  If you project along
+the x or y axes, you will get an orthogonal view:  with x as the projection
+axis the resulting images are projections to the yz plane of the original data
+and with y as the projection axis the resulting images are projections to the
+xz plane of the original data.
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+<H3><A NAME="CommandLine">Command line</A></H3>
+<P>RunProj accepts the command-line arguments described in
+<A HREF="Region.html#COMMANDLINE">Region.html</A>.  In addition, RunProj has
+the following options:
+
+<DL>
+  <DT><CODE>-average</CODE>
+  <DD>Specifies that RunProj is to combine slices by averaging them.  For
+    compatibility with previous versions, RunProj accepts
+    <CODE>-average_z</CODE> as a synonym for <CODE>-average</CODE>.
+
+  <DT><CODE>-axis=</CODE><VAR>p</VAR>
+  <DD>Specifies which axis of the data to use as the projection axis.
+    <VAR>p</VAR> must be <CODE>x</CODE>, <CODE>y</CODE>, or <CODE>z</CODE>.
+    If this option does not appear on the command line, RunProj computes the
+    projection along the z axis.
+
+  <DT><CODE>-group=</CODE><VAR>m</VAR>
+  <DD>Specifies that RunProj is to combine <VAR>m</VAR> slices to generate
+    one output image.  <VAR>m</VAR> must be a positive integer.  If
+    <CODE>-group</CODE> is not specified, RunProj combines 3 slices
+    to form one output image.  For compatibility with previous versions,
+    RunProj accepts <CODE>-z_group=</CODE><VAR>m</VAR> as a synonym for
+    <CODE>-group=</CODE><VAR>m</VAR>.
+
+  <DT><CODE>-max</CODE>
+  <DD>Specifies that RunProj is to combine slices by taking the maximum
+    value (across the slices) at each pixel location.  For compatibility with
+    previous versions, RunProj accepts <CODE>-max_z</CODE> as a synonym for
+    <CODE>-max</CODE>.
+
+  <DT><CODE>-step=</CODE><VAR>n</VAR>
+  <DD>Specifies that RunProj is to jump <VAR>n</VAR> slices from the first
+    slice in a group of combined slices to the start of the next group.
+    <VAR>n</VAR> must be a positive integer.  If <CODE>-step</CODE> is not
+    specified, RunProj jumps 3 slices between groups.  For compatibility with
+    previous versions, RunProj accepts <CODE>-z_step=</CODE><VAR>n</VAR>
+    as a synonym for <CODE>-step=</CODE><VAR>n</VAR>.
+
+  <DT><CODE>-sum</CODE>
+  <DD>Specifies that RunProj is to combine slices by summing them.  For
+    compatibility with previous versions, RunProj accepts <CODE>-sum_z</CODE>
+    as a synonym for <CODE>-sum</CODE>.
+</DL>
+
+<P>If more than one of <CODE>-sum</CODE>, <CODE>-average</CODE>,
+or <CODE>-max</CODE> appear on the command line, the last one takes
+precedence.  If none of them appear on the command line, RunProj combines
+slices by summing them.
+
+<P>As an example, if stack.dat has 10 z sections per wavelength/time point
+pair, the command line shown below generates proj.dat which,
+for each wavelength/time point pair, has a single z section that is the
+average of the 10 z sections.
+
+<PRE>
+    RunProj stack.dat proj.dat -group=10 -step=10 -average
+</PRE>
+
+<P><A HREF="#Overview">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

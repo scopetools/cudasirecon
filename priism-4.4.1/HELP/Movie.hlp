@@ -1,0 +1,126 @@
+KEYWORD
+    Windows Z Time ManualZControl TimeLapse Loop RepeatDelay Speed Paused
+
+DESCRIPTION : MOVIE
+    Use Movie to view image data in a window as a sequence
+    of movie frames.  This can be particularly useful when
+    looking at volume-rendered data or a sequence of time
+    points. When you activate Movie from the main Priism
+    menu, all windows that are open and not currently
+    iconified when Movie starts can be controlled by that
+    instance of the Movie tool.  If you activate Movie
+    from the View menu of an individual image window, only
+    that window will be controlled by the Movie tool.
+
+Windows
+    When you launch Movie from the main Priism menu, the
+    Movie dialog will have the list of the windows it will
+    control at the top of the dialog.  This scrolled list
+    has one line per window; windows that only have a
+    single time point and z section are never included.
+    Each line will display the window number followed by
+    the z and time point sizes.  If Movie is actively
+    controlling that window (i.e. when animation is in
+    progress, Movie changes the currently displayed
+    section in that window), the z and time point bounds
+    for the animation are also shown.  The bounds are
+    displayed as three values separated by colons:  the
+    first value is the starting index, the second value
+    is the largest allowed index, and the third value is
+    the increment.  During an animation, Movie automatically
+    updates the list to correspond to size changes in the
+    windows or windows which have been closed.  You can
+    force the Movie tool to rebuild the list by using the
+    "Update" button, which is further described below.
+
+    To change the bounds or active/inactive state for a
+    window, select the line for that window in the list
+    or enter the window number entry directly in the
+    Window field just below the list.  Then use the
+    "Z Start/End/Inc" field to edit the z bounds, the
+    "Time Start/End/Inc" field to edit the time point
+    bounds, or the toggle button labeled "active" to
+    switch between the active and inactive states.
+
+    Four other buttons affect all windows in the list:
+
+    Update
+        If you press this button, located immediately
+        above the scrolled list, the Movie tool will
+        reexamine all available windows and update the
+        list.  In the process, it will add or remove
+        entries in the list corresponding to windows
+        that have been opened or closed since the last
+        time the list was updated.  For windows that
+        were in the list previously, the Movie tool
+        will attempt to preserve the current bounds,
+        but if the size of the window has changed,
+        the Movie tool will coerce the bounds as
+        necessary.  The Movie tool will reset the
+        active/inactive state of each window:  if the
+        window is not iconified it will be active; if
+        it is iconified it will be inactive.  During
+        the update of the list, the Movie tool will
+        also reset the animation to start at the first
+        section.
+
+    Copy range
+        Copies the z and time point bounds for the
+        currently selected window to all other windows
+        (coercing them if necessary if the another
+        window has a smaller size).
+
+    Activate all
+        Puts all windows in the list under active control
+        of the Movie tool.
+
+    Inactivate all
+        Causes the Movie tool to cease active control of
+        all windows in the list.
+
+Z
+    Using these text fields, you can specify the starting
+    and ending z section for the animation and the section
+    index increment.
+
+Time
+    For time lapse data, you can specify a subset of the
+    time points to view by choosing a starting and ending
+    time point and the time index increment. 
+         
+ManualZControl
+    If you are animating time lapse data, you can use this
+    slider control to change the Z section.  This slider
+    control will be grayed out when the "Time Lapse" toggle
+    button is off.
+
+TimeLapse
+    Toggle this button on if you want to animate through
+    time instead of z.
+
+Loop
+    The "Up&Down", "Up", and, "Down" toggles control how
+    to move through the data.  When the "Up" toggle is
+    on, the z (or time) index is increased to its maximum
+    value and then the animation starts over at the
+    starting z (or time) value.  When the "Down" toggle
+    is on the section index is decreased to its minimum
+    value and then the animation repeats.  When the "Up &
+    Down" toggle is on, the z (time) index is first
+    increased to its maximum value and then decreased to
+    the minimum.
+
+RepeatDelay
+    This lets you adjust how much time to pause between
+    repeating the display of a sequence of frames.  It has
+    no effect in the up and down mode.
+
+Speed
+    This slider lets you adjust how quickly the frames are
+    displayed.  When set to the minimum value, the frames
+    will be displayed as fast as possible.
+
+Paused
+    This toggle button determines whether or not Movie
+    animates the image windows.  Toggle the "Pause" button
+    off to start the movie.

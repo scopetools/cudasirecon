@@ -1,0 +1,65 @@
+KEYWORD
+        Range Ndiv
+
+DESCRIPTION
+        Histogram equalization alters the input data to give the
+        closest possible approximation to data that is uniformly
+        distributed over a given range.  The alteration preserves
+        the relationship between pixel values: a pixel whose input
+        value is greater than another pixel's value will have its
+        output value greater than or equal to the other pixel's
+        output value.
+
+        HisEqual applies histogram equalization separately to each
+        input section (so the preservation of the relationship
+        between pixels only holds for pixels within the same section).
+        The controls for the range of sections to process and
+        the x and y bounds of the region to process are similar
+        to those in other applications and are described in
+        Region.hlp.  The additional parameters that HisEqual uses
+        are Range, which sets the input and output range of values
+        (input values outside of the range are mapped to one of the
+        endpoints of the range) and Ndiv, which controls how
+        finely the range is divided in order to calculate the
+        approximation to the uniform distribution.
+
+        HisEqual accepts the command-line arguments described in
+        Region.hlp.  In addition, it also has the following options:
+
+            -range=low:high
+                Specifies the range of intensity values to
+                histogram. If not specified, HisEqual will use a
+                range of [0, 4096].
+
+            -ndiv=n
+                Specifies the number of divisions, n, in the
+                histogram.  n must be greater than zero.  If not
+                specified, HisEqual will use 256 divisions.
+
+        As an example, the following computes the approximate
+        histogram equalization of in.dat and stores the result
+        in out.dat.  The options are equivalent to the values
+        HisEqual would use by default.
+
+            HisEqual in.dat out.dat -range=0:4096 -ndiv=256
+
+Range
+        When HisEqual is applied to a section, it takes pixel values
+        falling in a given range and maps them to the same range in
+        the output; the mapping is nonlinear so that the output
+        values are approximately uniformly distributed over the range.
+        Input values below the range's minimum are mapped to the
+        minimum; input values above the range's maximum are mapped
+        to the maximum.
+
+        The first value in the Range field set the lower bound of the
+        range; the second value is the upper bound.
+
+Ndiv
+        To calculate the mapping between the input and output,
+        the input and output ranges are divided into Ndiv
+        equally sized bins.  In general, using a larger amount of
+        bins will improve how well the output approximates a
+        uniform distribution though the discreteness and
+        "clumpiness" (how many input pixels share the same value)
+        of the input data are other limiting factors.

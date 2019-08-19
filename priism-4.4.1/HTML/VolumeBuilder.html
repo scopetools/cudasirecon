@@ -1,0 +1,328 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Volume Builder</TITLE>
+  <META NAME="Description" CONTENT="On-line help for Volume Builder.">
+  <META NAME="Keywords" CONTENT="Priism,model,polygon,conversion,measurement">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="VolumeBuilder">Volume Builder</A></H1>
+<H2>Overview</H2>
+<P>Volume Builder assembles polygons in different sections to build 3D
+objects.  The required input is an <A HREF="#InputImage">image file or window</A>
+and corresponding <A HREF="#PolygonData">polygon data</A>.  Once these are
+entered, press the <A HREF="#CreateObjects">Create Objects button</A> to
+assemble the 3D objects; alternatively, a list of which polygons belong to
+which objects can be read in by pressing the
+<A HREF="#ObjectFiles">load object list</A> button.  If the source of the
+images is a window, then the polygons will be displayed there and the object
+number to which each polygon belongs will appear in the center of each polygon.
+
+<P>Once the objects are assembled, they can be modified directly by entering
+the object to be modified in the
+<A HREF="#CurrentObject">Current wave, time, object</A> field and then
+pressing the <A HREF="#Correct">change</A>, <A HREF="#Rename">rename</A>, or
+<A HREF="#Delete">delete</A> buttons.  A number of measurements can be made
+of the object properties and their interrelationships via the options
+in the <EM>measurements</EM> and <EM>relationship</EM> menus.  The
+<EM>surface models</EM> menu provides options to convert the assembled
+objects into a model that can be used with <A HREF="3DModel.html">3D Model</A>.
+The <A HREF="#ObjectInfo">object information topic</A> describes available
+measurements, relationships, and models in more detail.
+
+<P>For notes on how to approach the Modeling process, consult
+<A HREF="3DModelStrategies.html">3D Modeling Strategies</A>.
+
+<H3>Topics</H3>
+<P>
+  <A HREF="#InputImage">Input image</A> |
+  <A HREF="#PolygonData">Polygon data</A> |
+  <A HREF="#Z">Z</A> |
+  <A HREF="#Time">Time</A> |
+  <A HREF="#Wavelengths">Wavelengths</A> |
+  <A HREF="#MaximumZGap">Maximum z gap</A> |
+  <A HREF="#CreateObjects">Create objects</A> |
+  <A HREF="#CurrentObject">Current object</A> |
+  <A HREF="#Highlight">Highlight</A> |
+  <A HREF="#Correct">Correct</A> |
+  <A HREF="#Rename">Rename</A> |
+  <A HREF="#ObjectFiles">Object files</A> |
+  <A HREF="#ObjectInfo">Object information</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+  <A HREF="EditPolygon.html">Edit Polygon</A> |
+  <A HREF="SurfHarmMod.html">SurfHarmMod</A> |
+  <A HREF="FindPoints.html">FindPoints</A> |
+  <A HREF="Clouds.html">Clouds</A> |
+  <A HREF="3DModel.html">3D Model</A> |
+  <A HREF="3DModelStrategies.html">3D modeling strategies</A> |
+  <A HREF="Priism.html">Priism</A>
+<HR>
+
+<H2><A NAME="InputImage">Input image</A></H2>
+<P>Volume Builder requires an image file or window.  Press the
+<EM>Image file</EM> button to open a file selection dialog to select the image
+file or directly enter the file name or window number in the adjacent field.
+If a window is used, the outlines of the polygons and the number of the object
+to which each polygon is assigned will be displayed there.
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="PolygonData">Polygon data</A></H2>
+<P>The polygon data can be from <A HREF="EditPolygon.html">Edit Polygon</A>,
+<A HREF="2DObjFinder.html">2DObjFinder</A>,
+<A HREF="FPPolygons.html">FPPolygons</A>, or
+<A HREF="SurfHarmMod.html">SurfHarmMod</A>.  When the image source is a window,
+Volume Builder will automatically detect if polygons are associated with the
+window and use those by default.  It is also possible to read the polygons
+from file:  press the <EM>Polygon data</EM> button to open a file selection
+dialog or enter the file name directly in the adjacent field.  If polygons
+are loaded for an image window that already has polygons associated with it,
+you will be prompted whether the new polygons should replace the existing ones
+or whether the new polygons should be added to the existing polygons.
+
+<P>Alternatively, loading an <A HREF="#ObjectFiles">object list</A> in the
+new object library format will import polygon data and how the polygons are
+grouped into objects.
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="Z">Z</A></H2>
+<P>The <EM>Z</EM> field displays the range of sections that are considered
+when building objects.  The first value is the starting section number, the
+second value is the maximum section number, and the last value is the section
+number increment.
+ 
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="Time">Time</A></H2>
+<P>The <EM>T</EM> field displays the range of time points that are considered
+when building objects or <A HREF="#ObjectInfo">reporting object
+information</A>.  The first value is the index of the first time point, the
+second value is the maximum time point index, and the last value is the index
+increment.
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="Wavelengths">Wavelengths</A></H2>
+<P>The toggles next to the <EM>W</EM> button indicate which wavelengths
+are considered when building objects or
+<A HREF="#ObjectInfo">reporting object information</A>.  If a toggle is on,
+that wavelength is considered; if it is off, that wavelength is not used.
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="MaximumZGap">Maximum z gap</A></H2>
+<P>When <A HREF="#CreateObjects">assembling objects</A>, Volume Builder will
+search up to <VAR>m</VAR> z sections from a polygon already in an object to
+find another polygon to add to the object.  The value of <VAR>m</VAR> is
+displayed in the <EM>max z gap</EM> field.
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="CreateObjects">Create objects</A></H2>
+<P>When an <A HREF="#InputImage">image file or window</A> and a
+<A HREF="#PolygonData">set of polygons</A> has been loaded, pressing the
+<EM>Create Objects</EM> button assembles the polygons into objects.  The
+assembly process is affected by the settings of the <A HREF="#Z">Z</A>,
+<A HREF="#Time">T</A>, <A HREF="#Wavelengths">W</A>, and
+<A HREF="#MaximumZGap">max z gap</A> controls.
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="CurrentObject">Current object</A></H2>
+<P>The wavelength, time point index, and object number for the object
+affected by the <A HREF="#Highlight">highlight toggle</A>
+and <A HREF="#Correct">change</A>, <A HREF="#Rename">rename</A>, and
+<A HREF="#Delete">delete</A> buttons is displayed in the
+<EM>Current wave, time, obj</EM> field.  To modify a different object,
+enter new values in that field.
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="Highlight">Highlight</A></H2>
+<P>If this toggle is on and the input images are from a window, the
+<A HREF="#CurrentObject">current object</A> will be displayed in light
+blue instead of the color normally used for polygons in the same
+wavelength.
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="Correct">Correct</A></H2>
+<P>To manually add or delete a polygon from an object, enter the
+object's wavelength, time point index, and number in the
+<A HREF="#CurrentObject">Current wave, time, obj</A> field and then press the
+<EM>change</EM> button.  That causes a new dialog to be opened, at the top
+the number of each polygon in the object and the z section corresponding
+to that polygon are listed (if the images are from an image window, the
+polygons are labeled with the object number followed by a slash followed
+by the polygon number while the correction dialog is open).  At the bottom
+of the dialog, use the <EM>Section</EM> and <EM>Polygon</EM> fields to
+specify a particular polygon:  enter the z section containing the polygon
+in the <EM>Section</EM> field and the polygon number in the <EM>Polygon</EM>
+field.  When the <EM>Add</EM> button is pressed, that polygon
+will be added to the current object.  When the <EM>Delete</EM> button is
+pressed, the polygon is deleted from the current object if it is there.
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="Rename">Rename</A></H2>
+<P>To assign a new object number to an object, press the <EM>rename</EM>
+button and enter the new object number in the dialog that appears.  This
+can be used to assign the polygons in one object to another object.
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="Delete">Delete</A></H2>
+<P>Remove the <A HREF="#CurrentObject">current object</A> and all its
+constituent polygons.
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="ObjectFiles">Object files</A></H2>
+<P>How polygons are grouped into objects may be saved to a file or loaded from
+a file.  There are two different file formats:
+
+<DL>
+  <DT>old volume builder<DD>This is a text format that lists the polygons
+    (identified by section and polygon number) in each polygon.  Volume
+    Builder and <A HREF="FindPoints.html">Find Points</A> can read
+    this format.
+  <DT>new object library<DD>This is a binary format that includes both the
+    association information and the polygon vertex data.  Volume Builder
+    and <A HREF="Clouds.html">Clouds</A> can read this format.
+</DL>
+
+<P>Press the <EM>load object list</EM> button in the Volume Builder dialog
+to select an object file to load.  When the button is pressed, a dialog
+will be displayed to select the file name and the file format; press the
+<EM>load</EM> button in the dialog to read from the file.  Saving an
+object file is similar: press the <EM>save object list</EM> button, enter
+the file name and format in the dialog that appears, and then press the
+<EM>save</EM> button.
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+<H2><A NAME="ObjectInfo">Object information</A></H2>
+<P>After objects have been <A HREF="#CreateObjects">assembled</A> or
+<A HREF="#ObjectFiles">read from file</A>; Volume Builder may be used to
+calculate the properties of the objects or to convert them into models
+for use with <A HREF="3DModel.html">3D Model</A>.
+
+<P>Use the options in the <EM>measurements</EM> and <EM>relationship</EM>
+menus to report object properties.  In general, any of these options
+will display the results to the scrolled text field in the Volume Builder
+and write the results to a text file (a dialog will be displayed to select
+the file name).  The options in the <EM>measurements</EM> menu are:
+
+<DL>
+  <DT>2D data<DD>For each polygon in the section range specified by the
+    <A HREF="#Z">Z</A> and <A HREF="#Time">T</A> fields and the
+    <A HREF="#Wavelengths">wavelength toggles</A>, compute the number,
+    <VAR>n</VAR>, of pixels whose centers are within the polygon, the sum
+    of the intensity of those pixels, the area (simply <VAR>n</VAR> times the
+    area of the pixel from the image header), the center of gravity
+    (the average, over all pixels whose centers are within the polygon, of
+    the x and y coordinates for the center of each pixel), and the center of
+    mass (the intensity weighted average, over all pixels whose centers are
+    within the polygon, of the x and y coordinates for the center of each
+    pixel).  The center of mass and center of gravity are reported in pixel
+    units.
+  <DT>2D real<DD>Has the same effect as <EM>2D data</EM>, but the center
+    of mass and center of gravity are reported in the same units used
+    for the pixel spacing in the image header.  The coordinates do not
+    take into account the origin or tilt angles from the header.
+  <DT>3D data<DD>For each object in the given <A HREF="#Time">time range</A>
+    and <A HREF="#Wavelengths">selected wavelengths</A>, compute the number
+    of voxels whose centers are within the object, the sum of the intensity
+    of those voxels, the volume (simply <VAR>n</VAR> times the volume of
+    a voxel from the image header), the center of gravity (the average, over
+    all voxels whose centers are within the object, of the x, y, and z
+    coordinates of the center of each pixel), the center of mass
+    (the intensity weighted average, over all voxels whose centers are within
+    the object, of the x, y, and z coordinates of the center of each pixel),
+    and the surface area (the sum of the areas of the triangles in the
+    mesh defining the borders of the object).  The center coordinates are
+    reported in voxels and the surface area in units of the pixel spacing
+    squared.
+  <DT>3D real<DD>Has the same effect as <EM>3D data</EM>, but the center
+    of mass and gravity are reported in the same units for the pixel
+    spacing in the image header.  The center coordinates include the
+    effect of the origin and tilt angles from the image header.
+</DL>
+
+<P>The options in the <EM>relationship</EM> menu are:
+
+<DL>
+  <DT>between two objects<DD>A dialog is displayed to select which
+    objects (each specified by a wavelength index, time point index,
+    and object number) are to be compared.  No results are written to
+    the scrolled text field, but a summary of the properties of
+    each object (these are the same as reported by the <EM>3D real</EM>
+    option from the <EM>measurements</EM> menu except the surface area
+    is not included and the maximum distance between vertices in polygons in
+    the object is included) and the relationship between the two
+    objects (the distance between their centers and the minimum and
+    maximum distance between the center of a pixel inside the first object
+    to a center of a pixel inside the second object).
+  <DT>wave object overlap<DD>Operates on the first two
+    <A HREF="#Wavelengths">selected wavelengths</A>.  Each object in the
+    first wavelength is compared to each object in the second wavelength
+    and the number of voxels whose centers are in both objects is computed.
+    The number of shared voxels and the number of voxels in the two
+    objects are displayed as volumes (the number of voxels multiplied by
+    the volume per voxel from the image header).
+</DL>
+
+<P>Use the options in the <EM>surface models</EM> menu to create
+model files usable by <A HREF="3DModel.html">3D Model</A>.  The available
+models, reflecting different ways of representing the objects, are:
+
+<DL>
+  <DT>wire frame<DD>Each object is represented by the mesh of triangles that
+    form the object's boundary; only the edges of the triangles are shown
+    when the object is displayed by 3D Model.  Within 3D Model, it is
+    possible to switch back and forth between this representation and the
+    <EM>solid</EM> representation.
+  <DT>solid<DD>Each object is represented by a the mesh of triangles that
+    form the object's boundary; the triangles are filled when the object
+    is displayed by 3D Model.  Within 3D Model, it is possible to switch
+    back and forth between this representation and the <EM>wire frame</EM>
+    representation.
+  <DT>string of pts<DD>Each object is represented by a single line which
+    proceeds, in order first by polygon then by section, through all
+    the vertices of the polygons in the object.
+  <DT>string no cross<DD>Each object is represented by the boundaries of
+    the constituent polygons.
+  <DT>gravity centers<DD>Each object is represented by a point at the
+    object's center of gravity (the average, over all voxels whose centers
+    are within the object, of the x, y, and z coordinates of the center of
+    each pixel).
+  <DT>mass centers<DD>Each object is represented by a point at the
+    object's center of mass (the intensity weighted average, over all voxels
+    whose centers are within the object, of the x, y, and z coordinates of
+    the center of each pixel).
+</DL>
+
+<P><A HREF="#VolumeBuilder">Return to overview</A>
+<HR>
+
+</BODY>
+</HTML>

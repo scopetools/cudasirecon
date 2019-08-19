@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Rotfast</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the application to generate a set of projections of a 3D volume at different rotations about the y axis.">
+  <META NAME="Keywords" CONTENT="Priism,rotation,projection">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Rotfast">Rotfast</A></H1>
+<H2>Overview</H2>
+
+<P>Rotfast is a program that calculates projections of a 3D volume
+for one or more different views corresponding to different rotations of
+the volume about the Y axis.
+
+<P>There is a graphical interface (rotfast_i) for specifying the inputs to
+Rotfast and then passing them to the command-line application to calculate the
+result.  You can also use the command-line application directly.  To
+run Rotfast with the input file, <VAR>infile</VAR>, and output file,
+<VAR>outfile</VAR>, use
+
+<PRE>
+     rotfast infile outfile &lt;options&gt;
+</PRE>
+
+<P>For descriptions of the possible options see the topics
+<A HREF="#yang">Y angles</A>, <A HREF="#bkg">Background value</A>, and
+<A HREF="#deltaz">Z pixel size</A>.  Other options to set the region
+processed and aspects of the graphical front end that Rotfast shares with
+other applications are described in
+<A HREF="BatchRegion.html">BatchRegion.html</A>.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#yang">Y angles</A> |
+   <A HREF="#bkg">Background value</A> |
+   <A HREF="#deltaz">Z pixel size</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="BatchRegion.html">BatchRegion.html</A>
+<HR>
+
+<H2><A NAME="yang">Y angles</A></H2>
+<P>The projected views that Rotfast calculates are at y angles ranging
+from a start value to a final value with a fixed angle increment.  In
+the graphical interface these values are set in the <EM>Y Tilt (min,max,del)
+field</EM>.  On the command-line, use the option
+
+<PRE>
+            -ang=min:max:step
+</PRE>
+
+<P>to specify the set of views to calculate.  If the option is not set, one
+view at y rotation of zero degrees is calculated.
+
+<P>
+   <A HREF="#Rotfast">Overview</A> |
+   Y angles |
+   <A HREF="#bkg">Background value</A> |
+   <A HREF="#deltaz">Z pixel size</A>
+<HR>
+
+<H2><A NAME="bkg">Background value</A></H2>
+<P>Rotfast can subtract a fixed value from all the input values before
+doing the projection calculation.  Those input values that are less than
+zero after the subtraction are coerced to zero.  The background value to
+subtract is set in the <EM>Background to subtract</EM> field in the
+graphical interface (the graphical interface currently only allows you to set
+the background for the first wave; the other waves will use zero for the
+background value). On the command-line, use the option
+
+<PRE>
+            -bkg=wave1_bkg:wave2_bkg:wave3_bkg:wave4_bkg:wave5_bkg
+</PRE>
+
+<P>to specify the background values.  If the option is not set, a background
+value of zero is assumed for all waves.
+
+<P>
+   <A HREF="#Rotfast">Overview</A> |
+   <A HREF="#yang">Y angles</A> |
+   Background value |
+   <A HREF="#deltaz">Z pixel size</A>
+<HR>
+
+
+<H2><A NAME="deltaz">Z pixel size</A></H2>
+<P>Use this option to override the z pixel size in the input file header.
+This works well for thin data stacks because it gives it a pseudo 3-D feel
+by stretching the spacing of the stack in the z direction.  In the graphical
+user interface, you can override the z pixel size by turning off the toggle
+button labeled "default".  That toggle button is to the right of the field
+labeled "Z Spacing".  Then enter the z spacing you want to use in the field
+labeled "Z Spacing".  On the command line, use
+
+<PRE>
+            -deltaz=pixel_size
+</PRE>
+
+<P>to set the pixel size.  Changing the z pixel size will not have an effect if
+the processed region only has one z section.
+
+<P>
+   <A HREF="#Rotfast">Overview</A> |
+   <A HREF="#yang">Y angles</A> |
+   <A HREF="#bkg">Background value</A> |
+   <A HREF="#deltaz">Z pixel size</A>
+<HR>
+
+</BODY>
+</HTML>

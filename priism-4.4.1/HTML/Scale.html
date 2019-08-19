@@ -1,0 +1,346 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Scale</TITLE>
+  <META NAME="Description" CONTENT="On-line help for monitor image scaling.">
+  <META NAME="Keywords" CONTENT="Priism">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="Overview">Scale</A></H1>
+<H2>Overview</H2>
+
+<P>The Scale dialog allows you to view and set the mapping of data values
+into image intensities.  Because it also displays a histogram of the data
+values, it is also often used to look at the distribution of data values.
+
+<P>At the center of the dialog is a blue region in which the histogram
+is displayed and which is overlayed with a line graph schematically showing
+how the data values are mapped to image intensities.  You can change
+this mapping by editing the four values in the
+<EM><A HREF="#Scale">Scale</A></EM> field or by
+<A HREF="#MouseUse">adjusting the line graph with
+the mouse</A>.  The <A HREF="#GraphMinMax">range of data values</A>
+covered by the histogram is set by the field just below the histogram
+display.
+
+<H3>Topics</H3>
+<P>
+   Overview |
+   <A HREF="#Wave">Wave selection</A> |
+   <A HREF="#Options">Options</A> |
+   <A HREF="#Scale">Scaling values</A> |
+   <A HREF="#Histogram">Histogram</A> |
+   <A HREF="#WaveSectionScale">Using wave scale</A> |
+   <A HREF="#MouseUse">Using the mouse</A> |
+   <A HREF="#GraphMinMax">Graph range</A> |
+   <A HREF="#OtherControls">Other controls</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+   <A HREF="Priism.html">Priism</A> |
+   <A HREF="Monitor.html">Image Windows</A>
+<HR>
+
+<H2><A NAME="Wave">Wave Selection</A></H2>
+
+<P>The toggle buttons at the top of the menu indicate the wave in view.
+Pushing one of the toggles will cause that wave to be displayed in the
+image window.  The scale and histogram information will also be updated.
+
+<P>When the image window is displaying the data as single wavelength
+pseudocolor images and the wave viewed is changed, the wave toggles in the
+Scale menu are updated to reflect the wave currently in view.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Overview">Overview</A> |
+   Wave selection |
+   <A HREF="#Options">Options</A> |
+   <A HREF="#Scale">Scaling values</A> |
+   <A HREF="#Histogram">Histogram</A> |
+   <A HREF="#WaveSectionScale">Using wave scale</A> |
+   <A HREF="#MouseUse">Using the mouse</A> |
+   <A HREF="#GraphMinMax">Graph range</A> |
+   <A HREF="#OtherControls">Other controls</A>
+<HR>
+
+<H2><A NAME="Options">Options</A></H2>
+
+<P>The <EM>Options</EM> menu has settings which can be toggled on or off to
+control some less commonly used features.  A feature is on when an <EM>x</EM>
+is displayed next to it in the menu.
+
+<P>When the <EM>3D Histogram</EM> option is set, the histogram includes data
+from all z sections in the current wave and time.  By default, this option
+is off and only the values from the current section are used for the
+histogram calculation.
+
+<P>When the <EM>Binary</EM> option is set a binary scaling (actually a linear
+scaling with a very small difference between the minimum and maximum) is forced
+and, in addition to altering the scaling values for the data set, Scale alters
+the recommended threshold value.
+
+<P>When the <EM>Autorange</EM> option is set and a new section is displayed,
+the bounds on the histogram display are automatically adjusted to accommodate
+both the scale for the section and the range of data values.  This is the
+default behavior when scaling data in a scratch window.
+
+<P>When the <EM>Autoscale</EM> option is set and a new section is displayed,
+the scale is automatically adjusted to be a linear scale between the minimum
+and maximum data values in the new section.  By default, this option is
+off.  When it is turned on, the <EM><A HREF="#WaveSectionScale">Using wave
+scale</A></EM> toggle will be toggled off; if that toggle is toggled on,
+autoscaling will be turned off.
+
+<P>When the <EM>Filter</EM> option is set and a new section is displayed, a
+scale is automatically chosen by shifting the current scales based on where
+the peak in the histogram is.  By default, this option is off.
+
+<P>Because the <EM>3D Histogram</EM> and <EM>Filter</EM> options rely on
+the histogram calculation, they automatically turn on the histogram display
+when selected and are turned off if the <A HREF="#Histogram">histogram display
+is turned off</A>.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Overview">Overview</A> |
+   <A HREF="#Wave">Wave selection</A> |
+   Options |
+   <A HREF="#Scale">Scaling values</A> |
+   <A HREF="#Histogram">Histogram</A> |
+   <A HREF="#WaveSectionScale">Using wave scale</A> |
+   <A HREF="#MouseUse">Using the mouse</A> |
+   <A HREF="#GraphMinMax">Graph range</A> |
+   <A HREF="#OtherControls">Other controls</A>
+<HR>
+
+<H2><A NAME="Scale">Scaling Values</A></H2>
+
+<P>The mapping the from data values to intensities is set by four values
+that are shown in the <EM>Scale</EM> field.  A data value, x, between the first
+value, v0, and the second value, v1, is mapped to an image intensity, I, using
+this formula when v1 is greater than or equal to v0
+<PRE>
+     I = IMax * (( x - v0 ) / ( v1 - v0 ))^Gamma
+</PRE>
+<P>where Gamma is the third value in the field.  Data values greater than
+v1 are either displayed as the maximum intensity if the fourth value in the
+field is not one or as the minimum intensity if the fourth value is one.
+When v0 is greater than v1, the mapping is
+<PRE>
+     I = IMax * ( 1 - (( x - v0 ) / ( v1 - v0 ))^Gamma )
+</PRE>
+<P>and values greater than v0 are mapped to the minimum intensity if the
+fourth value in the field is not one or as the maximum intensity if the
+fourth value in the field is one.
+
+<P>In the special case where the first and second values both the same
+(in the case where the scale is applied to a single section, both must be
+zero), the image window has an autoscaling mechanism in which each section is
+linearly scaled based on the minimum and maximum of a sample of points from the
+section.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Overview">Overview</A> |
+   <A HREF="#Wave">Wave selection</A> |
+   <A HREF="#Options">Options</A> |
+   Scaling values |
+   <A HREF="#Histogram">Histogram</A> |
+   <A HREF="#WaveSectionScale">Using wave scale</A> |
+   <A HREF="#MouseUse">Using the mouse</A> |
+   <A HREF="#GraphMinMax">Graph range</A> |
+   <A HREF="#OtherControls">Other controls</A>
+<HR>
+
+<H2><A NAME="Histogram">Histogram</A></H2>
+
+<P>This toggle button turns off the calculation and display of the histogram
+and is useful when the overhead for those calculations isn't desired.  The
+line graph representing the mapping is still shown.
+<A HREF="#Options">Some options</A> will, as a side effect, turn on the
+histogram display; these same options are turned if they are in use when
+the histogram display is turned off.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Overview">Overview</A> |
+   <A HREF="#Wave">Wave selection</A> |
+   <A HREF="#Options">Options</A> |
+   <A HREF="#Scale">Scaling values</A> |
+   Histogram |
+   <A HREF="#WaveSectionScale">Using wave scale</A> |
+   <A HREF="#MouseUse">Using the mouse</A> |
+   <A HREF="#GraphMinMax">Graph range</A> |
+   <A HREF="#OtherControls">Other controls</A>
+<HR>
+
+<H2><A NAME="WaveSectionScale">Using Wave Scale</A></H2>
+
+<P>For each section, the scale that is applied is either a scale associated
+with just that section, if such a scale has been set, or the scale
+associated with the wave.  When viewing and changing the scales with Scale,
+how you use these two different sources for the scaling parameters is
+restricted to keep things simpler.  When the <EM>Using wave scale</EM> toggle
+is on, all sections in a wave use the scale associated with the wave, and
+the scale parameters shown are those of the wave's scale.  When it is off,
+all sections use their own scales (for any of these that haven't been set
+they are initialized with the scale associated with the wave), and the
+scale parameters shown are those for the current section's scale.
+
+<P>Besides manually toggling the <EM>Using wave scale</EM> toggle, there
+are situations when it is automatically changed.  When <A HREF="#Wave">a
+new wave is selected</A>, the toggle is toggled on if the newly displayed
+section doesn't have its own scale set and it is toggled off if the new section
+does have its own scale.  Also, if the <A HREF="#Options">autorange option</A>
+is enabled, it is toggled off.  If at some point, the toggle is manually
+toggled on, the autorange option is turned off if it was on.  Finally,
+if the <EM><A HREF="#OtherControls">Load</A></EM> button is pressed, the
+toggle is toggled on because the only scales affected by that button are those
+associated with each wave.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Overview">Overview</A> |
+   <A HREF="#Wave">Wave selection</A> |
+   <A HREF="#Options">Options</A> |
+   <A HREF="#Scale">Scaling values</A> |
+   <A HREF="#Histogram">Histogram</A> |
+   Using wave scale |
+   <A HREF="#MouseUse">Using the mouse</A> |
+   <A HREF="#GraphMinMax">Graph range</A> |
+   <A HREF="#OtherControls">Other controls</A>
+<HR>
+
+<H2><A NAME="MouseUse">Using the Mouse</A></H2>
+
+<P>You can use the mouse to adjust the image scale by altering
+the line graph displayed in the dialog.  There are three control points on the
+line graph.  If you place the pointer on one of the outer points, depress the
+right mouse button, and keep it depressed while moving the mouse, you
+will shift the upper or lower bound for the scale.  The same operation
+with the central point can be used to simultaneously shift both the maximum
+and minimum, i.e. slide the scale.  If you place the pointer on either of
+the segments between the boxes and drag the pointer with the right mouse
+button held down, you will alter the shape of the curve.  When the
+<A HREF="#Options">binary option</A> is on, the only movement that is possible
+is sliding the scale.
+
+<P>When adjusting the curve with the mouse, the outer control points can't
+be pushed beyond the bounds of the histogram display.  Adjust the values in
+the <EM><A HREF="#GraphMinMax">Graph Min/Max</A></EM> field to alter these
+bounds.  When the outer control points have little horizontal separation,
+you'll no longer be able to reshape the curve, but pointing at the segment
+between the outer control points, depressing the right mouse button, and
+moving the pointer will slide the scale.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Overview">Overview</A> |
+   <A HREF="#Wave">Wave selection</A> |
+   <A HREF="#Options">Options</A> |
+   <A HREF="#Scale">Scaling values</A> |
+   <A HREF="#Histogram">Histogram</A> |
+   <A HREF="#WaveSectionScale">Using wave scale</A> |
+   Using the mouse |
+   <A HREF="#GraphMinMax">Graph range</A> |
+   <A HREF="#OtherControls">Other controls</A>
+<HR>
+
+<H2><A NAME="GraphMinMax">Graph Range</A></H2>
+
+<P>The minimum and maximum data values represented in the histogram
+display are shown in the <EM>Graph Min/Max</EM> field.  You can change
+these values.  This can be useful when <A HREF="#MouseUse">adjusting
+the scale with the mouse</A> or with the
+<EM><A HREF="#OtherControls">Brightness</A></EM> or
+<EM><A HREF="#OtherControls">Contrast</A></EM> buttons.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Overview">Overview</A> |
+   <A HREF="#Wave">Wave selection</A> |
+   <A HREF="#Options">Options</A> |
+   <A HREF="#Scale">Scaling values</A> |
+   <A HREF="#Histogram">Histogram</A> |
+   <A HREF="#WaveSectionScale">Using wave scale</A> |
+   <A HREF="#MouseUse">Using the mouse</A> |
+   Graph range |
+   <A HREF="#OtherControls">Other controls</A>
+<HR>
+
+<H2><A NAME="OtherControls">Other Controls</A></H2>
+
+<P>The <EM>Brightness</EM> button will shift the scale by a factor (5%)
+of the difference between the upper and lower bound of the scaling.  Clicking
+on the right side of the button shifts the scale downward causing the image to
+appear brighter, clicking on the left side of the button has the opposite
+effect.
+
+<P>Clicking the right side of the <EM>Contrast</EM> button reduces the
+difference between the upper and lower bounds for the scale enhancing the
+contrast in the image.  To lower the contrast (expand the range of the
+scale), click on the left side of the <EM>Contrast</EM> button.
+
+<P>Neither of these buttons will cause the scale to fall outside of
+the <A HREF="#GraphMinMax">bounds on the histogram display</A>, so you may
+want to change these bounds before using the <EM>Contrast</EM> or <EM>
+Brightness</EM> buttons.
+
+<P>The <EM>Save</EM> button records the current scales and the name of the
+file viewed in a database.  <EM><A HREF="ViewFile.html">ViewFile</A></EM>
+and <EM><A HREF="CopyRegion.html">CopyRegion</A></EM> have options to read
+the saved scales for a file when the file is loaded into a window.
+The <EM>Load</EM> button can be used to load the saved scales after the
+file is opened.  If the
+<EM><A HREF="#WaveSectionScale">Using wave scale</A></EM> is off, be aware
+that the only scales recorded are the those for each wave; the scales for
+each section are not stored.
+
+<P>The <EM>Reverse</EM> button will change the scaling to give the negative
+image.
+
+<P>The <EM>Reset</EM> button is intended to provide a limited undo
+capability.  It will restore the scale in use at the most recent occurrence
+of any of the following events:
+
+<UL>
+<LI>the <EM><A HREF="#WaveSectionScale">Using wave scale</A></EM> toggle
+was pressed
+<LI>the section displayed in the image window was changed (this only applies
+if the  <EM><A HREF="#WaveSectionScale">Using wave scale</A></EM> toggle is
+currently on)
+<LI><A HREF="#Wave">a new wave was selected</A>
+<LI>the Scale dialog was opened
+</UL>
+
+<P>The <EM>Load Default</EM> button loads a linear scale whose range is
+based on minima and maxima recorded when the image window was created
+(the extreme values for the wave are used when the
+<EM><A HREF="#WaveSectionScale">Using wave scale</A></EM> toggle is on;
+otherwise the extreme values for the current section are used).  The
+minima and maxima are not recalculated.  If they were not set or were set to
+unintelligible values when the window was created, the scale won't change
+and an error message will be displayed; otherwise, the new scale range is
+just what the application that created the window set the range to be, and it
+may not be the same as the actual range of data values.
+
+<H3>Topics</H3>
+<P>
+   <A HREF="#Overview">Overview</A> |
+   <A HREF="#Wave">Wave selection</A> |
+   <A HREF="#Options">Options</A> |
+   <A HREF="#Scale">Scaling values</A> |
+   <A HREF="#Histogram">Histogram</A> |
+   <A HREF="#WaveSectionScale">Using wave scale</A> |
+   <A HREF="#MouseUse">Using the mouse</A> |
+   <A HREF="#GraphMinMax">Graph range</A> |
+   Other controls
+<HR>
+
+</BODY>
+</HTML>
+

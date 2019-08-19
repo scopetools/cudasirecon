@@ -1,0 +1,332 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Priism Help: Alignment File Manipulator</TITLE>
+  <META NAME="Description" CONTENT="On-line help for the applications to adjust alignment parameters for use with a resampled tilt series or a tilt series with a subset of the tilts.">
+  <META NAME="Keywords" CONTENT="Priism,EM,tomography,alignment">
+  <LINK REV=MADE HREF="mailto:ive@msg.ucsf.edu">
+</HEAD>
+<BODY>
+
+<H1><A NAME="tfalignment">Alignment File Manipulator</A></H1>
+<H2>Overview</H2>
+
+<P>The alignment parameter files written by
+<A HREF="BEAD_ALIGN.html">BEAD_ALIGN</A>, <A HREF="ALIGN2D.html">ALIGN2D</A> or
+<A HREF="MASSNORM.html">MASSNORM</A> are tied to the pixel spacing, center
+coordinates, and tilt angles of a tilt series.  If you generate a new tilt
+series by resampling or binning (i.e. with
+<A HREF="../ResDown.html">ReduceRes</A>) or by taking a subset of the tilts,
+you'll need a modified alignment parameter file to reconstruct the new tilt
+series.  The Alignment File Manipulator can generate the modified alignment
+parameter file.  There is an interactive version with a graphical interface
+that allows simple manipulations (correcting the shifts for resampling or
+taking a subset of the tilts); a command-line application, tfalignment, can do
+more (merge alignment results calculated relative to the same reference or
+generate alignment parameter files from scratch).
+
+<P>As an example, assume that a.stk is a 2048 x 2048 tilt series with alignment
+parameters that have been calculated and stored in a.bprmMn.  To compute
+the alignment parameters for a_half.stk, a version of a.stk resampled to
+1024 x 1024, run the Aligment File Manipulator with the input file as
+a.bprmMn, the output file as a_half.bprmMn, the sampling ratio as 0.5, while
+leaving the other parameters (shift, projection range, and step size) at their
+default values.
+
+<H3>Topics</H3>
+<P>
+    Overview |
+    <A HREF="#InputFile">Input file</A> |
+    <A HREF="#OutputFile">Output file</A> |
+    <A HREF="#SamplingRatio">Sampling ratio</A> |
+    <A HREF="#XYShift">Projection shift</A> |
+    <A HREF="#InputProjectionRange">Projection range</A> |
+    <A HREF="#InputStepSize">Step size</A> |
+    <A HREF="#Invert">Invert</A> |
+    <A HREF="#ReverseAxis">Reverse tilt axis</A> |
+    <A HREF="#CommandLine">Command line</A>
+
+<H3>Related Priism Topics</H3>
+<P>
+    <A HREF="../Priism.html">Priism</A> |
+    <A HREF="BEAD_ALIGN.html">Bead align</A> |
+    <A HREF="BEAD_ALIGN_INTERACTIVE.html">Bead align (interactive)</A> |
+    <A HREF="ALIGN2D.html">Beadless alignment</A> |
+    <A HREF="MASSNORM.html">Massnorm</A> |
+    <A HREF="EMTAR.html">Reconstruction</A> |
+    <A HREF="../ResDown.html">ReduceRes</A>
+<HR>
+
+<H2><A NAME="InputFile">Input File</A></H2>
+<P>For the interactive Alignment File Manipulator, use the "Input file" field
+to enter the name of the .bprmMn file that you want to convert.  It can also
+handle files in the old .bprm format.  You can use the button adjacent to the
+field to bring up a file browser for selection of the file.
+
+<P><A HREF="#tfalignment">Return to overview</A>
+<HR>
+
+<H2><A NAME="OutputFile">Output File</A></H2>
+<P>For the interactive Alignment File Manipulator, use the "Output file" field
+to enter the name for the output parameter file.  You can use the button
+adjacent to the field to bring up a file browser for selection of the file.
+
+<P><A HREF="#tfalignment">Return to overview</A>
+<HR>
+
+<H2><A NAME="SamplingRatio">Sampling Ratio</A></H2>
+<P>Let <VAR>x1</VAR> be the x pixel spacing of the tilt series used to
+generate the input alignment parameter file and <VAR>x2</VAR> be the x pixel
+spacing of the tilt series for which you want to generate a new set of
+alignment parameters.  Then enter the ratio of <VAR>x1</VAR> to <VAR>x2</VAR>
+in the "Sampling ratio" field.
+
+<P>Like the other alignment and reconstruction applications, the Alignment File
+Manipulator assumes the pixels in the tilt series are square:  i.e. the
+ratio calculated above will hold true for the y pixel spacing as well.
+
+<P><A HREF="#tfalignment">Return to overview</A>
+<HR>
+
+<H2><A NAME="XYShift">Projection Shift</A></H2>
+<P>The alignment procedure aims to keep the object at the center of the
+image (pixel coordinates ((nx - 1) / 2.0, (ny - 1) / 2.0) where the lower
+left corner pixel is (0,0)) in one tilt at the center of the image in all
+tilts.  If you computed the alignment parameters for one version of a tilt
+series, call it q, and want to apply those parameters to another version
+of the tilt series, r, whose image center does not correspond to the same
+location, fill the "Projection shift" field with the shift, measured in
+units of pixels in q, between the center of r and the center of q.
+
+<P>As an example, you have the alignment parameters calculated from a limited
+range in x and y of a tilt series with nx by ny images; the region used
+for the alignment calculation had it's lower left corner at (x1,y1) in the
+full image and had a size of nx1 by ny1 pixels.  You want to apply those
+alignment parameters to the full tilt series.  Since the center of the
+full image is at ((nx - 1) / 2.0 - x1, (ny - 1) / 2.0 -y1) in the subset,
+the shifts that you would enter in the "Projection shift" field would be
+(nx - nx1) / 2.0 - x1 pixels in x and (ny - ny1) / 2.0 - y1 pixels in y
+(i.e. the difference between the coordinates in the subset which correspond
+to the center of the full image and the coordinates of the center of the
+subset).
+
+<P><A HREF="#tfalignment">Return to overview</A>
+<HR>
+
+<H2><A NAME="InputProjectionRange">Projection Range</A></H2>
+<P>If the tilt series for which you are calculating the new alignment
+parameters has a subset of the projections from the tilt series used to
+generate the input alignment parameter file, use the "Projection range"
+field to limit the projections included in the output alignment parameter
+field.  The first value in the field is the index of the first tilt to include
+and the second value in the field is the index of the last tilt to include.
+Indices start from zero:  an index of zero refers to the first projection in
+the tilt series used to generate the input alignment parameter file.
+
+<P><A HREF="#tfalignment">Return to overview</A>
+<HR>
+
+<H2><A NAME="InputStepSize">Step Size</A></H2>
+<P>If the tilt series for which you are calculating the new alignment
+parameters takes every 2nd (or 3rd, etc...) projection from the tilt series
+used to generate the input alignment parameter file, the set the value
+in the "Step size" field to be the increment between the projections extracted.
+If you use every other projection, then use a step size of 2; if you reversed
+the order of the projections, use a step size of -1.
+
+<P><A HREF="#tfalignment">Return to overview</A>
+<HR>
+
+<H2><A NAME="Invert">Invert</A></H2>
+<P>When the toggle button labeled "Invert" is on, the new alignment parameters
+will invert the coordinate transformations specified by the input alignment
+parameters.
+
+<P><A HREF="#tfalignment">Return to overview</A>
+<HR>
+
+<H2><A NAME="ReverseAxis">Reverse Tilt Axis</A></H2>
+<P>When the toggle button labeled "Reverse Tilt Axis" is on, 180 degrees will
+be added to the rotation alignment parameters and the results will be wrapped
+to the range from -180 degrees to 180 degrees (excluding -180 and including
+180).  The change to the rotation is done prior to inverting the coordinate
+system or applying a projection shift.
+
+<P><A HREF="#tfalignment">Return to overview</A>
+<HR>
+
+<H2><A NAME="CommandLine">Command Line</A></H2>
+<P>A command-line application, tfalignment, provides the same operations as
+the interactive Aligment File Manipulator and some additional capabilities
+as well.  To reproduce the example from the <A HREF="#tfalignment">overview</A>
+(calculate alignment parameters from a.bprmMn for a tilt series at half the x
+and y resolution), use
+<PRE>
+     tfalignment a.bprmMn -ratio=0.5 -out=a_half.bprmMn
+</PRE>
+<P>The full command-line syntax is (optional parts are shown in braces; parts
+to be replaced with a value appropriate for your case are shown in italics;
+options which are mutually exclusive are show separated by vertical bars):
+
+<PRE>
+    tfalignment [<VAR>input_param_file</VAR> \
+        [-ratio=<VAR>r</VAR>] [-shift=x:y] [-invert] [-revaxis] \
+        [-istart=<VAR>is</VAR>] [-iend=<VAR>ie</VAR>] [-istep=<VAR>ii</VAR>] \
+        [-ostart=<VAR>os</VAR>] [-ostep=<VAR>oi</VAR>]] ... \
+        [-out=<VAR>out_name</VAR>] [-iref=i] [-nv=<VAR>count</VAR>] \
+        [-align|-massnorm] [-title=<VAR>label</VAR>] \
+        [-stk=<VAR>stk_name</VAR> [-istart=<VAR>is</VAR>] \
+        [-iend=<VAR>ie</VAR>] [-istep=<VAR>ii</VAR>] [-ostart=<VAR>-os</VAR>] \
+        [-ostep=<VAR>oi</VAR>]] ... \
+        [-rot0=[<VAR>angle</VAR>][:<VAR>delta</VAR>]] \
+        [-tilt=[<VAR>angle</VAR>][:<VAR>delta</VAR>[:<VAR>index</VAR>]]]
+</PRE>
+
+<P>Essentially, there can be zero or more input parameter files.  For each
+input parameter file you can set the x pixel spacing relative to the output
+(via <CODE>-ratio</CODE>), the shift of the image center (via
+<CODE>-shift</CODE>), whether to invert the transformation specified by the
+parameters (via <CODE>-invert</CODE>), whether or not to add 180 degrees to
+the rotation parameters (via <CODE>-revaxis</CODE>), which projections are
+extracted (via <CODE>-istart</CODE>, <CODE>-iend</CODE>, and
+<CODE>-istep</CODE>), and how those projections are numbered in the output
+parameter file (via <CODE>-ostart</CODE> and <CODE>-ostep</CODE>).  Set the
+name of the output parameter file with <CODE>-out</CODE>.  If you want the
+output parameter file to have parameters for exactly <VAR>count</VAR>
+projections, use <CODE>-nv</CODE> to set <CODE>count</CODE>.
+<CODE>-align</CODE> forces the output to be in the .bprm format;
+<CODE>-massnorm</CODE> forces the output to be in the .bprmMn format.  Use
+<CODE>-title</CODE> to control what tfalignment writes to the first line in
+the output.  The remaining options only come into play if the output
+projections include projections that can not be drawn from one of the input
+parameter files (that is only possible if you use <CODE>-nv</CODE>,
+<CODE>-ostart</CODE>, or <CODE>-ostep</CODE>).  For additional information
+about a specific option or argument, consult the list below.
+
+<DL>
+  <DT><VAR>input_param_file</VAR><DD>Is the name of an input
+    parameter file.  If the name is - (a single hyphen), tfalignment reads
+    the parameter file from standard input.  You may supply multiple input
+    parameter files.  If a projection <VAR>j</VAR> in the output maps to
+    projections in more than one input parameter file, tfalignment will
+    use the parameter values from the file that appears first on the command
+    line.
+  <DT><CODE>-ratio=</CODE><VAR>r</VAR><DD>Sets the ratio, <VAR>r</VAR>, of the
+    x pixel spacing assumed for the previous input parameter file to the x
+    pixel spacing assumed for the output parameters.  tfalignment assumes
+    that the ratio of the y pixel spacings is also <VAR>r</VAR>.  If you
+    do not specify a pixel spacing ratio for an input parameter file,
+    tfalignment assumes pixel spacing ratio is one.
+  <DT><CODE>-shift=</CODE><VAR>x</VAR><CODE>:</CODE><VAR>y</VAR><DD>Sets
+    the shift in x and in y to get from the nominal center (i.e.
+    (nx - 1) / 2.0, (ny - 1) / 2.0 where (0,0) is the pixel in the lower
+    left) of the images used to calculate the alignment to the nominal center
+    of the images to be aligned.  The units for the shifts are pixels of the
+    images used to calculate the alignment.
+  <DT><CODE>-invert</CODE><DD>Inverts the transformation specified by the
+    alignment parameters from the previous input parameter file.  The output
+    parameters for those projections will correspond to the inverted
+    transformation.  By default, tfalignment does not invert the
+    transformation specified by the input parameters.
+  <DT><CODE>-revaxis</CODE><DD>180 degrees are added to the rotation parameters
+    from the previous input parameter file, and the results are wrapped to
+    the range of -180 degrees to 180 degrees (excluding -180 and including
+    180).  The change to the rotation is done prior to inverting the parameters
+    or applying a projection shift.  By default, tfalignment uses the rotation
+    parameters as they are.
+  <DT><CODE>-istart=</CODE><VAR>is</VAR><DD>Sets the zero-based index for the
+    first projection to use from the previous input parameter file or tilt
+    series (tilt series inputs are set via <CODE>-stk</CODE>).  If you do not
+    specify the first projection to use for a file, tfalignment will start
+    from the first projection.
+  <DT><CODE>-iend=</CODE><VAR>ie</VAR><DD>Sets the zero-based index for the
+    last projection to use from the previous input parameter file or tilt
+    series.  If you do not specify the last projection to use for a file,
+    tfalignment will end with the highest projection index in the file.
+  <DT><CODE>-istep=</CODE><VAR>ii</VAR><DD>Sets the index increment between
+    adjacent projections to use from the previous input parameter file or
+    tilt series.  <VAR>ii</VAR> must not be zero.  If you do not specify
+    an increment for a file, tfalignment uses an increment of one.
+  <DT><CODE>-ostart=</CODE><VAR>os</VAR><DD>Sets the destination projection
+    in the output for the starting projection (set with <CODE>-istart</CODE>)
+    from the previous input parameter file or tilt series.  <VAR>os</VAR> is
+    the zero-based index of the destination projection.  If you do not set the
+    destination projection for the first projection taken from a file,
+    tfalignment assumes that the destination is the first projection in the
+    output.
+  <DT><CODE>-ostep=</CODE><VAR>oi</VAR><DD>Sets the increment between
+    destination projections for adjacent projections taken from the previous
+    file.  <VAR>oi</VAR> must not be zero.  If you do not set the destination
+    increment, tfalignment uses an increment of one.
+  <DT><CODE>-out=</CODE><VAR>name</VAR><DD>Sets the name of the file to
+    create for the output alignment parameters.  If you use this option more
+    than once, only the last has any effect.  If you do not specify the name
+    of the output file, tfalignment writes the output parameters to standard
+    output.
+  <DT><CODE>-nv=</CODE><VAR>count</VAR><DD>Sets the total number of projections
+    included in the output.  <VAR>count</VAR> must not be negative.  In the
+    output parameters, the projections are numbered using one-based indexing;
+    the first is always numbered one.  If you do not set the number of
+    output projections, tfalignment uses the smallest number that will
+    accommodate the destination projections for the projections selected
+    from all input parameter files.
+  <DT><CODE>-align</CODE><DD>Forces the output to be in the old format written
+    by the alignment applications.  tfalignment treats simultaneous  use of
+    <CODE>-align</CODE> and <CODE>-massnorm</CODE> as an error.  If you do not
+    set the output format with <CODE>-align</CODE> or <CODE>-massnorm</CODE>,
+    tfalignment writes the output in .bprm format if there are one or more
+    input parameter files and all those input parameter files are in the .bprm
+    format; otherwise, tfalignment writes the output in .bprmMn format.
+  <DT><CODE>-massnorm</CODE><DD>Forces the output to be in the .bprmMn format
+    (i.e. the format generated by <A HREF="MASSNORM.html">MASSNORM</A> which
+    includes alignment and mass-normalization parameters).  See the
+    description of <CODE>-align</CODE> for more details.
+  <DT><CODE>-title=</CODE><VAR>label</VAR><DD>Sets the title written as
+    the first line in the output.  If you do not set a title, tfalignment
+    will use the the title from the first input parameter file or print a
+    blank line if there are no input parameter files.
+  <DT><CODE>-stk=</CODE><VAR>stk_name</VAR><DD>Establishes the tilt series
+    (images at different tilts in MRC format) stored in the file named
+    <VAR>stk_name</VAR> as a source of tilt angle values.  Following the
+    <CODE>-stk</CODE> option, you may specify <CODE>-istart</CODE>,
+    <CODE>-iend</CODE>, and <CODE>-istep</CODE> to control which projections
+    are used from a tilt series and <CODE>-ostart</CODE> and
+    <CODE>-ostep</CODE> to control how the selected projections are mapped
+    to the output parameter file.  tfalignment only looks at the tilt series
+    for a tilt angle value if it can not determine the tilt angle value from
+    one of the input  parameter files.  You may specify multiple -stk options.
+    tfalignment searches the tilt series for tilt angle values in the
+    order they appear on the command line; tfalignment stops the search as
+    soon as it locates a match.
+  <DT><CODE>-rot0=</CODE><VAR>angle</VAR>[:<VAR>delta</VAR>]<DD>Sets the
+    orientation angle of the tilt axis for projections which tfalignment can
+    not draw from one of the input parameter files.  The orientation angle is
+    the angle between the tilt axis and a ray pointed upwards along the
+    vertical axis of the image.  The sign of the orientation angle is positive
+    if a clockwise rotation of the image makes the tilt axis vertical; the
+    sign on the angle is negative if a counterclockwise rotation of the image
+    makes the tilt axis vertical.  The first argument to -rot0 specifies the
+    orientation angle, measured in degrees, of the tilt axis at a tilt angle
+    of 0 degrees.  The second argument is the difference, in degrees, between
+    the orientation angle at a tilt angle of +60 degrees and at a tilt angle
+    of -60 degrees.  If you do not set the orientation angle, tfalignment
+    assumes an orientation angle of zero degrees for all projections not
+    drawn from an input parameter file.  If you set orientation angle but not
+    how the orientation angle changes with tilt angle, tfalignment assumes the
+    orientation angle is independent of the tilt angle.
+  <DT><CODE>-tilt=</CODE>[<VAR>angle</VAR>][<CODE>:</CODE>[<VAR>delta</VAR>][<CODE>:</CODE><VAR>index</VAR>]]<DD>
+    Specifies the tilt angle for projections which tfalignment can not
+    determine the tilt angle from an input parameter file or a tilt series.
+    <VAR>angle</VAR> is the tilt angle, in degrees, for the projection whose
+    0-based index (in the output parameters) is <VAR>index</VAR>.  If you do
+    not supply a value for <VAR>angle</VAR> (i.e. <CODE>-tilt=:</CODE>...)
+    tfalignment assumes a value of zero.  If you do not supply a value for
+    <VAR>index</VAR>, tfalignment assumes a value of zero.  <VAR>delta</VAR>
+    is the difference, in degrees, between the tilt angles of projection i+1
+    and projection i for any non-negative value of i.  If you do not
+    set <VAR>delta</VAR>, tfalignment assumes a value of 0.
+</DL>
+
+</BODY>
+</HTML>

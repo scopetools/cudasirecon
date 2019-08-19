@@ -1,0 +1,15 @@
+KEYWORD
+           DownUP_Slider
+
+DESCRIPTION : Slider
+           Slider treats the entire data volume as a stack of
+           sections so that sliding from one end to the other
+           will move thru every section, regardless of the 
+           organization of the dimensions.
+ 
+DownUP_Slider
+           The Down and Up Slider is the control for moving
+           thru sections. It's a quick way to move around
+           in your data set. The percentage of the way the
+           bar is to the right, is the same percentage the 
+           diplayed section is to the end of the data stack. 

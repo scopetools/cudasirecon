@@ -1,0 +1,89 @@
+KEYWORD
+
+DESCRIPTION
+    The applications in Priism for aligning EM tomograms and
+    computing the 3D reconstruction from the tomograms expect
+    the tilt angles for the tomographic series to be stored
+    in the extended header for the MRC data.  If your data
+    does not have the tilt angles in the extended header you
+    can use the "Insert Tilts" application to add them.  One
+    way of checking the contents of a data set's extended
+    header is to use the Edit Header application in Priism's
+    DataViews->DataInfo menu.
+
+    To access the graphical interface, select "Processing",
+    then "EM Processing", and, finally, "Insert Tilts" from
+    the Priism menus.  That will display a dialog.  The first
+    line in the dialog is for selecting your data which does
+    not include the tilt angles.  You can press the "Input"
+    button to select the file with a file browser or directly
+    enter the name of the file in the adjacent field.  The
+    second line in the dialog controls the name of the output
+    MRC file.  If your data does not already have space for
+    the extended header, the tilt angles can not be inserted
+    into it.  Instead, the data will be copied to a new file
+    which has space for the extended header; to select the
+    name of the new file use the "Output" button to open a
+    file browser or enter the name directly in the adjacent
+    field.  If your data has space for an extended header,
+    you have the option of creating a new file with the
+    updated tilt angles or modifying the existing file:
+    turn on the "in place" button to modify the existing
+    file or turn it off to create a new file.
+
+    The values for the inserted tilt angles are controlled by
+    the third and fourth lines in the dialog.  If the tilt
+    angles are linearly spaced, you can turn on the "Linear
+    spacing" button and enter the tilt angle, in degrees,
+    for the first projection in the "Start" field and enter
+    the tilt angle increment, in degrees, in the "Step" field.
+    For other arrangements of the tilt angles, you will have
+    to import the tilt angles from a text file by turning off
+    the "Linear spacing" button and then pressing the "Tilt
+    file" button to select a file or entering the name of the
+    file directly in the adjacent field.  The text file must
+    have the tilt angles, in degrees, separated by whitespace
+    and in the same order as the projections in the MRC file.
+
+    Once you have selected the input file, tilt angles, and,
+    if necessary, the output file, press the "DoIt" button at
+    the bottom of the dialog to insert the tilt angles.  You
+    can use "Close" button at the bottom of the dialog to
+    dismiss the dialog.
+
+    The application to insert tilt angles into a file also
+    has a command-line interface.  The command to copy the
+    contents of infile to outfile and insert linearly
+    varying tilt angles which start with t degrees and
+    have an increment of s degrees is
+
+        insert_tilts infile outfile -linear=t:s
+
+    To use the tilt angles read from the text file, tfile,
+    instead of linearly varying tilt angles, you would use
+    the following command:
+
+        insert_tilts infile outfile -tilt_file=tfile
+
+    To read the tilt angles from standard input, use the
+    above command with a file name of "-" for the file
+    with the tilt angles, i.e.:
+
+        insert_tilts infile outfile -tilt_file=-
+
+    If infile already had space for an extended header,
+    the command to insert a linearly varying set of tilt
+    angles is
+
+        insert_tilts infile -linear=t:s
+
+    and the command to insert the tilt angles read from a
+    text file is
+
+        insert_tilts infile -tilt_file=tfile
+
+    The example below copies the data from a.dat to a_h.dat
+    and inserts tilt angles that start from 65 degrees and
+    have an increment of -1 degrees:
+
+        insert_tilts a.dat b.dat -linear=65:-1

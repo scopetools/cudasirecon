@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVECreateArena</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Defines the behavior of IVECreateArena.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVECreateArena</H1>
+<H2>Overview</H2>
+<P>Creates a <A HREF="IVEArena.html">shared memory segment</A>.
+<H2>Prototype (C)</H2>
+<P><CODE>#include "ive_shm.h"</CODE>
+<BR><CODE>IVEArena IVECreateArena(const char* filename, IVEArenaAttr attr, int fail_if_exist, int* p_status);</CODE>
+<H2>Prototype (Fortran)</H2>
+<P>There is no Fortran interface.
+<H2>Parameters</H2>
+<DL>
+  <DT><VAR>filename</VAR><DD><VAR>filename</VAR> is the name to use for the
+    shared memory segment.  As currently implemented, this name must be that
+    of a regular disk file (not a device file).
+  <DT><VAR>attr</VAR><DD><VAR>attr</VAR> specifies the attributes of the
+    arena.  If <VAR>attr</VAR> is zero (NULL), the default attributes are
+    used.
+  <DT><VAR>fail_if_exist</VAR><DD>Only has an effect if <VAR>filename</VAR>
+    exists.  If <VAR>fail_if_exist</VAR> is true, then
+    the function call will fail if <VAR>filename</VAR> exists.  If
+    <VAR>fail_if_exist</VAR> is false and <VAR>filename</VAR> exists, the
+    function will act as <A HREF="IVEAttachArena.html">IVEAttachArena</A>
+    does if <VAR>filename</VAR> appears to be a valid shared memory file
+    or will overwrite <VAR>filename</VAR> if it does not appear to be a
+    valid shared memory file.
+  <DT><VAR>p_status</VAR><DD>If the call to IVECreateArena returns zero,
+    then *<VAR>p_status</VAR> will be set to one of the values listed
+    below if <VAR>p_status</VAR> is not zero.    
+    <DL>
+      <DT>IVE_ERR_NO_MEM<DD>There was insufficient memory available to
+        complete the operation.
+      <DT>IVE_ERR_NO_SPC<DD>There was insufficient disk space to create
+        a lock file.
+      <DT>IVE_ERR_NO_RESOURCES<DD>There was insufficient system resources
+        available (other than memory) to complete the operation.
+      <DT>IVE_ERR_IN_USE<DD>Another thread was in the process of creating
+        or attaching to <VAR>filename</VAR>.
+      <DT>IVE_ERR_TIMEOUT<DD>The operation could not be completed because
+        it was interrupted too many times by signals or access to a remote
+        filesystem timed out.
+      <DT>IVE_ERR_IO<DD>The operation could not be completed because an
+        I/O error occurred.
+      <DT>IVE_ERR_NO_PERMISSION<DD>The caller does not have sufficient
+        privileges to access <VAR>filename</VAR> or it is in a read-only
+        filesystem.
+      <DT>IVE_ERR_EXIST<DD><VAR>fail_if_exist</VAR> is true, and a file
+        whose file name is <VAR>filename</VAR> is present.
+      <DT>IVE_ERR_UNSUPPORTED<DD>The file size is not supported by the
+        file system or the other operations to create the shared memory segment
+        are not supported by the operating system.
+      <DT>IVE_ERR_INVALID<DD>The size of the arena specified by <VAR>attr</VAR>
+        is too small to hold the arena header.
+      <DT>IVE_ERR_BAD_FILENAME<DD><VAR>filename</VAR> does not exist or
+        is a directory.
+      <DT>IVE_ERR_INTERNAL<DD>An error internal to the library was detected.
+        This is most likely because of a bug in the library.
+      <DT>IVE_ERR_UNRECOGNIZED<DD>The operating system or system library
+        returned an error code that was not expected.
+    </DL>
+</DL>
+<H2>Return value</H2>
+<P>If the function call fails, zero is returned.  Otherwise, a non-zero
+value is returned.  When the application is done with the arena, it can
+destroy it with <A HREF="IVEDestroyArena.html">IVEDestroyArena</A> or just
+detach from it with <A HREF="IVEDetachArena.html">IVEDetachArena</A>.
+<H2>Cross references</H2>
+<P><A HREF="IVEDestroyArena.html">IVEDestroyArena</A>,
+<A HREF="IVEAttachArena.html">IVEAttachArena</A>,
+<A HREF="IVEDetachArena.html">IVEDetachArena</A>,
+<A HREF="IVEArena.html">IVEArena</A>, and
+<A HREF="IVEArenaAttr.html">IVEArenaAttr</A>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified July 1, 2001
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

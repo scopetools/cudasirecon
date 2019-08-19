@@ -1,0 +1,68 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <TITLE>Reference: IVE Error Codes</TITLE>
+  <META NAME="Author" CONTENT="Eric Branlund">
+  <META NAME="Description" CONTENT="Describes the various IVE_ERR_ constants.">
+  <LINK REV=MADE HREF="mailto:eric@msg.ucsf.edu">
+</HEAD>
+
+<BODY>
+
+<H1>Reference: IVE Error Codes</H1>
+<P>To flag error conditions, IVE functions use the following constants defined
+in ive_error.h (for C) or ive_error.inc (for Fortran).
+
+<DL>
+  <DT><A NAME="IVE_ERR_NONE">IVE_ERR_NONE</A><DD>No error occurred.  This
+    constant evaluates to zero; all the other error constants are non-zero.
+  <DT><A NAME="IVE_ERR_NO_MEM">IVE_ERR_NO_MEM</A><DD>Insufficient memory was
+    available to complete the operation.
+  <DT><A NAME="IVE_ERR_NO_SPC">IVE_ERR_NO_SPC</A><DD>Insufficient disk space
+    was available to complete the operation.
+  <DT><A NAME="IVE_ERR_NO_RESOURCES">IVE_ERR_NO_RESOURCES</A><DD>A system
+    resource (other than disk space or memory) was exhausted.
+  <DT><A NAME="IVE_ERR_NO_PERMISSION">IVE_ERR_NO_PERMISSION</A><DD>Did not
+    have sufficient privileges to complete the operation.
+  <DT><A NAME="IVE_ERR_IN_USE">IVE_ERR_IN_USE</A><DD>A resource was in use and
+    the operation could not be completed.
+  <DT><A NAME="IVE_ERR_TIMEOUT">IVE_ERR_TIMEOUT</A><DD>An operation could not
+    be completed before a timeout interval elapsed or before a fixed number of
+    retries after being interrupted by a signal.
+  <DT><A NAME="IVE_ERR_IO">IVE_ERR_IO</A><DD>An I/O error occurred.
+  <DT><A NAME="IVE_ERR_EXIST">IVE_ERR_EXIST</A><DD>Could not create something
+    because it was already in place.
+  <DT><A NAME="IVE_ERR_OVERFLOW">IVE_ERR_OVERFLOW</A><DD>A return value
+    exceeded the range that can be represented.
+  <DT><A NAME="IVE_ERR_UNSUPPORTED">IVE_ERR_UNSUPPORTED</A><DD>The operation
+    is not handled due to limitations in the libraries or operating system.
+  <DT><A NAME="IVE_ERR_INVALID">IVE_ERR_INVALID</A><DD>An invalid argument was
+    detected.
+  <DT><A NAME="IVE_ERR_BAD_FILENAME">IVE_ERR_BAD_FILENAME</A><DD>A file name
+    included a non-existent path element or was too long for the file system.
+  <DT><A NAME="IVE_ERR_CORRUPT">IVE_ERR_CORRUPT</A><DD>An inconsistency was
+    detected in a data file or internal data structure.
+  <DT><A NAME="IVE_ERR_INTERNAL">IVE_ERR_INTERNAL</A><DD>An error internal to
+    the library was detected.  This is most likely because of a bug in the
+    library.
+  <DT><A NAME="IVE_ERR_UNRECOGNIZED">IVE_ERR_UNRECOGNIZED</A><DD>An internal
+    call to the operating system or system library encountered an error which
+    IVE did not expect.
+</DL>
+
+<HR>
+
+<P>| <A HREF="Categories.html">categories</A>
+   | <A HREF="Alphabetical.html">alphabetical</A>
+   |
+
+<HR>
+
+<P>modified December 20, 2001
+<ADDRESS>
+  Eric Branlund (<A HREF="mailto:eric@msg.ucsf.edu">eric@msg.ucsf.edu</A>)
+</ADDRESS>
+
+</BODY>
+</HTML>

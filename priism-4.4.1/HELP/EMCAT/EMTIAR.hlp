@@ -1,0 +1,809 @@
+KEYWORD
+      Resolution ApplyMassnorm ReconstructionShift
+      ReconstructionZSize TapirCyclesPerRun TapirSmoothing
+      RestartRecon NumberOfRuns TemporaryDirectory
+      InitialGuess CrossCorrelationImages GuessResolution
+      StartingRunNumber AutomaticTermination ResolutionScale
+      FullSize AlignedSize SectionRange Positivity CoerceInput
+      Multires AlignmentMethod SimplexFilter Offset
+      PhaseWeighting Slab WienerCoefficient CenterPeakDistance
+      2ndPeakThreshold SimplexDeviations CommandLine
+
+DESCRIPTION
+      EMTIAR is a front-end for the iterative alignment and
+      reconstruction of EM tomography data.  It differs from
+      the other alignment and reconstruction front end,
+      EMTAR, in that it can do multiple runs of reconstruction,
+      reprojection, and alignment of the data to the
+      reprojection in order to refine the alignment
+      parameters and reconstruction; EMTAR does not refine
+      the alignment parameters and therefore requires less
+      time.
+
+      The basic recipe for generating a reconstruction with
+      EMTIAR is:
+
+      1) Use the mass-normalization and alignment components
+         of EMTAR to generate the final values for the mass-
+         normalization parameters and initial guess for the
+         alignment parameters.  If your data has fiducial
+         markers, you can use BALIGN instead to generate the
+         initial guess for the alignment parameters and then
+         use the mass-normalization component of EMTAR to
+         add the mass-normalization values.
+
+      2) Start EMTIAR.  Enter the name of the tilt series
+         in the "TiltSeries" field at the top of the dialog.
+         Enter the name of the file with the mass-
+         normalization parameters and initial guess at the
+         alignment parameters in the "InAlignParam" field
+         at the top of the dialog.
+
+      3) Adjust other parameters.  Parameters that
+         are commonly changed are:
+
+         The resolution level to process
+             If you've added multiple resolutions
+             to the input tilt series using
+             AppendRes with a z scaling of one,
+             then you can enter the resolution
+             level (zero is the highest) to process
+             in the "Resolution" field.  The generated
+             alignment parameters will always be in
+             terms of the coordinates of the highest
+             resolution.  The generated reconstruction
+             will be at the selected resolution level.
+             Size-related input parameters are
+             automatically scaled by the resolution
+             factor so you should choose values for
+             those that are appropriate for the highest
+             resolution.  Performing initial refinement
+             at lower resolutions can significantly
+             speed up the process because the
+             reconstructions are smaller.
+
+         Bounds of the reconstructed volume
+             The bounds are controlled by the
+             "Reconstruction shift" and "Reconstruction
+             Z size" fields.  The x and y dimensions
+             of the reconstruction are constrained to be
+             the same size as the x and y dimensions of
+             the input tilt series.  EMTAR has methods
+             to interactively select the bounds; you can
+             use them and then copy the values from EMTAR's
+             "Shift (XYZ)" field to the "Reconstruction
+             shift" field in EMTIAR and the third value
+             in EMTAR's "Size XYZ" field to the
+             "Reconstruction Z size" field in EMTIAR.
+
+         Number of runs
+             This is the number of times the steps of
+             reconstruction, reprojection, and alignment
+             to the reprojection are repeated.
+
+         Parallel execution
+             If you have a cluster of computers or a
+             single machine with multiple processors,
+             you can speed up the reconstruction step by
+             having pieces of the reconstruction done by
+             different processors.
+
+      4) Press the "Do It" button to start the alignment
+         and reconstruction.  Before pressing "Do It" you
+         way want to alter the job submission settings
+         by pressing the "Options" button at the bottom
+         of the EMTIAR dialog.  The job submission settings
+         are described in BatchRegion.hlp.
+
+      Besides a log file, the iterative alignment and
+      reconstruction generates two outputs.  The first
+      is an alignment parameter file for each iteration.
+      The names for these files are the contents of the
+      "OutParamBase" field with an underscore, the
+      iteration number, and the extension of the input
+      alignment parameter file appended.  The second
+      output is the data for the reconstructed volume.
+      The file name for the reconstructed volume is in
+      the "Reconstruction" field.
+
+Resolution
+      The resolution parameter selects which resolution
+      to process from the input tilt series.  0 is the
+      highest (full) resolution.  Normally all that you
+      need to do to process a different resolution is
+      set the resolution parameter.  There are other
+      parameters in the special parameters dialog
+      that affect the handling of different resolutions
+      (guess resolution, resolution scale, and full
+      size), but in typical cases the user interface
+      chooses correct defaults for those parameters.
+
+ApplyMassnorm
+      The default behavior for the iterative alignment
+      and reconstruction has an initialization step
+      where the mass-normalization parameters are used
+      to generate a mass-normalized (but not aligned)
+      version of the input tilt series.  The toggle
+      button next to "Apply massnorm" controls whether
+      or not to use the initialization step.  If you
+      have already applied the mass-normalization
+      parameters to the input tilt series, turn the
+      toggle button off; otherwise, make sure it is on.
+
+      Two controls affect the application of the mass-
+      normalization parameters during the initialization
+      step.  The menu at the end of the "Apply massnorm"
+      line allows you to select the image formation model.
+      You have three choices:
+
+      logarithmic
+          The mass density is linearly related to the
+          logarithm of the electron counts.
+
+      scaled linear
+          The mass density is linearly related to the
+          electron counts.
+
+      linear
+          The electron counts are used without modification
+          as a measure of the mass density.
+
+      The other control is the pcBase field in the special
+      parameters dialog.  For the scaled linear or logarithmic
+      image formation models, the value in that field
+      controls the contribution of an additive term
+      corresponding to a sheet of uniform mass density.
+      The documentation for appl_prm, APPL_PRM.hlp, has
+      more information about the pcBase parameter.
+
+ReconstructionShift
+      These three values (they are in units of pixels)
+      shift the imaginary 3D tilt axis of the projection
+      data from its default location; they are used to
+      center the reconstruction volume on an object of
+      interest.  The default orientation of the 3D tilt
+      axis has it pass through the point whose x and y
+      coordinates are the center of the reference
+      projection.
+
+ReconstructionZSize
+      This value sets the size of the z dimension, in
+      pixels, for the reconstructed volume (the volume
+      is written as slices parallel to the xz plane so
+      this value sets the y dimension of a single slice).
+
+TapirCyclesPerRun
+      EMTIAR uses tapir to calculate the reconstruction
+      from the aligned data.  The value in the "Tapir
+      cycles/run" field is the number of iterations to
+      tapir to perform for each run of the EMTIAR steps.
+
+TapirSmoothing
+      EMTIAR uses tapir to calculate the reconstruction
+      from the aligned data.  The value in the "Tapir
+      smoothing" field constrains how smooth the
+      reconstruction should be.  Consult the tapir
+      documentation, TAPIR.hlp, for more details.
+
+RestartRecon
+       If the "Restart recon" toggle button is on, the
+       reconstructions in all iterations after the
+       first do not start with an initial guess.  If
+       the "Restart recon" button is off, the
+       reconstructions use the reconstruction result
+       from the previous iteration as the initial guess.
+       Use the "Initial guess" field to control whether
+       or not the reconstruction during the first iteration
+       uses an initial guess.
+
+       By default, the "Restart recon" toggle button is
+       on.  That is different than the behavior of the
+       iterative alignment and reconstruction in Priism
+       4.2.0, which always carried over the reconstruction
+       between iterations.
+
+NumberOfRuns
+      The value in the "Number of Runs" field is the
+      number of iterations that should be performed to
+      refine the alignment parameters and reconstruction.
+
+TemporaryDirectory
+      The iterative alignment and reconstruction
+      procedure will use the directory specified
+      in the "Temporary directory" field for
+      storage of the temporary results:  the mass-
+      normalized tilt series from the initialization
+      step (a floating-point data set which has the
+      same dimensions as the input tilt series), the
+      aligned tilt series (a floating-point data set
+      whose size is given by the "Aligned size" and
+      "Section range" fields), the
+      intermediate reconstruction (a floating-point
+      data set whose size is given by the x and y
+      dimensions of the input tilt series and the
+      reconstruction z size), and the reprojection
+      result (a data set which is the same size
+      as the input tilt series).  At any given
+      time, the temporary files present will be the
+      result of the initialization step, if any, and,
+      at most, either an intermediate reconstruction
+      and aligned tilt series, an intermediate
+      reconstruction and reprojection result, or,
+      if running in parallel mode, two copies of
+      the intermediate reconstruction.  If you are
+      running in parallel mode with a list of
+      machines, there may be additional files present
+      if input files or outputs are not visible to all
+      machines in the list.
+
+      By default, the temporary directory is a
+      directory named tmp in your home directory.
+      If you are using the parallel execution mode,
+      the temporary directory should be accessible
+      under the same name to all the computers used.
+      You might change the temporary directory if
+      you were short on space in the default directory
+      or the default directory was on a slow disk and
+      you have a fast disk with enough space for the
+      temporary files.
+
+InitialGuess
+      To specify an initial guess for the reconstruction,
+      enter the name of the file containing the initial
+      guess into the "Initial guess" field or press the
+      adjacent button to launch a file browser to help
+      you select the file.  The initial guess is optional,
+      if you do not enter anything in the "Initial guess"
+      field or use "none" as the name of the file, the
+      reconstruction will proceed without an initial
+      guess.  If you do use an initial guess, its
+      dimensions must match the dimensions of the
+      reconstruction (i.e. have an x size equal to the
+      x size of the input tilt series, a y size equal
+      to the value in the "Reconstruction Z size" field,
+      and a z size equal to the y size of the input tilt
+      series).
+
+CrossCorrelationImages
+      If you select an alignment method that includes
+      Talign, the alignment calculations can generate
+      images of the cross-correlation results, with one
+      cross-correlation image per projection for the
+      most recent iteration.  If the field labeled
+      "Cross correlations" is not empty and not set
+      to "none", those cross-correlation images will
+      be written to an MRC file with the name given
+      in the field.
+
+GuessResolution
+      The guess resolution parameter allows you to
+      select which resolution to use from the file
+      containing the initial guess.  The dimensions
+      of the resolution you select must be compatible
+      with the dimensions you've specified for the
+      reconstruction.
+
+StartingRunNumber
+      The iterations of alignment and reconstruction
+      will be numbered from the value in the "Starting
+      run number" field to the value in the "Starting
+      run number field" plus the number of runs minus
+      one.  That numbering only affects the names of
+      the output alignment parameter files.  If you
+      had previously done n iterations and wanted to
+      see the effect of performing m more with a
+      record of the alignment parameters for all of
+      the m plus n iterations, you would set EMTIAR
+      so the input alignment parameter file was the
+      output alignment parameter file from the nth
+      iteration, the number of runs was m, the
+      starting run number was n plus one, and the
+      initial guess was the reconstruction generated
+      by the previous set of iterations.
+
+AutomaticTermination
+      When the "Automatic termination" toggle button
+      is off, the iterative alignment and reconstruction
+      will terminate when the number of runs you
+      specified has been completed.  When the
+      "Automatic termination" toggle button is on,
+      processing will terminate early if the R-factor
+      between reprojections of the reconstruction and
+      the measured tilt series increases.
+
+ResolutionScale
+      The resolution scale parameter controls the scale
+      factor applied to the alignment parameters and to
+      the size-related input parameters (reconstruction
+      shift, reconstruction z size, tapir smoothing,
+      aligned size, and characteristic lengths for the
+      x and y shifts).  In the typical case where you
+      select a resolution level to process from the
+      main dialog, the resolution scale factor will be
+      set appropriately.  In the case where you are
+      running the iterative alignment and reconstruction
+      on a downsampled tilt series but the input alignment
+      parameters are from a higher resolution version of
+      the data set, you should set the resolution scale
+      to be the same as the downsampling factor (if the
+      data is scaled down by a factor of four relative
+      to the coordinates used for the alignment parameters,
+      set the resolution scale parameter to four) and also
+      adjust the values for the dimensions of the higher
+      resolution data set (the "Full size" field).
+
+FullSize
+      These two values set the x and y dimensions, in
+      pixels, for the tilt series corresponding to the
+      alignment parameters in the input alignment
+      parameter file.  For most cases the user interface
+      can correctly determine these values from the
+      dimensions of the input tilt series.  One case
+      where you will have to manually change these
+      values is if you use a downsampled tilt series
+      as the input to the iterative alignment and
+      reconstruction but the input alignment parameters
+      correspond to a higher resolution version of
+      the same tilt series.  In that case, you should
+      enter the dimensions, in pixels, of that higher
+      resolution tilt series in the "Full size" field
+      and also adjust the resolution scale.
+
+AlignedSize
+      These two values are, respectively, the x and y
+      dimensions, in pixels, of the aligned projections.
+
+SectionRange
+      These three values set which of the input
+      projections are included in the reconstruction.
+      The first value is the index of the first
+      projection to use, the second value is the index
+      of the last projection to use, and the third
+      is the index step.  Allowable values for the
+      indices are between zero and the number of
+      input projections minus one, inclusive.
+
+Positivity
+       When this toggle is on, the pixel values
+       in the reconstruction are forced to be
+       non-negative.  This a priori constraint
+       is a powerful way to improve the
+       reconstruction so it isn't generally useful
+       to turn off the positivity constraint.
+
+CoerceInput
+       When this toggle is on, the values from the
+       aligned projection data are forced to be
+       non-negative (negative values are set to zero).
+       This is almost always the right thing to do.
+
+Multires
+       Turn on the "Add multires" toggle button to
+       cause the iterative alignment and
+       reconstruction to add lower resolutions to
+       the reconstruction if the x and y dimensions
+       of the reconstruction are large enough.  Turn
+       off the "Add multires" toggle button to
+       generate a reconstruction with a single
+       resolution.
+
+AlignmentMethod
+       Sets the method to use for alignment.  You have
+       three choices:
+
+       Talign + Simplex
+           Use a FFT-based cross-correlation to determine
+           the translations followed by a simplex
+           optimization of all parameters.
+
+       Talign
+           Use a FFT-based cross-correlation to determine
+           the translations.  The other parameters are not
+           modified.
+
+       Simplex
+           Use a simplex optimization of all parameters.
+           This is the default.
+
+SimplexFilter
+       If the "Simplex filter" toggle button is on and
+       you have selected an alignment method that includes
+       the simplex optimization, a high pass filter will
+       be applied to the data sets prior to the simplex
+       optimization.  When the "Simplex filter" toggle
+       button is off, a high pass filter is not applied
+       prior to the simplex optimization.
+
+Offset
+       If the "Offset" toggle button is on and you have
+       selected an alignment method that includes Talign,
+       a shift along the tilt axis will be induced with
+       the intent of keeping the peak corresponding to
+       the best shift parameters (that peak would likely
+       be near the origin if the input alignment parameters
+       are sufficiently good) away from the origin which
+       receives special treatment.  Before the alignment
+       parameters are written out, the program compensates
+       them for the induced shift.  When the "Offset"
+       toggle button is off, no shift along the tilt axis
+       is induced when using one of the methods which
+       include Talign.
+
+PhaseWeighting
+       If the "Phase weighting" toggle button is on
+       and you have selected an alignment method that
+       includes Talign, phase weighting will be performed
+       to enhance the cross-correlation peak at the
+       expense of less robustness in the face of noise.
+       When the "Phase weighting" toggle button is off,
+       phase weighting is not used to enhance the
+       cross-correlation peak.
+
+Slab
+       When the toggle button with the label, "Slab",
+       is on, the projections of the reconstruction
+       will be scaled under the assumption that the
+       reconstruction is drawn from a large slab with
+       the same height as the reconstruction.  When
+       the toggle button is off, the projections are
+       not scaled to account for missing density
+       beyond the bounds of the reconstruction.
+
+WienerCoefficient
+       When you use phase weighting of the cross-
+       correlations, there is a term like that in a
+       Wiener filter to keep things well behaved
+       when the amplitude of the cross-correlation
+       value in the frequency domain approaches zero.
+       The term is an estimate of the high-frequency
+       power spectral density times the value in the user
+       interface's "Wiener coefficient" field.  A higher
+       value for the "Wiener coefficient" increases the
+       suppression of the low amplitude components.  The
+       default value is 100.
+
+CenterPeakDistance
+       With the alignment methods that include Talign,
+       the alignment algorithm will try to cancel out
+       the effect of a peak at the origin by subtracting
+       out a radial average over the central 7 x 7 region
+       from that region.  The alignment application only
+       performs that subtraction if the largest value in
+       the central 7 x 7 region occurs at the center and
+       the quadratic fit to that point and its four
+       nearest neighbors gives a peak position, (xp, yp),
+       where both the absolute value of xp and yp are
+       less than a threshold value.  The threshold value
+       is, by default, 0.05 pixels,  You can change the
+       threshold by modifying the value in the "Center
+       peak distance" field.
+
+2ndPeakThreshold
+       With the alignment methods that include Talign,
+       the algorithm prefers peaks in the cross-correlation
+       that are away from the origin and only takes the
+       peak at the origin if the next highest peak (after
+       masking out the origin) has a height less than f
+       times the height of the peak at the origin.  The
+       default value of f is .001.  In the graphical
+       user interface, alter the value in the "2nd peak
+       threshold" field to alter the value of f.
+
+SimplexDeviations
+      These six parameters set the characteristic
+      length for each of the six alignment
+      parameters that can be refined when aligning
+      a section from the tilt series to a section
+      from the reprojection.  A characteristic length
+      scale of zero for a parameter causes the
+      simplex method to not refine that parameter;
+      in the graphical user interface, you turn on
+      or off the refinement of a parameter with the
+      toggle button adjacent to the field which
+      displays the characteristic length.  The
+      six alignment parameters are the x shift
+      (in pixels), y shift (in pixels), rotation
+      (in degrees), isotropic magnification factor,
+      the orientation angle for the anisotropic
+      stretching axis (in degrees), and the anisotropic
+      stretching factor.  The first four parameters
+      have a direct effect on the output alignment
+      parameters.  The last two (the orientation of
+      the anisotropic stretching direction and the
+      anisotropic stretching factor) do not.
+
+CommandLine
+      EMTIAR simply generates a script that runs the
+      command-line application, emtiar.  The command-
+      line syntax for emtiar is (optional parts are
+      enclosed in brackets):
+
+          emtiar input_tilt_series input_align_param \
+              output_align_param_base output_recon \
+              [options]
+
+      The options that emtiar understands are:
+
+      -bkgopt=option
+          Causes emtiar to use option with the command
+          specified with -rshcmd= when that command is
+          to be run in the background.  By default,
+          emtiar uses "-n" as the option.
+
+      -cor_out=fname
+          If fname is not empty and not equal to "none"
+          and an alignment method including Talign is
+          selected, images of the cross-correlation
+          results for the most recent iteration will be
+          written to an MRC file named fname.
+
+      -cpd=d
+          To reduce the effect of a central peak, the
+          Talign algorithm will subtract off a radial
+          average from the central 7 x 7 if the brightest
+          point in the central 7 x 7 occurs at the
+          center and a quadratic fit to the center
+          and its four nearest neighbors gives a peak
+          position, (xp, yp), where the absolute values
+          of xp and yp are less than d.  The default
+          value of d is 0.05 pixels.
+
+      -cycles=n
+          Sets the number of cycles of tapir to use
+          for every iteration to be n.  By default,
+          emtiar uses 20 cycles of tapir per iteration.
+
+      -dev=xs:ys:rot:mag:axis:stretch
+          Sets the characteristic length for each of
+          the six alignment parameters that can be
+          refined when aligning a section from the
+          tilt series to a section from the
+          reprojection.  By default, emtiar uses a
+          characteristic length of one pixel for
+          the x and y shift, a characteristic length
+          of zero degrees for the rotation and
+          orientation of the asymmetric stretching
+          axis, and a characteristic length of zero
+          for the magnification and asymmetric
+          stretching factor.
+
+      -dimxy=nx:ny
+          Sets the x and y dimensions of the aligned
+          projections, in pixels.  By default, emtiar
+          uses the same dimensions as the input tilt
+          series.
+
+      -fullsize=nx:ny
+          Specifies the dimensions, in pixels, of the
+          tilt series corresponding to the alignment
+          parameters in the input alignment parameter
+          file.  If you do not set this option, emtiar
+          will use the dimensions of the highest
+          resolution in the input tilt series.  A case
+          where you would want to use values other than
+          the defaults is when the input tilt series has
+          been downsampled and the input alignment
+          parameters are for a higher resolution of the
+          tilt series.  In that case you would also want
+          to specify the -rscale option as well.
+
+      -gres=i
+          Selects the resolution i from the initial
+          guess specified by -istrfile.  i must be
+          a non-negative integer less than the
+          number of resolutions in that file.
+
+      -imform=code
+          Sets the image formation model used during
+          the initialization step.  Valid values for
+          code are:
+
+          0    logarithmic (the default if the input
+               parameter file contains mass-normalization
+               parameters)
+          1    scaled linear
+          2    linear (the default if the input
+               parameter file does not contain mass-
+               normalization parameters)
+
+      -imod=m
+          Sets the method to use for alignment.
+          m may be one of the values listed below.
+      
+          0    Use Talign (a FFT-based cross-correlation)
+               to determine the translations followed by
+               a simplex optimization of all parameters.
+          1    Use Talign (a FFT-based cross-correlation)
+               to determine the translations.  The other
+               parameters are not modified.  This is the
+               default.
+          2    Use a simplex optimization of all parameters.
+
+      -istrfile=file
+          Specifies that the initial guess for the
+          reconstructed volume should be read from file.
+
+      -iv=ivstart:ivend:ivstep
+          Sets the range of input projections included
+          in the reconstruction.  By default, emtiar
+          includes all the projections present in the
+          input tilt series.
+
+      -machinefile=file
+          If you wish to use parallel execution on a
+          cluster of machines, use -machinefile= to
+          set the name of the file containing the list
+          of processors to use.  The format of the
+          file is described in the documentation
+          describing parallel execution.  If you wish
+          to use parallel execution on a machine with
+          multiple processors, do not use -machinefile=
+          or use it with an empty file name.
+
+      -mult=s
+          Sets the scale factor, s, for the noise
+          component when performing phase weighting
+          in an alignment method that uses Talign.
+          The default value for the scale factor is
+          one hundred.
+
+      -multires
+          Causes the generated reconstruction to
+          have multiple resolutions if the x and
+          y dimensions of the reconstruction are
+          large enough.
+
+      -no_nodecheck
+          If a list of machines has been supplied with
+          -machinefile=, disables the checks on whether
+          all of the compute nodes can see the temporary
+          directory and whether copies of input or output
+          files have to be kept in the temporary directory
+          for the compute nodes that would otherwise not
+          be able to see those files.  Only use this option
+          if you know the temporary directory and other
+          files are visible to the compute nodes and you
+          want to avoid the extra overhead of the additional
+          checks.
+
+      -nofilter
+          If specified, a highpass filter is not applied
+          when you use simplex optimization in the
+          alignment; otherwise, a highpass filter is
+          applied when you use simplex optimization.
+
+      -nooffset
+          If specified, no offset along the tilt axis is
+          applied when you use one of the alignment methods
+          which include Talign; otherwise, an offset is
+          applied along the tilt axis and then compensated
+          for prior to writing out the alignment parameters.
+
+      -noterm
+          Disables early termination if the R-factor
+          between reprojections of the reconstruction
+          and the measured tilt series increases.
+
+      -np=n
+          Sets the maximum number of processors to use
+          when parallel execution is enabled.  If
+          -machinefile= is used with a non-empty file
+          name, emtiar will by default use all the
+          processors listed in that file; otherwise,
+          emtiar defaults to using two processors.
+
+      -parallel
+          Enables parallel execution.  By default,
+          emtiar does not attempt to use parallel
+          execution.
+
+      -pcbase=b
+          Sets a factor that comes into play if the
+          scaled linear or logarithmic image formation
+          model is used during the initialization step.
+          By default, emtiar assumes a value of 0.05.
+
+      -phaseweight
+          If specified, phase weighting is done when
+          you use an alignment method that includes
+          Talign; otherwise, phase weighting is not done.
+
+      -positivity=i
+          Turns on the positivity constraint for the
+          reconstruction if i is any integer.  By
+          default, the positivity constraint is not
+          enforced.
+
+      -proj_pos=i
+          For the reconstruction, causes any negative
+          values in the input projections to be set to
+          zero if i is any integer.  By default, the
+          reconstruction does not force the input
+          projection data to be non-negative.
+
+      -reconz=nz
+          Sets the z dimension of the reconstruction,
+          in pixels.  By default, the z dimension is one
+          fourth the size of the x dimension of the input
+          tilt series.
+
+      -res=i
+          Selects i as the resolution to process from
+          the input tilt series.  i must be a non-
+          negative integer less than the number of
+          resolution in the tilt series.  Other command-
+          line options affecting the processing of
+          different resolutions are -rscale, -fullsize,
+          and -gres, but, in normal circumstances, it
+          is sufficient to use -res by itself.  If you
+          do not specify this option, the highest
+          resolution (zero) is processed.
+
+      -restart_recon
+          If specified, reconstructions for iterations
+          other than the first do not start with an initial
+          guess.
+
+      -rscale=i
+           Controls the scale factor (1.0 / i) applied
+           to the alignment parameters and size-related
+           input parameters to compensate for processing
+           a lower resolution.  i must be a positive
+           integer.  If you do not set this option, i
+           defaults to be two raised to the power of the
+           resolution level selected with -res.  A case
+           where you would want to use a value different
+           than the default is when the input tilt series
+           has been downsampled and the input alignment
+           parameters are for a higher resolution of the
+           tilt series.  In that case you would also want
+           to specify the -fullsize option as well.
+
+      -rshcmd=cmd
+          Sets the command used to start launch processes
+          on remote machines in the parallel execution
+          mode.  By default, emtiar will use "ssh -x".
+
+      -runs=n
+          Sets the number of iterations of refinement to
+          perform.  By default, emtiar will perform a
+          single iteration.
+
+      -shxzy=xshift:yshift:zshift
+          Specifies the shift, in pixels, of the
+          reconstructed volume from the default
+          position.  By default, emtiar does not
+          shift the reconstructed volume.
+
+      -skip_init
+          Disables the initialization step for computing
+          a mass-normalized tilt series.
+
+      -slab
+          Causes projections of the reconstruction to be
+          scaled under the assumption that the reconstruction
+          is part of a large slab with the same height and
+          average density as the reconstruction.
+
+      -smooth=s
+          Sets the factor constraining the smoothness
+          of the reconstruction.  By default, emtiar
+          will use a value of zero.
+
+      -spth=t
+          In the Talign algorithm, cross-correlation peaks
+          away from the origin are preferred.  A peak at
+          the origin is only accepted if the next highest
+          peak (after masking out the origin) has a height
+          less than t times the height of the peak at the
+          origin.  The default value for t is .001.
+
+      -start=i
+          Sets the number to associate with the first
+          iteration.  By default, emtiar will use a
+          value of one.
+
+      -tmpdir=directory
+          Sets the directory used for temporary files.
+          By default, emtiar places the temporary files in
+          a directory named tmp within your home directory.

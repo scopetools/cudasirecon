@@ -1,0 +1,223 @@
+KEYWORD
+    Condition Threshold Expression Background Result PtList
+
+DESCRIPTION Threshold
+    Use Threshold to remove all data in an image whose intensity
+    does not match a condition that you set.  In the output, the
+    pixels which do not match the condition are replaced with the
+    background intensity.  If you have selected the "masked data"
+    option from the Result menu, the pixels which do satisfy the
+    condition retain their intensities.  If you have selected the
+    "mask" option from the Result menu, the pixels which satisfy
+    the condition are set to one.
+
+    For the condition, you have the three choices in the
+    Condition menu:  the pixel's intensity equals or or exceeds
+    the threshold value, the pixel's intensity is less than or
+    equal to the threshold value, or an arbitrary expression
+    entered in the "Expression "field.
+
+    The controls for selecting the input file, output file,
+    and region to process are shared with many other Priism
+    applications and are described in Region.hlp.
+
+    Threshold accepts the command-line arguments described in
+    Region.hlp.  In addition, Threshold has the following
+    options:
+
+    -not_below=v
+        Selects the "above or equal to threshold" condition
+        with a threshold equal to v.  If -not_below, -not_above
+        or -expression do not appear on the command line,
+        Threshold proceeds as if -not_below=0 had been
+        specified.
+
+    -not_above=v
+        Selects the "below or equal to threshold" condition
+        with a threshold equal to v.
+
+    -expression=expr
+        Sets the pixel selection condition to be the expression
+        given by expr (see the Expression topic for more details
+        about acceptable expressions).  Because some characters
+        in expressions (notably <, >, (, ), and !) likely have
+        special meanings to the shell, you will usually have
+        to put expr in quotes.
+
+    -background=b
+        Sets the background value, used to fill pixels which
+        do not satisfy the selection criteria, to b.  If
+        -background is not set on the command line, Threshold
+        assumes a background value of zero.
+
+    -result=mask or -result=masked_data
+        The first form causes the pixels which satisfy the
+        selection criteria to have an intensity of one assigned
+        to them in the output file; the other form preserves
+        the intensity values of the pixels that satisfy the
+        selection criteria.  If -result does not appear on the
+        command-line, Threshold proceeds as if -result=mask had
+        appeared on the command line.
+
+    -ptlist=filename
+        Causes Threshold to generate a file named filename with
+        the pixel coordinates of the pixels that satisfy the
+        selection criteria.
+
+    As an example, if in.dat has non-complex data, then the
+    following generates out.dat which has ones where the
+    intensity falls in the range of 800 to 1000 and zeros
+    elsewhere:
+
+        Threshold in.dat out.dat \
+            -expression='p >= 800 and p <= 1000' -result=mask
+
+Condition
+    Use the "Condition" menu in conjunction with either the
+    "Threshold" or "Expression" fields to set the criteria the
+    application uses to select pixels.  The three choices
+    available from the "Condition" menu are:
+
+    above or equal to threshold
+        Selects pixels whose intensity (or magnitude of the
+        pixel value if the input is complex-valued) is greater
+        than or equal to the value in the threshold field.
+
+    below or equal to threshold
+        Selects pixels whose intensity (or magnitude of the
+        pixel value if the input is complex-valued) less
+        than or equal to the value in the threshold field.
+
+    generic expression
+        For this case, use the "Expression" field to enter
+        an expression (for instance, "p > 2000 or p < 1000"
+        where p stands for the  pixel value) to enter an
+        arbitrary selection expression.
+
+Threshold
+    Use the "Threshold" field to enter the threshold value
+    used when the condition for selecting pixels is either
+    "above or equal to threshold" or "below or equal to
+    threshold".
+
+Expression
+    If you select "generic expression" as the pixel selection
+    condition, then enter the selection criteria in the
+    "Expression" field.  You may use the following in the
+    criteria:
+
+    p
+        Represents the pixel value of the pixel to be tested.
+
+    numbers or constants
+        Explicit values (for instance 1, 5.7, and 1e3; the
+        last is an alternative way to say 1000) stand for
+        themselves.  Also recognizes the following named
+        constants:  pi (i.e. 3.14159...), e (i.e. 2.71828...),
+        and i (represents a purely imaginary value with a
+        magnitude of one).
+
+    ( and )
+        Use parentheses to specify a different order of
+        operations than the default ordering (exponentiation
+        has highest precedence, followed by multiplication
+        and division, followed by addition and subtraction,
+        followed by the comparison operators, and followed
+        by the Boolean operators among which not has the
+        highest precedence; operators with the same precedence
+        which appear consecutively are evaluated left to
+        right).
+
+    comparison operations
+        These are == (is equal to), != (is not equal to),
+        < (is less than), > (is greater than), <= (is less
+        than or equal to), and >= (is greater than or equal
+        to).  Except for == and !=, the comparison operators
+        expect the quantities compared to be real; for complex
+        values, use one of the conversion functions to convert
+        the value to a real quantity.
+
+    Boolean operations
+        These are not ("not x" is true if x is false and is
+        false if x is true; as a shortcut, you may use !
+        instead of  not), and ("x and y" is true if both x and
+        y are true; otherwise it is false), or ("x or y" is
+        is false if x and y are false; otherwise it is true),
+        and xor ("x xor y" is true if only one of x and y is
+        true; otherwise it is false).
+
+    conversion functions
+        The functions to convert a real or complex value to
+        a real value are real(x), imag(x), mag(x), and
+        phase(x).  The first returns the real part of x, the
+        second returns the imaginary part of x, the third
+        returns the magnitude of x, and the fourth returns
+        the phase, in radians, of x.  complex(x,y) is also
+        available to create a complex number with a real
+        component equal to x and an imaginary component equal
+        to y.
+
+    numeric operations
+        These are + (addition), - (subtraction), *
+        (multiplication), / (division), and ^ (exponentiation).
+
+    transcendental functions
+        These are cos(x) (the cosine of x, assuming x is in
+        radians), sin(x) (the sine of x, assuming x is in
+        radians), tan(x) (the tangent of x, assuming x is in
+        radians), log(x) (the natural logarithm of x), and
+        log10(x) (the logarithm base 10 of x).
+
+    miscellaneous functions
+        abs(x) expects a real value and returns its absolute
+        value.  max(x,y) expects two real values returns the
+        larger of the two.  min(x,y) expects two real values
+        and returns the smaller of the two.  in_range(b1,b2,x)
+        is a shortcut for the expression "x >= b1 and x <= b2".
+
+    As an example, if the input data is real and the desired
+    threshold is 1500, then the expression
+
+        p >= 1500
+
+    is equivalent to the "above or equal to threshold" selection
+    from the "Condition" menu.  The slightly more complicated
+    expression
+
+        abs(p - 800) < 10
+
+    selects all pixels with values between 791 and 809.  The
+    same condition can be expressed in other ways:
+
+        p > 790 and p < 810
+
+     or
+
+        in_range(791, 809, p)
+
+Background
+    In the output, pixels whose original value does not
+    satisfy the specified condition are set to the background
+    value.
+
+Result
+    Use the "Result" menu to control what is done with pixels
+    that satisfy the condition you have set (pixels which
+    do not satisfy the condition are set to the background
+    value).  The two available options are:
+
+    mask
+        Pixels satisfying the condition are set to one.
+
+    masked data
+        Pixels satisfying the condition retain their values.
+
+PtList
+    If the "Point list" toggle is on, a file will be written
+    with the pixel coordinates of the points that satisfy the
+    specified condition.  Enter the name of the file in the
+    field next to the toggle button.  The format of the file
+    is plain text with three columns separated by spaces.
+    The first column is the x coordinate, the second is the y
+    coordinate, and the third is the z coordinate.  The
+    coordinates are relative to the dimensions of the output.

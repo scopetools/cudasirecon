@@ -1,0 +1,54 @@
+KEYWORD
+    Quality Progressive
+
+DESCRIPTION
+    The JFIF (JPEG) plugin uses software from the Independent JPEG
+    Group to apply the standard JPEG lossy compression algorithm to
+    each image and write the compressed image data to a JFIF file.
+    JFIF is the de facto standard for interchange of JPEG compressed
+    images.
+
+    When Image Capture is run from the command line, you can use
+
+        -format=jfif
+
+    as an option to Image Capture to have it generate JPEG
+    compressed images stored as JFIF files.  To control the
+    quality of the compression, append ,qual=quality_factor
+    to -format=jfif, i.e. to get a quality of 90 you could use
+
+        -format=jfif,qual=90
+
+    If you do not explicitly set the quality, a quality of 75
+    will be used.  To use the progressive JPEG compression
+    algorithm, append ,progressive to the option beginning
+    with -format=jfif, i.e. use
+
+        -format=jfif,progressive
+
+    if you wanted to use the default quality or
+
+        -format=jfif,qual=90,progressive
+
+    if you wanted a quality of 90.
+
+Quality
+    The quality parameter sets the image quality of the compressed
+    images; valid values range from 0 (low quality) to 100 (high
+    quality).  In most cases, you want the smallest compressed image
+    which still decompresses to something that is visually indistin-
+    guishable from the original:  quality values between 50 and 95
+    are generally appropriate for achieving that end.  Quality values
+    above 95 can dramatically increase the compressed size with little
+    gain in image quality.  Quality values below 50 produce very small
+    files which decompress to low quality images.
+
+Progressive
+    Turning on the "Progressive" toggle button causes the output to
+    be compressed with the progressive JPEG algorithm rather than the
+    standard JPEG algorithm.  Progressive JPEG is intended for trans-
+    mission over a slow communications link:  the receiver is able
+    to generate a low quality image after receiving part of the data
+    and can gradually improve the image quality as more data arrives.
+    Not all JPEG decoders support progressive JPEG and such decoders
+    may not be able to view a progressive JPEG at all.
