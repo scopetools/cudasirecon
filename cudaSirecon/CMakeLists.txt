@@ -11,8 +11,9 @@ if(WIN32)# OR APPLE)
 endif()
 
 if(WIN32)
-	set(PRIISM_LIB_PATH "${CMAKE_SOURCE_DIR}/IVE/win64/LIB")
-	include_directories("${CMAKE_SOURCE_DIR}/IVE/win64/INCLUDE/")
+  set(PRIISM_LIB_PATH "${CMAKE_SOURCE_DIR}/IVE/win64/LIB")
+  set(PRIISM_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/IVE/win64/INCLUDE")
+	include_directories(${PRIISM_INCLUDE_PATH})
     link_directories ( ${PRIISM_LIB_PATH} )
     if(WITH_TIFF)
         include_directories( ${TIFF_INCLUDE_DIR} )
@@ -23,28 +24,31 @@ elseif(APPLE)
 	set(PRIISM_LIB_PATH "$ENV{IVE_BASE}/Darwin64/LIB")
 	include_directories("$ENV{IVE_BASE}/Darwin64/INCLUDE/")
 else()
-## Assuming the builder's shell environment is already set up to use 64-bit Priism
-	set(PRIISM_LIB_PATH "$ENV{IVE_BASE}/Linux/x86_64/LIB")
-	include_directories("$ENV{IVE_BASE}/Linux/x86_64/INCLUDE/")
+  set(PRIISM_LIB_PATH "${CMAKE_SOURCE_DIR}/IVE/linux64/LIB")
+  set(PRIISM_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/IVE/linux64/INCLUDE")
+	include_directories(${PRIISM_INCLUDE_PATH})
 endif(WIN32)
 
+message(STATUS "PRIISM_LIB_PATH: " ${PRIISM_LIB_PATH})
 
-if(WIN32)
-  message(STATUS "PRIISM_LIB_PATH: " ${PRIISM_LIB_PATH})
-  # find_library(IMLIB libimlib.a
-  #   PATHS ${PRIISM_LIB_PATH}
-  #   REQUIRED)
-  # find_library(IVELIB ive
-  #   PATHS ${PRIISM_LIB_PATH}
-  #   REQUIRED)
-else(WIN32)
-  find_library(IMLIB imlib
-    PATHS ${PRIISM_LIB_PATH}
-    REQUIRED)
-  find_library(IVELIB ive
-    PATHS ${PRIISM_LIB_PATH}
-    REQUIRED)
- endif(WIN32)
+find_library(IMLIB imlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
+find_library(IVELIB ive PATHS ${PRIISM_LIB_PATH} REQUIRED)
+
+# if(WIN32)
+#   # find_library(IMLIB libimlib.a
+#   #   PATHS ${PRIISM_LIB_PATH}
+#   #   REQUIRED)
+#   # find_library(IVELIB ive
+#   #   PATHS ${PRIISM_LIB_PATH}
+#   #   REQUIRED)
+# else(WIN32)
+#   find_library(IMLIB imlib
+#     PATHS ${PRIISM_LIB_PATH}
+#     REQUIRED)
+#   find_library(IVELIB ive
+#     PATHS ${PRIISM_LIB_PATH}
+#     REQUIRED)
+# endif(WIN32)
 
 # if (APPLE)
 ###############################################
@@ -157,3 +161,26 @@ else(WIN32)
 endif(WIN32)
 CUDA_ADD_CUFFT_TO_TARGET(cudaSirecon)
 CUDA_ADD_CUFFT_TO_TARGET(cudaSireconDriver)
+
+# added for make install to work in conda
+set(HEADERS
+  cudaSirecon.h
+  cudaSireconImpl.h
+  gpuFunctions.h
+)
+
+install(
+  TARGETS cudaSireconDriver
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RENAME sirecon
+)
+
+install(
+  FILES ${HEADERS} DESTINATION include
+)
+
+install(
+  FILES ${IMLIB} ${IVELIB} DESTINATION lib
+)
