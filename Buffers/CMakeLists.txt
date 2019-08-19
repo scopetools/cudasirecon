@@ -14,10 +14,14 @@ CUDA_ADD_LIBRARY(
   )
 
 set(HEADERS
-  SIMrecon_TechX/Buffers/Buffer.h
-  SIMrecon_TechX/Buffers/CPUBuffer.h
-  SIMrecon_TechX/Buffers/GPUBuffer.h
-  SIMrecon_TechX/Buffers/PinnedCPUBuffer.h
+  Buffer.h
+  CPUBuffer.h
+  GPUBuffer.h
+  PinnedCPUBuffer.h
+  # SIMrecon_TechX/Buffers/Buffer.h
+  # SIMrecon_TechX/Buffers/CPUBuffer.h
+  # SIMrecon_TechX/Buffers/GPUBuffer.h
+  # SIMrecon_TechX/Buffers/PinnedCPUBuffer.h
   )
 
 install(
