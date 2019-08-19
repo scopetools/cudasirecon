@@ -12,6 +12,7 @@ if [ `uname` == Linux ]; then
     export CC=x86_64-conda_cos6-linux-gnu-gcc
     export CXX=x86_64-conda_cos6-linux-gnu-g++
     cmake .. \
+        -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
         -DCMAKE_INSTALL_RPATH:STRING="${PREFIX}/lib"
