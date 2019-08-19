@@ -1,12 +1,14 @@
 #######################################################################
 # Build instruction for CUDA SIMrecon project
+#
 # 1. Prerequisites
 #  1.1 Cmake (> 2.8.11)
-#  1.2 CUDA SDK (>5.0)
-#  1.3a. If Linux or Mac OS X, GCC (< 4.8)
-#  1.3b. If Windows, Visual C++ (> 2012)
+#  1.2 CUDA SDK (>=7.0 on Mac OS X, otherwise >=5.0)
+#  1.3a. If Linux or Mac OS X, GCC (version suitable to the CUDA version being used; read CUDA manuals to find out)
+#  1.3b. If Windows, Visual C++ (>= 2012)
 #  1.4 Boost libraries (> 1.48)
-#  1.5 IVE libraries (download from http://msg.ucsf.edu/IVE/Download/index.html). Place the priism-4.2.9/ folder under this folder where this file is located
+#  1.5 If Linux or Mac, the development (not just the runtime) libraries of LAPACK, BLAS, and X11. For Mac, you can obtain these libraries and other  useful stuff by using tools like macports, homebrew, or fink.
+#  1.6 If Linux or Mac, Priism/IVE libraries (download from http://msg.ucsf.edu/IVE/Download/index.html; follow the installation instructions and put a line ". install_folder/Priism_setup.sh" in your .bashrc file, where install_folder is where the Priism package is installed and retart a BASH shell. To test if the environment is set up right, run "echo $IVE_BASE" and see if it prints out the installation folder name.
 #
 # 2. Make a build dir (assumed to be "build" under the main folder where this 
 #    CMakeLists.txt is located) and cd into it
@@ -18,6 +20,8 @@
 #  > cmake -D CMAKE_BUILD_TYPE=Release -G "NMake Makefiles" ..
 #  Make sure there isn't any error or warning messages. 
 #  Always delete everything in the build dir before re-run cmake
+#
+#  3.1 The nvcc flag specified here only works for CUDA compute-capability 6.1. If you need to include other compute-capabilities, add '-D CUDA_NVCC_FLAGS="-gencode arch=compute_xx,code=sm_xx" ' to the "cmake ..." command.
 #
 # 4. Type "make" on Linux/Mac or "nmake" on Window to build the executable
 #
@@ -98,10 +102,12 @@ if (WITH_TIFF)
 endif()
 
 if(WIN32)
-  find_package( Boost )
-else()
-  find_package( Boost REQUIRED COMPONENTS program_options filesystem regex system)
+  set (Boost_USE_STATIC_LIBS    ON)
+  set (Boost_USE_MULTITHREADED  ON)
+  set (Boost_USE_STATIC_RUNTIME OFF)
 endif(WIN32)
+
+find_package( Boost REQUIRED COMPONENTS program_options filesystem system)
 
 if(WIN32 OR APPLE)
   link_directories ( ${Boost_LIBRARY_DIRS} )
@@ -114,12 +120,15 @@ if(APPLE)
 endif()
 
 set(CUDA_NVCC_FLAGS
-  -gencode=arch=compute_20,code=sm_20;-gencode=arch=compute_30,code=sm_30;-gencode=arch=compute_35,code=sm_35)
+   -gencode=arch=compute_61,code=sm_61 " " ${CUDA_NVCC_FLAGS} )
 
-if(WIN32)
-  set(CUDA_NVCC_FLAGS
-     ${CUDA_NVCC_FLAGS};-I${Boost_INCLUDE_DIRS};--use-local-env;--cl-version=2013)
-endif(WIN32)
+# if(WIN32)
+#   set(CUDA_NVCC_FLAGS
+#      ${CUDA_NVCC_FLAGS} -I${Boost_INCLUDE_DIRS}; --use-local-env --cl-version=2013)
+# endif(WIN32)
+
+
+message(STATUS "CUDA_NVCC_FLAGS: " ${CUDA_NVCC_FLAGS})
 
 add_subdirectory(Buffers)
 add_subdirectory(cudaSirecon)
