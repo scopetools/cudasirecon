@@ -13,8 +13,8 @@ requirements:
   build:
     - conda
     - cudatoolkit-dev=10.0
-    - gcc_linux-64=5.4.0 # [linux]
-    - gxx_linux-64=5.4.0 # [linux]
+    # - gcc_linux-64=5.4.0 # [linux]
+    # - gxx_linux-64=5.4.0 # [linux]
     - openblas
     - lapack
     - cmake
