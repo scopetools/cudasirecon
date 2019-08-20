@@ -11,6 +11,19 @@
 I compile it with gcc with the Priism library (-limlib) and 
 single-precision FFTW2 libraries (-lsrfftw and -lsfftw). No other dependencies.
 
+how to build this
+download fftw: http://www.fftw.org/download.html
+
+cd ~/Downloads
+tar -zxvf fftw-2.1.5.tar.gz
+cd fftw-2.1.5
+./configure --prefix=/usr/local/share/fftw-2.1.5/build-single --enable-type-prefix --enable-float --enable-threads
+make
+make install
+cd /Users/talley/Dropbox/OMX/scripts/from\ Lin/
+gcc ./makeotfMOD.c -I/Users/talley/Dropbox/NIC/software/priism-4.4.1/Darwin64/INCLUDE -I/usr/local/share/fftw-2.1.5/build-single/include/ -L/Users/talley/Dropbox/NIC/software/priism-4.4.1/Darwin64/LIB -L/usr/local/share/fftw-2.1.5/build-single/lib  -limlib -lsrfftw -lsfftw
+
+
 A couple of option flags need to be specified, for example:
 ./otf /Users/talley/Dropbox/528_150912_1515_glyc_a2_001.dv test1.otf -angle -1.855500 -ls 0.2075 -na 1.4 -nimm 1.515 -fixorigin 3 20 -leavekz 7 11 3
 */
@@ -110,7 +123,7 @@ int main(argc,argv)
   char corrfiles[MAXPATH];
   float *background2D=0, *slope2D=0;
 
-  IMAlPrt(0);
+  IMAlPrt(0); // disable printing to standard output
 
   interpkr[0] = 0;
   interpkr[1] = 0;
@@ -128,7 +141,8 @@ int main(argc,argv)
     fgets(ifiles, MAXPATH, stdin);
     ifiles[strlen(ifiles)-1]='\0';
   }
-  if (IMOpen(istream_no, ifiles, "ro")) {
+  // istream_no (=1) now refers to this file
+  if (IMOpen(istream_no, ifiles, "ro")) { // returns TRUE only on error
     fprintf(stderr, "File %s does not exist.\n", ifiles);
     exit(-1);
   }
@@ -138,13 +152,19 @@ int main(argc,argv)
     fgets(ofiles, MAXPATH, stdin);
     ofiles[strlen(ofiles)-1]='\0';
   }
-  if (IMOpen(ostream_no, ofiles, "new")) {
+  if (IMOpen(ostream_no, ofiles, "new")) { //Creates a file or image window and opens it for reading and writing.
     fprintf(stderr, "File %s can not be created.\n", ofiles);
     exit(-1);
   }
 
-  IMRdHdr(istream_no, ixyz, mxyz, &pixeltype, &min, &max, &mean);
-  IMGetHdr(istream_no, &header);
+  IMRdHdr(istream_no, ixyz, mxyz, &pixeltype, &min, &max, &mean); // read header
+  // This call must be used before any other information can be 
+  // retrieved using IMRt functions as it reads the header into memory.
+  // Reading the header has the side effect of resetting the current 
+  // position to the first line in the first section of the highest resolution
+  
+  IMGetHdr(istream_no, &header); //Get the entire header in a single block of memory.
+
 
   nx=header.nx;
   ny=header.ny;
@@ -159,7 +179,7 @@ int main(argc,argv)
   dkr = 1/(ny*dr);
   dkz = 1/(nz*dz);
 
-  printf("nx=%d, ny=%d, nz=%d\n", nx, ny, nz);
+  //printf("nx=%d, ny=%d, nz=%d\n", nx, ny, nz);
 
   norders = (nphases+1)/2;
 
@@ -168,11 +188,11 @@ int main(argc,argv)
     sepMatrix[i] = (float *) malloc(nphases * sizeof(float));
   makematrix(nphases, sepMatrix);
 
-  nxy=(nx+2)*ny;
+  nxy=(nx+2)*ny; // why the +2?
 
   buffer =  (float *) malloc((nx*ny) * sizeof(float));
   floatimage = (float **) malloc(nphases*sizeof(float *));
-  bands = (complex **)malloc(nphases*sizeof(complex *));
+  bands = (complex **)malloc(nphases*sizeof(complex *)); // as many bands as phases
 
   for(i=0;i<nphases;i++) {
     floatimage[i] = (float *) calloc(nxy*nz, sizeof(float));
@@ -186,17 +206,18 @@ int main(argc,argv)
   border_size = 20;
 
   if (bUseCorr) {  // flatfield correction of measured data using calibration data
-    printf("loading CCD calibration file\n");
+    //printf("loading CCD calibration file\n");
     background2D = (float *) malloc((nx*ny) * sizeof(float));
     slope2D = (float *) malloc((nx*ny) * sizeof(float));
     getbg_and_slope(corrfiles, background2D, slope2D, nx, ny);
   }
 
-  printf("Reading data...\n\n");
+  //printf("Reading data...\n\n");
   zsec = 0;
   for(z=0; z<nz; z++) {
     for( phase=0; phase<nphases; phase++) {
-      IMRdSec(istream_no, buffer);
+      IMRdSec(istream_no, buffer); //Reads the next section into ImgBuffer and 
+      // advances the file pointer to the section after that.
 
       if(buffer[(ny-1)*nx + (nx-1)] < 0)  /* fix camera error at even binnings */
         buffer[(ny-1)*nx + (nx-1)] = buffer[(ny-1)*nx + (nx-2)];
@@ -213,13 +234,13 @@ int main(argc,argv)
           for (k=0; k<nx; k++) {
             buffer[l*nx+k] -= background2D[l*nx+k];
             buffer[l*nx+k] *= slope2D[l*nx+k];
-          }
+          } 
       }
       else if (background_dummy >=0)
         background[zsec] = background_dummy;
       else
         estimate_background(buffer, nx, ny, border_size, background+zsec);
-      printf("%.3f\n",background[zsec]);
+      //printf("%.3f\n",background[zsec]);
 
       for(i=0;i<ny;i++)
         for(j=0;j<nx;j++)
@@ -245,13 +266,17 @@ int main(argc,argv)
   /* Before FFT, use center band to estimate bead center position */
   determine_center_and_background(floatimage, I2M_image, nx, ny, nz, nphases, &xcofm, &ycofm, &zcofm, &background_dummy, &background_i2m, &xcofm_i2m, &ycofm_i2m, &zcofm_i2m, twolens, I2M_inc);
 
-  printf("Center of mass is (%.3f, %.3f, %.3f)\n\n", xcofm, ycofm, zcofm);
+  //printf("Center of mass is (%.3f, %.3f, %.3f)\n\n", xcofm, ycofm, zcofm);
+  //printf("Background is %.3f\n\n", background_dummy);
+
 
   if (I2M_inc) {
     printf("I2M psf's background is %.3f\n", background_i2m);
     printf("I2M psf's center of mass is (%.3f, %.3f, %.3f)\n\n", xcofm_i2m, ycofm_i2m, zcofm_i2m);
   }
 
+  // subtract background and seperate bands
+  // it's unclear to me whether background from line 242 or 267 is being used
   for(z=0; z<nz; z++) {
     for(i=0;i<ny;i++)
       for(j=0;j<nx;j++)
@@ -265,21 +290,26 @@ int main(argc,argv)
           I2M_image[z*nxy + i*(nx+2) + j] -= background_i2m;
   }
 
+  // write just band zero to file
   if (Generate_band0) {
     mrc_file_write(floatimage[0], nx+2, ny, nz, dr, dz, 0, header.iwav1, order0files);
   }
+
+  // FFTW_IN_PLACE means that the output will be in the same memory space as the input
+  // floatimage[phase] will be overwritten
   rfftplan3d = rfftw3d_create_plan(nz, ny, nx, FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE | FFTW_IN_PLACE);
-  printf("Before fft\n");
+  //printf("Before fft\n");
   for( phase=0; phase<nphases; phase++)
     rfftwnd_one_real_to_complex(rfftplan3d, floatimage[phase], NULL);
+  
   if (I2M_inc)
     rfftwnd_one_real_to_complex(rfftplan3d, I2M_image, NULL);
 
   fftwnd_destroy_plan(rfftplan3d);
-  printf("After fft\n\n");
+  //printf("After fft\n\n");
 
   /* modify the phase of bands, so that it corresponds to FFT of a bead at origin */
-  printf("Shifting center...\n");
+  //printf("Shifting center...\n");
   for (phase=0; phase<nphases; phase++)
     shift_center(bands[phase], nx, ny, nz, xcofm, ycofm, zcofm);
 
@@ -324,7 +354,7 @@ int main(argc,argv)
     rescale(avg_output[phase], (phase+1)/2, nx, nz, &scalefactor, dorescale);
   }
 
-  /* For side bands, combine bandre's and bandim's into bandplus */
+  /* For side bands, combine bandre's (real band) and bandim's (imaginary band) into bandplus */
   /* Shouldn't this be done later on the averaged bands? */
   if (!five_bands)
     combine_reim(avg_output, norders, nx, nz, bForcedPIshift);
@@ -425,9 +455,10 @@ void determine_center_and_background(float **stack5phases, float *I2M_image, int
   float maxval, reval, valminus, valplus, *stack3d;
   double sum;
 
-  printf("In determine_center_and_background()\n");
+  //printf("In determine_center_and_background()\n");
   nxy2 = (nx+2)*ny;
 
+  // put all the pixels into a single vector
   stack3d = calloc(nxy2*nz, sizeof(float));
   for (j=0; j<nxy2*nz; j++) {
     for (i=0; i<nphases; i++)
@@ -461,6 +492,7 @@ void determine_center_and_background(float **stack5phases, float *I2M_image, int
   if( kminus<0 ) kminus+=nz;
   if( kplus>=nz ) kplus-=nz;
 
+  // find z center of mass
   valminus = stack3d[kminus*nxy2+maxi*(nx+2)+maxj];
   valplus  = stack3d[kplus *nxy2+maxi*(nx+2)+maxj];
   *zc = maxk + fitparabola(valminus, maxval, valplus);
@@ -517,15 +549,18 @@ void determine_center_and_background(float **stack5phases, float *I2M_image, int
   }
 #endif
 
+  // find y center of mass
   valminus = stack3d[maxk*nxy2+iminus*(nx+2)+maxj];
   valplus  = stack3d[maxk*nxy2+iplus *(nx+2)+maxj];
   *yc = maxi + fitparabola(valminus, maxval, valplus);
 
+  // find x center of mass
   valminus = stack3d[maxk*nxy2+maxi*(nx+2)+jminus];
   valplus  = stack3d[maxk*nxy2+maxi*(nx+2)+jplus];
   *xc = maxj + fitparabola(valminus, maxval, valplus);
 
   free(stack3d);
+
 
   sum = 0;
   infocus_sec = floor(*zc);
@@ -667,7 +702,7 @@ void combine_reim(complex **otf, int norders, int nx, int nz, int bForcedPIshift
   double bandre_mag, bandim_mag, phi;
   complex otfval;
 
-  printf("In combine_reim()\n");
+  //printf("In combine_reim()\n");
   nxz = (nx/2+1)*nz;
 
   /* for (order=1; order<norders; order++) { */
@@ -700,7 +735,7 @@ void combine_reim(complex **otf, int norders, int nx, int nz, int bForcedPIshift
     if (order==1 && bForcedPIshift)
       phi = PI-phi;
 
-    printf("  phi=%f\n", phi);
+    //printf("  phi=%f\n", phi);
 
     for (i=0; i<nxz; i++) {
       otfval.re = otf[2*order-1][i].re * cos(phi) + otf[2*order][i].re * sin(-phi);
@@ -720,7 +755,7 @@ void beadsize_compensate(complex **bands, float k0angle, float linespacing, floa
   float radius;   /* the radius of the fluorescent bead, according to the number provided by vendor */
   float kz, ky, kx, k0y, k0x, ratio, k0mag;
 
-  printf("In beadsize_compensate()\n");
+  //printf("In beadsize_compensate()\n");
   kycent = ny/2;
   kxcent = nx/2;
   kzcent = nz/2;
@@ -741,7 +776,7 @@ void beadsize_compensate(complex **bands, float k0angle, float linespacing, floa
     k0x = ((float)order)/(norders-1) * k0mag * cos(k0angle);
     k0y = ((float)order)/(norders-1) * k0mag * sin(k0angle);
 
-    printf("order=%d, k0x=%f, k0y=%f\n", order, k0x, k0y);
+    //printf("order=%d, k0x=%f, k0y=%f\n", order, k0x, k0y);
 
     for (kin=0; kin<nz; kin++) {
       kout = kin;
@@ -817,7 +852,7 @@ void radialft(complex *band, int nx, int ny, int nz, complex *avg_output)
   int *count, nxz, nxy;
   float rdist;
 
-  printf("In radialft()\n");
+  //printf("In radialft()\n");
   kycent = ny/2;
   kxcent = nx/2;
   kzcent = nz/2;
@@ -831,16 +866,17 @@ void radialft(complex *band, int nx, int ny, int nz, complex *avg_output)
     exit(-1);
   }
 
+  // accumulate values at radius rdist
   for (kin=0; kin<nz; kin++) {
     kz = kin;
     if (kin>kzcent) kz -= nz;
     for (iin=0; iin<ny; iin++) {
       ky = iin;
       if (iin>kycent) ky -= ny;
-      for (jin=0; jin<kxcent+1; jin++) {
+      for (jin=0; jin<kxcent+1; jin++) { // only averaging the first half of the image here
         kx = jin;
         rdist = sqrt(kx*kx+ky*ky);
-        if (rint(rdist) < nx/2+1) {
+        if (rint(rdist) < nx/2+1) { 
           indin = kin*nxy+iin*(nx/2+1)+jin;
           /* indout = floor(rdist)*nz+kin; /\* rint(rdist*nz)+kin caused trouble *\/  */
           /* the above line has been used up till 2010, which is probably less right compared to the following line: */
@@ -853,6 +889,7 @@ void radialft(complex *band, int nx, int ny, int nz, complex *avg_output)
     }
   }
 
+  // divide by count
   for (indout=0; indout<nxz; indout++) {
     if (count[indout]>0) {
       avg_output[indout].re /= count[indout];
@@ -861,7 +898,7 @@ void radialft(complex *band, int nx, int ny, int nz, complex *avg_output)
   }
 
   /* Then complete the rotational averaging and scaling*/
-  for (kx=0; kx<nx/2+1; kx++) {
+  for (kx=0; kx<nx/2+1; kx++) { // still just the first half
     indout = kx*nz+0;
     avg_output[indout].im = 0;
     for (kz=1; kz<=nz/2; kz++) {
@@ -884,10 +921,10 @@ void cleanup(complex *otfkxkz, int order, int nx, int nz, float dkr, float dkz, 
   complex czero={0.0,0.0};
   float NA_local;
 
-  if (order==0)
+//  if (order==0)
     NA_local = NA;
-  else
-    NA_local = NA * .92;
+//  else
+//    NA_local = NA * .92;
 
   lamda = lamdanm * 0.001;
   sinalpha = NA_local/NIMM;
@@ -895,7 +932,7 @@ void cleanup(complex *otfkxkz, int order, int nx, int nz, float dkr, float dkz, 
   krmax = 2*NA_local/lamda;
   k0mag = 1.0/linespacing;
 
-  printf("nz=%d\n", nz);
+  //printf("nz=%d\n", nz);
 
   if (!twolens) {
     for (ix=0; ix<icleanup; ix++) {
@@ -1019,7 +1056,7 @@ void outputdata(int ostream_no, complex **bands, IW_MRC_HEADER *header, int nord
 {
   int i;
 
-  printf("In outputdata()\n");
+  //printf("In outputdata()\n");
 
   header->nx = nz;
   header->ny = nx/2+1;
@@ -1089,7 +1126,7 @@ void fixorigin(complex *otfkxkz, int nx, int nz, int kx1, int kx2)
   int numvals, i, j;
   double *sum, totsum=0, ysum=0, sqsum=0;
 
-  printf("In fixorigin()\n");
+  //printf("In fixorigin()\n");
   meani = 0.5*(kx1+kx2);
   numvals = kx2-kx1+1;
   sum = (double *) malloc((kx2+1)*sizeof(double));
