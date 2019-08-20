@@ -124,15 +124,22 @@ set(CUDA_NVCC_FLAGS
   -gencode=arch=compute_52,code=sm_52; 
   -gencode=arch=compute_60,code=sm_60; 
   -gencode=arch=compute_61,code=sm_61; 
-  -gencode=arch=compute_70,code=sm_70;
   ${CUDA_NVCC_FLAGS} 
 )
+
+if(${CUDA_VERSION_MAJOR} GREATER 8)
+  set(CUDA_NVCC_FLAGS
+    ${CUDA_NVCC_FLAGS};
+    -gencode=arch=compute_70,code=sm_70;
+  )
+endif()
+
 if((${CUDA_VERSION_MAJOR} GREATER 9) AND (NOT APPLE))
-set(CUDA_NVCC_FLAGS
-  ${CUDA_NVCC_FLAGS};
-  -gencode=arch=compute_75,code=sm_75;
-  -gencode=arch=compute_75,code=compute_75
-)
+  set(CUDA_NVCC_FLAGS
+    ${CUDA_NVCC_FLAGS};
+    -gencode=arch=compute_75,code=sm_75;
+    -gencode=arch=compute_75,code=compute_75
+  )
 endif()
 
 
