@@ -170,7 +170,7 @@ set(HEADERS
 )
 
 install(
-  TARGETS cudaSireconDriver
+  TARGETS cudaSireconDriver cudaSirecon
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
