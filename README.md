@@ -6,7 +6,11 @@ Lin Shao's 3-beam SIM reconstruction software
 Packages for Linux and OS X are available through conda:
 
 ```bash
-$ conda install -c talley cudasirecon
+$ conda install -c talley -c conda-forge cudasirecon
+
+# you may wish to put it in a new environment ("sim" here):
+$ conda create -n sim -y -c talley -c conda-forge cudasirecon
+$ conda activate sim
 ```
 
 ## Usage
