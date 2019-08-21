@@ -212,7 +212,7 @@ int main(argc,argv)
     getbg_and_slope(corrfiles, background2D, slope2D, nx, ny);
   }
 
-  printf("Reading data...\n\n");
+  // printf("Reading data...\n");
   zsec = 0;
   for(z=0; z<nz; z++) {
     for( phase=0; phase<nphases; phase++) {
@@ -240,7 +240,7 @@ int main(argc,argv)
         background[zsec] = background_dummy;
       else
         estimate_background(buffer, nx, ny, border_size, background+zsec);
-      printf("%.3f\n",background[zsec]);
+      // printf("%.3f\n",background[zsec]);
 
       for(i=0;i<ny;i++)
         for(j=0;j<nx;j++)
@@ -266,8 +266,8 @@ int main(argc,argv)
   /* Before FFT, use center band to estimate bead center position */
   determine_center_and_background(floatimage, I2M_image, nx, ny, nz, nphases, &xcofm, &ycofm, &zcofm, &background_dummy, &background_i2m, &xcofm_i2m, &ycofm_i2m, &zcofm_i2m, twolens, I2M_inc);
 
-  printf("Center of mass is (%.3f, %.3f, %.3f)\n\n", xcofm, ycofm, zcofm);
-  printf("Background is %.3f\n\n", background_dummy);
+  printf("Center of mass is (%.3f, %.3f, %.3f)\n", xcofm, ycofm, zcofm);
+  printf("Background is %.3f\n", background_dummy);
 
 
   if (I2M_inc) {
@@ -298,7 +298,7 @@ int main(argc,argv)
   // FFTW_IN_PLACE means that the output will be in the same memory space as the input
   // floatimage[phase] will be overwritten
   rfftplan3d = rfftw3d_create_plan(nz, ny, nx, FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE | FFTW_IN_PLACE);
-  printf("Before fft\n");
+  // printf("Before fft\n");
   for( phase=0; phase<nphases; phase++)
     rfftwnd_one_real_to_complex(rfftplan3d, floatimage[phase], NULL);
   
@@ -306,7 +306,7 @@ int main(argc,argv)
     rfftwnd_one_real_to_complex(rfftplan3d, I2M_image, NULL);
 
   fftwnd_destroy_plan(rfftplan3d);
-  printf("After fft\n\n");
+  // printf("After fft\n\n");
 
   /* modify the phase of bands, so that it corresponds to FFT of a bead at origin */
   printf("Shifting center...\n");
@@ -455,7 +455,7 @@ void determine_center_and_background(float **stack5phases, float *I2M_image, int
   float maxval, reval, valminus, valplus, *stack3d;
   double sum;
 
-  printf("In determine_center_and_background()\n");
+  //printf("In determine_center_and_background()\n");
   nxy2 = (nx+2)*ny;
 
   // put all the pixels into a single vector
@@ -755,7 +755,7 @@ void beadsize_compensate(complex **bands, float k0angle, float linespacing, floa
   float radius;   /* the radius of the fluorescent bead, according to the number provided by vendor */
   float kz, ky, kx, k0y, k0x, ratio, k0mag;
 
-  printf("In beadsize_compensate()\n");
+  // printf("In beadsize_compensate()\n");
   kycent = ny/2;
   kxcent = nx/2;
   kzcent = nz/2;
@@ -852,7 +852,7 @@ void radialft(complex *band, int nx, int ny, int nz, complex *avg_output)
   int *count, nxz, nxy;
   float rdist;
 
-  printf("In radialft()\n");
+  // printf("In radialft()\n");
   kycent = ny/2;
   kxcent = nx/2;
   kzcent = nz/2;
@@ -1056,7 +1056,7 @@ void outputdata(int ostream_no, complex **bands, IW_MRC_HEADER *header, int nord
 {
   int i;
 
-  printf("In outputdata()\n");
+  // printf("In outputdata()\n");
 
   header->nx = nz;
   header->ny = nx/2+1;
