@@ -2,3 +2,5 @@
 build
 .vscode
 testData
+test_data/psf.dv
+test_data/proc.dv
