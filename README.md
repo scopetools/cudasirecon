@@ -54,3 +54,17 @@ dampenOrder0=1
 
 * Currently only accepts images as .dv or .mrc format.
 * Requires CUDA-capable NVIDIA GPU and driver.
+
+The program has been compiled against different versions of the CUDA toolkit. The required CUDA libraries are bundled in the conda distributions so you don't need to install the CUDA toolkit separately. If desired, you can pick which version of CUDA you'd like based on your needs, but please note that different versions of the CUDA toolkit have different GPU driver requirements.  Not all versions are available on all platforms.  To see what versions are available on your platform, type `conda search -c talley cudasirecon`.
+
+
+| CUDA  | min driver | Install With |
+| ------------- | ------------  | -----------  |
+| 10.1  | ≥ 418.39     | `conda install cudasirecon=*=cu10.1`  |
+| 10.0  | ≥ 410.48     | `conda install cudasirecon=*=cu10.0`  |
+|  9.2  | ≥ 396.26    | `conda install cudasirecon=*=cu9.2`  |
+|  9.0  | ≥ 384.81    | `conda install cudasirecon=*=cu9.0`  |
+
+If your CUDA Driver version is too low for the version of cudasirecon that you have installed, you may get an error that looks like: `!!Error occurred: cudaSetDevice failed`
+
+If you run into trouble, feel free to [open an issue](https://github.com/tlambert03/CUDA_SIMrecon/issues) and describe your setup.
