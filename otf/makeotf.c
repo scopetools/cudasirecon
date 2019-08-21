@@ -179,7 +179,7 @@ int main(argc,argv)
   dkr = 1/(ny*dr);
   dkz = 1/(nz*dz);
 
-  //printf("nx=%d, ny=%d, nz=%d\n", nx, ny, nz);
+  printf("nx=%d, ny=%d, nz=%d\n", nx, ny, nz);
 
   norders = (nphases+1)/2;
 
@@ -206,13 +206,13 @@ int main(argc,argv)
   border_size = 20;
 
   if (bUseCorr) {  // flatfield correction of measured data using calibration data
-    //printf("loading CCD calibration file\n");
+    printf("loading CCD calibration file\n");
     background2D = (float *) malloc((nx*ny) * sizeof(float));
     slope2D = (float *) malloc((nx*ny) * sizeof(float));
     getbg_and_slope(corrfiles, background2D, slope2D, nx, ny);
   }
 
-  //printf("Reading data...\n\n");
+  printf("Reading data...\n\n");
   zsec = 0;
   for(z=0; z<nz; z++) {
     for( phase=0; phase<nphases; phase++) {
@@ -240,7 +240,7 @@ int main(argc,argv)
         background[zsec] = background_dummy;
       else
         estimate_background(buffer, nx, ny, border_size, background+zsec);
-      //printf("%.3f\n",background[zsec]);
+      printf("%.3f\n",background[zsec]);
 
       for(i=0;i<ny;i++)
         for(j=0;j<nx;j++)
@@ -266,8 +266,8 @@ int main(argc,argv)
   /* Before FFT, use center band to estimate bead center position */
   determine_center_and_background(floatimage, I2M_image, nx, ny, nz, nphases, &xcofm, &ycofm, &zcofm, &background_dummy, &background_i2m, &xcofm_i2m, &ycofm_i2m, &zcofm_i2m, twolens, I2M_inc);
 
-  //printf("Center of mass is (%.3f, %.3f, %.3f)\n\n", xcofm, ycofm, zcofm);
-  //printf("Background is %.3f\n\n", background_dummy);
+  printf("Center of mass is (%.3f, %.3f, %.3f)\n\n", xcofm, ycofm, zcofm);
+  printf("Background is %.3f\n\n", background_dummy);
 
 
   if (I2M_inc) {
@@ -298,7 +298,7 @@ int main(argc,argv)
   // FFTW_IN_PLACE means that the output will be in the same memory space as the input
   // floatimage[phase] will be overwritten
   rfftplan3d = rfftw3d_create_plan(nz, ny, nx, FFTW_REAL_TO_COMPLEX, FFTW_ESTIMATE | FFTW_IN_PLACE);
-  //printf("Before fft\n");
+  printf("Before fft\n");
   for( phase=0; phase<nphases; phase++)
     rfftwnd_one_real_to_complex(rfftplan3d, floatimage[phase], NULL);
   
@@ -306,10 +306,10 @@ int main(argc,argv)
     rfftwnd_one_real_to_complex(rfftplan3d, I2M_image, NULL);
 
   fftwnd_destroy_plan(rfftplan3d);
-  //printf("After fft\n\n");
+  printf("After fft\n\n");
 
   /* modify the phase of bands, so that it corresponds to FFT of a bead at origin */
-  //printf("Shifting center...\n");
+  printf("Shifting center...\n");
   for (phase=0; phase<nphases; phase++)
     shift_center(bands[phase], nx, ny, nz, xcofm, ycofm, zcofm);
 
@@ -455,7 +455,7 @@ void determine_center_and_background(float **stack5phases, float *I2M_image, int
   float maxval, reval, valminus, valplus, *stack3d;
   double sum;
 
-  //printf("In determine_center_and_background()\n");
+  printf("In determine_center_and_background()\n");
   nxy2 = (nx+2)*ny;
 
   // put all the pixels into a single vector
@@ -702,7 +702,7 @@ void combine_reim(complex **otf, int norders, int nx, int nz, int bForcedPIshift
   double bandre_mag, bandim_mag, phi;
   complex otfval;
 
-  //printf("In combine_reim()\n");
+  printf("In combine_reim()\n");
   nxz = (nx/2+1)*nz;
 
   /* for (order=1; order<norders; order++) { */
@@ -735,7 +735,7 @@ void combine_reim(complex **otf, int norders, int nx, int nz, int bForcedPIshift
     if (order==1 && bForcedPIshift)
       phi = PI-phi;
 
-    //printf("  phi=%f\n", phi);
+    printf("  phi=%f\n", phi);
 
     for (i=0; i<nxz; i++) {
       otfval.re = otf[2*order-1][i].re * cos(phi) + otf[2*order][i].re * sin(-phi);
@@ -755,7 +755,7 @@ void beadsize_compensate(complex **bands, float k0angle, float linespacing, floa
   float radius;   /* the radius of the fluorescent bead, according to the number provided by vendor */
   float kz, ky, kx, k0y, k0x, ratio, k0mag;
 
-  //printf("In beadsize_compensate()\n");
+  printf("In beadsize_compensate()\n");
   kycent = ny/2;
   kxcent = nx/2;
   kzcent = nz/2;
@@ -776,7 +776,7 @@ void beadsize_compensate(complex **bands, float k0angle, float linespacing, floa
     k0x = ((float)order)/(norders-1) * k0mag * cos(k0angle);
     k0y = ((float)order)/(norders-1) * k0mag * sin(k0angle);
 
-    //printf("order=%d, k0x=%f, k0y=%f\n", order, k0x, k0y);
+    printf("order=%d, k0x=%f, k0y=%f\n", order, k0x, k0y);
 
     for (kin=0; kin<nz; kin++) {
       kout = kin;
@@ -852,7 +852,7 @@ void radialft(complex *band, int nx, int ny, int nz, complex *avg_output)
   int *count, nxz, nxy;
   float rdist;
 
-  //printf("In radialft()\n");
+  printf("In radialft()\n");
   kycent = ny/2;
   kxcent = nx/2;
   kzcent = nz/2;
@@ -932,7 +932,7 @@ void cleanup(complex *otfkxkz, int order, int nx, int nz, float dkr, float dkz, 
   krmax = 2*NA_local/lamda;
   k0mag = 1.0/linespacing;
 
-  //printf("nz=%d\n", nz);
+  printf("nz=%d\n", nz);
 
   if (!twolens) {
     for (ix=0; ix<icleanup; ix++) {
@@ -1056,7 +1056,7 @@ void outputdata(int ostream_no, complex **bands, IW_MRC_HEADER *header, int nord
 {
   int i;
 
-  //printf("In outputdata()\n");
+  printf("In outputdata()\n");
 
   header->nx = nz;
   header->ny = nx/2+1;
@@ -1126,7 +1126,7 @@ void fixorigin(complex *otfkxkz, int nx, int nz, int kx1, int kx2)
   int numvals, i, j;
   double *sum, totsum=0, ysum=0, sqsum=0;
 
-  //printf("In fixorigin()\n");
+  printf("In fixorigin()\n");
   meani = 0.5*(kx1+kx2);
   numvals = kx2-kx1+1;
   sum = (double *) malloc((kx2+1)*sizeof(double));
