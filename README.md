@@ -58,7 +58,7 @@ dampenOrder0=1
 The program has been compiled against different versions of the CUDA toolkit. The required CUDA libraries are bundled in the conda distributions so you don't need to install the CUDA toolkit separately. If desired, you can pick which version of CUDA you'd like based on your needs, but please note that different versions of the CUDA toolkit have different GPU driver requirements.  Not all versions are available on all platforms.  To see what versions are available on your platform, type `conda search -c talley cudasirecon`.
 
 
-| CUDA  | min driver | Install With |
+| build  | min CUDA driver | Install With |
 | ------------- | ------------  | -----------  |
 | 10.1  | ≥ 418.39     | `conda install cudasirecon=*=cu10.1`  |
 | 10.0  | ≥ 410.48     | `conda install cudasirecon=*=cu10.0`  |
