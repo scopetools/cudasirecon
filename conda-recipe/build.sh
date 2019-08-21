@@ -52,12 +52,6 @@ ln -s ${PREFIX}/bin/cudaSireconDriver ${PREFIX}/bin/sirecon
 #    cp "${CUDA_LIB_DIR}"/libcufft.*.so "${PREFIX}"/lib/
 #fi
 
-
-if [ `uname` == Darwin ]; then
-    cp "${CUDA_LIB_DIR}"/libcufft.*.dylib "${PREFIX}"/lib/
-    install_name_tool -add_rpath @executable_path/../lib "${PREFIX}/bin/makeotf"
-fi
-
 cd "${SRC_DIR}/build"
 
 # install fftw
@@ -76,3 +70,8 @@ $CC "${SRC_DIR}/otf/makeotf.c" \
     -L"${PREFIX}/lib" \
     -limlib -lsrfftw -lsfftw -lm \
     -o "${PREFIX}/bin/makeotf" 
+
+if [ `uname` == Darwin ]; then
+    cp "${CUDA_LIB_DIR}"/libcufft.*.dylib "${PREFIX}"/lib/
+    install_name_tool -add_rpath @executable_path/../lib "${PREFIX}/bin/makeotf"
+fi
