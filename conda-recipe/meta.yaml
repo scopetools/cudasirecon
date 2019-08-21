@@ -17,6 +17,7 @@ requirements:
   build:
     - conda # [linux]
     - cudatoolkit-dev=10.0 # [linux]
+    # - cudatoolkit-dev=9.2 # [linux]
     - gcc_linux-64=5.4.0 # [linux]
     - gxx_linux-64=5.4.0 # [linux]
     - openblas
@@ -27,6 +28,7 @@ requirements:
 
   run:
     - cudatoolkit=10.0 # [linux]
+    # - cudatoolkit=9.2
     - openblas
     - lapack
     - boost
