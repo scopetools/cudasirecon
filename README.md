@@ -14,7 +14,7 @@ $ conda install -c talley cudasirecon
 ```bash
 # the binary will be available as
 $ cudaSireconDriver
-# or more conveniently
+# (or a shorter symlink for convenience)
 $ sirecon
 
 # for command line help
@@ -22,6 +22,12 @@ $ sirecon --help
 
 # a typical call
 $ sirecon data.dv data-PROC.dv otf.otf -c config
+
+# ... where otf.otf was generated using the "makeotf" command:
+$ makeotf /path/to/psf.dv otf.otf -angle -1.855500 -ls 0.2075 -na 1.4 -nimm 1.515 -fixorigin 3 20 -leavekz 7 11 3
+
+# for more help on the makeotf command:
+$ makeotf -help
 ```
 
 A typical 3D sim config file may look like this:
