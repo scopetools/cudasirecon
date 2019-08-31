@@ -40,10 +40,20 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 ENABLE_TESTING()
 
-set(VERSION_MAJOR "0")
-set(VERSION_MINOR "0")
-set(VERSION_PATCH "1")
+file(READ "version.txt" ver)
+
+string(REGEX MATCH "VERSION_MAJOR ([0-9]*)" _ ${ver})
+set(ver_major ${CMAKE_MATCH_1})
+
+string(REGEX MATCH "VERSION_MINOR ([0-9]*)" _ ${ver})
+set(ver_minor ${CMAKE_MATCH_1})
+
+string(REGEX MATCH "VERSION_PATCH ([0-9]*)" _ ${ver})
+set(ver_patch ${CMAKE_MATCH_1})
+
+message("version: ${ver_major}.${ver_minor}.${ver_patch}")
 set(PROJECT_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+
 
 ######################################################################
 #
@@ -107,6 +117,9 @@ if(WIN32)
   set (Boost_USE_STATIC_RUNTIME OFF)
 endif(WIN32)
 
+message(STATUS "BOOST_INCLUDEDIR" ${BOOST_INCLUDEDIR})
+message(STATUS "BOOST_ROOT" ${BOOST_ROOT})
+message(STATUS "BOOST_LIBRARYDIR" ${BOOST_LIBRARYDIR})
 find_package( Boost REQUIRED COMPONENTS program_options filesystem system)
 
 if(WIN32 OR APPLE)

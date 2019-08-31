@@ -120,6 +120,7 @@ struct ReconParams {
   float *phaseSteps; /** user-specified non-ideal phase steps, one for each orientation */
   int   bTwolens;    /** whether to process I{^5}S dataset */
   int   bFastSIM;   /** fast SIM data is organized differently */
+  int   bWriteTitle;   /** whether to write command line args to title field in mrc header */
 
   /* algorithm related parameters */
   float zoomfact;

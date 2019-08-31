@@ -3,6 +3,8 @@
 #include "cudaSireconImpl.h"
 #include "SIM_reconstructor.hpp"
 
+std::string version_number = "1.0.1";
+
 void SetDefaultParams(ReconParams *pParams)
 {
   pParams->k0startangle =1.57193;
@@ -59,6 +61,7 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->fileRawAligned[0] = '\0';
   pParams->bSaveOverlaps = 0;
   pParams->fileOverlaps[0] = '\0';
+  pParams->bWriteTitle = 0;
 
   pParams->ifilein = 0;
   pParams->ofilein = 0;
@@ -1380,20 +1383,6 @@ void saveIntermediateDataForDebugging(const ReconParams& params)
 }
 #endif
 
-#ifndef __SIRECON_USE_TIFF__
-void saveCommandLineToHeader(int argc, char **argv, IW_MRC_HEADER &header)
-{
-  char titles[1000];
-  titles[0] = '\0';
-  for (int i = 3; i < argc; ++i) {
-    strcat(titles, argv[i]);
-    strcat(titles, " ");
-  }
-  IMAlLab(ostream_no, titles, strlen(titles) / 80 + 1);
-  IMWrHdr(ostream_no, header.label, 1, header.amin, header.amax,
-      header.amean);
-}
-#endif
 
 void dumpBands(std::vector<GPUBuffer>* bands, int nx, int ny, int nz0)
 {
@@ -1468,6 +1457,7 @@ SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
         options(m_progopts).positional(p).run(), m_varsmap);
 
   if (m_varsmap.count("help")) {
+    std::cout << "cudasirecon v" + version_number + " -- Written by Lin Shao. All rights reserved.\n" << "\n";
     std::cout << m_progopts << "\n";
     exit(0);
   }
@@ -1599,6 +1589,8 @@ int SIM_Reconstructor::setupProgramOptions()
     ("config,c", po::value<std::string>(&m_config_file)->default_value(""),
      "name of a file of a configuration.")
     ("2lenses", po::value<int>(&m_myParams.bTwolens)->implicit_value(true), "I5S data")
+    ("writeTitle", po::value<int>(&m_myParams.bWriteTitle)->implicit_value(true),
+     "Write command line to image header (may cause issues with bioformats)")
     ("help,h", "produce help message")
 #ifdef __SIRECON_USE_TIFF__
     ("xyres", po::value<float>(&m_imgParams.dy)->default_value(0.1),
@@ -1875,11 +1867,28 @@ void SIM_Reconstructor::writeResult(int it, int iw)
   printf("Time point %d, wave %d done\n", it, iw);
 }
 
+#ifndef __SIRECON_USE_TIFF__
+void saveCommandLineToHeader(int argc, char **argv, IW_MRC_HEADER &header, const ReconParams& myParams)
+{
+  char titles[1000];
+  titles[0] = '\0';
+  for (int i = 3; i < argc; ++i) {
+    strcat(titles, argv[i]);
+    strcat(titles, " ");
+  }
+  if (myParams.bWriteTitle){
+    IMAlLab(ostream_no, titles, strlen(titles) / 80 + 1);
+  }
+  IMWrHdr(ostream_no, header.label, 1, header.amin, header.amax,
+      header.amean);
+}
+#endif
+
 void SIM_Reconstructor::closeFiles()
 {
 #ifndef __SIRECON_USE_TIFF__
   ::IMClose(istream_no);
-  ::saveCommandLineToHeader(m_argc, m_argv, m_in_out_header);
+  ::saveCommandLineToHeader(m_argc, m_argv, m_in_out_header, m_myParams);
   ::IMClose(ostream_no);
 #endif
 }

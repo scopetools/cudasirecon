@@ -5,6 +5,7 @@
 namespace po = boost::program_options;
 #include <boost/tokenizer.hpp>
 
+
 //! All calculation starts with a SIM_Reconstructor object
 /*!
   As seen in cudaSireconDriver.cpp, SIM reconstruction is done in the following steps:
@@ -61,6 +62,7 @@ public:
   std::vector< std::string > m_all_matching_files;
   // CImg<> m_otf_tiff;
 #endif
+
 
 private:
   std::string m_config_file;
