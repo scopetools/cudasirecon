@@ -117,10 +117,10 @@ if(WIN32)
   set (Boost_USE_STATIC_RUNTIME OFF)
 endif(WIN32)
 
-message(STATUS "BOOST_INCLUDEDIR" ${BOOST_INCLUDEDIR})
-message(STATUS "BOOST_ROOT" ${BOOST_ROOT})
-message(STATUS "BOOST_LIBRARYDIR" ${BOOST_LIBRARYDIR})
 find_package( Boost REQUIRED COMPONENTS program_options filesystem system)
+message(STATUS "Boost_INCLUDE_DIRS " ${Boost_INCLUDE_DIRS})
+message(STATUS "Boost_LIBRARY_DIRS " ${Boost_LIBRARY_DIRS})
+message(STATUS "Boost_LIBRARIES " ${Boost_LIBRARIES})
 
 if(WIN32 OR APPLE)
   link_directories ( ${Boost_LIBRARY_DIRS} )
@@ -133,6 +133,7 @@ if(APPLE)
 endif()
 
 set(CUDA_NVCC_FLAGS
+  -D_USE_MATH_DEFINES
   -gencode=arch=compute_50,code=sm_50; 
   -gencode=arch=compute_52,code=sm_52; 
   -gencode=arch=compute_60,code=sm_60; 
