@@ -53,7 +53,18 @@ dampenOrder0=1
 
 ## Requirements
 
-* Currently only accepts images as .dv or .mrc format.
+* Currently only accepts images as .dv or .mrc format.  If you need to convert TIFF files (or any other format you can get into a numpy array) to DV/MRC format you can install the [mrc python package](https://github.com/tlambert03/mrc) with `pip install mrc`.  Then use something like:
+```python
+import tifffile
+import mrc
+
+fname = '/path/to/file.tif'
+im = tifffile.imread(fname)
+# it will be critical that the pixel calibrations 'dx','dy', 'dz' are correct for sim reconstruction
+mrc.imwrite(fname.replace('.tif', '.dv'), im,
+            metadata={'dx': 0.08, 'dy': 0.08, 'dz': 0.25, 'wave': [525,0,0,0,0]})
+```
+  
 * Requires CUDA-capable NVIDIA GPU and driver.
 
 The program has been compiled against different versions of the CUDA toolkit. The required CUDA libraries are bundled in the conda distributions so you don't need to install the CUDA toolkit separately. If desired, you can pick which version of CUDA you'd like based on your needs, but please note that different versions of the CUDA toolkit have different GPU driver requirements.  Not all versions are available on all platforms.  To see what versions are available on your platform, type `conda search -c talley cudasirecon`.
