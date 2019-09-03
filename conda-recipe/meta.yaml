@@ -47,5 +47,5 @@ requirements:
 
 test:
   commands:
-    - cudaSireconDriver --help
+    - cudasirecon --help
       
