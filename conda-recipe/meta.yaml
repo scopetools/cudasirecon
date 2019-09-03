@@ -9,30 +9,41 @@ build:
   number: 2
   # NOTE: for mac, you should export CUDA_VERSION before running conda build
   # it will look for cudatoolkit installed at /Developer/NVIDIA/CUDA-${CUDA_VERSION}
-  string: 'cu{{ environ.get('CUDA_VERSION') }}'
+  string: 'cu{{ environ.get('CUDA_VERSION', '10.0') }}'
   script_env:
     - CUDA_VERSION
   
 requirements:
   build:
+    # - {{ compiler("cxx") }}
     - conda # [linux]
+    - ninja # [win]
     - cudatoolkit-dev=10.0 # [linux]
     # - cudatoolkit-dev=9.2 # [linux]
     - gcc_linux-64=5.4.0 # [linux]
     - gxx_linux-64=5.4.0 # [linux]
-    - openblas
-    - lapack
+    - openblas # [not win]
+    - lapack # [not win]
     - cmake
-    - boost
-    - xorg-libx11
+    - boost-cpp # [not win]
+    - xorg-libx11 # [not win]
 
   run:
-    - cudatoolkit=10.0 # [linux]
+    {% if environ.get('CUDA_VERSION') == '10.0' %}
+    - cudatoolkit=10.0 # [not mac]
+    {% elif environ.get('CUDA_VERSION') == '10.1' %}
+    - cudatoolkit=10.1 # [not mac]
+    {% elif environ.get('CUDA_VERSION') == '9.2' %}
+    - cudatoolkit=9.2 # [linux]
+    {% elif environ.get('CUDA_VERSION') == '9.0' %}
+    - cudatoolkit=9.0 # [not mac]
+    {% endif %}
     # - cudatoolkit=9.2
-    - openblas
-    - lapack
-    - boost
-    - xorg-libx11
+    - openblas # [not win]
+    - lapack # [not win]
+    - liblapack # [win]
+    - boost #[not win]
+    - xorg-libx11 # [not win]
 
 test:
   commands:
