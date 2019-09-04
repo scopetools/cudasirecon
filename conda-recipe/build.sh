@@ -59,7 +59,7 @@ wget http://www.fftw.org/fftw-2.1.5.tar.gz
 tar -zxvf fftw-2.1.5.tar.gz
 cd fftw-2.1.5
 ./configure --prefix=${PREFIX} --enable-type-prefix --enable-float --enable-threads
-make
+make -j 4
 make install
 
 # build makeotf
