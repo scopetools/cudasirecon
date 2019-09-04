@@ -4,3 +4,5 @@ build
 testData
 test_data/psf.dv
 test_data/proc.dv
+IVE
+lapack
