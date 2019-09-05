@@ -12,18 +12,16 @@ if [ `uname` == Linux ]; then
     export LDFLAGS="-L${PREFIX}/lib"
     export CC=$PREFIX/bin/x86_64-conda_cos6-linux-gnu-gcc
     export CXX=$PREFIX/bin/x86_64-conda_cos6-linux-gnu-g++
-    # export CC=gcc
-    # export CXX=g++
     PLATFORM=linux64
 
-    #CUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda-${CUDA_VERSION}"
-    #CUDA_LIB_DIR="${CUDA_TOOLKIT_ROOT_DIR}"/lib64
+    CUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda-${CUDA_VERSION}"
+    CUDA_LIB_DIR="${CUDA_TOOLKIT_ROOT_DIR}"/lib64
 
     cmake .. \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
-    -DCMAKE_INSTALL_RPATH:STRING="${PREFIX}/lib"
-#    -DCUDA_TOOLKIT_ROOT_DIR="${CUDA_TOOLKIT_ROOT_DIR}" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+        -DCMAKE_INSTALL_RPATH:STRING="${PREFIX}/lib" \
+        -DCUDA_TOOLKIT_ROOT_DIR="${CUDA_TOOLKIT_ROOT_DIR}" 
 
 fi 
 

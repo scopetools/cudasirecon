@@ -31,4 +31,8 @@ target_link_libraries(makeotf
                       ${FFTW}
                       ${RFFTW})
 
+if(UNIX AND NOT APPLE)
+  target_link_libraries(makeotf m)
+endif()
+
 install(TARGETS makeotf RUNTIME DESTINATION bin)

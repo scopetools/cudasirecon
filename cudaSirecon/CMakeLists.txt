@@ -189,6 +189,12 @@ else(WIN32)
     ${TIFF_LIBRARIES}
     X11
   )
+  if(NOT APPLE)
+    target_link_libraries(
+      cudaSirecon
+      rt
+    )
+  endif()
   target_link_libraries(
     cudaSireconDriver
     cudaSirecon

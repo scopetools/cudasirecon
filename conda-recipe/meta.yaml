@@ -9,20 +9,19 @@ build:
   number: 2
   # NOTE: for mac, you should export CUDA_VERSION before running conda build
   # it will look for cudatoolkit installed at /Developer/NVIDIA/CUDA-${CUDA_VERSION}
-  string: 'cu{{ environ.get('CUDA_VERSION', '10.0') }}'
+  string: 'cu{{ environ.get('CUDA_VERSION') }}'
   script_env:
     - CUDA_VERSION
   
 requirements:
   build:
-    # - {{ compiler("cxx") }}
-    - conda # [linux]
     - ninja # [win]
-    {% if environ.get('CUDA_VERSION') == '10.0' %}
-    - cudatoolkit-dev=10.0 # [linux]
-    {% elif environ.get('CUDA_VERSION') == '9.2' %}
-    cudatoolkit-dev=9.2 # [linux]
-    {% endif %}
+    # - conda # [linux]
+    # {% if environ.get('CUDA_VERSION') == '10.0' %}
+    # - cudatoolkit-dev=10.0 # [linux]
+    # {% elif environ.get('CUDA_VERSION') == '9.2' %}
+    # cudatoolkit-dev=9.2 # [linux]
+    # {% endif %}
     - gcc_linux-64=5.4.0 # [linux]
     - gxx_linux-64=5.4.0 # [linux]
     - liblapack
@@ -31,10 +30,10 @@ requirements:
     - xorg-libx11 # [not win]
 
   run:
-    {% if environ.get('CUDA_VERSION') == '10.0' %}
-    - cudatoolkit=10.0 # [not osx]
-    {% elif environ.get('CUDA_VERSION') == '10.1' %}
+    {% if environ.get('CUDA_VERSION') == '10.1' %}
     - cudatoolkit=10.1 # [not osx]
+    {% elif environ.get('CUDA_VERSION') == '10.0' %}
+    - cudatoolkit=10.0 # [not osx]
     {% elif environ.get('CUDA_VERSION') == '9.2' %}
     - cudatoolkit=9.2 # [linux]
     {% elif environ.get('CUDA_VERSION') == '9.0' %}
@@ -48,3 +47,9 @@ test:
   commands:
     - cudasirecon --help
     - makeotf -h
+
+about:
+  home: https://github.com/tlambert03/CUDA_SIMrecon
+  license: GPL-3.0  
+  summary: 'CUDA-Accelerated 3-beam SIM reconstruction software'
+  description: 'CUDA-Accelerated 3-beam SIM reconstruction software'
