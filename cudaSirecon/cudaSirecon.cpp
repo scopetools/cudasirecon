@@ -3,7 +3,7 @@
 #include "cudaSireconImpl.h"
 #include "SIM_reconstructor.hpp"
 
-std::string version_number = "1.0.1";
+std::string version_number = "1.0.2";
 
 void SetDefaultParams(ReconParams *pParams)
 {
