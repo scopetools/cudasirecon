@@ -7,3 +7,4 @@ test_data/proc.dv
 IVE
 lapack
 *dist
+fftw2
