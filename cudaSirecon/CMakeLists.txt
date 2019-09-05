@@ -4,7 +4,7 @@ include_directories(
   "${CMAKE_CURRENT_SOURCE_DIR}/../Buffers"
   )
 
-
+set(CMAKE_MACOSX_RPATH 1)
 
 if(WIN32)# OR APPLE)
   link_directories ( ${Boost_LIBRARY_DIRS} )
@@ -179,6 +179,7 @@ else(WIN32)
     gpuFunctions
     Buffer
     ${IMLIB}
+    ${IVELIB}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_REGEX_LIBRARY}
@@ -187,7 +188,6 @@ else(WIN32)
     lapack
     ${TIFF_LIBRARIES}
     X11
-#    nvidia-ml
   )
   target_link_libraries(
     cudaSireconDriver
@@ -215,6 +215,6 @@ install(
   FILES ${HEADERS} DESTINATION include
 )
 
-install(
-  FILES ${IMLIB} ${IVELIB} DESTINATION lib
-)
+# install(
+#   FILES ${IMLIB} ${IVELIB} DESTINATION lib
+# )

@@ -18,34 +18,33 @@ requirements:
     # - {{ compiler("cxx") }}
     - conda # [linux]
     - ninja # [win]
+    {% if environ.get('CUDA_VERSION') == '10.0' %}
     - cudatoolkit-dev=10.0 # [linux]
-    # - cudatoolkit-dev=9.2 # [linux]
+    {% elif environ.get('CUDA_VERSION') == '9.2' %}
+    cudatoolkit-dev=9.2 # [linux]
+    {% endif %}
     - gcc_linux-64=5.4.0 # [linux]
     - gxx_linux-64=5.4.0 # [linux]
-    - openblas # [not win]
-    - lapack # [not win]
+    - liblapack
     - cmake
     - boost-cpp # [not win]
     - xorg-libx11 # [not win]
 
   run:
     {% if environ.get('CUDA_VERSION') == '10.0' %}
-    - cudatoolkit=10.0 # [not mac]
+    - cudatoolkit=10.0 # [not osx]
     {% elif environ.get('CUDA_VERSION') == '10.1' %}
-    - cudatoolkit=10.1 # [not mac]
+    - cudatoolkit=10.1 # [not osx]
     {% elif environ.get('CUDA_VERSION') == '9.2' %}
     - cudatoolkit=9.2 # [linux]
     {% elif environ.get('CUDA_VERSION') == '9.0' %}
-    - cudatoolkit=9.0 # [not mac]
+    - cudatoolkit=9.0 # [not osx]
     {% endif %}
-    # - cudatoolkit=9.2
-    - openblas # [not win]
-    - lapack # [not win]
-    - liblapack # [win]
-    - boost #[not win]
+    - liblapack
+    - boost-cpp #[not win]
     - xorg-libx11 # [not win]
 
 test:
   commands:
     - cudasirecon --help
-      
+    - makeotf -h

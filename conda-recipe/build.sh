@@ -23,7 +23,7 @@ if [ `uname` == Linux ]; then
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
     -DCMAKE_INSTALL_RPATH:STRING="${PREFIX}/lib"
-#    -D CUDA_TOOLKIT_ROOT_DIR="${CUDA_TOOLKIT_ROOT_DIR}" \
+#    -DCUDA_TOOLKIT_ROOT_DIR="${CUDA_TOOLKIT_ROOT_DIR}" \
 
 fi 
 
@@ -35,10 +35,10 @@ if [ `uname` == Darwin ]; then
     CUDA_LIB_DIR="${CUDA_TOOLKIT_ROOT_DIR}"/lib
 
     cmake .. \
-    -D CUDA_TOOLKIT_ROOT_DIR="${CUDA_TOOLKIT_ROOT_DIR}" \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
-    -DCMAKE_INSTALL_RPATH:STRING="${PREFIX}/lib"
+        -DCUDA_TOOLKIT_ROOT_DIR="${CUDA_TOOLKIT_ROOT_DIR}" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+        -DCMAKE_INSTALL_RPATH:STRING="${PREFIX}/lib"
 
 fi
 
@@ -55,23 +55,31 @@ ln -s ${PREFIX}/bin/cudaSireconDriver ${PREFIX}/bin/sirecon
 cd "${SRC_DIR}/build"
 
 # install fftw
-wget http://www.fftw.org/fftw-2.1.5.tar.gz
-tar -zxvf fftw-2.1.5.tar.gz
-cd fftw-2.1.5
-./configure --prefix=${PREFIX} --enable-type-prefix --enable-float --enable-threads
-make -j 4
-make install
+# wget http://www.fftw.org/fftw-2.1.5.tar.gz
+# tar -zxvf fftw-2.1.5.tar.gz
+# cd fftw-2.1.5
+# ./configure --prefix=${PREFIX} --enable-type-prefix --enable-float --enable-threads
+# make -j 4
+# make install
 
-# build makeotf
-$CC "${SRC_DIR}/otf/makeotf.c" \
-    -I"${SRC_DIR}/IVE/${PLATFORM}/INCLUDE" \
-    -I"${PREFIX}/include" \
-    -L"${SRC_DIR}/IVE/${PLATFORM}/LIB" \
-    -L"${PREFIX}/lib" \
-    -limlib -lsrfftw -lsfftw -lm \
-    -o "${PREFIX}/bin/makeotf" 
+# FFTW_ROOT="${SRC_DIR}/fftw2/${PLATFORM}/"
+
+# # build makeotf
+# $CC "${SRC_DIR}/otf/makeotf.c" \
+#     -I"${SRC_DIR}/IVE/${PLATFORM}/INCLUDE" \
+#     -I"${FFTW_ROOT}/include" \
+#     -L"${SRC_DIR}/IVE/${PLATFORM}/LIB" \
+#     -L"${FFTW_ROOT}/lib" \
+#     -limlib -lsrfftw -lsfftw -lm \
+#     -o "${PREFIX}/bin/makeotf" 
+
+# if [ `uname` == Darwin ]; then
+#     install_name_tool -add_rpath @executable_path/../lib "${PREFIX}/bin/makeotf"
+# fi
+
 
 if [ `uname` == Darwin ]; then
     cp "${CUDA_LIB_DIR}"/libcufft.*.dylib "${PREFIX}"/lib/
-    install_name_tool -add_rpath @executable_path/../lib "${PREFIX}/bin/makeotf"
 fi
+
+echo "####################### build.sh done"
