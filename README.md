@@ -136,3 +136,102 @@ The program has been compiled against different versions of the CUDA toolkit. Th
 If your CUDA Driver version is too low for the version of cudasirecon that you have installed, you may get an error that looks like: `!!Error occurred: cudaSetDevice failed`
 
 If you run into trouble, feel free to [open an issue](https://github.com/tlambert03/CUDA_SIMrecon/issues) and describe your setup.
+
+# Compiling from source
+
+Building the binary from source can be somewhat tricky (hence the conda packages), but if you'd like to build from scratch, here are some notes for each platform.  You can also look in the `conda-recipe` folder for tips.
+
+## All platforms
+
+The program requires the IVE libraries, which are not distributed with this source code and must be acquired seperately from UCSF.  Place them in a folder called `IVE` at the top level of the source folder (same folder as the cudaSirecon folder).  It should minimally have the following files and folders (example shown for linux, use `.dylib` or `.lib` as necessary for osx or windows)
+
+```
+CUDA_SIMrecon
+├── ...
+└── IVE/
+    ├── darwin64/
+    │   ├── INCLUDE/
+    │   └── LIB/
+    ├── linux64/
+    │   ├── INCLUDE/
+    │   │   ├── IM.h
+    │   │   ├── IMInclude.h
+    │   │   └── IWApiConstants.h
+    │   └── LIB/
+    │       ├── libimlib.a
+    │       └── libive.a
+    └── win64/
+        ├── INCLUDE/
+        └── LIB/
+```
+
+## Building on Linux
+This has only been tested on Ubuntu 16.04.  You will need to have the [NVIDIA CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) installed (I have used versions 8-10.1 ... so that part doesn't really matter)... See note below about optionally installing with conda.
+
+I use [conda](https://docs.conda.io/en/latest/miniconda.html) for the remaining dependencies and build as follows:
+
+```bash
+$ conda create -n simbuild -c conda-forge -y gcc_linux-64=5.4.0 gxx_linux-64=5.4.0 cmake liblapack boost-cpp xorg-libx11
+$ conda activate simbuild
+
+# optional: if you want to install the CUDA toolkit through conda rather than the NVIDIA website, you need to use the dev versions that have the nvcc compiler.
+# conda install -c conda-forge conda cudatookit-dev=10.0
+
+# create a build directory inside of CUDA_SIMrecon
+$ mkdir build
+$ cd build
+# run cmake, optionally directing it to the CUDA toolkit version you have
+$ export LDFLAGS="-L${CONDA_PREFIX}/lib"
+$ export CC="${CONDA_PREFIX}/bin/x86_64-conda_cos6-linux-gnu-gcc"
+$ export CXX="${CONDA_PREFIX}/bin/x86_64-conda_cos6-linux-gnu-g++"
+$ export CUDA_VERSION=10.1  # for example
+$ cmake .. \
+    -DCUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda-${CUDA_VERSION}"
+    -DCMAKE_BUILD_TYPE=Release
+
+# if there were no errors, build it
+$ make
+```
+If all went well, the executable should be at `./build/cudaSirecon/cudaSireconDriver`
+
+
+## Building on Mac
+
+I build with AppleClang 8.1.0.8020042.  Later versions may not be compatible with the NVIDIA compiler.  If you get an error like `nvcc fatal : The version ('90000') of the host compiler ('Apple clang') is not supported`, then you need to download and [Command Line Tool for 8.3.2](https://developer.apple.com/download/more/), then run `sudo xcode-select --switch /Library/Developer/CommandLineTools`.  You will also need to have the [NVIDIA CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) installed (I have used versions 8-10.1 ... so that part doesn't really matter). See note below about optionally installing with conda.
+
+I use [conda](https://docs.conda.io/en/latest/miniconda.html) for the remaining dependencies and build as follows:
+
+```bash
+$ conda create -n simbuild -c conda-forge -y cmake liblapack boost-cpp xorg-libx11
+$ conda activate simbuild
+
+# optional: if you want to install the CUDA toolkit through conda rather than the NVIDIA website, you need to use the dev versions that have the nvcc compiler.
+# conda install -c conda-forge conda cudatookit-dev=10.0
+
+# create a build directory inside of CUDA_SIMrecon
+$ mkdir build
+$ cd build
+# run cmake, optionally directing it to the CUDA toolkit version you have
+$ cmake .. \
+    -DCUDA_TOOLKIT_ROOT_DIR=/Developer/NVIDIA/CUDA-10.1 \
+    -DCMAKE_BUILD_TYPE=Release
+
+# if there were no errors, build it
+$ make
+```
+
+If all went well, the executable should be at `./build/cudaSirecon/cudaSireconDriver`
+
+### Building `makeotf`
+
+To build the `makeotf` program you also need precompiled fftw-2.x (not 3) libs in a folder called fftw2 in the base directory, with subfolders for each platform that you want to build for (darwin64, linux64, win64), as demonstrated above for the IVE libraries.  To build fftw2 on mac or linux:
+
+```bash
+# download, compile, and install fftw
+wget http://www.fftw.org/fftw-2.1.5.tar.gz
+tar -zxvf fftw-2.1.5.tar.gz
+cd fftw-2.1.5
+./configure --prefix=fftw2 --enable-type-prefix --enable-float --enable-threads
+make -j 4
+make install
+```

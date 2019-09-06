@@ -17,11 +17,12 @@ requirements:
   build:
     - {{ compiler("cxx") }} # [win]
     - ninja # [win]
-    # - conda # [linux]
     # {% if environ.get('CUDA_VERSION') == '10.0' %}
+    # - conda # [linux]
     # - cudatoolkit-dev=10.0 # [linux]
     # {% elif environ.get('CUDA_VERSION') == '9.2' %}
-    # cudatoolkit-dev=9.2 # [linux]
+    # - conda # [linux]
+    # - cudatoolkit-dev=9.2 # [linux]
     # {% endif %}
     - gcc_linux-64=5.4.0 # [linux]
     - gxx_linux-64=5.4.0 # [linux]
