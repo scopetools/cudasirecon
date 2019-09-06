@@ -143,7 +143,7 @@ Building the binary from source can be somewhat tricky (hence the conda packages
 
 ## All platforms
 
-The program requires the IVE libraries, which are not distributed with this source code and must be acquired seperately from UCSF.  Place them in a folder called `IVE` at the top level of the source folder (same folder as the cudaSirecon folder).  It should minimally have the following files and folders (example shown for linux, use `.dylib` or `.lib` as necessary for osx or windows)
+The program requires the IVE/Priism libraries, which are not distributed with this source code and must be acquired seperately from UCSF.  Place them in a folder called `IVE` at the top level of the source folder (same folder as the cudaSirecon folder).  It should minimally have the following files and folders (example shown for linux, use `.dylib` or `.lib` as necessary for osx or windows)
 
 ```
 CUDA_SIMrecon
@@ -174,7 +174,8 @@ I use [conda](https://docs.conda.io/en/latest/miniconda.html) for the remaining 
 $ conda create -n simbuild -c conda-forge -y gcc_linux-64=5.4.0 gxx_linux-64=5.4.0 cmake liblapack boost-cpp xorg-libx11
 $ conda activate simbuild
 
-# optional: if you want to install the CUDA toolkit through conda rather than the NVIDIA website, you need to use the dev versions that have the nvcc compiler.
+# optional: if you want to install the CUDA toolkit through conda rather than the NVIDIA website,
+# you need to use the dev versions that have the nvcc compiler.
 # conda install -c conda-forge conda cudatookit-dev=10.0
 
 # create a build directory inside of CUDA_SIMrecon
@@ -197,7 +198,7 @@ If all went well, the executable should be at `./build/cudaSirecon/cudaSireconDr
 
 ## Building on Mac
 
-I build with AppleClang 8.1.0.8020042.  Later versions may not be compatible with the NVIDIA compiler.  If you get an error like `nvcc fatal : The version ('90000') of the host compiler ('Apple clang') is not supported`, then you need to download and [Command Line Tool for 8.3.2](https://developer.apple.com/download/more/), then run `sudo xcode-select --switch /Library/Developer/CommandLineTools`.  You will also need to have the [NVIDIA CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) installed (I have used versions 8-10.1 ... so that part doesn't really matter). See note below about optionally installing with conda.
+I build with AppleClang 8.1.0.8020042.  Later versions may not be compatible with the NVIDIA compiler.  If during compilation you get an error like `nvcc fatal : The version ('xxxxx') of the host compiler ('Apple clang') is not supported`, then you need to download and install [Command Line Tool for 8.3.2](https://developer.apple.com/download/more/), then run `sudo xcode-select --switch /Library/Developer/CommandLineTools`.  You will also need to have the [NVIDIA CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) installed (I have used versions 8-10.1 ... so that part doesn't really matter). See note below about optionally installing that with conda.
 
 I use [conda](https://docs.conda.io/en/latest/miniconda.html) for the remaining dependencies and build as follows:
 
@@ -205,7 +206,8 @@ I use [conda](https://docs.conda.io/en/latest/miniconda.html) for the remaining 
 $ conda create -n simbuild -c conda-forge -y cmake liblapack boost-cpp xorg-libx11
 $ conda activate simbuild
 
-# optional: if you want to install the CUDA toolkit through conda rather than the NVIDIA website, you need to use the dev versions that have the nvcc compiler.
+# optional: if you want to install the CUDA toolkit through conda rather than the NVIDIA website,
+# you need to use the dev versions that have the nvcc compiler.
 # conda install -c conda-forge conda cudatookit-dev=10.0
 
 # create a build directory inside of CUDA_SIMrecon
@@ -222,16 +224,37 @@ $ make
 
 If all went well, the executable should be at `./build/cudaSirecon/cudaSireconDriver`
 
-### Building `makeotf`
+## Building on Windows
 
-To build the `makeotf` program you also need precompiled fftw-2.x (not 3) libs in a folder called fftw2 in the base directory, with subfolders for each platform that you want to build for (darwin64, linux64, win64), as demonstrated above for the IVE libraries.  To build fftw2 on mac or linux:
+*coming*...
+
+## Building `makeotf`
+
+
+To build the `makeotf` program you also need precompiled fftw-2.x (not 3) libs in a folder called fftw2 in the base directory, with subfolders for each platform that you want to build for (darwin64, linux64, win64), as demonstrated above for the IVE libraries.  See notes below about installing and compiling for mac/linux
+
+The `CMakeLists.txt` file in the root of the project will try to build `makeotf` by default, but you can also build it all manually as follows:
 
 ```bash
+export SRC_DIR=/path/to/CUDA_SIMrecon  # fix this for your system
+export FFTW_ROOT="${SRC_DIR}/fftw2"
+export PLATFORM=linux64  # or darwin64 for mac
+export IVE_ROOT="${SRC_DIR}/IVE/${PLATFORM}"
+
 # download, compile, and install fftw
 wget http://www.fftw.org/fftw-2.1.5.tar.gz
 tar -zxvf fftw-2.1.5.tar.gz
 cd fftw-2.1.5
-./configure --prefix=fftw2 --enable-type-prefix --enable-float --enable-threads
+./configure --prefix=$FFTW_ROOT --enable-type-prefix --enable-float --enable-threads
 make -j 4
 make install
+
+# then build makeotf
+gcc "${SRC_DIR}/otf/makeotf.c" \
+    -I"${IVE_ROOT}/INCLUDE" \
+    -I"${FFTW_ROOT}/include" \
+    -L"${IVE_ROOT}/LIB" \
+    -L"${FFTW_ROOT}/lib" \
+    -limlib -lsrfftw -lsfftw -lm \
+    -o "${SRC_DIR}/otf/makeotf"
 ```
