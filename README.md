@@ -206,6 +206,12 @@ I use [conda](https://docs.conda.io/en/latest/miniconda.html) for the remaining 
 $ conda create -n simbuild -c conda-forge -y cmake liblapack boost-cpp xorg-libx11
 $ conda activate simbuild
 
+# as of this writing, versions were
+# cmake=3.15.1
+# liblapack=3.8.0
+# boost-cpp=1.70.0
+# xorg-libx11=1.6.8
+
 # optional: if you want to install the CUDA toolkit through conda rather than the NVIDIA website,
 # you need to use the dev versions that have the nvcc compiler.
 # conda install -c conda-forge conda cudatookit-dev=10.0
