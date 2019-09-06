@@ -246,7 +246,7 @@ Unforunately, I have not been able to get autolinking to work with the boost lib
 
 [Download boost](https://www.boost.org/users/download/) (I am currently using v1.71.0), then prepare the boost libraries as described [here](https://www.boost.org/doc/libs/1_71_0/more/getting_started/windows.html#prepare-to-use-a-boost-library-binary).  Briefly, `cd` into the boost folder you downloaded and unzipped, then run `bootstrap` followed by `.\b2`  (if you get errors, you *may* need to specify the toolset with `bootstrap msvc`).  The compiled libraries will be put into the `./stage` directory.  Then move the whole folder to `C:\` such that you have `C:\boost\stage\`
 
-Finally, create a conda environment to install the remaining dependencies and build as follows:
+Finally, create a [conda](https://docs.conda.io/en/latest/miniconda.html) environment to install the remaining dependencies and build as follows:
 
 ```bash
 > conda create -n simbuild -c conda-forge -y ninja cmake openblas
