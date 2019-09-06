@@ -167,4 +167,6 @@ message(STATUS "CUDA_NVCC_FLAGS: " ${CUDA_NVCC_FLAGS})
 
 add_subdirectory(Buffers)
 add_subdirectory(cudaSirecon)
-add_subdirectory(otf)
+if(NOT WIN32)
+  add_subdirectory(otf)
+endif()

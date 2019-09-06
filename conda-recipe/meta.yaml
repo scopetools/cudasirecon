@@ -15,6 +15,7 @@ build:
   
 requirements:
   build:
+    - {{ compiler("cxx") }} # [win]
     - ninja # [win]
     # - conda # [linux]
     # {% if environ.get('CUDA_VERSION') == '10.0' %}
@@ -46,7 +47,7 @@ requirements:
 test:
   commands:
     - cudasirecon --help
-    - makeotf -h
+    - makeotf -h # [not win]
 
 about:
   home: https://github.com/tlambert03/CUDA_SIMrecon
