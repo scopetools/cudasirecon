@@ -143,7 +143,7 @@ Building the binary from source can be somewhat tricky (hence the conda packages
 
 ## All platforms
 
-The program requires the IVE/Priism libraries, which are not distributed with this source code and must be acquired seperately from UCSF.  Place them in a folder called `IVE` at the top level of the source folder (same folder as the cudaSirecon folder).  It should minimally have the following files and folders (example shown for linux, use `.dylib` or `.lib` as necessary for osx or windows)
+The program requires the IVE/Priism libraries, which are not distributed with this source code and must be acquired seperately from UCSF.  Place them in a folder called `IVE` at the top level of the source folder (same folder as the cudaSirecon folder).  It should minimally have the following files and folders (example shown for linux, use `.a` or `.lib` as necessary for osx or windows)
 
 ```
 CUDA_SIMrecon
@@ -166,7 +166,7 @@ CUDA_SIMrecon
 ```
 
 ## Building on Linux
-This has only been tested on Ubuntu 16.04.  You will need to have the [NVIDIA CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) installed (I have used versions 8-10.1 ... so that part doesn't really matter)... See note below about optionally installing with conda.
+This has only been tested on Ubuntu 16.04.  You will need to have the [NVIDIA CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) installed (I have used versions 8.0 - 10.1 ... so that part doesn't really matter unless you are targetting a GPU with a specific CUDA compute capability)... See note below about optionally installing with conda.
 
 I use [conda](https://docs.conda.io/en/latest/miniconda.html) for the remaining dependencies and build as follows:
 
@@ -198,7 +198,7 @@ If all went well, the executable should be at `./build/cudaSirecon/cudaSireconDr
 
 ## Building on Mac
 
-I build with AppleClang 8.1.0.8020042.  Later versions may not be compatible with the NVIDIA compiler.  If during compilation you get an error like `nvcc fatal : The version ('xxxxx') of the host compiler ('Apple clang') is not supported`, then you need to download and install [Command Line Tool for 8.3.2](https://developer.apple.com/download/more/), then run `sudo xcode-select --switch /Library/Developer/CommandLineTools`.  You will also need to have the [NVIDIA CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) installed (I have used versions 8-10.1 ... so that part doesn't really matter). See note below about optionally installing that with conda.
+I build with AppleClang 8.1.0.8020042.  Later versions may not be compatible with the NVIDIA compiler.  If during compilation you get an error like `nvcc fatal : The version ('xxxxx') of the host compiler ('Apple clang') is not supported`, then you need to download and install [Command Line Tool for 8.3.2](https://developer.apple.com/download/more/), then run `sudo xcode-select --switch /Library/Developer/CommandLineTools`.  You will also need to have the [NVIDIA CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) installed (I have used versions 8.0 - 10.1 ... so that part doesn't really matter unless you are targetting a GPU with a specific CUDA compute capability). See note below about optionally installing that with conda.
 
 I use [conda](https://docs.conda.io/en/latest/miniconda.html) for the remaining dependencies and build as follows:
 
@@ -232,7 +232,43 @@ If all went well, the executable should be at `./build/cudaSirecon/cudaSireconDr
 
 ## Building on Windows
 
-*coming*...
+I have built using [Build Tools for Visual Studio](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2017) versions 2013, 2015, and 2017 (have not tried 2019).  You can install the full Visual Studio Community edition, but the build tools are sufficient.  You will also need to have the [NVIDIA CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) installed (I have used versions 8.0 - 10.1 ... so that part doesn't really matter unless you are targetting a GPU with a specific CUDA compute capability).
+
+I use [conda](https://docs.conda.io/en/latest/miniconda.html) for the remaining dependencies, but it's important that you do this all in a command prompt where you have activated the VS build tools that you have installed... for instance: `x64 Native Tools Command Prompt for VS 2017` or `Visual C++ 2015 x64 Native Build Tools Command Prompt` should be available in the start menu if you have installed VSBuild Tools 2017 or 2015 respectively.
+
+#### Boost
+
+Unforunately, I have not been able to get autolinking to work with the boost libraries in conda, so I resort to manually downloading and compiling boost and placing it at `C:\boost`.  It must be compiled with the same version of visual studio that you are building cudasirecon with:
+
+[Download boost](https://www.boost.org/users/download/) (I am currently using v1.71.0), then prepare the boost libraries as described [here](https://www.boost.org/doc/libs/1_71_0/more/getting_started/windows.html#prepare-to-use-a-boost-library-binary).  Briefly, `cd` into the boost folder you downloaded and unzipped, then run `bootstrap` followed by `.\b2`  (if you get errors, you *may* need to specify the toolset with `bootstrap msvc`).  The compiled libraries will be put into the `./stage` directory.  Then move the whole folder to `C:\` such that you have `C:\boost\stage\`
+
+Finally, 
+```bash
+> conda create -n simbuild -c conda-forge -y ninja cmake openblas
+> conda activate simbuild
+
+# as of this writing, versions were
+# cmake=3.15.3
+# openblas=0.3.7
+# ninja=1.9.0
+
+# create a build directory inside of CUDA_SIMrecon
+> mkdir build
+> cd build
+
+# run cmake, optionally directing it to the CUDA toolkit version you have
+> set CUDA_VERSION=10.1
+> set CUDA_TOOLKIT_ROOT_DIR=C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v%CUDA_VERSION%
+> cmake .. -G "Ninja" -Wno-dev ^
+    -DCMAKE_BUILD_TYPE=Release ^
+    -DCUDA_TOOLKIT_ROOT_DIR="%CUDA_TOOLKIT_ROOT_DIR%" 
+
+# if there were no errors, build it
+> ninja
+```
+
+If all went well, the executable should be at `./build/cudaSirecon/cudaSireconDriver.exe`
+
 
 ## Building `makeotf`
 
