@@ -37,6 +37,7 @@ find_library(IVELIB ive PATHS ${PRIISM_LIB_PATH} REQUIRED)
 
 
 if(WIN32)
+  find_package(LAPACK)
   find_library(IMLIB libimlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
   find_library(IVELIB libive PATHS ${PRIISM_LIB_PATH} REQUIRED)
 
@@ -44,19 +45,20 @@ if(WIN32)
     find_library(LEG_STDIO legacy_stdio_definitions)
     message(STATUS "adding legacy stdio definitions for >VS14.0 " ${LEG_STDIO})
   endif()
+  message(STATUS "LAPACK: " ${LAPACK_LIBRARIES})
 
-  find_library(BLAS openblas libblas 
-    PATHS 
-    "${CONDA_PREFIX}/Library/lib"
-    "${CMAKE_SOURCE_DIR}/lapack/win64"
-    REQUIRED
-  )
-  find_library(LAPACK liblapack
-    PATHS
-    "${CONDA_PREFIX}/Library/lib"
-    "${CMAKE_SOURCE_DIR}/lapack/win64"
-    REQUIRED
-  )
+  # find_library(BLAS openblas libblas 
+  #   PATHS 
+  #   "${CONDA_PREFIX}/Library/lib"
+  #   "${CMAKE_SOURCE_DIR}/lapack/win64"
+  #   REQUIRED
+  # )
+  # find_library(LAPACK liblapack
+  #   PATHS
+  #   "${CONDA_PREFIX}/Library/lib"
+  #   "${CMAKE_SOURCE_DIR}/lapack/win64"
+  #   REQUIRED
+  # )
 else()
   find_library(IMLIB imlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
   find_library(IVELIB ive PATHS ${PRIISM_LIB_PATH} REQUIRED)
@@ -65,8 +67,7 @@ endif()
 message(STATUS "IMLIB: " ${IMLIB})
 message(STATUS "IVELIB: " ${IVELIB})
 message(STATUS "LEG_STDIO: " ${LEG_STDIO})
-message(STATUS "BLAS: " ${BLAS})
-message(STATUS "LAPACK: " ${LAPACK})
+
 
 find_package(CUDA)
 message(STATUS "CUDA: " ${CUDA_CUFFT_LIBRARIES})
@@ -124,15 +125,13 @@ add_dependencies(cudaSireconDriver
   Buffer
   )
 if(WIN32)
-  find_library(BLAS LIBBLAS PATHS "${CMAKE_SOURCE_DIR}/lapack/win64" REQUIRED)
-  find_library(LAPACK LIBLAPACK PATHS "${CMAKE_SOURCE_DIR}/lapack/win64" REQUIRED)
+
   if(WITH_TIFF)
     target_link_libraries(
       cudaSirecon
       gpuFunctions
       Buffer
-      ${LAPACK}
-      ${BLAS}
+      ${LAPACK_LIBRARIES}
       libtiff
     )
   else(WITH_TIFF)
@@ -144,8 +143,7 @@ if(WIN32)
       # ${IVELIB}
 	  libimlib
 	  libive
-      ${LAPACK}
-      ${BLAS}
+      ${LAPACK_LIBRARIES}
     )
   endif(WITH_TIFF)
 
@@ -158,8 +156,7 @@ if(WIN32)
       ${LEG_STDIO}
       ${IMLIB}
       ${IVELIB}
-      ${LAPACK}
-      ${BLAS}
+      ${LAPACK_LIBRARIES}
     )
   else()
   target_link_libraries(
@@ -169,8 +166,7 @@ if(WIN32)
     Buffer
     ${IMLIB}
     ${IVELIB}
-    ${LAPACK}
-    ${BLAS}
+    ${LAPACK_LIBRARIES}
   )
   endif()
 else(WIN32)
