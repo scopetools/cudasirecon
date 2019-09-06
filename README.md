@@ -1,5 +1,9 @@
 # CUDA_SIMrecon
-Lin Shao's 3-beam SIM reconstruction software
+
+Mats Gustafsson & Lin Shao's 3-beam SIM reconstruction software, with CUDA acceleration.
+
+Algorithm as described in [Gustafsson et al (2008) *Biophys*. **94(12)**: 4957–4970. doi: 10.1529/biophysj.107.120345](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2397368/)
+
 
 ## Installation
 
