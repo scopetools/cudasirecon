@@ -141,6 +141,34 @@ If your CUDA Driver version is too low for the version of cudasirecon that you h
 
 If you run into trouble, feel free to [open an issue](https://github.com/tlambert03/CUDA_SIMrecon/issues) and describe your setup.
 
+
+# Multichannel reconstruction
+
+`cudasirecon` does not currently accept multi-channel files (or TIFF files).  So it is necessary to temporarily pull out each channel into a new file prior to reconstruction.  The provided `recon.py` script is an example of how to use the [`mrc`](https://github.com/tlambert03/mrc) package to extract individual channels from a .dv file, reconstruct them, and merge them back (and clean up the intermediate file).  It is used as follows (note, `mrc`, `numpy`, and `cudasirecon` must be in your path):
+
+```
+python recon.py /path/to/raw_data.dv
+```
+
+`recon.py` will also accept any key value pairs that `cudasirecon` also accepts (to see that full list, type `cudasirecon -h` at the command prompt).  For instance, to override just a couple of the reconstruction parameters, you could do something like this:
+
+```
+python recon.py /path/to/raw_data.dv wiener 0.001 background 150
+```
+
+There are a couple of hard-coded filepaths in `recon.py`.  Specifically, it currently expects to find the OTFs and config files in the same directory as the recon.py script.  You can change that by putting in an absolute directory to some other folder for the variables at the top of the file:
+
+```python
+# path to your otf directory.  Defaults to the same as the recon.py file
+OTF_DIR = os.path.abspath(os.path.dirname(__file__))
+# path to your config directory.  Defaults to the same as the recon.py file
+CONFIG_DIR = os.path.abspath(os.path.dirname(__file__))
+```
+
+Note also, that the config and OTF files must be named with the emission wavelength in the filenames.
+For example: `config528.txt` and `otf528.otf`
+
+
 # Compiling from source
 
 Building the binary from source can be somewhat tricky (hence the conda packages), but if you'd like to build from scratch, here are some notes for each platform.  You can also look in the `conda-recipe` folder for tips.
