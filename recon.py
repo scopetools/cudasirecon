@@ -102,7 +102,7 @@ def file_splitter(fname):
                 os.remove(file)
 
 
-def reconstruct(file, otf, config=None, outfile=None, **kwargs):
+def reconstruct_single(file, otf, config=None, outfile=None, **kwargs):
     """perform the reconstruction"""
     if outfile is None:
         namesplit = os.path.splitext(file)
@@ -118,7 +118,7 @@ def reconstruct(file, otf, config=None, outfile=None, **kwargs):
     return outfile
 
 
-def reconstructMulti(inFile, outfile=None, **kwargs):
+def reconstruct(inFile, outfile=None, **kwargs):
     """Splits multi-channel file into individual channels
     then reconstructs each channel and merges the results
     """
@@ -130,7 +130,7 @@ def reconstructMulti(inFile, outfile=None, **kwargs):
         processed = []
         for file, wave, otf, config in splitfiles:
             try:
-                processed.append(reconstruct(file, otf, config, **kwargs))
+                processed.append(reconstruct_single(file, otf, config, **kwargs))
             except Exception as e:
                 print(f"Cannot reconstruct file {file} due to error {e}")
         if len(processed) > 1:
@@ -150,4 +150,4 @@ if __name__ == "__main__":
     parser.add_argument("infile", type=argparse.FileType("r"))
     args, extras = parser.parse_known_args()
     extras = {k: v for k, v in zip(extras[::2], extras[1::2])}
-    reconstructMulti(os.path.abspath(args.infile.name), **extras)
+    reconstruct(os.path.abspath(args.infile.name), **extras)
