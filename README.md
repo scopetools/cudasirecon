@@ -1,4 +1,4 @@
-# CUDA_SIMrecon
+# cudasirecon
 
 Mats Gustafsson & Lin Shao's 3-beam SIM reconstruction software, with CUDA acceleration.
 
@@ -139,7 +139,7 @@ The program has been compiled against different versions of the CUDA toolkit. Th
 
 If your CUDA Driver version is too low for the version of cudasirecon that you have installed, you may get an error that looks like: `!!Error occurred: cudaSetDevice failed`
 
-If you run into trouble, feel free to [open an issue](https://github.com/tlambert03/CUDA_SIMrecon/issues) and describe your setup.
+If you run into trouble, feel free to [open an issue](https://github.com/scopetools/cudasirecon/issues) and describe your setup.
 
 
 # Multichannel reconstruction
@@ -178,7 +178,7 @@ Building the binary from source can be somewhat tricky (hence the conda packages
 The program requires the IVE/Priism libraries, which are not distributed with this source code and must be acquired seperately from UCSF.  Place them in a folder called `IVE` at the top level of the source folder (same folder as the cudaSirecon folder).  It should minimally have the following files and folders (example shown for linux, use `.a` or `.lib` as necessary for osx or windows)
 
 ```
-CUDA_SIMrecon
+cudasirecon
 ├── ...
 └── IVE/
     ├── darwin64/
@@ -210,7 +210,7 @@ $ conda activate simbuild
 # you need to use the dev versions that have the nvcc compiler.
 # conda install -c conda-forge conda cudatookit-dev=10.0
 
-# create a build directory inside of CUDA_SIMrecon
+# create a build directory inside of cudasirecon
 $ mkdir build
 $ cd build
 # run cmake, optionally directing it to the CUDA toolkit version you have
@@ -248,7 +248,7 @@ $ conda activate simbuild
 # you need to use the dev versions that have the nvcc compiler.
 # conda install -c conda-forge conda cudatookit-dev=10.0
 
-# create a build directory inside of CUDA_SIMrecon
+# create a build directory inside of cudasirecon
 $ mkdir build
 $ cd build
 # run cmake, optionally directing it to the CUDA toolkit version you have
@@ -285,7 +285,7 @@ Finally, create a [conda](https://docs.conda.io/en/latest/miniconda.html) enviro
 # openblas=0.3.7
 # ninja=1.9.0
 
-# create a build directory inside of CUDA_SIMrecon
+# create a build directory inside of cudasirecon
 > mkdir build
 > cd build
 
@@ -310,7 +310,7 @@ To build the `makeotf` program you also need precompiled fftw-2.x (not 3) libs i
 The `CMakeLists.txt` file in the root of the project will try to build `makeotf` by default, but you can also build it all manually as follows:
 
 ```bash
-export SRC_DIR=/path/to/CUDA_SIMrecon  # fix this for your system
+export SRC_DIR=/path/to/cudasirecon  # fix this for your system
 export FFTW_ROOT="${SRC_DIR}/fftw2"
 export PLATFORM=linux64  # or darwin64 for mac
 export IVE_ROOT="${SRC_DIR}/IVE/${PLATFORM}"

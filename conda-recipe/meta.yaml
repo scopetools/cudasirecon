@@ -51,7 +51,7 @@ test:
     - makeotf -h # [not win]
 
 about:
-  home: https://github.com/tlambert03/CUDA_SIMrecon
+  home: https://github.com/scopetools/cudasirecon
   license: GPL-3.0  
   summary: 'CUDA-Accelerated 3-beam SIM reconstruction software'
   description: 'CUDA-Accelerated 3-beam SIM reconstruction software'
