@@ -162,7 +162,7 @@ __global__ void sum_reduction_kernel(float* img, int nx, int ny,
   __shared__ float locRedBuffer[RED_BLOCK_SIZE_X * RED_BLOCK_SIZE_Y];
   if (k < nx && l < ny) {
     locRedBuffer[threadIdx.x + blockDim.x * threadIdx.y] =
-      img[k + l * nx];
+      img[k + l * (nx+2)];
   } else {
     locRedBuffer[threadIdx.x + blockDim.x * threadIdx.y] = 0.0f;
   }
@@ -1469,6 +1469,9 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
 
   } /* for order */
 
+  free(zdistcutoff);
+  free(ampmag2);
+  free(conjamp);
   return;
 }
 
@@ -1825,7 +1828,7 @@ __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
         (cuFloatComplex*)bands->at(2*order).getPtr(), order,
         (cuFloatComplex*)bigbuffer->getPtr(), nx, ny, nz, zoomfact, z_zoom);
 
-    /*     /\* transform it into real space*\/ */
+    // transform it into real space
     cuFFTErr = cufftExecC2C(myGPUPlan, (cuFloatComplex*)bigbuffer->getPtr(),
         (cuFloatComplex*)bigbuffer->getPtr(), CUFFT_INVERSE);
     if (cuFFTErr!=CUFFT_SUCCESS) printf("Error in cufftExecC2C: %d\n", cuFFTErr);
@@ -1920,7 +1923,7 @@ __global__ void write_outbuffer_kernel1(cuFloatComplex * bigbuffer, float * outb
   if (j<nx) {
     int i = blockIdx.y;
     int k = blockIdx.z;
-    int NXlocal = gridDim.x*blockDim.x;
+    int NXlocal = gridDim.x*blockDim.x; // check; why not use "nx"?
     int NYlocal = gridDim.y;
     int ind = k*NXlocal*NYlocal + i*NXlocal + j;
     outbuffer[ind] += bigbuffer[ind].x;
