@@ -101,15 +101,7 @@ endif()
 
 find_package(CUDA)
 
-if (WITH_TIFF)
-  if (WIN32)
-    set(TIFF_INCLUDE_DIR "c:/libtiff")
-    set(TIFF_LIBRARY "c:/libtiff")
-  endif(WIN32)
-  find_package(TIFF)
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -D__SIRECON_USE_TIFF__")
-endif()
+find_package(TIFF)
 
 if(WIN32)
   set (Boost_USE_STATIC_LIBS    ON)
@@ -155,13 +147,6 @@ if((${CUDA_VERSION_MAJOR} GREATER 9) AND (NOT APPLE))
     -gencode=arch=compute_75,code=compute_75
   )
 endif()
-
-
-# if(WIN32)
-#   set(CUDA_NVCC_FLAGS
-#      ${CUDA_NVCC_FLAGS} -I${Boost_INCLUDE_DIRS}; --use-local-env --cl-version=2013)
-# endif(WIN32)
-
 
 message(STATUS "CUDA_NVCC_FLAGS: " ${CUDA_NVCC_FLAGS})
 
