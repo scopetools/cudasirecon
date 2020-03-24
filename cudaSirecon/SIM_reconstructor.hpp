@@ -57,11 +57,9 @@ public:
 
   void closeFiles(); //! only needed for closing MRC output file
 
-#ifdef __SIRECON_USE_TIFF__
   //! Names of input TIFF files (usually a time series whose file names all match a pattern)
   std::vector< std::string > m_all_matching_files;
-  // CImg<> m_otf_tiff;
-#endif
+  CImg<> m_otf_tiff;
 
 
 private:
@@ -80,9 +78,7 @@ private:
 
   int setupProgramOptions(); //! setup command line options using Boost library
   int setParams();  //! assign parameters after parsing command line
-#ifdef __SIRECON_USE_TIFF__
   void setup(CImg<> &inTIFF);
-#else
   //! Read header, set up OTF and separation matrix, allocate device buffers, initialize parameters like k0guess etc.
   /*!
     Calls setup_part2() to:
@@ -99,7 +95,6 @@ private:
      f. amp
    */
   void setup();
-#endif
   void openFiles();
 
   //! Load raw data from disk, do flat-fielding, and transfer data to GPU

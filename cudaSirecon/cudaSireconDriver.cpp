@@ -25,9 +25,7 @@ int main(int argc, char **argv)
       }
     }
 
-#ifndef __SIRECON_USE_TIFF__
     myreconstructor.closeFiles();
-#endif
   }
   catch (std::exception &e) {
     std::cerr << "\n!!Error occurred: " << e.what() << std::endl;

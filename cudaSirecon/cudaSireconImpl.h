@@ -27,28 +27,17 @@
 
 #include <complex>
 
-#ifndef NDEBUG
-#ifndef _WIN32
-#include <nvml.h>  //for memory query
-static nvmlDevice_t nvmldevice;
-static nvmlMemory_t memoryStruct;
-#endif
-#endif
-
 #include "Buffer.h"
 #include "GPUBuffer.h"
 #include "CPUBuffer.h"
 #include "PinnedCPUBuffer.h"
 #include "gpuFunctions.h"
 
-#ifdef __SIRECON_USE_TIFF__
-#include <tiffio.h>
 #define cimg_use_tiff
 #include <CImg.h>
 using namespace cimg_library;
-#else
+
 #include <IMInclude.h>  // MRC file I/O routines
-#endif
 
 // Block sizes for reduction kernels
 #define RED_BLOCK_SIZE_X 64
@@ -73,9 +62,8 @@ using namespace cimg_library;
     PTR = 0;\
   }                         
 
-#ifdef __SIRECON_USE_TIFF__
 static TIFF *otf_tiff;  // TODO: get rid of this; use "CImg<> m_otf_tiff" member in SIM_reconstructor instead.
-#else
+
 static const int istream_no = 1;
 static const int ostream_no = 2;
 static const int otfstream_no = 3;
@@ -95,7 +83,6 @@ struct myExtHeader {
   float xdrift;
   float ydrift;
 };
-#endif
 
 static float maxval = -FLT_MAX;
 static float minval = FLT_MAX;
@@ -175,6 +162,7 @@ struct ReconParams {
   int   bSaveOverlaps; /** whether to save makeoverlaps() output into a file */
   char  fileOverlaps[400];
 
+  bool bTIFF;
   char ifiles[400];
   char ofiles[400];
   char otffiles[400];
@@ -253,9 +241,6 @@ void SetDefaultParams(ReconParams *pParams);
 // void setup(ReconParams* params, ImageParams*
 //     imgParams, DriftParams* driftParams, ReconData* data);
 void setup_part2(ReconParams* params, ImageParams* imgParams, ReconData* reconData);
-// #ifdef __SIRECON_USE_TIFF__
-// void setup(CImg<> &inTIFF, ReconParams* params, ImageParams* imgParams, ReconData* reconData);
-// #endif
 void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER &header);
 // void readDriftData(const ReconParams& params, DriftParams* driftParams);
 void getOTFs(ReconParams* params, const ImageParams& imgParams,
@@ -281,11 +266,11 @@ void makematrix(int nphases, int norders, int dir, float *arrPhases,
 void allocSepMatrixAndNoiseVarFactors(const ReconParams& params,
     ReconData* reconData);
 
-#ifdef __SIRECON_USE_TIFF__
+// For TIFF inputs
 void load_and_flatfield(CImg<> &cimg, int section_no, float *bufDestiny, 
     float background, float inscale);
-#endif
 
+// For MRC inputs
 void load_and_flatfield(int section_no, int wave_no,
     int time_no, float *bufDestiny, float *buffer, int nx, int ny,
     float *background, float backgroundExtra, float *slope, float inscale,
@@ -295,9 +280,6 @@ void saveIntermediateDataForDebugging(const ReconParams& params);
 
 void matrix_transpose(float* mat, int nRows, int nCols);
 
-/*!
-  
-*/
 void findModulationVectorsAndPhasesForAllDirections(
     int zoffset, ReconParams* params, const ImageParams& imgParams,
     DriftParams* driftParams, ReconData* data);
@@ -317,9 +299,9 @@ void calcPhaseList(float * phaseList, vector3d *driftlist,
 
 void writeResult(int it, int iw, const ReconParams& params,
     const ImageParams& imgParams, const ReconData& reconData);
-#ifndef __SIRECON_USE_TIFF__
+
+// This only works for MRC/DV files for now:
 void saveCommandLineToHeader(int argc, char **argv, IW_MRC_HEADER &header);
-#endif
 
 void dumpBands(std::vector<GPUBuffer>* bands, int nx, int ny, int nz0);
 
@@ -342,12 +324,9 @@ extern "C" void sgetri_(int*, float*, int*, int*, float*, int*, int*);
 extern "C" void sgels_(const char*, int*, int*, int*, float*, int*, float*,
     int*, float*, int*, int*);
 
-#ifdef __SIRECON_USE_TIFF__
 extern "C" int load_tiff(TIFF *const tif, const unsigned int directory, const unsigned colind, float *const buffer);
 extern "C" int save_tiff(TIFF *tif, const unsigned int directory, int colind, const int nwaves, int width, int height, float * buffer , int bIsComplex);
-
 std::vector<std::string> gatherMatchingFiles(std::string target_path, std::string pattern);
 std::string makeOutputFilePath(std::string inputFileName, std::string insert);
-#endif
 
 #endif

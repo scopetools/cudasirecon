@@ -16,10 +16,8 @@ if(WIN32)
   set(PRIISM_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/IVE/win64/INCLUDE")
 	include_directories(${PRIISM_INCLUDE_PATH})
     link_directories ( ${PRIISM_LIB_PATH} )
-    if(WITH_TIFF)
-        include_directories( ${TIFF_INCLUDE_DIR} )
-        link_directories ( ${TIFF_LIBRARY} )
-    endif(WITH_TIFF)
+    include_directories( ${TIFF_INCLUDE_DIR} )
+    link_directories ( ${TIFF_LIBRARY} )
 elseif(APPLE)
   set(PRIISM_LIB_PATH "${CMAKE_SOURCE_DIR}/IVE/darwin64/LIB")
   set(PRIISM_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/IVE/darwin64/INCLUDE")
@@ -71,27 +69,13 @@ if (NOT APPLE)
 set (SHARED_OR_NOT SHARED)
 endif()
 
-if (WITH_TIFF AND WIN32)
 CUDA_ADD_LIBRARY(
   cudaSirecon
-  ${SHARED_OR_NOT}
+#  ${SHARED_OR_NOT}
   cudaSirecon.cpp
   boostfs.cpp
-  tiffhandle.cpp
+  tiffhandle.cpp  ## Remove later
   )
-elseif(APPLE)
-  CUDA_ADD_LIBRARY(
-    cudaSirecon
-    SHARED
-    cudaSirecon.cpp
-  )
-else ()
-  CUDA_ADD_LIBRARY(
-    cudaSirecon
-#    ${SHARED_OR_NOT}
-    cudaSirecon.cpp
-  )
-endif()
 
 CUDA_ADD_EXECUTABLE(
   cudaSireconDriver
@@ -103,28 +87,17 @@ add_dependencies(cudaSireconDriver
   gpuFunctions
   Buffer
   )
-if(WIN32)
 
-  if(WITH_TIFF)
-    target_link_libraries(
-      cudaSirecon
-      gpuFunctions
-      Buffer
-      ${LAPACK_LIBRARIES}
-      libtiff
+if(WIN32)
+  target_link_libraries(
+    cudaSirecon
+    gpuFunctions
+    Buffer
+    ${IMLIB}
+    ${IVELIB}
+    ${LAPACK_LIBRARIES}
+    ${TIFF_LIBRARIES}
     )
-  else(WITH_TIFF)
-    target_link_libraries(
-      cudaSirecon
-      gpuFunctions
-      Buffer
-      # ${IMLIB}
-      # ${IVELIB}
-	  libimlib
-	  libive
-      ${LAPACK_LIBRARIES}
-    )
-  endif(WITH_TIFF)
 
   if ( ${MSVC_VERSION} GREATER 1800)
     target_link_libraries(
@@ -136,17 +109,17 @@ if(WIN32)
       ${IMLIB}
       ${IVELIB}
       ${LAPACK_LIBRARIES}
-    )
+      )
   else()
-  target_link_libraries(
-    cudaSireconDriver
-    cudaSirecon
-    gpuFunctions
-    Buffer
-    ${IMLIB}
-    ${IVELIB}
-    ${LAPACK_LIBRARIES}
-  )
+	target_link_libraries(
+      cudaSireconDriver
+      cudaSirecon
+      gpuFunctions
+      Buffer
+      ${IMLIB}
+      ${IVELIB}
+      ${LAPACK_LIBRARIES}
+	  )
   endif()
 else(WIN32)
   target_link_libraries(

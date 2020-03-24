@@ -109,11 +109,11 @@ void _load_tiff_separate(TIFF *const tif, const uint16 samplesperpixel, const ui
   }
 }
 
-#ifdef __SIRECON_USE_TIFF__
+//#ifdef __SIRECON_USE_TIFF__
 extern "C" int load_tiff(TIFF *const tif, const unsigned int directory, const unsigned colind, float *const buffer);
 extern "C" int save_tiff(TIFF *tif, const unsigned int directory, int colind, const int nwaves, int width, int height, float * buffer , int bIsComplex);
 
-#endif
+//#endif
 
 
 //template<typename T>
