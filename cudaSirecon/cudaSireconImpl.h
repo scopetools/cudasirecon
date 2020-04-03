@@ -1,13 +1,12 @@
 #ifndef __CUDA_SIRECON_H
 #define __CUDA_SIRECON_H
+
 #ifdef _WIN32
 #define _USE_MATH_DEFINES
 #endif
+
 #include <cuda.h>
 #include <cufft.h>
-#include <cuComplex.h>
-#include <cuda_runtime_api.h>
-#include <driver_types.h>
 #include <iostream>
 #include <vector>
 #include <cstring>
@@ -26,6 +25,10 @@
 #include <cassert>
 
 #include <complex>
+
+#include <nvml.h>  //for memory query
+static nvmlDevice_t nvmldevice;
+static nvmlMemory_t memoryStruct;
 
 #include "Buffer.h"
 #include "GPUBuffer.h"
@@ -62,7 +65,7 @@ using namespace cimg_library;
     PTR = 0;\
   }                         
 
-static TIFF *otf_tiff;  // TODO: get rid of this; use "CImg<> m_otf_tiff" member in SIM_reconstructor instead.
+//static TIFF *otf_tiff;  // TODO: get rid of this; use "CImg<> m_otf_tiff" member in SIM_reconstructor instead.
 
 static const int istream_no = 1;
 static const int ostream_no = 2;
@@ -107,6 +110,13 @@ struct ReconParams {
   float *phaseSteps; /** user-specified non-ideal phase steps, one for each orientation */
   int   bTwolens;    /** whether to process I{^5}S dataset */
   int   bFastSIM;   /** fast SIM data is organized differently */
+  int   bBessel;    /** whether to process Bessel-Sheet SIM dataset */
+  float BesselNA;  /* excitation NA of the Bessel beam */
+  float BesselLambdaEx; /* excitation wavelength of the Bessel beam */
+  float deskewAngle; /* Beseel-sheet sample scan angle */
+  int extraShift; // If deskewed, the output image's extra shift in X
+  bool  bNoRecon; // whether not to reconstruct; used usually when deskewing
+  unsigned cropXYto; // crop the X-Y dimension to this size; 0 means no cropping
   int   bWriteTitle;   /** whether to write command line args to title field in mrc header */
 
   /* algorithm related parameters */
@@ -163,15 +173,16 @@ struct ReconParams {
   char  fileOverlaps[400];
 
   bool bTIFF;
-  char ifiles[400];
-  char ofiles[400];
-  char otffiles[400];
-  int ifilein;
-  int ofilein;
-  int otffilein;
+  std::string ifiles;
+  std::string ofiles;
+  std::string otffiles;
+  // int ifilein;
+  // int ofilein;
+  // int otffilein;
 };
 struct ImageParams {
   int nx;
+  int nx_raw; //! raw image's width before deskewing
   int ny;
   int nz;
   int nz0;
@@ -182,6 +193,7 @@ struct ImageParams {
   float dx;
   float dy;
   float dz;
+  float dz_raw; //! used when deskew is performed on raw data; to remember the original dz before de-skewing
   float inscale;
 };
 struct DriftParams {
@@ -209,7 +221,7 @@ struct DriftParams {
   };
 };
 struct ReconData {
-  int sizeOTF;
+  size_t sizeOTF;
   std::vector<std::vector<GPUBuffer> > otf;
   CPUBuffer background;
   CPUBuffer slope;
@@ -240,14 +252,8 @@ void SetDefaultParams(ReconParams *pParams);
  * */
 // void setup(ReconParams* params, ImageParams*
 //     imgParams, DriftParams* driftParams, ReconData* data);
-void setup_part2(ReconParams* params, ImageParams* imgParams, ReconData* reconData);
 void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER &header);
-// void readDriftData(const ReconParams& params, DriftParams* driftParams);
-void getOTFs(ReconParams* params, const ImageParams& imgParams,
-    ReconData* data);
-void determine_otf_dimensions(ReconParams *pParams, int nz, int *sizeOTF);
 void allocateOTFs(ReconParams *pParams, int sizeOTF, std::vector<std::vector<GPUBuffer> > & otfs);
-int loadOTFs(const ReconParams& params, const ImageParams& imgParams, ReconData* data);
 void allocateImageBuffers(const ReconParams& params,
     const ImageParams& imgParams, ReconData* reconData);
 
@@ -266,15 +272,20 @@ void makematrix(int nphases, int norders, int dir, float *arrPhases,
 void allocSepMatrixAndNoiseVarFactors(const ReconParams& params,
     ReconData* reconData);
 
+void load_and_flatfield(CImg<> &cimg, int section_no, float *bufDestiny,
+                        float *background, float backgroundExtra,
+                        float *slope, float inscale);
+void deskewOneSection(CImg<> &rawSection, float* nxp2OutBuff, int z, int nz,
+                      int nx_out, float deskewFactor, int extraShift);
 // For TIFF inputs
-void load_and_flatfield(CImg<> &cimg, int section_no, float *bufDestiny, 
-    float background, float inscale);
+// void load_and_flatfield(CImg<> &cimg, int section_no, float *bufDestiny, 
+//     float background, float inscale);
 
-// For MRC inputs
-void load_and_flatfield(int section_no, int wave_no,
-    int time_no, float *bufDestiny, float *buffer, int nx, int ny,
-    float *background, float backgroundExtra, float *slope, float inscale,
-    int bUsecorr);
+// // For MRC inputs
+// void load_and_flatfield(int section_no, int wave_no,
+//     int time_no, float *bufDestiny, float *buffer, int nx, int ny,
+//     float *background, float backgroundExtra, float *slope, float inscale,
+//     int bUsecorr);
 
 void saveIntermediateDataForDebugging(const ReconParams& params);
 
@@ -309,6 +320,7 @@ void deviceMemoryUsage();
 
 double meanAboveBackground_GPU(GPUBuffer &img, int nx, int ny, int nz);
 void rescale_GPU(GPUBuffer &img, int nx, int ny, int nz, float scale);
+// void deskew_GPU(std::vector<GPUBuffer> * pImgs, int nx, int ny, int nz, float deskewAngle, float dz_prior_to, float dr, int extraShift, float fillVal);
 
 // Compute rdistcutoff
 int rdistcutoff(int iw, const ReconParams& params, const ImageParams& imgParams);

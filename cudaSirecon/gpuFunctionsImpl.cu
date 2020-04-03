@@ -125,7 +125,7 @@ __host__ void rescale(int nx, int ny, int nz, int z, int zoffset, int direction,
   CPUBuffer sumTmpHost(numBlocks.x * numBlocks.y * sizeof(float));
   for (int phase = 0; phase < nphases; ++phase) {
     sum_reduction_kernel<<<numBlocks, blockSize>>>(
-         ((float*)((*images)[phase].getPtr())) +
+         ((float*)(images->at(phase).getPtr())) +
          (z + zoffset) * (nx + 2) * ny, nx, ny,
         (float*)sumTmpDev.getPtr());
     sumTmpDev.set(&sumTmpHost, 0, sumTmpDev.getSize(), 0);
@@ -330,7 +330,11 @@ __host__ void findk0(std::vector<GPUBuffer>* bands, GPUBuffer* overlap0,
 
   fitorder1 = 0;
   if (nz > 1) {
-    fitorder2 = 2;
+    if (!pParams->bBessel) {
+      fitorder2 = 2;
+    } else {
+      fitorder2 = 1;
+    }
   }
   else {
     fitorder2 = 1;
@@ -345,7 +349,7 @@ __host__ void findk0(std::vector<GPUBuffer>* bands, GPUBuffer* overlap0,
   cufftHandle cufftplan;
   int err = cufftPlan2d(&cufftplan, ny, nx, CUFFT_C2C);
   if (CUFFT_SUCCESS != err) {
-    printf("cufftPlanxd failed\n");
+	printf("cufftPlanxd failed at %s(%d)\n", __FILE__, __LINE__);
     printf("Error code: %d\n", err);
     fflush(stdout);
     exit(-1);
@@ -510,6 +514,8 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
   float order0_2_factor = 1.0f;
   if (nz > 1) {
     order0_2_factor = 5.0f;
+    if (params->bBessel)
+      order0_2_factor = 4.0f;
   }
   float dkr = 1.0f / (ny * dy);
   float dkz;
@@ -533,9 +539,16 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
   float betamin = asin(k0mag / (2.0 / lambdaexc) - sin(alpha) *
       SPOTRATIO);
   float zdistcutoff;
-  if (!params->bTwolens) {
+  if (!params->bTwolens && !params->bBessel) {
     zdistcutoff = (int)ceil(((1.0 - cos(alpha)) / lambdaem) / dkz);
-  } 
+  }
+  else if (params->bBessel) {
+    float halfangle;
+    float kzExMax;
+    kzExMax = 2.0 * params->BesselNA / params->BesselLambdaEx;
+    halfangle = acos(k0mag * order2 /(params->norders-1)/ kzExMax);
+    zdistcutoff = ceil((kzExMax * sin(halfangle) + (1.0 - cos(alpha)) / lambdaem) / dkz);
+  }
   else {
     std::cerr << "Sorry, this program doesn't handel 2-objective mode data\n";
     exit(-1);
@@ -549,8 +562,9 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
 
   float kx = k0x * (order2 - order1);
   float ky = k0y * (order2 - order1);
-  float otfcutoff;
-  otfcutoff = 0.007;
+  float otfcutoff = 0.008;
+  if (params->bBessel)
+    otfcutoff = 0.01;
 
   cutilSafeCall(cudaMemset((void*)overlap0->getPtr(), 0,
         nx * ny * nz * sizeof(cuFloatComplex)));
@@ -570,12 +584,14 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
         &params->bFilteroverlaps, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_apodizeoutput,
         &params->apodizeoutput, sizeof(int)));
+  cutilSafeCall(cudaMemcpyToSymbol(const_pParams_bBessel,
+        &params->bBessel, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_bRadAvgOTF,
         &params->bRadAvgOTF, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_nzotf,
         &params->nzotf, sizeof(int)));
   std::vector<cuFloatComplex*> otfPtrs;
-  //  std::cout << "OTFs:\n";
+
   for (int i = 0; i < params->norders; ++i) {
     otfPtrs.push_back((cuFloatComplex*)(OTF->at(i).getPtr()));
     //    OTF->at(i).dump(std::cout, 100, 0, 100 * sizeof(float));
@@ -923,7 +939,9 @@ __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
   int fitorder1 = 0;
   int fitorder2 = 0;
   if (nz > 1) {
-      fitorder2 = 2;
+	fitorder2 = 2;
+    if (pParams->bBessel) 
+      fitorder2 = 1;
   }
   else {
     fitorder2 = 1;
@@ -1298,12 +1316,24 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
 
   /* 080201: zdistcutoff[0] depends on options -- single or double lenses */
   zdistcutoff = (int *) malloc(norders * sizeof(int));
-  if (!pParams->bTwolens) {
+  if (!pParams->bTwolens && !pParams->bBessel) {
     zdistcutoff[0] = (int) ceil(((1-cos(alpha))/lambdaem) / dkz);    /* OTF support axial limit in data pixels */
     zdistcutoff[norders-1] = 1.3*zdistcutoff[0];    /* approx max axial support limit of the OTF of the high frequency side band */
     if (norders>=3)
       for (order=1;order<norders-1;order++)
         zdistcutoff[order] = (1+lambdaem/lambdaexc)*zdistcutoff[0];       /* axial support limit of the OTF of the medium frequency side band(s?) */
+  }
+  else if (pParams->bBessel) {
+    float kzExMax, halfangle;
+    kzExMax = 2 *pParams->BesselNA / pParams->BesselLambdaEx;
+
+    zdistcutoff[0] = (int) rint((kzExMax + (1-cos(alpha))/lambdaem) / dkz);    /* OTF support axial limit in data pixels */
+    printf("norders=%d, zdistcutoff[%d]=%d\n", norders, 0 ,zdistcutoff[0]);
+    for (order=1; order<norders; order++) {
+      halfangle = acos(k0mag * order / (norders-1) / kzExMax);
+      zdistcutoff[order] = ceil((kzExMax * sin(halfangle) + (1.0 - cos(alpha)) / lambdaem) / dkz);
+      printf("zdistcutoff[%d]=%d\n", order ,zdistcutoff[order]);
+    }
   }
   else {  /* two lenses */
     zdistcutoff[0] = (int) ceil(1.02*(2/lambdaem + 2/lambdaexc) / dkz);  /* 1.02 is just a safety margin */
@@ -1326,7 +1356,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
 
   apocutoff = rdistcutoff+ k0pix*(norders-1);
 
-  if (pParams->bTwolens)
+  if (pParams->bTwolens || pParams->bBessel)
     zapocutoff = zdistcutoff[0];
   else
     zapocutoff = zdistcutoff[1];
@@ -1357,6 +1387,8 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
         &pParams->apodizeoutput, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_apoGamma,
         &pParams->apoGamma, sizeof(float)));
+  cutilSafeCall(cudaMemcpyToSymbol(const_pParams_bBessel,
+        &pParams->bBessel, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_bRadAvgOTF,
         &pParams->bRadAvgOTF, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_nzotf, &pParams->nzotf,
@@ -1595,8 +1627,16 @@ __global__ void filterbands_kernel1(int dir, int ndirs, int order, int norders, 
         zdistabs = abs(z0);
 
         if (zapocutoff > 0) {  /* 3D case */
-          rho = sqrt((rdistabs / apocutoff) * (rdistabs / apocutoff) +
-                     (zdistabs / zapocutoff) * (zdistabs / zapocutoff));
+          if (!const_pParams_bBessel)
+			rho = sqrt((rdistabs / apocutoff) * (rdistabs / apocutoff) +
+					   (zdistabs / zapocutoff) * (zdistabs / zapocutoff));
+		  else {
+            float rhox, rhoy, rhoz;
+            rhox = xabs/rdistcutoff; //apocutoff * 1.6f;
+            rhoy = yabs/apocutoff;
+            rhoz = zdistabs/zapocutoff;
+            rho = sqrt(rhox*rhox + rhoy*rhoy + rhoz*rhoz);
+          }
         }
         else         /* 2D case */
           rho = sqrt((rdistabs/apocutoff)*(rdistabs/apocutoff));
@@ -1768,9 +1808,9 @@ __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
 
   /* Allocate temporaries */    
   cutilSafeCall(cudaMalloc((void **) &dev_coslookup,
-        (int)(nx*zoomfact*ny*zoomfact*sizeof(float))));
+                           (int)(rint(nx*zoomfact)*rint(ny*zoomfact)*sizeof(float))));
   cutilSafeCall(cudaMalloc((void **) &dev_sinlookup,
-        (int)(nx*zoomfact*ny*zoomfact*sizeof(float))));
+                           (int)(rint(nx*zoomfact)*rint(ny*zoomfact)*sizeof(float))));
 
   fact = expfact/0.5;  /* expfact is used for "exploded view".  For normal reconstruction expfact = 1.0  */
 
@@ -1785,15 +1825,15 @@ __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
 
   printf("moving centerband\n");
   cutilSafeCall(cudaMemset((void*) bigbuffer->getPtr(), 0,
-        int((zoomfact*nx)*(zoomfact*ny)*(z_zoom*nz)*sizeof(cuFloatComplex))));
+        unsigned (rint(zoomfact*nx)*rint(zoomfact*ny)*(z_zoom*nz)*sizeof(cuFloatComplex))));
   move_kernel<<<grid,block>>>(
       (cuFloatComplex*)bands->at(0).getPtr(),
       (cuFloatComplex*)bands->at(0).getPtr(),
       0, (cuFloatComplex*)bigbuffer->getPtr(), nx, ny, nz, zoomfact, z_zoom);
 
   cufftHandle myGPUPlan;
-  cufftResult cuFFTErr = cufftPlan3d(&myGPUPlan, (int) (z_zoom*nz), (int) (zoomfact*ny),
-                                     (int) (zoomfact*nx), CUFFT_C2C);
+  cufftResult cuFFTErr = cufftPlan3d(&myGPUPlan, (int) (z_zoom*nz), (int) rint(zoomfact*ny),
+                                     (int) rint(zoomfact*nx), CUFFT_C2C);
   if (cuFFTErr!=CUFFT_SUCCESS) {
     if (cuFFTErr == CUFFT_ALLOC_FAILED)
       printf("\n*** In assemblerealspacebands(), CUFFT failed to allocate GPU or CPU memory\n");
@@ -1811,11 +1851,11 @@ __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
 
   printf("inserting centerband\n");
   NZblock = (int)(z_zoom*nz);
-  NYblock = (int)(zoomfact*ny);
+  NYblock = (int) rint(zoomfact*ny);
   NXblock = (int) ceil((zoomfact*nx)/nThreads);
   dim3 grid2(NXblock, NYblock, NZblock);
   write_outbuffer_kernel1<<<grid2,block>>>((cuFloatComplex*)bigbuffer->getPtr(),
-      (float*)outbuffer->getPtr(), (int)(zoomfact*nx));
+      (float*)outbuffer->getPtr(), (int) rint(zoomfact*nx));
 
   printf("centerband assembly completed\n");
 
@@ -1823,7 +1863,7 @@ __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
     float k0x, k0y;
     /* move side bands to bigbuffer, fill in with zeroes */
     printf("moving order %d\n",order); 
-    cutilSafeCall(cudaMemset((void*) bigbuffer->getPtr(), 0,   int((zoomfact*nx)*(zoomfact*ny)*(z_zoom*nz)*sizeof(cuFloatComplex))));
+    cutilSafeCall(cudaMemset((void*) bigbuffer->getPtr(), 0,   unsigned (rint(zoomfact*nx)*rint(zoomfact*ny)*(z_zoom*nz)*sizeof(cuFloatComplex))));
     move_kernel<<<grid,block>>>((cuFloatComplex*)bands->at(2*order-1).getPtr(),
         (cuFloatComplex*)bands->at(2*order).getPtr(), order,
         (cuFloatComplex*)bigbuffer->getPtr(), nx, ny, nz, zoomfact, z_zoom);
@@ -1838,8 +1878,8 @@ __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
     k0y = k0[dir].y*((float)order);
 
     NZblock = 1;
-    NYblock = (int)(zoomfact*ny);
-    NXblock = ((int) (zoomfact*nx))/nThreads;
+    NYblock = (int)rint (zoomfact*ny);
+    NXblock = (int) ceil(zoomfact*nx/nThreads);
     dim3 grid3(NXblock, NYblock, NZblock);
     cos_sin_kernel<<<grid3,block>>>(k0x,  k0y, fact, dev_coslookup, dev_sinlookup, (int)(zoomfact*nx));
     write_outbuffer_kernel2<<<grid2, block>>>(dev_coslookup,
@@ -1861,7 +1901,7 @@ __global__ void move_kernel(cuFloatComplex *inarray1, cuFloatComplex *inarray2, 
 {
   int     xdim, ydim, zdim, nxy, nxyout;
 
-  xdim=zoomfact*nx; ydim=zoomfact*ny;
+  xdim=rint(zoomfact*nx); ydim=rint(zoomfact*ny);
   zdim = z_zoom*nz;
   nxy = (nx/2+1)*ny;
   nxyout = xdim*ydim;
@@ -1923,7 +1963,7 @@ __global__ void write_outbuffer_kernel1(cuFloatComplex * bigbuffer, float * outb
   if (j<nx) {
     int i = blockIdx.y;
     int k = blockIdx.z;
-    int NXlocal = gridDim.x*blockDim.x; // check; why not use "nx"?
+    int NXlocal = nx; // why was "gridDim.x*blockDim.x" used?
     int NYlocal = gridDim.y;
     int ind = k*NXlocal*NYlocal + i*NXlocal + j;
     outbuffer[ind] += bigbuffer[ind].x;
@@ -1937,7 +1977,7 @@ __global__ void write_outbuffer_kernel2(float * coslookup, float * sinlookup,
   if (j<nx) {
     int i = blockIdx.y;
     int k = blockIdx.z;
-    int NXlocal = gridDim.x*blockDim.x;
+    int NXlocal = nx; // why was "gridDim.x*blockDim.x" used?
     int NYlocal = gridDim.y;
     int indxy = i*NXlocal + j;
     int ind = k*NXlocal*NYlocal + indxy;
@@ -1952,7 +1992,7 @@ __global__ void cos_sin_kernel(float k0x, float k0y, float fact, float * coslook
 
   if (j<nx) {
     int ind = i*(gridDim.x*blockDim.x) + j;
-    int NXlocal = gridDim.x*blockDim.x;
+    int NXlocal = nx; // why was "gridDim.x*blockDim.x" used?
     int NYlocal = gridDim.y;
     float angle = fact * M_PI * ((j-NXlocal/2)*k0x/NXlocal + (i-NYlocal/2)*k0y/NYlocal);
     coslookup[ind] = cos(angle);
@@ -2205,7 +2245,9 @@ __host__ void rescale_GPU(GPUBuffer &img, int nx, int ny, int nz, float scale)
   unsigned nThreads = 1024;
   unsigned nBlocks = (unsigned) ceil( nx*ny*nz / (float) nThreads );
   scale_kernel<<<nBlocks, nThreads>>>((float *) img.getPtr(), scale, nx*ny*nz);
+#ifndef NDEBUG
   std::cout<< "rescale_GPU(): " << cudaGetErrorString(cudaGetLastError()) << std::endl;
+#endif
 }
 
 __global__ void scale_kernel(float * img, double factor, int n)
@@ -2214,3 +2256,65 @@ __global__ void scale_kernel(float * img, double factor, int n)
   if (ind < n)
     img[ind] *= factor;
 }
+
+// // // // //! Add 2 to the X dimensions of "*in" and "*out" 
+// // // // __global__ void deskew_kernel(float *in, int nx, int ny, int nz,
+// // // //                               float *out, int nxOut, int extraShift,
+// // // //                               double deskewFactor, float fillVal)
+// // // // {
+// // // //   unsigned xout = blockIdx.x * blockDim.x + threadIdx.x;
+// // // //   unsigned yout = blockIdx.y;
+// // // //   unsigned zout = blockIdx.z;
+
+// // // //   if (xout < nxOut) {
+// // // //     float xin = (xout - nxOut/2.+extraShift) - deskewFactor*(blockIdx.z-nz/2.) + nx/2.;
+
+// // // //     unsigned indout = zout * (nxOut+2) * ny + yout * (nxOut+2) + xout;
+// // // //     if (xin >= 0 && xin < nx-1) {
+
+// // // //       // 09-03-2013 Very important lesson learned:
+// // // //       // the (unsigned int) casting has be placed right there because
+// // // //       // otherwise, the entire express would evaluate as floating point and
+// // // //       // there're only 24-bit mantissa, so any odd index that's > 16777216 would
+// // // //       // inaccurately rounded up. int or unsigned does not have the 24-bit limit.
+// // // //       unsigned indin = zout * (nx+2) * ny + yout * (nx+2) + (unsigned int) floor(xin);
+
+// // // //       float offset = xin - floor(xin);
+// // // //       out[indout] = (1-offset) * in[indin] + offset * in[indin+1];
+// // // //     }
+// // // //     else
+// // // //       out[indout] = fillVal;
+// // // //   }
+// // // // }
+
+// // // // __host__ void deskew_GPU(std::vector<GPUBuffer> * pImgs, int nx, int ny, int nz,
+// // // // 						 float deskewAngle, float dz_prior_to, 
+// // // //                          float dr, int extraShift, float fillVal)
+// // // // {
+// // // //   assert(ny >= nx);
+// // // //   int newNx = ny;
+
+// // // //   if (deskewAngle <0) deskewAngle += 180.;
+// // // //   float deskewFactor = cos(deskewAngle * M_PI/180.) * dz_prior_to / dr;   // cos() or sin() ?? --lin
+
+// // // //   GPUBuffer outBuf((newNx+2) * ny * nz * sizeof(float), 0);
+// // // //   outBuf.setToZero();
+
+// // // //   dim3 block(512, 1, 1);
+// // // //   unsigned nxBlocks = (unsigned) ceil(newNx / (float) block.x);
+// // // //   dim3 grid(nxBlocks, ny, nz);
+
+// // // //   for (std::vector<GPUBuffer>::iterator inBuf=pImgs->begin(); inBuf != pImgs->end(); inBuf++) {
+// // // //     assert(inBuf->hasNaNs() == false);
+// // // // 	deskew_kernel<<<grid, block>>>((float *) inBuf->getPtr(), nx, ny, nz,
+// // // // 								   (float *) outBuf.getPtr(), newNx,
+// // // // 								   extraShift, deskewFactor, fillVal);
+// // // // 	inBuf->resize((newNx+2) * ny * nz * sizeof(float));
+// // // // 	outBuf.set(&(*inBuf), 0, outBuf.getSize(), 0);
+// // // // #ifndef NDEBUG
+// // // // 	std::cout<< "deskew_GPU(): " << cudaGetErrorString(cudaGetLastError()) << std::endl;
+// // // //     assert(outBuf.hasNaNs() == false);
+// // // // #endif
+// // // //   }
+// // // // }
+

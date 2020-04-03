@@ -23,6 +23,7 @@ __constant__ int const_pParams_bNoKz0;
 __constant__ int const_pParams_bFilteroverlaps;
 __constant__ int const_pParams_apodizeoutput;
 __constant__ float const_pParams_apoGamma;
+__constant__ int const_pParams_bBessel;
 __constant__ int const_pParams_bRadAvgOTF;
 __constant__ int const_pParams_nzotf;
 __constant__ float const_wiener;
