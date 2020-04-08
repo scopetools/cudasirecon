@@ -108,13 +108,51 @@
 // Disable silly warnings on some Microsoft VC++ compilers.
 #ifdef _MSC_VER
 #pragma warning(push)
+#pragma warning(disable:4127)
+#pragma warning(disable:4244)
 #pragma warning(disable:4311)
 #pragma warning(disable:4312)
+#pragma warning(disable:4319)
+#pragma warning(disable:4512)
+#pragma warning(disable:4571)
+#pragma warning(disable:4640)
+#pragma warning(disable:4706)
+#pragma warning(disable:4710)
 #pragma warning(disable:4800)
 #pragma warning(disable:4804)
+#pragma warning(disable:4820)
 #pragma warning(disable:4996)
+
+#ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE 1
+#endif
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS 1
+#endif
+#ifndef _CRT_NONSTDC_NO_DEPRECATE
 #define _CRT_NONSTDC_NO_DEPRECATE 1
+#endif
+#endif
+
+// Define correct string functions for each compiler and OS.
+#if cimg_OS==2 && defined(_MSC_VER)
+#define cimg_sscanf std::sscanf
+#define cimg_sprintf std::sprintf
+#define cimg_snprintf cimg::_snprintf
+#define cimg_vsnprintf cimg::_vsnprintf
+#else
+#include <stdio.h>
+#if defined(__MACOSX__) || defined(__APPLE__)
+#define cimg_sscanf cimg::_sscanf
+#define cimg_sprintf cimg::_sprintf
+#define cimg_snprintf cimg::_snprintf
+#define cimg_vsnprintf cimg::_vsnprintf
+#else
+#define cimg_sscanf std::sscanf
+#define cimg_sprintf std::sprintf
+#define cimg_snprintf snprintf
+#define cimg_vsnprintf vsnprintf
+#endif
 #endif
 
 // Include OS-specific headers.
