@@ -6,9 +6,10 @@
 /*  estimate the sub-pixel position of the bead by fitting parabolas; */
 /*  cleanup out-of-band noises. */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#ifdef _WIN32
+#define _USE_MATH_DEFINES
+#endif
+#include <cmath>
 
 #include <iostream>
 #include <vector>
@@ -17,8 +18,8 @@
 #define cimg_use_tiff
 #ifndef _WIN32
 #define cimg_use_openmp
-#define cimg_use_cpp11 1
 #endif
+#define cimg_use_cpp11 1
 #include <CImg.h>
 using namespace cimg_library;
 
@@ -27,7 +28,7 @@ using namespace cimg_library;
 #include <complex>
 #include <fftw3.h>
 
-#define PI 3.1415926536
+//#define PI 3.1415926536
 #define SPOTRATIO 0.1
 #define MAXPHASES 11
 #define DEFAULTPHASES 5
@@ -70,10 +71,12 @@ int commandline(int argc, char *argv[], int * twolens, int *rescale, float *bead
 // for IMLIB with vs >2015
 // https://stackoverflow.com/questions/30412951/unresolved-external-symbol-imp-fprintf-and-imp-iob-func-sdl2
 FILE _iob[] = {*stdin, *stdout, *stderr};
-extern "C" FILE * __cdecl __iob_func(void)
+
+extern "C" FILE *  __iob_func(void)
 {
     return _iob;
 }
+
 #endif
 
 int main(int argc, char **argv)
@@ -408,7 +411,7 @@ void makematrix (int nphases, float ** sepMatrix)
   float phi;
   
   norders = (nphases+1)/2;
-  phi = 2*PI/nphases;
+  phi = 2*M_PI/nphases;
   for(j=0;j<nphases;j++) {
      sepMatrix[0][j] = 1.0/nphases;
      for(order=1;order<norders;order++) 
@@ -659,7 +662,7 @@ void apodize(int napodize,int nx, int nxExtra, int ny,float *image)
     diff = (image[ (ny-1)*nxExtra +k ] - image[ /* 0*nxExtra+ */ k ]) / 2;
     for(l=0;l<napodize;l++)
     {
-      fact = 1 - sin((((float)l+0.5)/napodize)*PI*0.5);
+      fact = 1 - sin((((float)l+0.5)/napodize)*M_PI*0.5);
       image[l*nxExtra + k] += diff*fact;
       image[(ny-1-l)*nxExtra + k] -= diff*fact;
     }
@@ -669,7 +672,7 @@ void apodize(int napodize,int nx, int nxExtra, int ny,float *image)
     diff = (image[ l*nxExtra + nx-1 ] - image[ l*nxExtra /* +0 */ ]) / 2;
     for(k=0;k<napodize;k++)
     {
-      fact = 1 - sin((((float)k+0.5)/napodize)*PI*0.5);
+      fact = 1 - sin((((float)k+0.5)/napodize)*M_PI*0.5);
       image[l*nxExtra + k] += diff*fact;
       image[l*nxExtra + nx-1-k] -= diff*fact;
     }
@@ -688,10 +691,10 @@ void cosapodize(int nx,int nxExtra, int ny,float *image)
   printf("in cosapodize\n");
   for(k=0;k<nx;k++)
   {
-    xfact = sin(PI*((float)k+0.5)/nx);
+    xfact = sin(M_PI*((float)k+0.5)/nx);
     for(l=0;l<ny;l++)
     {
-      yfact = sin(PI*((float)l+0.5)/ny);
+      yfact = sin(M_PI*((float)l+0.5)/ny);
       image[l*nxExtra + k] *= (xfact*yfact);
     }
   }
@@ -719,15 +722,15 @@ void combine_reim(std::vector<std::complex<float> *> &otf, int norders, int nx, 
     /* phi is now in the first quadrant only, since bandim_mag and bandre_mag are both positive */
     /* which quadrant phi should be in is decided by the kz=0 plane of bandre and bandim values */
     if (otf[2*order-1][nx/4*nz].real() < 0 && otf[2*order][nx/4*nz].real() >0)
-      phi += PI;
+      phi += M_PI;
     else if (otf[2*order-1][nx/4*nz].real() < 0 && otf[2*order][nx/4*nz].real() <0)
-      phi = PI-phi;
+      phi = M_PI-phi;
     else if (otf[2*order-1][nx/4*nz].real() > 0 && otf[2*order][nx/4*nz].real() >0)
       phi = -phi;
 
     /* Sometimes the above logic still won't find the correct phase; user can specify additional Pi phase shift*/
     if (order==1 && bForcedPIshift)
-      phi = PI-phi;
+      phi = M_PI-phi;
 
     printf("  phi=%f\n", phi);
 
@@ -755,7 +758,7 @@ void beadsize_compensate(std::vector<std::complex<float> *> &bands, float k0angl
 
   k0mag = 1/linespacing;
   radius = bead_diameter * 0.5;
-  limit_at_origin = 4*PI*radius*radius*radius/3;
+  limit_at_origin = 4*M_PI*radius*radius*radius/3;
   
   for (order=0; order<norders; order++) {
     if(order==0)
@@ -807,9 +810,9 @@ void shift_center(std::complex<float> *bands, int nx, int ny, int nz, float xc, 
   kzcent = nz/2;
   nxy = (nx/2+1)*ny;
 
-  dphiz = 2*PI*zc/nz;
-  dphiy = 2*PI*yc/ny;
-  dphix = 2*PI*xc/nx;
+  dphiz = 2*M_PI*zc/nz;
+  dphiy = 2*M_PI*yc/ny;
+  dphix = 2*M_PI*xc/nx;
 
   for (kin=0; kin<nz; kin++) {    /* the origin of Fourier space is at (0,0) */
     kz = kin;
@@ -1099,11 +1102,11 @@ double sphereFFT(float k, float radius)
   double a, x;
  
   if (k>0 || k<0) {
-    x = 2*PI*radius*k;
-    a = radius / (PI*k*k) * (sin(x)/x - cos(x));
+    x = 2*M_PI*radius*k;
+    a = radius / (M_PI*k*k) * (sin(x)/x - cos(x));
   }
   else
-    a = 4*PI*pow(radius, 3)/3;
+    a = 4*M_PI*pow(radius, 3)/3;
 
   return a;
 }

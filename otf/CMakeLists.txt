@@ -18,6 +18,7 @@ find_library(IMLIB imlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
 find_library(IVELIB ive PATHS ${PRIISM_LIB_PATH} REQUIRED)
 
 # FFTW3
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/findFFTW")
 if (WIN32)
   find_package(FFTW3 REQUIRED COMPONENTS single)
   include_directories( ${TIFF_INCLUDE_DIR} )
