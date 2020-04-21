@@ -354,6 +354,7 @@ void findModulationVectorsAndPhasesForAllDirections(
     }
     else if (params->bTIFF) {
       // TO-DO
+      std::cout << "No unmixed raw images were saved in TIFF mode\n";
     }
 
     /* After separation and FFT, the std::vector rawImages, now referred to as
@@ -506,6 +507,7 @@ void findModulationVectorsAndPhasesForAllDirections(
         }
         else if (params->bTIFF) {
           // To-DO
+          std::cout << "No overlaps were saved in TIFF mode";
         }
       }
     }     /* if(searchforvector) ... else ... */
@@ -1022,15 +1024,11 @@ void dumpBands(std::vector<GPUBuffer>* bands, int nx, int ny, int nz0)
     std::stringstream s;
 
     s << "band" << n << ".tif";
-    TIFF * band_tiff = TIFFOpen(s.str().c_str(), "w");
+
     CPUBuffer buf(nx*ny*nz0*sizeof(float));
     i->set(&buf, 0, buf.getSize(), 0);
-    float *ptr = (float*) buf.getPtr();
-    for (int z=0; z<nz0; z++) {
-      save_tiff(band_tiff, z, 0, 1, nx, ny, ptr, 0);
-      ptr += nx * ny;
-    }
-    TIFFClose(band_tiff);
+    CImg<> band_tiff((float *) buf.getPtr(), nx, ny, nz0, 1, true);
+    band_tiff.save_tiff(s.str().c_str());
 
     std::stringstream ss;
     ss << "band" << n << ".dat";
@@ -1482,7 +1480,6 @@ void SIM_Reconstructor::processOneVolume()
 
   findModulationVectorsAndPhasesForAllDirections(m_zoffset,
       &m_myParams, m_imgParams, &m_driftParams, &m_reconData);
-  std::cout<<2<<std::endl;
 
   m_reconData.overlap0.resize(0);
   m_reconData.overlap1.resize(0);
@@ -1932,7 +1929,7 @@ void deskewOneSection(CImg<> &rawSection, float* nxp2OutBuff, int z, int nz,
   unsigned ny_in = rawSection.height();
   float *in = rawSection.data();
 #pragma omp parallel for
-  for (unsigned xout=0; xout<nx_out+2; xout++) {
+  for (auto xout=0; xout<nx_out+2; xout++) {
     float xin = xout;
     if (fabs(deskewFactor) > 0)
       xin = xout - nx_out/2. + extraShift - deskewFactor*(z-nz/2.) + nx_in/2.;

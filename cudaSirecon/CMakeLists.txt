@@ -39,10 +39,10 @@ if(WIN32)
   find_library(IMLIB libimlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
   find_library(IVELIB libive PATHS ${PRIISM_LIB_PATH} REQUIRED)
 
-  if ( ${MSVC_VERSION} GREATER 1800)
-    find_library(LEG_STDIO legacy_stdio_definitions)
-    message(STATUS "adding legacy stdio definitions for >VS14.0 " ${LEG_STDIO})
-  endif()
+  # if ( ${MSVC_VERSION} GREATER 1800)
+  #   find_library(LEG_STDIO legacy_stdio_definitions)
+  #   message(STATUS "adding legacy stdio definitions for >VS14.0 " ${LEG_STDIO})
+  # endif()
   message(STATUS "LAPACK: " ${LAPACK_LIBRARIES})
 
 else()
@@ -74,7 +74,6 @@ CUDA_ADD_LIBRARY(
 #  ${SHARED_OR_NOT}
   cudaSirecon.cpp
   boostfs.cpp
-  tiffhandle.cpp  ## Remove later
   )
 
 CUDA_ADD_EXECUTABLE(

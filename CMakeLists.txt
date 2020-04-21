@@ -107,6 +107,12 @@ if(WIN32)
   set (Boost_USE_STATIC_LIBS    ON)
   set (Boost_USE_MULTITHREADED  ON)
   set (Boost_USE_STATIC_RUNTIME OFF)
+
+  if ( ${MSVC_VERSION} GREATER 1800)
+    find_library(LEG_STDIO legacy_stdio_definitions)
+    message(STATUS "adding legacy stdio definitions for >VS14.0 " ${LEG_STDIO})
+  endif()
+
 endif(WIN32)
 
 find_package( Boost REQUIRED COMPONENTS program_options filesystem system regex)
@@ -152,6 +158,6 @@ message(STATUS "CUDA_NVCC_FLAGS: " ${CUDA_NVCC_FLAGS})
 
 add_subdirectory(Buffers)
 add_subdirectory(cudaSirecon)
-if(NOT WIN32)
-  add_subdirectory(otf)
-endif()
+#if(NOT WIN32)
+add_subdirectory(otf)
+#endif()
