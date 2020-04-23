@@ -229,14 +229,12 @@ __host__ void separate(int nx, int ny, int nz, int direction, int nphases,
     int norders, std::vector<GPUBuffer>*rawImages, float *sepMatrix)
 {
 #ifndef NDEBUG
-  for (std::vector<GPUBuffer>::iterator i = rawImages->begin();
-      i != rawImages->end(); ++i) {
+  for (auto i = rawImages->begin(); i != rawImages->end(); ++i)
     assert(i->hasNaNs() == false);
-  }
 #endif
   // Allocate memory for result (have to do this out-of-place)
   std::vector<float*> output(norders * 2 - 1);
-  for (std::vector<float*>::iterator i = output.begin(); i != output.end(); ++i) {
+  for (auto i = output.begin(); i != output.end(); ++i) {
     cutilSafeCall(cudaMalloc((void**)&(*i), nz * ny * (nx + 2) *
           sizeof(float)));
   }
@@ -245,7 +243,7 @@ __host__ void separate(int nx, int ny, int nz, int direction, int nphases,
 
   // Transfer image pointers in __constant__ array
   std::vector<float*> imgPtrs;
-  for (std::vector<GPUBuffer>::iterator i = rawImages->begin(); i != rawImages->end(); ++i) {
+  for (auto i = rawImages->begin(); i != rawImages->end(); ++i) {
     imgPtrs.push_back((float*)i->getPtr());
   }
   cutilSafeCall(cudaMemcpyToSymbol(const_imgPtrs, &imgPtrs[0],
@@ -273,9 +271,7 @@ __host__ void separate(int nx, int ny, int nz, int direction, int nphases,
         nz * ny * (nx + 2) * sizeof(float), 0);
   }
 #ifndef NDEBUG
-  for (std::vector<GPUBuffer>::iterator i = rawImages->begin();
-      i != rawImages->end(); ++i) {
-  //  i->dump(std::cout, nx + 2, 0, nz * ny * (nx + 2)* sizeof(float));
+  for (auto i = rawImages->begin(); i != rawImages->end(); ++i) {
     assert(i->hasNaNs() == false);
   }
 #endif
@@ -1427,8 +1423,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
   //  dumpBands(&otf, 128, 257, 1);
   //  exit(0);
   std::vector<cuFloatComplex*> otfPtrs;
-  for (std::vector<GPUBuffer>::iterator i = otf.begin();
-      i != otf.end(); ++i) {
+  for (auto i = otf.begin(); i != otf.end(); ++i) {
     otfPtrs.push_back((cuFloatComplex*)i->getPtr());
   }
   cutilSafeCall(cudaMemcpyToSymbol(const_otfPtrs, &otfPtrs[0], 
@@ -2257,64 +2252,4 @@ __global__ void scale_kernel(float * img, double factor, int n)
     img[ind] *= factor;
 }
 
-// // // // //! Add 2 to the X dimensions of "*in" and "*out" 
-// // // // __global__ void deskew_kernel(float *in, int nx, int ny, int nz,
-// // // //                               float *out, int nxOut, int extraShift,
-// // // //                               double deskewFactor, float fillVal)
-// // // // {
-// // // //   unsigned xout = blockIdx.x * blockDim.x + threadIdx.x;
-// // // //   unsigned yout = blockIdx.y;
-// // // //   unsigned zout = blockIdx.z;
-
-// // // //   if (xout < nxOut) {
-// // // //     float xin = (xout - nxOut/2.+extraShift) - deskewFactor*(blockIdx.z-nz/2.) + nx/2.;
-
-// // // //     unsigned indout = zout * (nxOut+2) * ny + yout * (nxOut+2) + xout;
-// // // //     if (xin >= 0 && xin < nx-1) {
-
-// // // //       // 09-03-2013 Very important lesson learned:
-// // // //       // the (unsigned int) casting has be placed right there because
-// // // //       // otherwise, the entire express would evaluate as floating point and
-// // // //       // there're only 24-bit mantissa, so any odd index that's > 16777216 would
-// // // //       // inaccurately rounded up. int or unsigned does not have the 24-bit limit.
-// // // //       unsigned indin = zout * (nx+2) * ny + yout * (nx+2) + (unsigned int) floor(xin);
-
-// // // //       float offset = xin - floor(xin);
-// // // //       out[indout] = (1-offset) * in[indin] + offset * in[indin+1];
-// // // //     }
-// // // //     else
-// // // //       out[indout] = fillVal;
-// // // //   }
-// // // // }
-
-// // // // __host__ void deskew_GPU(std::vector<GPUBuffer> * pImgs, int nx, int ny, int nz,
-// // // // 						 float deskewAngle, float dz_prior_to, 
-// // // //                          float dr, int extraShift, float fillVal)
-// // // // {
-// // // //   assert(ny >= nx);
-// // // //   int newNx = ny;
-
-// // // //   if (deskewAngle <0) deskewAngle += 180.;
-// // // //   float deskewFactor = cos(deskewAngle * M_PI/180.) * dz_prior_to / dr;   // cos() or sin() ?? --lin
-
-// // // //   GPUBuffer outBuf((newNx+2) * ny * nz * sizeof(float), 0);
-// // // //   outBuf.setToZero();
-
-// // // //   dim3 block(512, 1, 1);
-// // // //   unsigned nxBlocks = (unsigned) ceil(newNx / (float) block.x);
-// // // //   dim3 grid(nxBlocks, ny, nz);
-
-// // // //   for (std::vector<GPUBuffer>::iterator inBuf=pImgs->begin(); inBuf != pImgs->end(); inBuf++) {
-// // // //     assert(inBuf->hasNaNs() == false);
-// // // // 	deskew_kernel<<<grid, block>>>((float *) inBuf->getPtr(), nx, ny, nz,
-// // // // 								   (float *) outBuf.getPtr(), newNx,
-// // // // 								   extraShift, deskewFactor, fillVal);
-// // // // 	inBuf->resize((newNx+2) * ny * nz * sizeof(float));
-// // // // 	outBuf.set(&(*inBuf), 0, outBuf.getSize(), 0);
-// // // // #ifndef NDEBUG
-// // // // 	std::cout<< "deskew_GPU(): " << cudaGetErrorString(cudaGetLastError()) << std::endl;
-// // // //     assert(outBuf.hasNaNs() == false);
-// // // // #endif
-// // // //   }
-// // // // }
 

@@ -26,10 +26,6 @@
 
 #include <complex>
 
-#include <nvml.h>  //for memory query
-static nvmlDevice_t nvmldevice;
-static nvmlMemory_t memoryStruct;
-
 #include "Buffer.h"
 #include "GPUBuffer.h"
 #include "CPUBuffer.h"
@@ -87,9 +83,6 @@ struct myExtHeader {
   float ydrift;
 };
 
-static float maxval = -FLT_MAX;
-static float minval = FLT_MAX;
-
 
 struct vector {
   float x;
@@ -145,8 +138,9 @@ struct ReconParams {
   float wiener, wienerInr;
   int   bUseEstimatedWiener;
 
-  /* OTF specific parameters */
+  /** OTF specific parameters */
   int   nxotf, nyotf, nzotf;
+  float dzPSF;    /** PSF's z step size (for non-MRC formats) */
   float dkzotf, dkrotf;  /** OTF's pixel size in inverse mirons */
   int   bRadAvgOTF;   /** is radially-averaged OTF used? */
   int   bOneOTFperAngle; /** one OTF per SIM angle (instead of common OTF for all angles)?*/
@@ -176,9 +170,6 @@ struct ReconParams {
   std::string ifiles;
   std::string ofiles;
   std::string otffiles;
-  // int ifilein;
-  // int ofilein;
-  // int otffilein;
 };
 struct ImageParams {
   int nx;

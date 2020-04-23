@@ -14,11 +14,15 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <algorithm>
+#include <cassert>
 
 #define cimg_use_tiff
+
 #ifndef _WIN32
 #define cimg_use_openmp
 #endif
+
 #define cimg_use_cpp11 1
 #include <CImg.h>
 using namespace cimg_library;
@@ -28,10 +32,7 @@ using namespace cimg_library;
 #include <complex>
 #include <fftw3.h>
 
-//#define PI 3.1415926536
-#define SPOTRATIO 0.1
-#define MAXPHASES 11
-#define DEFAULTPHASES 5
+#define DEFAULTNPHASES 5
 
  
 float fitparabola(float a1, float a2, float a3);
@@ -39,8 +40,8 @@ float estimate_background(CImg<> &image, int border_size);
 void determine_center(std::vector< CImg<> > &stack5phases, CImg<> &I2Mstack, float *xc, float *yc, float *zc, float *xc_i2m, float *yc_i2m, float *zc_i2m, bool two_lens, bool I2M_inc);
 void apodize(int napodize,int nx, int nxExtra, int ny, float *image);
 void cosapodize(int nx, int nxExtra, int ny, float *image);
-void makematrix (int nphases, float ** sepMatrix);
-void separate(std::vector<CImg<>> &floatimage, float ** sepMatrix);
+void makematrix (CImg<float> &sepMatrix);
+void separate(std::vector<CImg<>> &floatimage, CImg<> &sepMatrix);
 
 void combine_reim(std::vector<std::complex<float> *> &bands, int norders, int nx, int nz, int);
 void shift_center(std::complex<float> *bands, int nx, int ny, int nz, float xc, float yc, float zc);
@@ -50,9 +51,10 @@ void beadsize_compensate(std::vector<std::complex<float> *> &bands, float k0angl
                          int nx, int ny, int nz, float dr, float dz);
 double sphereFFT(float k, float radius);
 
-void radialft(std::complex<float> *bands, int nx, int ny, int nz, std::complex<float> *avg);
-void cleanup(std::complex<float> *otfkxkz, int order, int nx, int nz, float dkr, float dkz, float linespacing,
-	     int lambdanm, int icleanup, int ileave1_1, int ileave1_2, int ileave2, int twolens, float NA, float NIMM);
+void radialft(std::complex<float> *bands, int nx, int ny, int nz, float dr, std::complex<float> *avg, unsigned nr);
+void cleanup(std::complex<float> *otfkxkz, int order, int nx, int nz, float dr, float dz,
+             float linespacing, unsigned lambdanm, int icleanup, int ileave1_1, int ileave1_2,
+             int ileave2, int twolens, float NA, float NIMM);
 void cleanup_I2M(std::complex<float> *otfkxkz, int nx, int nz, float dkr, float dkz, int lamdanm, int icleanup, float NA, float NIMM);
 void modify(std::complex<float> *otfkxkz, int nx, int nz, int *ifixz, int ifixr, int order, int twolens);
 void fixorigin(std::complex<float> *otfkxkz, int nx, int nz, int kx1, int kx2);
@@ -65,7 +67,7 @@ void outputdata(int ostream_no, IW_MRC_HEADER *header, std::vector<std::complex<
                 int norders, int nx, int ny, int nz, float dkr, float dkz, int five_bands);
 
 void mrc_file_write(float *buffer, int nx, int ny, int nz, float rlen, float zlen, int mode, int iwave, const char *files);
-int commandline(int argc, char *argv[], int * twolens, int *rescale, float *beaddiam, float *k0angle, float *linespacing, int *five_bands, int *nphases, int *interpkr, int *leavekz, int *do_compen, int *I2M_inc, std::string &I2Mfiles, float *background, int *bBgInExtHdr, int *order0gen, std::string &order0files, int *conjugate, float *na, float *nimm, int *ifixz, int *ifixr, int *wavelength, float *dr, float *dz, int *bCoherentBSIM, int *bForcedPIshift, std::string &ifiles, std::string &ofiles, int *ifilein, int *ofilein);
+int commandline(int argc, char *argv[], int * twolens, int *rescale, float *beaddiam, float *k0angle, float *linespacing, int *five_bands, int *nphases, int *interpkr, int *leavekz, int *do_compen, int *I2M_inc, std::string &I2Mfiles, float *background, int *bBgInExtHdr, int *order0gen, std::string &order0files, int *conjugate, float *na, float *nimm, int *ifixz, int *ifixr, unsigned *wavelength, float *dr, float *dz, int *bCoherentBSIM, int *bForcedPIshift, std::string &ifiles, std::string &ofiles, int *ifilein, int *ofilein);
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900)
 // for IMLIB with vs >2015
@@ -82,55 +84,47 @@ extern "C" FILE *  __iob_func(void)
 int main(int argc, char **argv)
 {
   std::string ifiles, ofiles, I2Mfiles, order0files;
-  CImg <> PSFtiff;
-  int istream_no=1, ostream_no=2;
   IW_MRC_HEADER header, otfheader;
-  int nxExtra, nxy, phase, nphases=DEFAULTPHASES, napodize=10;
+  int nphases=DEFAULTNPHASES, napodize=10;
   int border_size;
-  float dr=0.106, dz=0.1, dkr, dkz, background_dummy=-1., background_i2m, xcofm, ycofm, zcofm, xcofm_i2m, ycofm_i2m, zcofm_i2m;
-  float **sepMatrix;
-  float bead_diameter=0.12, scalefactor=1.0;
-  float k0angleguess=0, linespacing = /* 0.1945 after 11/22/02 for Rhodamine channel. 0.17536 for FITC channel. otherwise */ 0.20365 ; 
-  fftwf_plan rfftplan3d;
+  float dr=0.106f, dz=0.1f, background_dummy=-1.f, background_i2m, xcofm, ycofm, zcofm, xcofm_i2m, ycofm_i2m, zcofm_i2m;
+  float bead_diameter=0.12f, scalefactor=1.0f;
+  float k0angleguess=1.57f, linespacing = 0.2f ; 
   int ifixz[3], ifixr, twolens=0, dorescale=0, ifilein=0, ofilein=0, five_bands=0, do_compen=1, I2M_inc=0, Generate_band0=0, conjugate=0;
   int bBgInExtHdr = 0; /* if the background of each section is recorded in the extended header's 3rd float number (in Lin's scope) */
-  int wavelength;
   int icleanup, ileavekz[3]={0,0,0}, ileave1_1, ileave1_2, ileave2, interpkr[2];
-  float NA=1.4, NIMM=1.515;
+  float NA=1.4f, NIMM=1.515f;
   float user_dr=0, user_dz=0; /* will use these for dr, dz if these are greater than zero */
   int bCoherentBSIM = 0; /* In coherent Bessel-SIM, do fixorigin() differently? */
   int bForcedPIshift=0;
 
-#ifdef __SIRECON_USE_TIFF__
-  TIFFSetWarningHandler(NULL);
-#else
+
   IMAlPrt(0);       
-#endif
+
   interpkr[0] = 0;
   interpkr[1] = 0;
   ifixz[0] = 1;ifixz[1]=1; ifixz[2]=1; ifixr = 0;
 
-  wavelength = 525;
+  unsigned wavelength = 525;
 
   if (!commandline(argc, argv, &twolens, &dorescale, &bead_diameter, &k0angleguess, &linespacing, &five_bands, &nphases, interpkr, ileavekz, &do_compen, &I2M_inc, I2Mfiles, &background_dummy, &bBgInExtHdr, &Generate_band0, order0files, &conjugate, &NA, &NIMM, ifixz, &ifixr, &wavelength, &user_dr, &user_dz, &bCoherentBSIM, &bForcedPIshift, ifiles, ofiles, &ifilein, &ofilein))
     return -1;
 
   
   printf("ileavekz[0]=%d, ifixz[0]=%d\n", ileavekz[0], ifixz[0]);
-  if (nphases > MAXPHASES) {
-    fprintf(stderr, "nphases is larger than MAXPHASES\n");
-    return -1;
-  }
 
   if (!ifilein) {
     std::cout << " PSF dataset file name: ";
     getline(std::cin, ifiles);
   }
 
+  int istream_no=1, ostream_no=2; //! For MRC file I/O
+  // First try with TIFF; if unsuccessful, fall back to MRC
   bool bTIFF = false;
   TIFFSetWarningHandler(NULL);
   TIFFSetErrorHandler(NULL);
   TIFF *tf = TIFFOpen(ifiles.c_str(), "r");
+  CImg <> PSFtiff;
   if (tf) {
     TIFFClose(tf);
     PSFtiff.assign(ifiles.c_str());
@@ -153,7 +147,7 @@ int main(int argc, char **argv)
       return -1;
     }
 
-  size_t nx, ny, nz;
+  unsigned nx, nxExtra, ny, nz, nxy;
   if (bTIFF) {
     nx = PSFtiff.width();
     ny = PSFtiff.height();
@@ -182,26 +176,22 @@ int main(int argc, char **argv)
   else 
     nz /= nphases+1;
 
-  printf("nx=%d, ny=%d, nz=%d, dr=%f, dz=%f, wavelength=%d\n", nx, ny, nz, dr, dz, wavelength);
+  printf("nx=%u, ny=%u, nz=%u, dr=%f, dz=%f, wavelength=%u\n", nx, ny, nz, dr, dz, wavelength);
 
-  dkr = 1/(ny*dr);
-  dkz = 1/(nz*dz);
+  float dkx = 1/(nx*dr);
+  float dky = 1/(ny*dr);
+  float dkz = 1/(nz*dz);
 
   int norders = (nphases+1)/2;
 
-  sepMatrix = (float **) malloc(nphases * sizeof(float *));
-  for (int i=0; i<nphases; i++)
-    sepMatrix[i] = (float *) malloc(nphases * sizeof(float));
-  makematrix(nphases, sepMatrix);
-
-  if (nx%2) 
+  if (nx % 2)
     nxExtra = nx+1;
   else
     nxExtra = nx+2;
-  nxy=nxExtra*ny;
+  nxy = nxExtra * ny;
 
-  std::vector< CImg<> > floatimage(nphases);
-  std::vector< std::complex<float> *> bands(nphases);
+  std::vector<CImg<>> floatimage(nphases);
+  std::vector<std::complex<float>*> bands(nphases);
   
   for(int i=0; i<nphases; i++) {
     floatimage[i].assign(nxExtra, ny, nz);
@@ -218,7 +208,7 @@ int main(int argc, char **argv)
   printf("Reading data...\n\n");
   int zsec = 0;  // incremented by 1 at the end of "for (phase)" loop
   CImg<> buffer;
-  for(int z=0; z<nz; z++) {
+  for(auto z=0u; z<nz; z++) {
     for(int phase=0; phase<nphases; phase++) {
       if (bTIFF)
         buffer.assign(PSFtiff.data(0, 0, zsec), nx, ny, 1, 1, true); // Reuse buffer from "PSFtiff"; check
@@ -229,7 +219,7 @@ int main(int argc, char **argv)
 
       // Fix camera error at even binnings for some very old Photometric CCD
       if(buffer(nx-1, ny-1) < 0)
-		buffer(nx-1, ny-1) = buffer(nx-2, ny-1);
+        buffer(nx-1, ny-1) = buffer(nx-2, ny-1);
 
       if (!bTIFF && bBgInExtHdr) {
         // Some Andor EMCCDs have hidden border pixels that can be used to report fluctuating dark
@@ -246,19 +236,19 @@ int main(int argc, char **argv)
           background[zsec] = estimate_background(buffer, border_size);
       }
 
-      for(int i=0; i<ny; i++) {
+      for(auto i=0u; i<ny; i++) {
         // Copy from "buffer" to floatimage[phase] at section z row-by-row
         std::memcpy(floatimage[phase].data(0, i, z), buffer.data(0, i), nx*sizeof(float));
-        for (int j=0; j<nxExtra - nx; j++)
+        for (auto j=0u; j<nxExtra - nx; j++)
           floatimage[phase](nx+j, i, z) = 0.;
       }
 
       // To-Do: why not apodize "buffer" first before copying to "floatimage[phase]"?
       float *floatsection = floatimage[phase].data(0, 0, z);
       if(napodize>=0) 
-		apodize(napodize, nx, nxExtra, ny, floatsection);
+        apodize(napodize, nx, nxExtra, ny, floatsection);
       else if(napodize==-1)
-		cosapodize(nx, nxExtra, ny, floatsection);
+        cosapodize(nx, nxExtra, ny, floatsection);
       
       zsec ++;
     } // end for(phase)
@@ -270,13 +260,13 @@ int main(int argc, char **argv)
       else 
         IMRdSec(istream_no, buffer.data());
       if(buffer(nx-1, ny-1) == -1.0)  /* fix camera error at even binnings */
-		buffer(nx-1, ny-1) = buffer(nx-2, ny-1);
+        buffer(nx-1, ny-1) = buffer(nx-2, ny-1);
       if (z==nz/2)
         background_i2m = estimate_background(buffer, border_size);
-      for(int i=0; i<ny; i++) {
+      for(auto i=0u; i<ny; i++) {
         // Copy from "buffer" to I2M_imag at section z row-by-row
         std::memcpy(I2M_image.data(0, i, z), buffer.data(0, i), nx*sizeof(float));
-        for (int j=0; j<nxExtra - nx; j++)
+        for (auto j=0u; j<nxExtra - nx; j++)
           I2M_image(nx+j, i, z) = 0.;
       }
     }
@@ -293,6 +283,7 @@ int main(int argc, char **argv)
     printf("I2M psf's center of mass is (%.3f, %.3f, %.3f)\n\n", xcofm_i2m, ycofm_i2m, zcofm_i2m);
   }
 
+#pragma omp parallel for
   for(int z=0; z<nz; z++) {
     for(int phase=0; phase<nphases; phase++) {
       CImg<> oneSection(floatimage[phase].data(0, 0, z), nxExtra, ny, 1, 1, true);
@@ -302,8 +293,12 @@ int main(int argc, char **argv)
   if (I2M_inc) 
     I2M_image -= background_i2m;
 
-  if (nphases > 1)
-    separate(floatimage, sepMatrix);  // rewrite separate to deal with 3D stack
+  CImg<> sepMatrix(nphases, nphases);
+
+  if (nphases > 1) {
+    makematrix(sepMatrix);
+    separate(floatimage, sepMatrix);
+  }
 
   if (Generate_band0) {
     if (bTIFF)
@@ -312,8 +307,24 @@ int main(int argc, char **argv)
       mrc_file_write(floatimage[0], nxExtra, ny, nz, dr, dz, 0, wavelength, order0files.c_str());
   }
 
-  rfftplan3d = fftwf_plan_dft_r2c_3d(nz, ny, nx, floatimage[0].data(), (fftwf_complex*) floatimage[0].data(), FFTW_ESTIMATE);
   printf("Before fft\n");
+  unsigned nthreads = 1;
+#ifndef NDEBUG
+#ifdef _WIN32
+  SYSTEM_INFO siSysInfo;
+  GetSystemInfo(&siSysInfo);
+  nthreads = siSysInfo.dwNumberOfProcessors;
+#else
+  nthreads = sysconf(_SC_NPROCESSORS_CONF); // Get number of processors; only works on Unix-based systems and Cygwin (but not MingW)
+#endif
+#endif
+
+  printf("Number of threads used: %d\n", nthreads);
+
+  fftwf_plan_with_nthreads(nthreads);
+  fftwf_plan rfftplan3d =
+    fftwf_plan_dft_r2c_3d(nz, ny, nx, floatimage[0].data(),
+                          (fftwf_complex *) floatimage[0].data(), FFTW_ESTIMATE);
   for(int phase=0; phase<nphases; phase++)
     fftwf_execute_dft_r2c(rfftplan3d, floatimage[phase].data(), (fftwf_complex *) floatimage[phase].data());
   if (I2M_inc)
@@ -322,7 +333,7 @@ int main(int argc, char **argv)
   fftwf_destroy_plan(rfftplan3d);
   printf("After fft\n\n");
 
-  /* modify the phase of bands, so that it corresponds to FFT of a bead at origin */
+  // Modify the phase of bands, so that it corresponds to FFT of a bead at origin
   std::cout << "Shifting center...\n";
   for (int phase=0; phase<nphases; phase++)
     shift_center(bands[phase], nx, ny, nz, xcofm, ycofm, zcofm);
@@ -330,44 +341,47 @@ int main(int argc, char **argv)
   if (I2M_inc)
     shift_center((std::complex<float> *)I2M_image.data(), nx, ny, nz, xcofm_i2m, ycofm_i2m, zcofm_i2m);
 
-  /* Now compensate finite bead size for all bands */
+  // Now compensate finite bead size for all bands
   if (do_compen)
-    beadsize_compensate(bands, k0angleguess, linespacing, bead_diameter, norders, nx, ny, nz, dkr, dkz);
+    beadsize_compensate(bands, k0angleguess, linespacing, bead_diameter, norders, nx, ny, nz, dr, dz);
 
-  std::vector< CImg<> > avg_output_buf(nphases);
+  std::vector<CImg<>> avg_output_buf(nphases);
   std::vector<std::complex<float> *> avg_output(nphases);
+  //! smaller of the X-Y dimensions; to be used as the lateral dimension in avg_output
+  unsigned nr = std::min(nx, ny);
+
   for (int phase=0; phase < nphases; phase ++) {
-    avg_output_buf[phase].assign(nz, nxExtra, 1, 1, 0.);
+    avg_output_buf[phase].assign(nz, (nr/2+1)*2, 1, 1, 0.f);
     avg_output[phase] = (std::complex<float> *) avg_output_buf[phase].data();
   }
 
-  for (int order=0; order < norders; order ++) {
+  for (auto order=0; order < norders; order ++) {
     if (order==0)
-      radialft(bands[0], nx, ny, nz, avg_output[0]);
+      radialft(bands[0], nx, ny, nz, dr, avg_output[0], nr);
  
     else {
-      radialft(bands[2*order-1], nx, ny, nz, avg_output[2*order-1]);
-      radialft(bands[2*order], nx, ny, nz, avg_output[2*order]);
+      radialft(bands[2*order-1], nx, ny, nz, dr, avg_output[2*order-1], nr);
+      radialft(bands[2*order], nx, ny, nz, dr, avg_output[2*order], nr);
     }
   }
 
   std::complex<float> * I2Mavg_output;
   if (I2M_inc) {
-    I2Mavg_output = (std::complex<float> *) calloc(nz*(nx/2+1), sizeof(std::complex<float>));
-    radialft((std::complex<float> *)I2M_image.data(), nx, ny, nz, I2Mavg_output);
+    I2Mavg_output = (std::complex<float> *) calloc(nz*(nr/2+1), sizeof(std::complex<float>));
+    radialft((std::complex<float> *)I2M_image.data(), nx, ny, nz, dr, I2Mavg_output, nr);
   }
 
   icleanup = nx/2+1;
   ileave1_1 = ileavekz[0]; ileave1_2 = ileavekz[1]; ileave2 = ileavekz[2];
 
-  printf("ileavekz[0]=%d, ileave1_1=%d\n", ileavekz[0], ileave1_1);
+//  printf("ileavekz[0]=%d, ileave1_1=%d\n", ileavekz[0], ileave1_1);
 
   for (int phase=0; phase < nphases; phase ++) {
     modify(avg_output[phase], nx, nz, ifixz, ifixr, (phase+1)/2, twolens);
     if (bCoherentBSIM)
       {/* cleanup_CBSIM(); */}
     else if (ileave1_1 > 0) {
-      cleanup(avg_output[phase], (phase+1)/2, nx, nz, dkr, dkz, linespacing, wavelength, icleanup, ileave1_1, ileave1_2, ileave2, twolens, NA, NIMM);
+      cleanup(avg_output[phase], (phase+1)/2, nr, nz, dr, dz, linespacing, wavelength, icleanup, ileave1_1, ileave1_2, ileave2, twolens, NA, NIMM);
     }
     if (phase==0 && interpkr[0] > 0)
       fixorigin(avg_output[phase], nx, nz, interpkr[0], interpkr[1]);
@@ -380,23 +394,23 @@ int main(int argc, char **argv)
     combine_reim(avg_output, norders, nx, nz, bForcedPIshift);
 
   if (conjugate)
-    for (phase=0; phase<nphases; phase++)
+    for (auto phase=0; phase<nphases; phase++)
 #pragma omp parallel for
-      for (int i=0; i<(nx/2+1)*nz; i++)
+      for (auto i=0; i<(nx/2+1)*nz; i++)
         avg_output[phase][i] = std::conj(avg_output[phase][i]);
 
   if (!bTIFF) {
     otfheader = header;
-    outputdata(ostream_no, &otfheader, avg_output, norders, nx, ny, nz, dkr, dkz, five_bands);
+    outputdata(ostream_no, &otfheader, avg_output, norders, nx, ny, nz, dkx, dkz, five_bands);
   }
   else 
-    outputdata(ofiles, avg_output, norders, nx, ny, nz, dkr, dkz, five_bands);
+    outputdata(ofiles, avg_output, norders, nx, ny, nz, dkx, dkz, five_bands);
   
   if (I2M_inc) {
 /*     cleanup_I2M(I2Mavg_output, nx, nz, dkr, dkz, wavelength, icleanup, NA, NIMM); */
     fixorigin(I2Mavg_output, nx, nz, interpkr[0], interpkr[1]);
     rescale(I2Mavg_output, 0, nx, nz, &scalefactor, dorescale);
-    mrc_file_write((float *)I2Mavg_output, nz, nx/2+1, 1, dkz, dkr, 2, wavelength, I2Mfiles.c_str());
+    mrc_file_write((float *)I2Mavg_output, nz, nx/2+1, 1, dkz, dkx, 2, wavelength, I2Mfiles.c_str());
   }
   return 0;
 }
@@ -405,19 +419,16 @@ int main(int argc, char **argv)
 /*     generates the matrix that is to be used to separate the raw indata    */
 /*     into the different bands of sample information.                       */
 /*****************************************************************************/
-void makematrix (int nphases, float ** sepMatrix)
+void makematrix (CImg<float> &sepMatrix)
 {
-  int j,order,norders;
-  float phi;
-  
-  norders = (nphases+1)/2;
-  phi = 2*M_PI/nphases;
-  for(j=0;j<nphases;j++) {
-     sepMatrix[0][j] = 1.0/nphases;
-     for(order=1;order<norders;order++) 
-     {
-        sepMatrix[2*order-1][j] = cos(j*order*phi)/nphases;
-        sepMatrix[2*order  ][j] = sin(j*order*phi)/nphases;
+  auto nphases = sepMatrix.width();
+  auto norders = (nphases+1)/2;
+  auto phi = 2*M_PI / nphases;
+  for (auto j=0; j<nphases; j++) {
+    sepMatrix(j, 0) = 1.0 / nphases;
+     for (auto order=1; order<norders; order++) {
+       sepMatrix(j, 2*order-1) = cos(j*order*phi)/nphases;
+       sepMatrix(j, 2*order  ) = sin(j*order*phi)/nphases;
      }
   }
 }
@@ -430,22 +441,28 @@ void makematrix (int nphases, float ** sepMatrix)
 /*     The bands are returned in the same array floatimage where the         */
 /*     input data was.                                                       */
 /*****************************************************************************/
-void separate(std::vector<CImg<>> &floatimage, float ** sepMatrix)
+void separate(std::vector<CImg<>> &floatimage, CImg<> &sepMatrix)
 {
-  size_t nphases = floatimage.size();
+  auto nphases = floatimage.size();
 
-  // unsigned x, y, z;
+  //! Big temp buffer to optimize for speed:
+  std::vector<CImg<>> output(nphases);
+  std::vector<float *> output_ptr(nphases), floatimage_ptr(nphases);
+  for (int i=0; i<nphases; i++) {
+    output[i].assign(floatimage[i], "xyzc");
+    output_ptr[i] = output[i].data();
+    floatimage_ptr[i] = floatimage[i].data();
+  }
+
 #pragma omp parallel for
-  cimg_forXYZ(floatimage[0], x, y, z) {
-    float *output = new float[nphases];
+  for (int x=0; x<floatimage[0].size(); x++) {
     for (int i=0; i<nphases; i++) {
-      output[i]=0.0;
+      output_ptr[i][x] = 0.0;
       for(int j=0; j<nphases; j++)
-        output[i] += floatimage[j](x, y, z) * sepMatrix[i][j];
+        output_ptr[i][x] += floatimage_ptr[j][x] * sepMatrix(j, i);
     }
-    for(int i=0;i<nphases;i++)
-      floatimage[i](x, y, z) = output[i];
-    delete[] output;
+    for(int i=0; i<nphases; i++)
+      floatimage_ptr[i][x] = output_ptr[i][x];
   }
 }
 
@@ -458,7 +475,7 @@ float estimate_background(CImg<> &image, int border_size)
   size_t ny = image.height();
 #pragma omp parallel for shared(image) reduction(+: sum, total)
   cimg_forXY(image, x, y) {
-	if (y<border_size || y>ny-border_size ||
+    if (y<border_size || y>ny-border_size ||
         x<border_size || x>nx-border_size) {
       sum += image(x, y);
       total ++;
@@ -476,9 +493,9 @@ void determine_center(std::vector< CImg<> > & stackNphases, CImg<> &I2M_image, f
   int ny = stackNphases[0].height();
   int nz = stackNphases[0].depth();
 
-  int nphases = stackNphases.size();
+  unsigned nphases = stackNphases.size();
   CImg<> stack3d(stackNphases[0], "xyzc", 0); // same dimension as a single-phase stack
-  for (int p=0; p<nphases; p++)
+  for (auto p=0u; p<nphases; p++)
     stack3d += stackNphases[p];
   stack3d /= nphases;
 
@@ -535,8 +552,8 @@ void determine_center(std::vector< CImg<> > & stackNphases, CImg<> &I2M_image, f
     kmin = kplus2;
     for (k=kplus2+1; k<=kplus2+5; k++)
       if (stack3d[k*nxy2+maxi*nxExtra+maxj] < minval_right) {
-	minval_right = stack3d[k*nxy2+maxi*nxExtra+maxj];
-	kmin = k;
+    minval_right = stack3d[k*nxy2+maxi*nxExtra+maxj];
+    kmin = k;
       }
     for (i=0; i<n_samples; i++) {
       Xs[i] = kmin + 1 + i;
@@ -548,8 +565,8 @@ void determine_center(std::vector< CImg<> > & stackNphases, CImg<> &I2M_image, f
     kmin = kminus2;
     for (k=kminus2-1; k>=kminus-5; k--)
       if (stack3d[k*nxy2+maxi*nxExtra+maxj] < minval_left) {
-	minval_left = stack3d[k*nxy2+maxi*nxExtra+maxj];
-	kmin = k;
+        minval_left = stack3d[k*nxy2+maxi*nxExtra+maxj];
+        kmin = k;
       }
     for (i=0; i<n_samples; i++) {
       Xs[i] = kmin - 1 - i;
@@ -585,20 +602,20 @@ void determine_center(std::vector< CImg<> > & stackNphases, CImg<> &I2M_image, f
     // sum = 0;
     // for (i=0; i<*yc-20; i++)
     //   for (j=0; j<nx; j++)
-	// sum += I2M_image[infocus_sec*nxy2 + i*nxExtra + j];
+    // sum += I2M_image[infocus_sec*nxy2 + i*nxExtra + j];
     // *background_i2m = sum / (nx*(*yc-20));
 
     /* Search for the peak pixel */
     /* Be aware that I2M_image is of dimension nxExtra*ny*nz */
     maxval=0.0;
     cimg_forXYZ(I2M_image, x, y, z) {
-	  reval=I2M_image(x, y, z);
-	  if( reval > maxval ) {
-	    maxval = reval;
-	    maxi=y; maxj=x;
-	    maxk=z;
-	  }
-	}
+      reval=I2M_image(x, y, z);
+      if( reval > maxval ) {
+        maxval = reval;
+        maxi=y; maxj=x;
+        maxk=z;
+      }
+    }
 
     iminus = maxi-1; iplus = maxi+1;
     if( iminus<0 ) iminus+=ny;
@@ -741,26 +758,26 @@ void combine_reim(std::vector<std::complex<float> *> &otf, int norders, int nx, 
   }
 }
 
-void beadsize_compensate(std::vector<std::complex<float> *> &bands, float k0angle, float linespacing, float bead_diameter, int norders, int nx, int ny, int nz, float dkr, float dkz)
+void beadsize_compensate(std::vector<std::complex<float> *> &bands, float k0angle, float linespacing, float bead_diameter, int norders, int nx, int ny, int nz, float dr, float dz)
 {
-  int order, kin, iin, jin, kout, iout, indin, kycent, kxcent, kzcent, nxy;
-  std::complex<float> *bandptr=0, *bandptr1=0;
-  float rho; /* the distance in Fourier space from a point to the origin */
-  float limit_at_origin;   /* the limit value of the FT of a sphere at the origin of Fourier space */
-  float radius;   /* the radius of the fluorescent bead, according to the number provided by vendor */
-  float kz, ky, kx, k0y, k0x, ratio, k0mag;
-
   printf("In beadsize_compensate()\n");
-  kycent = ny/2;
-  kxcent = nx/2;
-  kzcent = nz/2;
-  nxy = (nx/2+1)*ny;
+  float dkx = 1./(nx * dr);
+  float dky = 1./(ny * dr);
+  float dkz = 1./(nz * dz);
 
-  k0mag = 1/linespacing;
-  radius = bead_diameter * 0.5;
-  limit_at_origin = 4*M_PI*radius*radius*radius/3;
+  int kycent = ny/2;
+  int kxcent = nx/2;
+  int kzcent = nz/2;
+  int nxy = (nx/2+1)*ny;
+
+  float k0mag = 1/linespacing;
+  float radius = bead_diameter * 0.5;   //! the radius of the fluorescent bead
+
+  //! The limit value of the FT of a sphere at the origin of Fourier space
+  float limit_at_origin = 4*M_PI*radius*radius*radius/3;
   
-  for (order=0; order<norders; order++) {
+  for (auto order=0; order<norders; order++) {
+    std::complex<float> *bandptr=nullptr, *bandptr1=nullptr;
     if(order==0)
       bandptr = bands[order];
     else {
@@ -768,30 +785,33 @@ void beadsize_compensate(std::vector<std::complex<float> *> &bands, float k0angl
       bandptr1 = bands[2*order];
     }
 
-    k0x = ((float)order)/(norders-1) * k0mag * cos(k0angle);
-    k0y = ((float)order)/(norders-1) * k0mag * sin(k0angle);
+    float k0x = ((float)order)/(norders-1) * k0mag * cos(k0angle);
+    float k0y = ((float)order)/(norders-1) * k0mag * sin(k0angle);
 
-    for (kin=0; kin<nz; kin++) {
-      kout = kin;
+#pragma omp parallel for
+    for (auto kin=0; kin<nz; kin++) {
+      int kout = kin;
       if (kout>kzcent) kout -= nz;
-      kz = kout * dkz;
-      for (iin=0; iin<ny; iin++) {
-	iout = iin;
-	if (iout>kycent) iout -= ny;
-	ky = iout * dkr + k0y;
-	for (jin=0; jin<kxcent+1; jin++) {
-	  kx = jin * dkr + k0x;
-	  indin = kin*nxy+iin*(nx/2+1)+jin;
-	  if (! (order==0 && indin==0) ) {
-	    rho = sqrt(kz*kz + ky*ky + kx*kx);
-	    ratio = sphereFFT(rho,radius) / limit_at_origin;
-	  }
-	  else
-	    ratio = 1;
-	  bandptr[indin] /= ratio;
-	  if (order > 0)
-	    bandptr1[indin] /= ratio;
-	}
+      auto kz = kout * dkz;
+      for (auto iin=0; iin<ny; iin++) {
+        int iout = iin;
+        if (iout>kycent) iout -= ny;
+        auto ky = iout * dky + k0y;
+        for (auto jin=0; jin<kxcent+1; jin++) {
+          auto kx = jin * dkx + k0x;
+          auto indin = kin*nxy+iin*(nx/2+1)+jin;
+          float ratio;
+          if (! (order==0 && indin==0) ) {
+            //! The distance (in 1/um) in Fourier space from a point to the origin
+            float rho = sqrt(kz*kz + ky*ky + kx*kx);
+            ratio = sphereFFT(rho, radius) / limit_at_origin;
+          }
+          else
+            ratio = 1;  //! the limit at the origin
+          bandptr[indin] /= ratio;
+          if (order > 0)
+            bandptr1[indin] /= ratio;
+        }
       }
     }
   }
@@ -802,70 +822,68 @@ void beadsize_compensate(std::vector<std::complex<float> *> &bands, float k0angl
 /* Converted from Fortran code. kz is treated differently than kx and ky. don't know why */
 void shift_center(std::complex<float> *bands, int nx, int ny, int nz, float xc, float yc, float zc)
 {
-  int kin, iin, jin, indin, nxy, kz, kx, ky, kycent, kxcent, kzcent;
-  float phi1, phi2, phi, dphiz, dphiy, dphix;
+  int kycent = ny/2;
+  int kxcent = nx/2;
+  int kzcent = nz/2;
+  int nxy = (nx/2+1)*ny;
 
-  kycent = ny/2;
-  kxcent = nx/2;
-  kzcent = nz/2;
-  nxy = (nx/2+1)*ny;
+  float dphiz = 2*M_PI*zc/nz;
+  float dphiy = 2*M_PI*yc/ny;
+  float dphix = 2*M_PI*xc/nx;
 
-  dphiz = 2*M_PI*zc/nz;
-  dphiy = 2*M_PI*yc/ny;
-  dphix = 2*M_PI*xc/nx;
-
-  for (kin=0; kin<nz; kin++) {    /* the origin of Fourier space is at (0,0) */
-    kz = kin;
+#pragma omp parallel for
+  for (int kin=0; kin<nz; kin++) {    // the origin of Fourier space is at (0,0)
+    int kz = kin;
     if (kz>kzcent) kz -= nz;
-    phi1 = dphiz*kz;      /* first part of phi */
-    for (iin=0; iin<ny; iin++) {
-      ky = iin;
+    float phi1 = dphiz*kz;      //! first part of phi
+    for (int iin=0; iin<ny; iin++) {
+      int ky = iin;
       if (iin>kycent) ky -= ny;
-      phi2 = dphiy*ky;   /* second part of phi */
-      for (jin=0; jin<kxcent+1; jin++) {
-        kx = jin;
-        indin = kin*nxy+iin*(nx/2+1)+jin;
-        phi = phi1+phi2+dphix*kx;  /* third part of phi */
+      float phi2 = dphiy*ky;   //! second part of phi */
+      for (int jin=0; jin<kxcent+1; jin++) {
+        int kx = jin;
+        int indin = kin*nxy + iin*(nx/2+1) + jin;
+        float phi = phi1 + phi2 + dphix*kx;  //! All three parts of phi
         bands[indin] *= std::complex<float>(cos(phi), sin(phi));
       }
     }
   }
 }
 
-void radialft(std::complex<float> *band, int nx, int ny, int nz, std::complex<float> *avg_output)
+void radialft(std::complex<float> *band, int nx, int ny, int nz, float dr,
+              std::complex<float> *avg_output, unsigned nr_avg)
 {
-  int kin, iin, jin, indin, indout, indout_conj, kz, kx, ky, kycent, kxcent, kzcent;
-  int *count, nxz, nxy;
-  float rdist;
-
   printf("In radialft()\n");
-  kycent = ny/2;
-  kxcent = nx/2;
-  kzcent = nz/2;
-  nxy = (nx/2+1)*ny;
-  nxz = (nx/2+1)*nz;
+  auto kycent = ny/2;
+  auto kxcent = nx/2;
+  auto kzcent = nz/2;
+  auto nxy = (nx/2+1)*ny;
+  auto nxz = (nx/2+1)*nz;
 
-  count = (int *) calloc(nxz, sizeof(int));
+  int * count = (int *) calloc(nxz, sizeof(int));
+  assert(count);
 
-  if (!count) {
-    printf("No memory availale in radialft()\n");
-    exit(-1);
-  }
-
-  for (kin=0; kin<nz; kin++) {
-    kz = kin;
+  float dkx = 1.f / (nx * dr);
+  float dky = 1.f / (ny * dr);
+  float maxK = .5f / dr; //! maximum lateral frequency afforded by the sampling rate
+  float dkr = 1.f/ (nr_avg * dr);
+#pragma omp parallel for
+  for (auto kin=0; kin<nz; kin++) {
+    int kz = kin;
     if (kin>kzcent) kz -= nz;
-    for (iin=0; iin<ny; iin++) {
-      ky = iin;
+    for (auto iin=0; iin<ny; iin++) {
+      int ky = iin;
       if (iin>kycent) ky -= ny;
-      for (jin=0; jin<kxcent+1; jin++) {
-        kx = jin;
-        rdist = sqrt(kx*kx+ky*ky);
-        if (rint(rdist) < nx/2+1) {
-          indin = kin*nxy+iin*(nx/2+1)+jin;
-          /* indout = floor(rdist)*nz+kin; /\* rint(rdist*nz)+kin caused trouble *\/  */
-          /* the above line has been used up till 2010, which is probably less right compared to the following line: */
-          indout = rint(rdist)*nz+kin;
+      float ky_f = ky * dky;
+      for (auto jin=0; jin<kxcent+1; jin++) {
+        auto kx = jin;
+        float kx_f = kx * dkx;
+        float rdist_f = sqrt(kx_f*kx_f + ky_f*ky_f);
+        if (rdist_f < maxK) {
+          auto indin = kin*nxy + iin*(nx/2+1)+ jin;
+          unsigned indr = rint(rdist_f / dkr);
+          assert (indr < nr_avg/2 + 1); 
+          unsigned indout = indr * nz + kin;
           avg_output[indout] += band[indin];
           count[indout] ++;
         }
@@ -873,22 +891,20 @@ void radialft(std::complex<float> *band, int nx, int ny, int nz, std::complex<fl
     }
   }
   
-  for (indout=0; indout<nxz; indout++) {
+#pragma omp parallel for
+  for (auto indout=0; indout<nxz; indout++) {
     if (count[indout]>0)
       avg_output[indout] /= count[indout];
   }
 
-/* Then complete the rotational averaging and scaling*/
-  for (kx=0; kx<nx/2+1; kx++) {
-    indout = kx*nz+0;
-    avg_output[indout] = avg_output[indout].real();
-    for (kz=1; kz<=nz/2; kz++) {
-      indout = kx*nz+kz;
-      indout_conj = kx*nz + (nz-kz);
-      /* avg_output[indout].re = (avg_output[indout].re + avg_output[indout_conj].re)/2; */
-      /* avg_output[indout].im = (avg_output[indout].im - avg_output[indout_conj].im)/2; */
-      /* avg_output[indout_conj] = avg_output[indout]; */
-      /* avg_output[indout_conj].im *= -1; */
+//! Then force real value at the origin and Hermitian symmetry everywhere else
+#pragma omp parallel for
+  for (auto kx=0; kx<nx/2+1; kx++) {
+    auto indout0 = kx*nz+0;
+    avg_output[indout0] = avg_output[indout0].real();  //! Force real value at the origin 
+    for (auto kz=1; kz<=nz/2; kz++) {
+      auto indout = indout0 + kz;
+      auto indout_conj = indout0 + (nz-kz);
       avg_output[indout] = (avg_output[indout] + conj(avg_output[indout_conj]))/2.f;
       avg_output[indout_conj] = conj(avg_output[indout]);
     }
@@ -896,36 +912,40 @@ void radialft(std::complex<float> *band, int nx, int ny, int nz, std::complex<fl
   free(count);
 }
 
-void cleanup(std::complex<float> *otfkxkz, int order, int nx, int nz, float dkr, float dkz, float linespacing,
-	     int lamdanm, int icleanup, int ileave1_1, int ileave1_2, int ileave2, int twolens, float NA, float NIMM)
+void cleanup(std::complex<float> *otfkxkz, int order, int nr, int nz, float dr, float dz,
+             float linespacing, unsigned lamdanm, int icleanup, int ileave1_1, int ileave1_2,
+             int ileave2, int twolens, float NA, float NIMM)
 {
-  int ix, iz, kzstart, kzend, jotfshape;
-  float lamda, sinalpha, cosalpha, kr, krmax, beta, kzedge, k0mag;
-
   printf("In cleanup()\n");
-  lamda = lamdanm * 0.001;
-  sinalpha = NA/NIMM;
-  cosalpha = cos(asin(sinalpha));
-  krmax = 2*NA/lamda;
-  k0mag = 1.0/linespacing;
+  float lamda = lamdanm * 0.001;
+  float sinalpha = NA / NIMM;
+  float cosalpha = cos(asin(sinalpha));
+  float krmax = 2*NA/lamda;
+  float k0mag = 1.0/linespacing;
+
+  float dkr = 1./(nr * dr);
+  float dkz = 1./(nz * dz);
 
   if (!twolens) {
-    for (ix=0; ix<icleanup; ix++) {
-      kr = ix * dkr;
+#pragma omp parallel for
+    for (auto ix=0; ix<icleanup; ix++) {
+      int kzstart, kzend, jotfshape;
+      auto kr = ix * dkr;
       if ( kr <= krmax ) {
-		beta = asin( ( NA - kr*lamda ) /NIMM );
-		kzedge = (NIMM/lamda) * ( cos(beta) - cosalpha );
-		if(order==0) {
-		  kzstart = rint((kzedge/dkz) + 1);
-		  kzend = nz - kzstart;
-		  for (iz=kzstart; iz<=kzend; iz++)
-			otfkxkz[ix*nz+iz] = 0;
-		}
-		else if (order==1) {
-		  jotfshape = rint((kzedge/dkz) + 0.999);
-		  kzend = ileave1_1 - jotfshape;
+        auto beta = asin((NA - kr*lamda) / NIMM);
+        auto kzedge = (NIMM/lamda) * ( cos(beta) - cosalpha );
+
+        if(order==0) {
+          kzstart = rint((kzedge/dkz) + 1);
+          kzend = nz - kzstart;
+          for (auto iz=kzstart; iz<=kzend; iz++)
+            otfkxkz[ix*nz+iz] = 0;
+        }
+        else if (order==1) {
+          jotfshape = rint((kzedge/dkz) + 0.999);
+          kzend = ileave1_1 - jotfshape;
           if (kzend>=0)
-            for (iz=0; iz<=kzend; iz++) {
+            for (auto iz=0; iz<=kzend; iz++) {
               if(iz==0)
                 otfkxkz[ix*nz] = 0;
               else {
@@ -933,57 +953,59 @@ void cleanup(std::complex<float> *otfkxkz, int order, int nx, int nz, float dkr,
                 otfkxkz[ix*nz+nz-iz] = 0;
               }
             }
-		  kzstart = ileave1_2 + jotfshape;
-          for (iz=kzstart+1; iz<nz/2+1; iz++) {
+          kzstart = ileave1_2 + jotfshape;
+          for (auto iz=kzstart+1; iz<nz/2+1; iz++) {
             otfkxkz[ix*nz+iz] = 0;
             otfkxkz[ix*nz+nz-iz] = 0;
-		  }
-		}
-		else { /* order == 2 */
-		  jotfshape = rint((kzedge/dkz) + 0.999);
-		  kzstart = ileave2 + jotfshape;
-		  for (iz=kzstart; iz<nz/2+1; iz++) {
+          }
+        }
+        else { /* order == 2 */
+          jotfshape = rint((kzedge/dkz) + 0.999);
+          kzstart = ileave2 + jotfshape;
+          for (auto iz=kzstart; iz<nz/2+1; iz++) {
             otfkxkz[ix*nz+iz] = 0;
             otfkxkz[ix*nz+nz-iz] = 0;
-		  }
-		}
-      }
+          }
+        }
+     }
       else {   /* outside of lateral resolution limit */
-		for (iz=0; iz<nz; iz++)
-		  otfkxkz[ix*nz+iz] = 0;
+        for (auto iz=0; iz<nz; iz++)
+          otfkxkz[ix*nz+iz] = 0;
       }
     }
   }
   else {
-    float lambdaem, lambdaexc, two_over_lambdaem, two_over_lambdaexc, beta;
-    int center_of_arc;
 
-    lambdaem = lamda/NIMM;
-    lambdaexc = 0.88* lambdaem;;  /* 0.88 approximates a typical lambdaexc/lambdaem  */
-    two_over_lambdaem = 2/lambdaem;
-    two_over_lambdaexc = 2/lambdaexc;
-    // alpha = asin(NA/NIMM);  /* aperture angle of objectives */
-    beta = asin(k0mag/two_over_lambdaexc);   /* angle of side illumination beams */
+    float lambdaem = lamda/NIMM;
+    float lambdaexc = 0.88* lambdaem;;  // 0.88 approximates a typical lambdaexc/lambdaem
+    float two_over_lambdaem = 2/lambdaem;
+    float two_over_lambdaexc = 2/lambdaexc;
+    // alpha = asin(NA/NIMM);  //! aperture angle of objectives
+    float beta = asin(k0mag/two_over_lambdaexc);  //! angle of side illumination beams
+
+    int center_of_arc;
+    if (order==0) 
+      center_of_arc = ceil(two_over_lambdaexc/dkz) + 3;
+    else if (order == 1) {
+      center_of_arc = ceil(1. / lambdaexc * (cos(beta) + 1) / dkz) + 3;
+    }
+    else { // order == 2
+      center_of_arc = ceil(two_over_lambdaexc * cos(beta) / dkz) + 3;
+    }
     
-    for (ix=0; ix<icleanup; ix++) {
-      kr = ix * dkr;
+#pragma omp parallel for
+    for (auto ix=0; ix<icleanup; ix++) {
+      int kzstart, kzend;
+      auto kr = ix * dkr;
       if ( kr <= krmax ) {
-		if (order==0) 
-		  center_of_arc = ceil(two_over_lambdaexc/dkz)+3;
-		else if (order == 1) {
-		  center_of_arc = ceil((1/lambdaexc)*(cos(beta) + 1)/dkz)+3;
-		}
-		else { /* order == 2 */
-		  center_of_arc = ceil(two_over_lambdaexc * cos(beta)/dkz)+3;
-		}
-		kzstart = ceil(center_of_arc + sqrt(two_over_lambdaem * two_over_lambdaem - kr * kr)/dkz);
-		kzend = nz - kzstart;
-		for (iz=kzstart; iz<=kzend; iz++)
-		  otfkxkz[ix*nz+iz] = 0;
+        kzstart = ceil(center_of_arc + sqrt(two_over_lambdaem * two_over_lambdaem - kr * kr)/dkz);
+        kzend = nz - kzstart;
+        for (auto iz=kzstart; iz<=kzend; iz++)
+          otfkxkz[ix*nz+iz] = 0;
       }
       else 
-		for (iz=0; iz<nz; iz++)
-		  otfkxkz[ix*nz+iz] = 0;
+        for (auto iz=0; iz<nz; iz++)
+          otfkxkz[ix*nz+iz] = 0;
     }
   }
 }
@@ -1007,7 +1029,7 @@ void cleanup_I2M(std::complex<float> *otfkxkz, int nx, int nz, float dkr, float 
       kzstart = ceil(sqrt(two_over_lambdaem * two_over_lambdaem - kr * kr)/dkz)+1;
       kzend = nz - kzstart;
       for (iz=kzstart; iz<=kzend; iz++)
-		otfkxkz[ix*nz+iz] = 0;
+        otfkxkz[ix*nz+iz] = 0;
 
       /* Then, clean up stuff in-between center and side band */
       beta = asin( ( NA - kr*lamdaem ) /NIMM );
@@ -1089,7 +1111,7 @@ void outputdata(int ostream_no, IW_MRC_HEADER *header,  std::vector<std::complex
     else {
       IMWrSec(ostream_no, bands[2*i-1]);
       if (five_bands)
-		IMWrSec(ostream_no, bands[2*i]);
+        IMWrSec(ostream_no, bands[2*i]);
     }
   IMWrHdr(ostream_no, header->label, 0, header->amin, header->amax, header->amean);
   IMClose(ostream_no);
@@ -1116,9 +1138,9 @@ void modify(std::complex<float> *otfkxkz, int nx, int nz, int *ifixz, int ifixr,
   int kz, kx, ind0, ind1, ind2;
 
   if (ifixz[0])
-	for (kz=0; kz<nz; kz++)
-	  if (kz !=0 || order > 0)
-		otfkxkz[kz] = otfkxkz[nz+kz];    /* replace the kx=0 line with kx=1 line */
+    for (kz=0; kz<nz; kz++)
+      if (kz !=0 || order > 0)
+        otfkxkz[kz] = otfkxkz[nz+kz];    /* replace the kx=0 line with kx=1 line */
   
   if (ifixr) {
     for (kx=ifixr; kx<nx/2+1; kx++) {
@@ -1144,11 +1166,11 @@ void fixorigin(std::complex<float> *otfkxkz, int nx, int nz, int kx1, int kx2)
   for (i=0; i<=kx2; i++) { // note "<="
     sum[i] = 0;
 
-	if (i == 0)
-	  sum[i] = otfkxkz[0].real();  /* don't want to add up garbages on kz axis */
-	else
-	  for (j=0; j<nz; j++)
-		sum[i] += otfkxkz[i*nz+j].real(); /* imaginary parts will cancel each other because of symmetry */
+    if (i == 0)
+      sum[i] = otfkxkz[0].real();  /* don't want to add up garbages on kz axis */
+    else
+      for (j=0; j<nz; j++)
+        sum[i] += otfkxkz[i*nz+j].real(); /* imaginary parts will cancel each other because of symmetry */
 
     if (i>=kx1) {
       totsum += sum[i];
@@ -1177,7 +1199,7 @@ void rescale(std::complex<float> *otfkxkz, int order, int nx, int nz, float *sca
     // for (ind=0; ind<nxz; ind++) {
     //   mag = std::abs(otfkxkz[ind]);
     //   if (mag > valmax)
-	// valmax = mag;
+    // valmax = mag;
     // }
     // *scalefactor = 1/valmax;
     *scalefactor = 1/otfkxkz[0].real();
@@ -1271,15 +1293,13 @@ void Usage()
 
 int getinteger(char * buffer, int * ret)
 {
-   int i, len;
-
-   len = strlen(buffer);
-   for (i=0; i<len; i++) 
+   auto len = strlen(buffer);
+   for (auto i=0; i<len; i++) 
       if (!isdigit(buffer[i])) {
-	 if (i==0 && buffer[i] !='+' && buffer[i] !='-' )
-	    return 0;
-	 else if (i!=0)
-	    return 0;
+     if (i==0 && buffer[i] !='+' && buffer[i] !='-' )
+        return 0;
+     else if (i!=0)
+        return 0;
       }
    sscanf(buffer, "%d", ret);
    return 1;
@@ -1287,29 +1307,26 @@ int getinteger(char * buffer, int * ret)
 
 int getintegers(char *buffer[], int *ret, int num)
 {
-   int i;
-
-   for (i=0; i<num; i++) {
+   for (auto i=0; i<num; i++) {
       if (!getinteger(buffer[i], ret+i)) 
-	 return 0;
+     return 0;
    }
    return 1;
 }
 
 int getfloat(char *buffer, float *ret)
 {
-   int i, len;
-   int dotcount = 0;
+   unsigned dotcount = 0;
 
-   len = strlen(buffer);
-   for (i=0; i<len; i++)
+   auto len = strlen(buffer);
+   for (auto i=0; i<len; i++)
       if (!isdigit(buffer[i])) {
-	 if (i==0 && buffer[i] !='+' && buffer[i] !='-' && buffer[i]!='.' )
-	    return 0;
-	 else if (i!=0 && buffer[i] != '.')
-	    return 0;
-	 if (buffer[i] == '.')
-	    dotcount ++;
+     if (i==0 && buffer[i] !='+' && buffer[i] !='-' && buffer[i]!='.' )
+        return 0;
+     else if (i!=0 && buffer[i] != '.')
+        return 0;
+     if (buffer[i] == '.')
+        dotcount ++;
       }
    if (dotcount > 1) return 0;
    sscanf(buffer, "%f", ret);
@@ -1323,148 +1340,152 @@ int getfloats(char *buffer[], float *ret, int num)
 
    for (i=0; i<num; i++) {
       if (!getfloat(buffer[i], ret+i)) 
-	 return 0;
+     return 0;
    }
    return 1;
 }
 
-int commandline(int argc, char *argv[], int * twolens, int *rescale, float *beaddiam, float *k0angle, float *linespacing, int *five_bands, int *nphases, int *interpkr, int *leavekz, int *do_compen, int *I2M_inc,  std::string &I2Mfiles, float * background, int *bBgInExtHdr, int *order0gen, std::string &order0files, int *conjugate, float *na, float *nimm, int * ifixz, int *ifixr, int *wavelength, float *dr, float *dz, int *bCoherentBSIM, int *bForcedPIshift, std::string &ifiles, std::string &ofiles, int * ifilein, int *ofilein) {
+int commandline(int argc, char *argv[], int * twolens, int *rescale, float *beaddiam, float *k0angle, float *linespacing, int *five_bands, int *nphases, int *interpkr, int *leavekz, int *do_compen, int *I2M_inc,  std::string &I2Mfiles, float * background, int *bBgInExtHdr, int *order0gen, std::string &order0files, int *conjugate, float *na, float *nimm, int * ifixz, int *ifixr, unsigned *wavelength, float *dr, float *dz, int *bCoherentBSIM, int *bForcedPIshift, std::string &ifiles, std::string &ofiles, int * ifilein, int *ofilein) {
    int ncomm=1;
 
 
    while (ncomm < argc) {
-	 if (strcmp(argv[ncomm], "-angle") == 0) {
-	   if (!getfloat(argv[ncomm+1], k0angle)) {
-		 printf("Invalid input for switch -angle\n");
-		 return 0;
-	   }
-	   ncomm +=2;
-	 }
-	 else if (strcmp(argv[ncomm], "-ls") == 0) {
-	   if (!getfloat(argv[ncomm+1], linespacing)) {
-		 printf("Invalid input for switch -ls\n");
-		 return 0;
-	   }
-	   ncomm +=2;
-	 }
-	 else if (strcmp(argv[ncomm], "-fixorigin") == 0) {
-	   if (!getintegers(argv+ncomm+1, interpkr, 2)) {
-		 printf("Invalid input for switch -fixorigin\n");
-		 return 0;
-	   }
-	   ncomm +=3;
-	 }
-	 else if (strcmp(argv[ncomm], "-leavekz") == 0) {
-	   if (!getintegers(argv+ncomm+1, leavekz, 3)) {
-		 printf("Invalid input for switch -leavekz\n");
-		 return 0;
-	   }
-	   ncomm +=4;
-	 }
-	 else if (strcmp(argv[ncomm], "-2lenses") == 0) {
-	   *twolens = 1;
-	   ncomm ++;
-	 }
-	 else if (strcmp(argv[ncomm], "-rescale") == 0) {
-	   *rescale = 1;
-	   ncomm ++;
-	 }
-	 else if (strcmp(argv[ncomm], "-5bands") == 0) {
-	   *five_bands = 1;
-	   ncomm ++;
-	 }
-	 else if (strcmp(argv[ncomm], "-conj") == 0) {
-	   *conjugate = 1;
-	   ncomm ++;
-	 }
-	 else if (strcmp(argv[ncomm], "-nocompen") == 0) {
-	   *do_compen = 0;
-	   ncomm ++;
-	 }
-	 else if (strcmp(argv[ncomm], "-I2M") == 0) {
-	   *I2M_inc = 1;
-	   I2Mfiles = argv[ncomm+1];
-	   ncomm +=2;
-	 }
-	 else if (strcmp(argv[ncomm], "-gen_order0") == 0) {
-	   *order0gen = 1;
-	   order0files = argv[ncomm+1];
-	   ncomm +=2;
-	 }
-	 else if (strcmp(argv[ncomm], "-nphases") == 0) {
-	   if (!getinteger(argv[ncomm+1], nphases)) {
-		 printf("Invalid input for switch -nphases\n");
-		 return 0;
-	   }
-	   ncomm +=2;
-	 }
-	 else if (strcmp(argv[ncomm], "-beaddiam") == 0) {
-	   if (!getfloat(argv[ncomm+1], beaddiam)) {
-		 printf("Invalid input for switch -beaddiam\n");
-		 return 0;
-	   }
-	   ncomm += 2;
-	 }
-	 else if (strcmp(argv[ncomm], "-background") == 0) {
-	   if (!getfloat(argv[ncomm+1], background)) {
-		 printf("Invalid input for switch -background\n");
-		 return 0;
-	   }
-	   ncomm += 2;
-	 }
+     if (strcmp(argv[ncomm], "-angle") == 0) {
+       if (!getfloat(argv[ncomm+1], k0angle)) {
+         printf("Invalid input for switch -angle\n");
+         return 0;
+       }
+       ncomm +=2;
+     }
+     else if (strcmp(argv[ncomm], "-ls") == 0) {
+       if (!getfloat(argv[ncomm+1], linespacing)) {
+         printf("Invalid input for switch -ls\n");
+         return 0;
+       }
+       ncomm +=2;
+     }
+     else if (strcmp(argv[ncomm], "-fixorigin") == 0) {
+       if (!getintegers(argv+ncomm+1, interpkr, 2)) {
+         printf("Invalid input for switch -fixorigin\n");
+         return 0;
+       }
+       ncomm +=3;
+     }
+     else if (strcmp(argv[ncomm], "-leavekz") == 0) {
+       if (!getintegers(argv+ncomm+1, leavekz, 3)) {
+         printf("Invalid input for switch -leavekz\n");
+         return 0;
+       }
+       ncomm +=4;
+     }
+     else if (strcmp(argv[ncomm], "-2lenses") == 0) {
+       *twolens = 1;
+       ncomm ++;
+     }
+     else if (strcmp(argv[ncomm], "-rescale") == 0) {
+       *rescale = 1;
+       ncomm ++;
+     }
+     else if (strcmp(argv[ncomm], "-5bands") == 0) {
+       *five_bands = 1;
+       ncomm ++;
+     }
+     else if (strcmp(argv[ncomm], "-conj") == 0) {
+       *conjugate = 1;
+       ncomm ++;
+     }
+     else if (strcmp(argv[ncomm], "-nocompen") == 0) {
+       *do_compen = 0;
+       ncomm ++;
+     }
+     else if (strcmp(argv[ncomm], "-I2M") == 0) {
+       *I2M_inc = 1;
+       I2Mfiles = argv[ncomm+1];
+       ncomm +=2;
+     }
+     else if (strcmp(argv[ncomm], "-gen_order0") == 0) {
+       *order0gen = 1;
+       order0files = argv[ncomm+1];
+       ncomm +=2;
+     }
+     else if (strcmp(argv[ncomm], "-nphases") == 0) {
+       if (!getinteger(argv[ncomm+1], nphases)) {
+         printf("Invalid input for switch -nphases\n");
+         return 0;
+       }
+       ncomm +=2;
+     }
+     else if (strcmp(argv[ncomm], "-beaddiam") == 0) {
+       if (!getfloat(argv[ncomm+1], beaddiam)) {
+         printf("Invalid input for switch -beaddiam\n");
+         return 0;
+       }
+       ncomm += 2;
+     }
+     else if (strcmp(argv[ncomm], "-background") == 0) {
+       if (!getfloat(argv[ncomm+1], background)) {
+         printf("Invalid input for switch -background\n");
+         return 0;
+       }
+       ncomm += 2;
+     }
     else if (strcmp(argv[ncomm], "-bgInExtHdr") == 0) {
       *bBgInExtHdr = 1;
       ncomm += 1;
     }
-	 else if (strcmp(argv[ncomm], "-na") == 0) {
-	   if (!getfloat(argv[ncomm+1], na)) {
-		 printf("Invalid input for switch -na\n");
-		 return 0;
-	   }
-	   ncomm += 2;
-	 }
-	 else if (strcmp(argv[ncomm], "-nimm") == 0) {
-	   if (!getfloat(argv[ncomm+1], nimm)) {
-		 printf("Invalid input for switch -nimm\n");
-		 return 0;
-	   }
-	   ncomm += 2;
-	 }
-	 else if (strcmp(argv[ncomm], "-ifixkz") == 0) {
-	   if (!getinteger(argv[ncomm+1], ifixz)) {
-		 printf("Invalid input for switch -ifixkz\n");
-		 return 0;
-	   }
-	   ncomm += 2;
-	 }
-	 else if (strcmp(argv[ncomm], "-ifixkr") == 0) {
-	   if (!getinteger(argv[ncomm+1], ifixr)) {
-		 printf("Invalid input for switch -ifixkr\n");
-		 return 0;
-	   }
-	   ncomm += 2;
-	 }
-	 else if (strcmp(argv[ncomm], "-wavelength") == 0) {
-	   if (!getinteger(argv[ncomm+1], wavelength)) {
-		 printf("Invalid input for switch -wavelength\n");
-		 return 0;
-	   }
-	   ncomm += 2;
-	 }
-	 else if (strcmp(argv[ncomm], "-xyres") == 0) {
-	   if (!getfloat(argv[ncomm+1], dr)) {
-		 printf("Invalid input for switch -xyres\n");
-		 return 0;
-	   }
-	   ncomm += 2;
-	 }
-	 else if (strcmp(argv[ncomm], "-zres") == 0) {
-	   if (!getfloat(argv[ncomm+1], dz)) {
-		 printf("Invalid input for switch -zres\n");
-		 return 0;
-	   }
-	   ncomm += 2;
-	 }
+     else if (strcmp(argv[ncomm], "-na") == 0) {
+       if (!getfloat(argv[ncomm+1], na)) {
+         printf("Invalid input for switch -na\n");
+         return 0;
+       }
+       ncomm += 2;
+     }
+     else if (strcmp(argv[ncomm], "-nimm") == 0) {
+       if (!getfloat(argv[ncomm+1], nimm)) {
+         printf("Invalid input for switch -nimm\n");
+         return 0;
+       }
+       ncomm += 2;
+     }
+     else if (strcmp(argv[ncomm], "-ifixkz") == 0) {
+       if (!getinteger(argv[ncomm+1], ifixz)) {
+         printf("Invalid input for switch -ifixkz\n");
+         return 0;
+       }
+       ncomm += 2;
+     }
+     else if (strcmp(argv[ncomm], "-ifixkr") == 0) {
+       if (!getinteger(argv[ncomm+1], ifixr)) {
+         printf("Invalid input for switch -ifixkr\n");
+         return 0;
+       }
+       ncomm += 2;
+     }
+     else if (strcmp(argv[ncomm], "-wavelength") == 0) {
+       // if (!getinteger(argv[ncomm+1], wavelength)) {
+       try {
+         * wavelength = std::stoi(argv[ncomm]);
+         ncomm += 2;
+       }
+       catch (std::exception &e) {
+         std::cout << "Invalid input for switch -wavelength: " << e.what() << std::endl;
+         return 0;
+       }
+     }
+     else if (strcmp(argv[ncomm], "-xyres") == 0) {
+       if (!getfloat(argv[ncomm+1], dr)) {
+         printf("Invalid input for switch -xyres\n");
+         return 0;
+       }
+       ncomm += 2;
+     }
+     else if (strcmp(argv[ncomm], "-zres") == 0) {
+       if (!getfloat(argv[ncomm+1], dz)) {
+         printf("Invalid input for switch -zres\n");
+         return 0;
+       }
+       ncomm += 2;
+     }
      else if (strcmp(argv[ncomm], "-bessel") == 0) {
        *bCoherentBSIM = 1;
        ncomm += 1;
@@ -1473,26 +1494,26 @@ int commandline(int argc, char *argv[], int * twolens, int *rescale, float *bead
       *bForcedPIshift = 1;
       ncomm ++;
     }
-	 else if (strcmp(argv[ncomm], "-help") == 0 || strcmp(argv[ncomm], "-h") == 0) {
-	   Usage();
-	   return 0;
-	 }
-	 else if (ncomm < 3) {
-	   if (ncomm==1) {
-		 ifiles = argv[ncomm];
-		 *ifilein = 1;
-	   }
-	   else if (ncomm==2) {
-		 ofiles = argv[ncomm];
-		 *ofilein = 1;
-	   }
-	   ncomm ++;
-	 }
-	 else {
-	   printf("Invalid command line option %s\n", argv[ncomm]);
-	   Usage();
-	   return 0;
-	 }
+     else if (strcmp(argv[ncomm], "-help") == 0 || strcmp(argv[ncomm], "-h") == 0) {
+       Usage();
+       return 0;
+     }
+     else if (ncomm < 3) {
+       if (ncomm==1) {
+         ifiles = argv[ncomm];
+         *ifilein = 1;
+       }
+       else if (ncomm==2) {
+         ofiles = argv[ncomm];
+         *ofilein = 1;
+       }
+       ncomm ++;
+     }
+     else {
+       printf("Invalid command line option %s\n", argv[ncomm]);
+       Usage();
+       return 0;
+     }
    }
 
    return 1;
@@ -1503,7 +1524,7 @@ void mrc_file_write(float *buffer, int nx, int ny, int nz, float rlen, float zle
   int ostream_no=19;
   IW_MRC_HEADER header;
   int dimx, dimy, dimz, nxy, i;
-  float amin=0, amax=1, amean=0.1; /* make-shift way of doing this */
+  float amin=0.f, amax=1.f, amean=0.1f; // to-do
 
   printf("Writing output file: %s\n", files);
 

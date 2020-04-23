@@ -1019,8 +1019,7 @@ void saveIntermediateDataForDebugging(const ReconParams& params)
 void dumpBands(std::vector<GPUBuffer>* bands, int nx, int ny, int nz0)
 {
   int n = 0;
-  for (std::vector<GPUBuffer>::iterator i = bands->begin();
-      i != bands->end(); ++i) {
+  for (auto i = bands->begin(); i != bands->end(); ++i) {
     std::stringstream s;
 
     s << "band" << n << ".tif";
@@ -1240,8 +1239,10 @@ int SIM_Reconstructor::setupProgramOptions()
 
     ("xyres", po::value<float>(&m_imgParams.dy)->default_value(0.1),
      "x-y pixel size (only used for TIFF files)")
-    ("zres", po::value<float>(&m_imgParams.dz)->default_value(0.144),
+    ("zres", po::value<float>(&m_imgParams.dz)->default_value(0.2),
      "z pixel size (only used for TIFF files)")
+    ("zresPSF", po::value<float>(&m_myParams.dzPSF)->default_value(0.15),
+     "z pixel size used in PSF TIFF files)")
     ("wavelength", po::value<short>(&m_imgParams.wave[0])->default_value(530),
      "emission wavelength (only used for TIFF files)")
     ("writeTitle", po::value<int>(&m_myParams.bWriteTitle)->implicit_value(true),
@@ -1305,10 +1306,8 @@ int SIM_Reconstructor::setParams()
 
   if (m_varsmap.count("k0angles")) {
     boost::char_separator<char> sep(",");
-    boost::tokenizer<boost::char_separator<char> > tokens(m_varsmap["k0angles"].as< std::string >(), sep);
-    for ( boost::tokenizer<boost::char_separator<char> >::iterator it = tokens.begin();
-          it != tokens.end();
-          ++it)
+    boost::tokenizer<boost::char_separator<char>> tokens(m_varsmap["k0angles"].as< std::string >(), sep);
+    for ( auto it = tokens.begin(); it != tokens.end(); ++it)
         m_myParams.k0angles.push_back(strtod(it->c_str(), NULL));
 //    std::cout << m_myParams.k0angles << std::endl;
   }
@@ -1617,10 +1616,8 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
     } // end for (z)
 
 #ifndef NDEBUG
-    for (std::vector<GPUBuffer>::iterator i = rawImages->begin();
-         i != rawImages->end(); ++i) {
+    for (auto i = rawImages->begin(); i != rawImages->end(); ++i)
       assert(i->hasNaNs() == false);
-    }
 #endif
     //! 
     if (fabs(m_myParams.deskewAngle) > 0. && m_myParams.bNoRecon) {
@@ -1671,14 +1668,14 @@ void SIM_Reconstructor::determine_otf_dimensions()
         m_myParams.nzotf = nxotf;
         m_myParams.nxotf = nyotf;
         m_myParams.nyotf = 1;
-        m_myParams.dkzotf = 1/(m_imgParams.dz * m_myParams.nzotf);
+        m_myParams.dkzotf = 1/(m_myParams.dzPSF * m_myParams.nzotf);
         m_myParams.dkrotf = 1/(m_imgParams.dx * (m_myParams.nxotf-1)*2);
       }
       else {
         m_myParams.nzotf = nzotf / m_myParams.norders; // each order has a 3D OTF stack (non-negative kx half of Fourier space)
         m_myParams.nxotf = nxotf;
         m_myParams.nyotf = nyotf;
-        m_myParams.dkzotf = 1/(m_imgParams.dz * m_myParams.nzotf);
+        m_myParams.dkzotf = 1/(m_myParams.dzPSF * m_myParams.nzotf);
         m_myParams.dkrotf = 1/(m_imgParams.dx * m_myParams.nxotf);
       }
     }
@@ -1806,12 +1803,10 @@ int SIM_Reconstructor::loadOTFs()
   }
 
 #ifndef NDEBUG
-  for (int dir = 0; dir < nDirsOTF; dir++) {
-    for (std::vector<GPUBuffer>::iterator i = m_reconData.otf[dir].begin();
-         i != m_reconData.otf[dir].end(); ++i) {
+  for (int dir = 0; dir < nDirsOTF; dir++)
+    for (auto i = m_reconData.otf[dir].begin();
+         i != m_reconData.otf[dir].end(); ++i)
       assert(i->hasNaNs() == false);
-    }
-  }
 #endif
   return 1;
 }
@@ -1843,6 +1838,8 @@ void SIM_Reconstructor::writeResult(int it, int iw)
   }
 
   else {
+    float maxval = -FLT_MAX;
+    float minval = FLT_MAX;
 
     float* ptr = ((float*)outbufferHost.getPtr()) +
       (int)(m_zoffset * m_myParams.z_zoom * m_imgParams.nx * m_imgParams.ny *
