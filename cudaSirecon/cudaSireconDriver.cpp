@@ -20,8 +20,8 @@ int main(int argc, char **argv)
       for (int iw = 0; iw < 1; ++iw) {
         myreconstructor.loadAndRescaleImage(it, iw);
         myreconstructor.setCurTimeIdx(it);
-        myreconstructor.processOneVolume();
-        myreconstructor.writeResult(it, iw);
+        if (myreconstructor.processOneVolume())
+          myreconstructor.writeResult(it, iw);
       }
     }
 

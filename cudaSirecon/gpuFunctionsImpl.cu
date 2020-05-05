@@ -56,7 +56,7 @@ __global__ void apodize_x_kernel(int napodize, int nx, int ny,
   if (k < nx) {
     float diff = (image[(ny - 1) * (nx + 2) + k] - image[k]) / 2.0;
     for (int l = 0; l < napodize; ++l) {
-      float fact = 1.0 - sin((((float)l + 0.5) / (float)napodize) *
+      float fact = 1.0 - sinf((((float)l + 0.5) / (float)napodize) *
           M_PI * 0.5);
       image[l * (nx + 2) + k] = image[l * (nx + 2) + k] + diff * fact;
       image[(ny - 1 - l) * (nx + 2) + k] = image[(ny - 1 - l) * (nx + 2) + k] -
@@ -72,7 +72,7 @@ __global__ void apodize_y_kernel(int napodize, int nx, int ny,
   if (l < ny) {
     float diff = (image[l * (nx + 2) + nx - 1] - image[l * (nx + 2)]) / 2.0;
     for (int k = 0; k < napodize; ++k) {
-      float fact = 1.0 - sin(((k + 0.5) / (float)napodize) * M_PI *
+      float fact = 1.0 - sinf(((k + 0.5) / (float)napodize) * M_PI *
           0.5);
       image[l * (nx + 2) + k] = image[l * (nx + 2) + k] + diff * fact;
       image[l * (nx + 2) + (nx - 1 - k)] =
@@ -100,8 +100,8 @@ __global__ void cosapodize_kernel(int nx, int ny, float* image)
   int k = blockDim.x * blockIdx.x + threadIdx.x;
   int l = blockDim.y * blockIdx.y + threadIdx.y;
   if (k<nx && l<ny) {
-    float xfact = sin(M_PI * ((float)k + 0.5) / nx);
-    float yfact = sin(M_PI * ((float)l + 0.5) / ny);
+    float xfact = sinf(M_PI * ((float)k + 0.5) / nx);
+    float yfact = sinf(M_PI * ((float)l + 0.5) / ny);
     image[l * (nx + 2) + k] *= xfact * yfact;
   }
 }
@@ -190,13 +190,13 @@ __global__ void rescale_kernel(float* img, int nx, int ny,
   }
 }
 
-__host__ float estimate_Wiener(const std::vector<GPUBuffer>& rawImages, int nx,
-          int ny, int z, int nphases, int rdistcutoff)
-{
-  printf("In estimate_Wiener.\n");
-  fflush(stdout);
-  return 0.0f;
-}
+// __host__ float estimate_Wiener(const std::vector<GPUBuffer>& rawImages, int nx,
+//           int ny, int z, int nphases, int rdistcutoff)
+// {
+//   printf("In estimate_Wiener.\n");
+//   fflush(stdout);
+//   return 0.0f;
+// }
 
 __host__ void fixdrift_2D(std::vector<GPUBuffer>* CrawImages,
     vector3d *driftlist, int nphases, int nx, int ny, int nz, int dir,
@@ -215,15 +215,15 @@ __host__ int calcRefImage(const std::vector<GPUBuffer>& rawImages,
   return 0;
 }
 
-__host__ void determinedrift_2D(const std::vector<GPUBuffer>& rawImages,
-      const std::vector<GPUBuffer>& offImages, int nOffImages,
-      const GPUBuffer& CrefImage,
-      vector3d *drifts, int nphases, int nx, int ny, int dir,
-      float rdistcutoff, float drift_filter_fact)
-{
-  printf("In determinedrift_2D.\n");
-  fflush(stdout);
-}
+// __host__ void determinedrift_2D(const std::vector<GPUBuffer>& rawImages,
+//       const std::vector<GPUBuffer>& offImages, int nOffImages,
+//       const GPUBuffer& CrefImage,
+//       vector3d *drifts, int nphases, int nx, int ny, int dir,
+//       float rdistcutoff, float drift_filter_fact)
+// {
+//   printf("In determinedrift_2D.\n");
+//   fflush(stdout);
+// }
 
 __host__ void separate(int nx, int ny, int nz, int direction, int nphases,
     int norders, std::vector<GPUBuffer>*rawImages, float *sepMatrix)
@@ -317,7 +317,7 @@ __host__ void fixdrift_bt_dirs(std::vector<GPUBuffer>* bands, int norders,
 
 __host__ void findk0(std::vector<GPUBuffer>* bands, GPUBuffer* overlap0,
     GPUBuffer* overlap1, int nx, int ny, int nz, int norders, vector *k0,
-    float dy, float dz, std::vector<GPUBuffer>* OTF, short wave,
+    float dxy, float dz, std::vector<GPUBuffer>* OTF, short wave,
     ReconParams * pParams)
 {
   int fitorder1;
@@ -337,7 +337,7 @@ __host__ void findk0(std::vector<GPUBuffer>* bands, GPUBuffer* overlap0,
   }
 
   makeoverlaps(bands, overlap0, overlap1, nx, ny, nz, fitorder1, fitorder2,
-      (*k0).x, (*k0).y, dy, dz, OTF, wave, pParams);
+      (*k0).x, (*k0).y, dxy, dz, OTF, wave, pParams);
 
   GPUBuffer crosscorr_c(nx * ny * sizeof(cuFloatComplex), 0);
   aTimesConjB(overlap0, overlap1, nx, ny, nz, &crosscorr_c);
@@ -345,7 +345,7 @@ __host__ void findk0(std::vector<GPUBuffer>* bands, GPUBuffer* overlap0,
   cufftHandle cufftplan;
   int err = cufftPlan2d(&cufftplan, ny, nx, CUFFT_C2C);
   if (CUFFT_SUCCESS != err) {
-	printf("cufftPlanxd failed at %s(%d)\n", __FILE__, __LINE__);
+    printf("cufftPlanxd failed at %s(%d)\n", __FILE__, __LINE__);
     printf("Error code: %d\n", err);
     fflush(stdout);
     exit(-1);
@@ -367,16 +367,20 @@ __host__ void findk0(std::vector<GPUBuffer>* bands, GPUBuffer* overlap0,
   //  std::cout << "Cross correlation:" << std::endl;
   //  intensitiesHost.dump(std::cout, nx, 0, nx * ny * sizeof(float));
 
+  float dkx = 1 / (nx*dxy);
+  float dky = 1 / (ny*dxy);
   vector old_k0 = *k0;
   findpeak((float*)intensitiesHost.getPtr(), nx, ny, k0);
+  //! k0 so far is in pixels
+  
+  if (old_k0.x/dkx < (*k0).x - nx / 2) (*k0).x -= nx;
+  if (old_k0.x/dkx > (*k0).x + nx / 2) (*k0).x += nx;
+  if (old_k0.y/dky < (*k0).y - ny / 2) (*k0).y -= ny;
+  if (old_k0.y/dky > (*k0).y + ny / 2) (*k0).y += ny;
 
-  if (old_k0.x < (*k0).x - nx / 2) (*k0).x -= nx;
-  if (old_k0.x > (*k0).x + nx / 2) (*k0).x += nx;
-  if (old_k0.y < (*k0).y - ny / 2) (*k0).y -= ny;
-  if (old_k0.y > (*k0).y + ny / 2) (*k0).y += ny;
-
-  k0->x /= fitorder2;
-  k0->y /= fitorder2; /* return k0 of the first order, no matter which fitorder2 is used */
+  // Return k0 in 1/um of the first order, no matter which fitorder2 is used
+  k0->x *= dkx / fitorder2;
+  k0->y *= dky / fitorder2; 
 }
 
 __host__ void aTimesConjB(GPUBuffer* overlap0, GPUBuffer* overlap1,
@@ -504,7 +508,7 @@ __host__ float fitparabola( float a1, float a2, float a3 )
 
 __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
     GPUBuffer* overlap0, GPUBuffer* overlap1, int nx, int ny, int nz,
-    int order1, int order2, float k0x, float k0y, float dy, float dz,
+    int order1, int order2, float k0x, float k0y, float dxy, float dz,
     std::vector<GPUBuffer>* OTF, short wave, ReconParams* params)
 {
   float order0_2_factor = 1.0f;
@@ -513,37 +517,37 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
     if (params->bBessel)
       order0_2_factor = 4.0f;
   }
-  float dkr = 1.0f / (ny * dy);
+  float dkx = 1.0f / (nx * dxy);
+  float dky = 1.0f / (ny * dxy);
   float dkz;
   if (dz > 0.0f) {
     dkz = 1.0f / (nz * dz);
   } else {
     dkz = params->dkzotf;
   }
-  float krscale = dkr / params->dkrotf;
+
   float kzscale = dkz / params->dkzotf;
-  int rdistcutoff = (int)((params->na * 2.0 / (wave / 1.0e3)) / dkr);
-  if (rdistcutoff > nx / 2) {
-    rdistcutoff = nx / 2;
-  }
-  float k0pix = sqrt(k0x * k0x + k0y * k0y);
-  float k0mag = k0pix * dkr;
+  float rdistcutoff = params->na * 2.0 / (wave * 0.001);
+  if (rdistcutoff > 1./(2.*dxy) ) rdistcutoff = 1. / (2.*dxy);
+
+  //! k0 magnitude (of the lowest order) in 1/micron
+  float k0mag = sqrt(k0x * k0x + k0y * k0y);
   float lambdaem = (wave / params->nimm) / 1.0e3;
   float lambdaexc = 0.88 * lambdaem;
-  float alpha = asin(params->na / params->nimm);
-  float beta = asin(k0mag / (2.0 / lambdaexc));
-  float betamin = asin(k0mag / (2.0 / lambdaexc) - sin(alpha) *
+  float alpha = asinf(params->na / params->nimm);
+  float beta = asinf(k0mag / (2.0 / lambdaexc));
+  float betamin = asinf(k0mag / (2.0 / lambdaexc) - sinf(alpha) *
       SPOTRATIO);
   float zdistcutoff;
   if (!params->bTwolens && !params->bBessel) {
-    zdistcutoff = (int)ceil(((1.0 - cos(alpha)) / lambdaem) / dkz);
+    zdistcutoff = (int)ceil(((1.0 - cosf(alpha)) / lambdaem) / dkz);
   }
   else if (params->bBessel) {
     float halfangle;
     float kzExMax;
     kzExMax = 2.0 * params->BesselNA / params->BesselLambdaEx;
-    halfangle = acos(k0mag * order2 /(params->norders-1)/ kzExMax);
-    zdistcutoff = ceil((kzExMax * sin(halfangle) + (1.0 - cos(alpha)) / lambdaem) / dkz);
+    halfangle = acosf(k0mag * order2 /(params->norders-1)/ kzExMax);
+    zdistcutoff = ceil((kzExMax * sinf(halfangle) + (1.0 - cosf(alpha)) / lambdaem) / dkz);
   }
   else {
     std::cerr << "Sorry, this program doesn't handel 2-objective mode data\n";
@@ -554,7 +558,7 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
   if (zdistcutoff > nz / 2) {
     zdistcutoff = ((nz / 2 - 1) > 0) ? (nz / 2 - 1) : 0;
   }
-  printf("order2=%d, rdistcutoff=%d, zdistcutoff=%f\n", order2, rdistcutoff, zdistcutoff);
+
 
   float kx = k0x * (order2 - order1);
   float ky = k0y * (order2 - order1);
@@ -586,6 +590,8 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
         &params->bRadAvgOTF, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_nzotf,
         &params->nzotf, sizeof(int)));
+  cutilSafeCall(cudaMemcpyToSymbol(const_pParams_dkrotf, &params->dkrotf,
+        sizeof(float)));
   std::vector<cuFloatComplex*> otfPtrs;
 
   for (int i = 0; i < params->norders; ++i) {
@@ -622,6 +628,7 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
   // bands->at(order2 * 2).dump(std::cout, nx + 2, 0, 2 * (nx + 2) * sizeof(float));
   band2im = (cuFloatComplex*)bands->at(order2 * 2).getPtr();
 
+  printf("In makeoverlaps(), order1=%d, order2=%d, k0x=%f, k0y=%f, rdistcutoff=%f, zdistcutoff=%f pixels\n", order1, order2, kx/dkx, ky/dky, rdistcutoff/dky, zdistcutoff);
   // Generate the overlap arrays
   int numThreads = 128;
   dim3 threads(numThreads, 1, 1);
@@ -634,12 +641,12 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
   dim3 blocks(numBlocksX, numBlocksY, numBlocksZ);
   makeOverlaps0Kernel<<<blocks,threads>>>(
       nx, ny, nz, order1, order2, kx, ky, rdistcutoff,
-      otfcutoff, zdistcutoff, order0_2_factor, krscale, kzscale,
+      otfcutoff, zdistcutoff, order0_2_factor, dkx, dky, kzscale,
       band1im, band1re, (cuFloatComplex*)overlap0->getPtr());
   cutilSafeCall(cudaGetLastError());
   makeOverlaps1Kernel<<<blocks,threads>>>(
       nx, ny, nz, order1, order2, kx, ky, rdistcutoff,
-      otfcutoff, zdistcutoff, order0_2_factor, krscale, kzscale,
+      otfcutoff, zdistcutoff, order0_2_factor, dkx, dky, kzscale,
       band2im, band2re, (cuFloatComplex*)overlap1->getPtr());
   cutilSafeCall(cudaGetLastError());
 
@@ -648,11 +655,6 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
   assert(overlap1->hasNaNs() == false);
 #endif
 
-  //  std::cout << "Before ffts\n";
-  //  std::cout << "overlap 0:\n";
-  //  overlap0->dump(std::cout, 2 * nx, 0, 2 * nx * sizeof(float));
-  //  std::cout << "overlap 1:\n";
-  //  overlap1->dump(std::cout, 2 * nx, 0, 2 * nx * sizeof(float));
   // Do ffts
   cufftResult err;
   cufftHandle cufftplan;
@@ -695,7 +697,7 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
 __global__ void makeOverlaps0Kernel(int nx, int ny, int nz,
     int order1, int order2, float kx, float ky,
     float rdistcutoff, float otfcutoff, float zdistcutoff,
-    float order0_2_factor, float krscale, float kzscale,
+    float order0_2_factor, float dkx, float dky, float kzscale,
     cuFloatComplex *band1im, cuFloatComplex *band1re,
     cuFloatComplex *overlap0)
 {
@@ -703,27 +705,28 @@ __global__ void makeOverlaps0Kernel(int nx, int ny, int nz,
   if (j<nx) {
     int i = blockIdx.y;
     int z0 = blockIdx.z - zdistcutoff;
-    int x1 = j;
-    int y1 = i;
-    if (x1 > nx / 2) {
-      x1 -= nx;
-    }
-    if (y1 > ny / 2) {
-      y1 -= ny;
-    }
+    float x1f = j;
+    float y1f = i;
+    if (x1f > nx / 2)
+      x1f -= nx;
+    if (y1f > ny / 2)
+      y1f -= ny;
 
-    float rdist1 = sqrt((float)x1 * (float)x1 + (float)y1 * (float)y1);
+	// Convert pixels into 1/micron:
+	x1f *= dkx;
+	y1f *= dky;
+    float rdist1 = sqrt(x1f * x1f + y1f * y1f);
     if (rdist1 <= rdistcutoff) {
 
-      float x12 = x1 - kx;
-      float y12 = y1 - ky;
+      float x12 = x1f - kx;
+      float y12 = y1f - ky;
       float rdist12 = sqrt(x12 * x12 + y12 * y12);
-      float x21 = x1 + kx;
-      float y21 = y1 + ky;
+      float x21 = x1f + kx;
+      float y21 = y1f + ky;
       float rdist21 = sqrt(x21 * x21 + y21 * y21);
       if (rdist12 <= rdistcutoff || rdist21 <= rdistcutoff) { 
 
-        int iin;
+        int iin;  // coords of input arrays
         int jin;
         int conj;
         if (j <= nx / 2) {
@@ -738,11 +741,11 @@ __global__ void makeOverlaps0Kernel(int nx, int ny, int nz,
 
         if (rdist12 <= rdistcutoff) {
           if (!(z0 == 0 && const_pParams_bNoKz0)) {
-            cuFloatComplex otf1 = dev_otfinterpolateMkOvrLps(
-                                      const_otfPtrs[order1], x1, y1, krscale, z0, kzscale, 1);
+            cuFloatComplex otf1 = dev_otfinterpolate(
+                     const_otfPtrs[order1], x1f, y1f, z0, kzscale);
             if (sqrt(otf1.x * otf1.x + otf1.y * otf1.y) > otfcutoff) {
-              cuFloatComplex otf12 = dev_otfinterpolateMkOvrLps(
-                                         const_otfPtrs[order2], x12, y12, krscale, z0, kzscale, 1);
+              cuFloatComplex otf12 = dev_otfinterpolate(
+                     const_otfPtrs[order2], x12, y12, z0, kzscale);
               if (sqrt(otf12.x * otf12.x + otf12.y * otf12.y) * order0_2_factor > otfcutoff) {
                 int z;
                 if (conj) {
@@ -753,9 +756,7 @@ __global__ void makeOverlaps0Kernel(int nx, int ny, int nz,
                 z = (z + nz) % nz;
                 int indin = z * (nx / 2 + 1) * ny + iin * (nx / 2 + 1) + jin;
                 cuFloatComplex val1re = band1re[indin];
-                cuFloatComplex val1im;
-                val1im.x = 0.0f;
-                val1im.y = 0.0f;
+                cuFloatComplex val1im ={0., 0.};
                 if (order1 > 0) {
                   val1im = band1im[indin];
                 }
@@ -799,7 +800,7 @@ __global__ void makeOverlaps0Kernel(int nx, int ny, int nz,
 __global__ void makeOverlaps1Kernel(int nx, int ny, int nz,
     int order1, int order2, float kx, float ky,
     float rdistcutoff, float otfcutoff, float zdistcutoff,
-    float order0_2_factor, float krscale, float kzscale,
+	float order0_2_factor, float dkx, float dky, float kzscale,
     cuFloatComplex *band2im, cuFloatComplex *band2re,
     cuFloatComplex *overlap1)
 {
@@ -807,23 +808,26 @@ __global__ void makeOverlaps1Kernel(int nx, int ny, int nz,
   if (j<nx) {
     int i = blockIdx.y;
     int z0 = blockIdx.z - zdistcutoff;
-    int x1 = j;
-    int y1 = i;
-    if (x1 > nx / 2) {
-      x1 -= nx;
+    float x1f = j;
+    float y1f = i;
+    if (x1f > nx / 2) {
+      x1f -= nx;
     }
-    if (y1 > ny / 2) {
-      y1 -= ny;
+    if (y1f > ny / 2) {
+      y1f -= ny;
     }
 
-    float rdist1 = sqrt((float)x1 * (float)x1 + (float)y1 * (float)y1);
+	// Convert pixels into 1/micron:
+	x1f *= dkx;
+	y1f *= dky;
+    float rdist1 = sqrt(x1f * x1f + y1f * y1f);
     if (rdist1 < rdistcutoff) {
 
-      float x12 = x1 - kx;
-      float y12 = y1 - ky;
+      float x12 = x1f - kx;
+      float y12 = y1f - ky;
       float rdist12 = sqrt(x12 * x12 + y12 * y12);
-      float x21 = x1 + kx;
-      float y21 = y1 + ky;
+      float x21 = x1f + kx;
+      float y21 = y1f + ky;
       float rdist21 = sqrt(x21 * x21 + y21 * y21);
       if (rdist12 <= rdistcutoff || rdist21 <= rdistcutoff) {
 
@@ -842,11 +846,11 @@ __global__ void makeOverlaps1Kernel(int nx, int ny, int nz,
 
         if (rdist21 <= rdistcutoff) {
           if (!(z0 == 0 && const_pParams_bNoKz0)) {
-            cuFloatComplex otf2 = dev_otfinterpolateMkOvrLps(
-                                       const_otfPtrs[order2], x1, y1, krscale, z0, kzscale, 1);
+            cuFloatComplex otf2 = dev_otfinterpolate(
+                             const_otfPtrs[order2], x1f, y1f, z0, kzscale);
             if (sqrt(otf2.x * otf2.x + otf2.y * otf2.y) * order0_2_factor > otfcutoff) {
-              cuFloatComplex otf21 = dev_otfinterpolateMkOvrLps(
-                                          const_otfPtrs[order1], x21, y21, krscale, z0, kzscale, 1);
+              cuFloatComplex otf21 = dev_otfinterpolate(
+                               const_otfPtrs[order1], x21, y21, z0, kzscale);
               if (sqrt(otf21.x * otf21.x + otf21.y * otf21.y) > otfcutoff) {
                 int z;
                 if (conj) {
@@ -887,49 +891,48 @@ __global__ void makeOverlaps1Kernel(int nx, int ny, int nz,
   }
 }
 
-__device__ cuFloatComplex dev_otfinterpolateMkOvrLps(
-    cuFloatComplex * otf, float kx, float ky, float krscale, int kz,
-    float kzscale, int mask) {
-  cuFloatComplex otfval = make_cuFloatComplex(0.0f, 0.0f);
-  if (const_pParams_bRadAvgOTF) {
-    int irindex, izindex, indices[2][2];
-    float krindex, kzindex;
-    float ar, az;
+// // __device__ cuFloatComplex dev_otfinterpolateMkOvrLps(
+// //     cuFloatComplex * otf, float kx, float ky, int kz, float kzscale, int mask) {
+// //   cuFloatComplex otfval = make_cuFloatComplex(0.0f, 0.0f);
+// //   if (const_pParams_bRadAvgOTF) {
+// //     int irindex, izindex, indices[2][2];
+// //     float krindex, kzindex;
+// //     float ar, az;
 
-    krindex = sqrt(kx*kx+ky*ky) * krscale;
-    kzindex = kz * kzscale;
-    if (kzindex<0) kzindex += const_pParams_nzotf;
+// //     krindex = sqrt(kx*kx+ky*ky) * krscale;
+// //     kzindex = kz * kzscale;
+// //     if (kzindex<0) kzindex += const_pParams_nzotf;
 
-    irindex = floor(krindex);
-    izindex = floor(kzindex);
+// //     irindex = floor(krindex);
+// //     izindex = floor(kzindex);
 
-    ar = krindex - irindex;
-    az = kzindex - izindex;
-    if (izindex == const_pParams_nzotf-1) {
-      indices[0][0] = irindex*const_pParams_nzotf+izindex;
-      indices[0][1] = irindex*const_pParams_nzotf;
-      indices[1][0] = (irindex+1)*const_pParams_nzotf+izindex;
-      indices[1][1] = (irindex+1)*const_pParams_nzotf;
-    }
-    else {
-      indices[0][0] = irindex*const_pParams_nzotf+izindex;
-      indices[0][1] = irindex*const_pParams_nzotf+(izindex+1);
-      indices[1][0] = (irindex+1)*const_pParams_nzotf+izindex;
-      indices[1][1] = (irindex+1)*const_pParams_nzotf+(izindex+1);
-    }
-    if (mask) {
-      otfval.x = (1-ar)*(otf[indices[0][0]].x*(1-az) + otf[indices[0][1]].x*az) +
-        ar*(otf[indices[1][0]].x*(1-az) + otf[indices[1][1]].x*az);
-      otfval.y = (1-ar)*(otf[indices[0][0]].y*(1-az) + otf[indices[0][1]].y*az) +
-        ar*(otf[indices[1][0]].y*(1-az) + otf[indices[1][1]].y*az);
-    }
-  }
-  return otfval;
-}
+// //     ar = krindex - irindex;
+// //     az = kzindex - izindex;
+// //     if (izindex == const_pParams_nzotf-1) {
+// //       indices[0][0] = irindex*const_pParams_nzotf+izindex;
+// //       indices[0][1] = irindex*const_pParams_nzotf;
+// //       indices[1][0] = (irindex+1)*const_pParams_nzotf+izindex;
+// //       indices[1][1] = (irindex+1)*const_pParams_nzotf;
+// //     }
+// //     else {
+// //       indices[0][0] = irindex*const_pParams_nzotf+izindex;
+// //       indices[0][1] = irindex*const_pParams_nzotf+(izindex+1);
+// //       indices[1][0] = (irindex+1)*const_pParams_nzotf+izindex;
+// //       indices[1][1] = (irindex+1)*const_pParams_nzotf+(izindex+1);
+// //     }
+// //     if (mask) {
+// //       otfval.x = (1-ar)*(otf[indices[0][0]].x*(1-az) + otf[indices[0][1]].x*az) +
+// //         ar*(otf[indices[1][0]].x*(1-az) + otf[indices[1][1]].x*az);
+// //       otfval.y = (1-ar)*(otf[indices[0][0]].y*(1-az) + otf[indices[0][1]].y*az) +
+// //         ar*(otf[indices[1][0]].y*(1-az) + otf[indices[1][1]].y*az);
+// //     }
+// //   }
+// //   return otfval;
+// // }
 
 __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
     GPUBuffer* overlap0, GPUBuffer* overlap1, int nx, int ny, int nz,
-    int norders, vector *k0, float dy, float dz, std::vector<GPUBuffer>* otf,
+    int norders, vector *k0, float dxy, float dz, std::vector<GPUBuffer>* otf,
     short wave, cuFloatComplex amps[], ReconParams * pParams)
 { 
   int fitorder1 = 0;
@@ -943,7 +946,7 @@ __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
     fitorder2 = 1;
   }
 
-  float k0mag = sqrt(k0->x * k0->x + k0->y * k0->y);
+  float k0mag = sqrt(k0->x * k0->x + k0->y * k0->y);  // in 1/um
   float k0angle = atan2(k0->y, k0->x);
 
   /* recalculate the overlap arrays at least this first time */
@@ -951,16 +954,16 @@ __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
   float x2 = k0angle;
   cuFloatComplex modamp;
   float amp2 = getmodamp(k0angle, k0mag, bands, overlap0,  overlap1, nx, ny, nz,
-      fitorder1, fitorder2, dy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
+      fitorder1, fitorder2, dxy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
 
   /* recalculate the overlap arrays every time only if recalcarrays >= 3*/
   redoarrays = (pParams->recalcarrays >= 3);
   float deltaangle = 0.001;
-  float deltamag = 0.1;
+  float deltamag = 0.1 / (std::max(nx, ny) * dxy);  // in 1/um
   float angle = k0angle + deltaangle;
   float x3 = angle;
   float amp3 = getmodamp(angle, k0mag, bands, overlap0,  overlap1, nx, ny, nz,
-      fitorder1, fitorder2, dy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
+      fitorder1, fitorder2, dxy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
 
   float amp1;
   float x1 = 0.0;
@@ -974,7 +977,7 @@ __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
       angle += deltaangle;
       x3 = angle;
       amp3 = getmodamp(angle, k0mag, bands, overlap0, overlap1, nx, ny, nz,
-          fitorder1, fitorder2, dy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
+          fitorder1, fitorder2, dxy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
     }
   } else {
     angle = k0angle;
@@ -992,7 +995,7 @@ __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
       angle -= deltaangle;
       x3 = angle;
       amp3 = getmodamp(angle, k0mag, bands, overlap0, overlap1, nx, ny, nz,
-          fitorder1, fitorder2, dy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
+          fitorder1, fitorder2, dxy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
     }
   }  /* the maximum of modamp(x) is now between x1 and x3 */
   angle = fitxyparabola(x1, amp1, x2, amp2, x3, amp3);   /* this should be a good angle.  */
@@ -1001,12 +1004,12 @@ __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
 
   x2 = k0mag;
   amp2 = getmodamp(angle, k0mag, bands, overlap0, overlap1, nx, ny, nz,
-      fitorder1, fitorder2, dy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
+      fitorder1, fitorder2, dxy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
 
   float mag = k0mag + deltamag;
   x3 = mag;
   amp3 = getmodamp(angle, mag, bands, overlap0, overlap1, nx, ny, nz,
-      fitorder1, fitorder2, dy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
+      fitorder1, fitorder2, dxy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
   if (amp3 > amp2) {
     while (amp3 > amp2) {
       amp1 = amp2;
@@ -1016,7 +1019,7 @@ __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
       mag += deltamag;
       x3 = mag;
       amp3 = getmodamp(angle, mag, bands, overlap0, overlap1, nx, ny, nz,
-          fitorder1, fitorder2, dy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
+          fitorder1, fitorder2, dxy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
     }
   } else {
     mag = k0mag;
@@ -1034,7 +1037,7 @@ __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
       mag -= deltamag;
       x3 = mag;
       amp3 = getmodamp(angle, mag, bands, overlap0, overlap1, nx, ny, nz,
-          fitorder1, fitorder2, dy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
+          fitorder1, fitorder2, dxy, dz, otf, wave, &modamp, redoarrays, pParams, 0);
     }
   }  /* the maximum of modamp(x) is now between x1 and x3 */
 
@@ -1045,14 +1048,13 @@ __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
   printf("Optimum modulation amplitude:\n");
   redoarrays = (pParams->recalcarrays>=2);    /* recalculate the d_overlap arrays for optimum modamp fit */
   amp3 = getmodamp(angle, mag, bands, overlap0,  overlap1, nx, ny, nz,
-      fitorder1, fitorder2, dy, dz, otf, wave, &modamp, redoarrays, pParams, 1);
+      fitorder1, fitorder2, dxy, dz, otf, wave, &modamp, redoarrays, pParams, 1);
   /* one last time, to find the modamp at the optimum k0*/
 
-  float dk = (1/(ny*dy));   /* inverse microns per pixel in data */
-  printf("Optimum k0 angle=%f, length=%f, spacing=%f microns\n", angle, mag, 1.0 / (mag * dk));
+  printf("Optimum k0 angle=%f, length=%f, spacing=%f um\n", angle, mag, 1.0 / mag);
 
-  k0->x = mag * cos(angle);
-  k0->y = mag * sin(angle);
+  k0->x = mag * cosf(angle);
+  k0->y = mag * sinf(angle);
   amps[fitorder2] = modamp;
 
   /* finally find the modamp for the other orders */
@@ -1061,7 +1063,7 @@ __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
     for (int order = 2; order < norders; ++order) {
       /* assuming that "angle" and "mag" remain the same for every adjacent pair of bands within one direction */
       getmodamp(angle, mag, bands, overlap0, overlap1, nx, ny, nz,
-          order - 1, order, dy, dz, otf, wave, &modamp, redoarrays, pParams, 1);
+          order - 1, order, dxy, dz, otf, wave, &modamp, redoarrays, pParams, 1);
       amps[order] = modamp;
     }
   } else {
@@ -1069,7 +1071,7 @@ __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
     for (int order = 1; order < norders; ++order) {
       if (order != fitorder2) {
         getmodamp(angle, mag, bands, overlap0, overlap1, nx, ny, nz,
-            0, order, dy, dz, otf, wave, &modamp, redoarrays, pParams, 1);
+            0, order, dxy, dz, otf, wave, &modamp, redoarrays, pParams, 1);
         amps[order] = modamp;
       }
     }
@@ -1102,7 +1104,7 @@ __host__ float fitxyparabola( float x1, float y1, float x2, float y2, float x3, 
 
 __host__ float getmodamp(float kangle, float klength,
     std::vector<GPUBuffer>* bands, GPUBuffer* overlap0, GPUBuffer* overlap1,
-    int nx, int ny,int nz, int order1, int order2, float dy, float dz,
+    int nx, int ny,int nz, int order1, int order2, float dxy, float dz,
     std::vector<GPUBuffer>* otf, short wave, cuFloatComplex* modamp,
     int redoarrays, ReconParams *pParams, int bShowDetail)
 {
@@ -1112,10 +1114,10 @@ __host__ float getmodamp(float kangle, float klength,
   cuFloatComplex amp_inv;
   cuFloatComplex amp_combo;
 
-  k1.x = klength * cos(kangle);
-  k1.y = klength * sin(kangle);
-  corr_coef = findrealspacemodamp(bands, overlap0, overlap1, nx, ny, nz, order1, order2, k1, dy, dz, otf,
-      wave, modamp, &amp_inv, &amp_combo, redoarrays, pParams);
+  k1.x = klength * cosf(kangle);
+  k1.y = klength * sinf(kangle);
+  corr_coef = findrealspacemodamp(bands, overlap0, overlap1, nx, ny, nz, order1, order2,
+	  k1, dxy, dz, otf, wave, modamp, &amp_inv, &amp_combo, redoarrays, pParams);
   amp2 = modamp->x * modamp->x + modamp->y * modamp->y;
 
   printf(" In getmodamp: angle=%f, mag=%f, amp=%f, phase=%f\n", kangle, klength, sqrt(amp2), get_phase(*modamp));
@@ -1132,7 +1134,7 @@ __host__ float findrealspacemodamp(
     std::vector<GPUBuffer>* bands,
     GPUBuffer* overlap0, GPUBuffer* overlap1,
     int nx, int ny, int nz, int order1, int order2,
-    vector k0, float dy, float dz,
+    vector k0, float dxy, float dz,
     std::vector<GPUBuffer>* OTF,
     short wave,
     cuFloatComplex *modamp1, cuFloatComplex *modamp2,
@@ -1143,12 +1145,12 @@ __host__ float findrealspacemodamp(
     /* make arrays that contain only the overlapping parts of fourier
        space. Otf-equalize there, set to zero elsewhere  */
     makeoverlaps(bands, overlap0, overlap1, nx, ny, nz, order1, order2,
-        k0.x, k0.y, dy, dz, OTF, wave, pParams);
+        k0.x, k0.y, dxy, dz, OTF, wave, pParams);
   }
 
   // Launch reduction kernel
-  float kx = k0.x * (order2 - order1);
-  float ky = k0.y * (order2 - order1);
+  float k0x = k0.x * (order2 - order1);
+  float k0y = k0.y * (order2 - order1);
 
   int numRedBlocksX = (int)ceil((float)nx / (float)RED_BLOCK_SIZE_X);
   int numRedBlocksY = (int)ceil((float)ny / (float)RED_BLOCK_SIZE_Y);
@@ -1164,7 +1166,7 @@ __host__ float findrealspacemodamp(
   int numBlocksY = (int)ceil((float)ny / (float)RED_BLOCK_SIZE_Y);
   dim3 blocks(numBlocksX, numBlocksY, 1);
   dim3 threads(RED_BLOCK_SIZE_X, RED_BLOCK_SIZE_Y, 1);
-  reductionKernel<<<blocks,threads>>>(nx, ny, nz, kx, ky,
+  reductionKernel<<<blocks,threads>>>(nx, ny, nz, k0x, k0y, dxy,
       (cuFloatComplex*)overlap0->getPtr(),
       (cuFloatComplex*)overlap1->getPtr(),
       (cuFloatComplex*)XStarY_dev.getPtr(),
@@ -1194,8 +1196,8 @@ __host__ float findrealspacemodamp(
   }
   float modamp_amp = tan(beta);
   float modamp_arg = atan2(XStarYFR.y, XStarYFR.x);
-  modamp3->x = modamp_amp * cos(modamp_arg);
-  modamp3->y = modamp_amp * sin(modamp_arg);
+  modamp3->x = modamp_amp * cosf(modamp_arg);
+  modamp3->y = modamp_amp * sinf(modamp_arg);
 
   float corr_coef = (XStarYFR.x * XStarYFR.x + XStarYFR.y * XStarYFR.y)
     / (sumXMagFR * sumYMagFR);
@@ -1206,7 +1208,7 @@ __host__ float findrealspacemodamp(
 
 __global__ void reductionKernel(
     int nx, int ny, int nz,
-    float kx, float ky,
+    float k0x, float k0y, float dxy,
     const cuFloatComplex *overlap0, const cuFloatComplex *overlap1,
     cuFloatComplex *XStarY, float *sumXMag, float *sumYMag) {
 
@@ -1217,8 +1219,8 @@ __global__ void reductionKernel(
   // phase factor
   cuFloatComplex expiphi;
   float angle = 2.0f * M_PI * (
-      ((float)i - 0.5f * (float)nx) * kx / (float)nx +
-      ((float)j - 0.5f * (float)ny) * ky / (float)ny);
+      ((float)i - 0.5f * (float)nx) * k0x +
+      ((float)j - 0.5f * (float)ny) * k0y ) * dxy;
   sincosf(angle, &(expiphi.y), &(expiphi.x));
 
   // reduction at thread level: each thread sums over z dimension
@@ -1278,42 +1280,41 @@ __global__ void reductionKernel(
 
 __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
     const std::vector<vector>& k0, int ndirs, int norders,
-    std::vector<GPUBuffer>& otf, float dy, float dz,
+    std::vector<GPUBuffer>& otf, float dxy, float dz,
     const std::vector<std::vector<cuFloatComplex> >& amp,
     const std::vector<float>& noiseVarFactors, int nx, int ny, int nz,
     short wave, ReconParams* pParams)
 {
   float *ampmag2;
   cuFloatComplex *conjamp;
-  float rdistcutoff;
   int order, order2, dir2, *zdistcutoff;
   float apocutoff, zapocutoff;
-  float dkr, dkz, krscale, kzscale, k0mag, k0pix;
+  float dkz;
   /* int iin, jin, conj, xyind, ind, z0, iz, z; */
   float lambdaem, lambdaexc, alpha, beta, betamin, wiener;
 
   wiener = pParams->wiener*pParams->wiener;
-  dkr = (1/(ny*dy));   /* inverse microns per pixel in data */
+
   if (dz>0)
     dkz = (1/(nz*dz));   /* inverse microns per pixel in data */
   else
     dkz = pParams->dkzotf;
-  krscale = dkr / pParams->dkrotf;   /* ratio of radial direction pixel scales of data and otf */
-  kzscale = dkz / pParams->dkzotf;   /* ratio of axial direction pixel scales of data and otf */
-  k0pix =  sqrt(k0[0].x*k0[0].x + k0[0].y*k0[0].y);   /* k0 magnitude (for highest order) in pixels */
-  k0mag = k0pix * dkr;   /* k0 magnitude (for highest order) in inverse microns */
+
+  float kzscale = dkz / pParams->dkzotf;   /* ratio of axial direction pixel scales of data and otf */
+  float k0mag =  sqrt(k0[0].x*k0[0].x + k0[0].y*k0[0].y); //! k0 magnitude (for highest order) in 1/um
+
   lambdaem = (wave/pParams->nimm)/1000.0;  /* emission wavelength in the sample, in microns */
   lambdaexc = 0.88* lambdaem;;  /* 0.88 approximates a typical lambdaexc/lambdaem  */
-  alpha = asin(pParams->na/pParams->nimm);  /* aperture angle of objectives */
-  beta = asin(k0mag/(2/lambdaexc));   /* angle of center of side illumination beams */
-  betamin = asin((k0mag/(2/lambdaexc)) -sin(alpha)*SPOTRATIO);   /* angle of inner edge of side illumination beams */
-  rdistcutoff = (pParams->na*2/(wave/1000.0)) / dkr;    /* OTF support radial limit in data pixels */
-  if (rdistcutoff>nx/2) rdistcutoff=nx/2;
+  alpha = asinf(pParams->na/pParams->nimm);  /* aperture angle of objectives */
+  beta = asinf(k0mag/(2/lambdaexc));   /* angle of center of side illumination beams */
+  betamin = asinf((k0mag/(2/lambdaexc)) -sinf(alpha)*SPOTRATIO);   /* angle of inner edge of side illumination beams */
+  float rdistcutoff = (pParams->na*2/(wave/1000.0)); /* OTF support radial limit in 1/um */
+  if (rdistcutoff> 1./(2.*dxy)) rdistcutoff = 1./(2.*dxy);
 
   /* 080201: zdistcutoff[0] depends on options -- single or double lenses */
   zdistcutoff = (int *) malloc(norders * sizeof(int));
   if (!pParams->bTwolens && !pParams->bBessel) {
-    zdistcutoff[0] = (int) ceil(((1-cos(alpha))/lambdaem) / dkz);    /* OTF support axial limit in data pixels */
+    zdistcutoff[0] = (int) ceil(((1-cosf(alpha))/lambdaem) / dkz);    /* OTF support axial limit in data pixels */
     zdistcutoff[norders-1] = 1.3*zdistcutoff[0];    /* approx max axial support limit of the OTF of the high frequency side band */
     if (norders>=3)
       for (order=1;order<norders-1;order++)
@@ -1323,19 +1324,19 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
     float kzExMax, halfangle;
     kzExMax = 2 *pParams->BesselNA / pParams->BesselLambdaEx;
 
-    zdistcutoff[0] = (int) rint((kzExMax + (1-cos(alpha))/lambdaem) / dkz);    /* OTF support axial limit in data pixels */
+    zdistcutoff[0] = (int) rint((kzExMax + (1-cosf(alpha))/lambdaem) / dkz);    /* OTF support axial limit in data pixels */
     printf("norders=%d, zdistcutoff[%d]=%d\n", norders, 0 ,zdistcutoff[0]);
     for (order=1; order<norders; order++) {
-      halfangle = acos(k0mag * order / (norders-1) / kzExMax);
-      zdistcutoff[order] = ceil((kzExMax * sin(halfangle) + (1.0 - cos(alpha)) / lambdaem) / dkz);
+      halfangle = acosf(k0mag * order / (norders-1) / kzExMax);
+      zdistcutoff[order] = ceil((kzExMax * sinf(halfangle) + (1.0 - cosf(alpha)) / lambdaem) / dkz);
       printf("zdistcutoff[%d]=%d\n", order ,zdistcutoff[order]);
     }
   }
   else {  /* two lenses */
     zdistcutoff[0] = (int) ceil(1.02*(2/lambdaem + 2/lambdaexc) / dkz);  /* 1.02 is just a safety margin */
-    zdistcutoff[norders-1] = (int) ceil(1.02*(2/lambdaem + 2*cos(beta)/lambdaexc) / dkz);    /* approx max axial support limit of the OTF of the high frequency side band */
+    zdistcutoff[norders-1] = (int) ceil(1.02*(2/lambdaem + 2*cosf(beta)/lambdaexc) / dkz);    /* approx max axial support limit of the OTF of the high frequency side band */
     if (norders==3) {
-      zdistcutoff[1] =  (int) ceil(1.02*(2/lambdaem + (1+cos(betamin))/lambdaexc) / dkz); /* axial support limit of the OTF of the medium frequency side band */
+      zdistcutoff[1] =  (int) ceil(1.02*(2/lambdaem + (1+cosf(betamin))/lambdaexc) / dkz); /* axial support limit of the OTF of the medium frequency side band */
     }
     else if (norders>3)
       for (order=1;order<norders-1;order++) {
@@ -1350,7 +1351,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
     /* printf("order=%d, rdistcutoff=%f, zdistcutoff=%d\n", order, rdistcutoff, zdistcutoff[order]); */
   }
 
-  apocutoff = rdistcutoff+ k0pix*(norders-1);
+  apocutoff = rdistcutoff+ k0mag * (norders-1);
 
   if (pParams->bTwolens || pParams->bBessel)
     zapocutoff = zdistcutoff[0];
@@ -1389,6 +1390,8 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
         &pParams->bRadAvgOTF, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_nzotf, &pParams->nzotf,
         sizeof(int)));
+  cutilSafeCall(cudaMemcpyToSymbol(const_pParams_dkrotf, &pParams->dkrotf,
+        sizeof(float)));
   cutilSafeCall(cudaMemcpyToSymbol(const_wiener, &wiener,
         sizeof(float)));
 
@@ -1466,13 +1469,13 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
     dim3 block(nThreads, 1, 1);
 
     filterbands_kernel1<<<grid,block>>>(dir, ndirs, order, norders, nx, ny, nz,
-        rdistcutoff, zapocutoff, apocutoff, krscale, kzscale,
-        dev_bandptr, dev_bandptr2, false);
+										rdistcutoff, zapocutoff, apocutoff, dxy, kzscale,
+										dev_bandptr, dev_bandptr2, false);
     cutilSafeCall(cudaGetLastError());
 
     filterbands_kernel1<<<grid,block>>>(dir, ndirs, order, norders, nx, ny, nz,
-        rdistcutoff, zapocutoff, apocutoff, krscale, kzscale,
-        dev_bandptr, dev_bandptr2, true);
+										rdistcutoff, zapocutoff, apocutoff, dxy,kzscale,
+										dev_bandptr, dev_bandptr2, true);
     cutilSafeCall(cudaGetLastError());
 
 #ifndef NDEBUG
@@ -1489,8 +1492,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
       NZblock = (nz-zdistcutoff[order]) - (zdistcutoff[order]+1);
       NXblock = (int) ceil( (float)(nx+2)/2./nThreads );
       dim3 grid2(NXblock, NYblock, NZblock);
-      filterbands_kernel3<<<grid2,block>>>(order, nx, ny, nz,
-          dev_bandptr, dev_bandptr2);
+      filterbands_kernel3<<<grid2,block>>>(order, nx, ny, nz, dev_bandptr, dev_bandptr2);
       cutilSafeCall(cudaGetLastError());
     }
 
@@ -1503,13 +1505,18 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
 }
 
 __global__ void filterbands_kernel1(int dir, int ndirs, int order, int norders, int nx, int ny, 
-    int nz, float rdistcutoff, float zapocutoff, float apocutoff, float krscale, float kzscale,
+									int nz, float rdistcutoff, float zapocutoff, float apocutoff, float dxy, float kzscale,
     cuFloatComplex * dev_bandptr, cuFloatComplex * dev_bandptr2, bool bSecondEntry)
 {
 
   float kx, ky, rdist1, rdistabs, apofact;
   kx = order * const_k0[dir].x;
   ky = order * const_k0[dir].y;
+
+  float dkx = 1./(nx*dxy);
+  float dky = 1./(ny*dxy);
+  float min_dkr = dkx < dky ? dkx : dky;
+  float suppRadius = const_pParams_suppression_radius * min_dkr;
 
   // compute x1, y1, z0 based on block and thread indices
   int x1 = blockIdx.x * blockDim.x + threadIdx.x + 1;
@@ -1546,22 +1553,24 @@ __global__ void filterbands_kernel1(int dir, int ndirs, int order, int norders, 
     }
     xyind = iin * (nx / 2 + 1) + jin;
 
-    rdist1 = sqrtf(x1*x1+y1*y1);  /* dist from center of band to be filtered */
+	float x1f = x1 * dkx;
+	float y1f = y1 * dky;
+    rdist1 = sqrtf(x1f*x1f+y1f*y1f);  /* dist from center of band to be filtered */
 
     // The following variable masks the whole computation
     if (rdist1<=rdistcutoff) { /* is x1,y1 within the theoretical lateral OTF support of 
                                   the data that is to be scaled? */
-      xabs=x1+kx;   /* (floating point) coords rel. to absolute fourier space, with */
-      yabs=y1+ky;   /* the absolute origin=(0,0) after the band is shifted by k0 */
+      xabs=x1f+kx;   /* (floating point) coords rel. to absolute fourier space, with */
+      yabs=y1f+ky;   /* the absolute origin=(0,0) after the band is shifted by k0 */
       rdistabs = sqrt(xabs*xabs + yabs*yabs);  // used later for apodization calculation
-      otf1 = dev_otfinterpolate(const_otfPtrs[order], x1, y1, krscale, z0, kzscale);
+      otf1 = dev_otfinterpolate(const_otfPtrs[order], x1f, y1f, z0, kzscale);
 
       weight = otf1.x * otf1.x + otf1.y * otf1.y;
       if (order!= 0) weight *= const_ampmag2[order];
       dampfact = 1. / const_noiseVarFactors[dir*norders+order];
     
       // this one is thread dependent ... from the rdist calculation
-      if (const_pParams_bSuppress_singularities && order != 0 && rdist1 <=const_pParams_suppression_radius)
+      if (const_pParams_bSuppress_singularities && order != 0 && rdist1 <=suppRadius)
         dampfact *= dev_suppress(rdist1);
     
       // these next two are not thread dependent
@@ -1593,7 +1602,7 @@ __global__ void filterbands_kernel1(int dir, int ndirs, int order, int norders, 
     
           if (rdist2<rdistcutoff) {
       
-            otf2 = dev_otfinterpolate(const_otfPtrs[abs(order2)], x2, y2, krscale, z0, kzscale);
+            otf2 = dev_otfinterpolate(const_otfPtrs[abs(order2)], x2, y2, z0, kzscale);
             weight = dev_mag2(otf2) / const_noiseVarFactors[dir2*norders+abs(order2)];
             if (order2 != 0) weight *= amp2mag2;
       
@@ -1639,7 +1648,7 @@ __global__ void filterbands_kernel1(int dir, int ndirs, int order, int norders, 
         if (rho > 1.f) rho = 1.0f;
 
         if (const_pParams_apodizeoutput == 1)    /* cosine-apodize */
-          apofact = cos((M_PI*0.5f)* rho);
+          apofact = cosf((M_PI*0.5f)* rho);
         else if (const_pParams_apodizeoutput == 2)
           apofact = 1.0f - rho;
         // apofact = __powf(1.0f - rho, const_pParams_apoGamma);
@@ -1729,7 +1738,7 @@ __global__ void filterbands_kernel3(int order, int nx, int ny, int nz,
   return;
 }
 
-__device__ cuFloatComplex dev_otfinterpolate(cuFloatComplex * otf, float kx, float ky, float krscale, int kz, float kzscale)
+__device__ cuFloatComplex dev_otfinterpolate(cuFloatComplex * otf, float kx, float ky, int kz, float kzscale)
   /* (kx, ky, kz) is Fourier space coords with origin at kx=ky=kz=0 and going  betwen -nx(or ny,nz)/2 and +nx(or ny,nz)/2 */
 {
   cuFloatComplex otfval = make_cuFloatComplex(0.f, 0.f);
@@ -1739,7 +1748,7 @@ __device__ cuFloatComplex dev_otfinterpolate(cuFloatComplex * otf, float kx, flo
     float krindex, kzindex;
     float ar, az;
 
-    krindex = sqrt(kx*kx+ky*ky) * krscale;
+    krindex = sqrt(kx*kx+ky*ky) / const_pParams_dkrotf;
     kzindex = kz * kzscale;
     if (kzindex<0) kzindex += const_pParams_nzotf;
 
@@ -1769,7 +1778,7 @@ __device__ cuFloatComplex dev_otfinterpolate(cuFloatComplex * otf, float kx, flo
   return otfval;
 }
 
-__device__ float dev_order0damping(float radius, float zindex, int rlimit, int zlimit)
+__device__ float dev_order0damping(float radius, float zindex, float rlimit, int zlimit)
 {
   float rfraction, zfraction;
 
@@ -1786,17 +1795,17 @@ __device__ float dev_mag2(cuFloatComplex x)
 
 __device__ float dev_suppress(float x)
 {
-  float x6,out;
+  float x6, out;
   x6 = x*x*x;
   x6 *= x6;
-  out = 1.0/(1+20000/(x6+20));
+  out = 1.0/(1+1000/(x6+.2));
   return out;
 }
 
 __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
     GPUBuffer* bigbuffer, std::vector<GPUBuffer>* bands, int ndirs,
     int norders, const std::vector<vector>& k0, int nx, int ny, int nz,
-    float zoomfact, int z_zoom, float expfact)
+    float dxy, float zoomfact, int z_zoom, float expfact)
 {
   float fact,* dev_coslookup,* dev_sinlookup;
   int order;
@@ -1807,7 +1816,7 @@ __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
   cutilSafeCall(cudaMalloc((void **) &dev_sinlookup,
                            (int)(rint(nx*zoomfact)*rint(ny*zoomfact)*sizeof(float))));
 
-  fact = expfact/0.5;  /* expfact is used for "exploded view".  For normal reconstruction expfact = 1.0  */
+  fact = expfact/0.5;  // expfact is used for "exploded view".  For normal reconstruction expfact = 1.0
 
   int nThreads = 128;
   int NZblock = nz;
@@ -1876,7 +1885,7 @@ __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
     NYblock = (int)rint (zoomfact*ny);
     NXblock = (int) ceil(zoomfact*nx/nThreads);
     dim3 grid3(NXblock, NYblock, NZblock);
-    cos_sin_kernel<<<grid3,block>>>(k0x,  k0y, fact, dev_coslookup, dev_sinlookup, (int)(zoomfact*nx));
+    cos_sin_kernel<<<grid3,block>>>(k0x,  k0y, dxy/zoomfact, fact, dev_coslookup, dev_sinlookup, (int)(zoomfact*nx));
     write_outbuffer_kernel2<<<grid2, block>>>(dev_coslookup,
         dev_sinlookup, (cuFloatComplex*)bigbuffer->getPtr(), 
         (float*)outbuffer->getPtr(), (int) (zoomfact*nx));
@@ -1958,7 +1967,7 @@ __global__ void write_outbuffer_kernel1(cuFloatComplex * bigbuffer, float * outb
   if (j<nx) {
     int i = blockIdx.y;
     int k = blockIdx.z;
-    int NXlocal = nx; // why was "gridDim.x*blockDim.x" used?
+    int NXlocal = nx;
     int NYlocal = gridDim.y;
     int ind = k*NXlocal*NYlocal + i*NXlocal + j;
     outbuffer[ind] += bigbuffer[ind].x;
@@ -1972,7 +1981,7 @@ __global__ void write_outbuffer_kernel2(float * coslookup, float * sinlookup,
   if (j<nx) {
     int i = blockIdx.y;
     int k = blockIdx.z;
-    int NXlocal = nx; // why was "gridDim.x*blockDim.x" used?
+    int NXlocal = nx;
     int NYlocal = gridDim.y;
     int indxy = i*NXlocal + j;
     int ind = k*NXlocal*NYlocal + indxy;
@@ -1980,18 +1989,17 @@ __global__ void write_outbuffer_kernel2(float * coslookup, float * sinlookup,
   }
 }
 
-__global__ void cos_sin_kernel(float k0x, float k0y, float fact, float * coslookup, float * sinlookup, int nx) {
+__global__ void cos_sin_kernel(float k0x, float k0y, float dxy, float fact, float * coslookup, float * sinlookup, int nx) {
 
   int j = blockIdx.x * blockDim.x + threadIdx.x;
   int i = blockIdx.y;
 
   if (j<nx) {
-    int ind = i*(gridDim.x*blockDim.x) + j;
-    int NXlocal = nx; // why was "gridDim.x*blockDim.x" used?
+    int ind = i*nx + j;
+    int NXlocal = nx;
     int NYlocal = gridDim.y;
-    float angle = fact * M_PI * ((j-NXlocal/2)*k0x/NXlocal + (i-NYlocal/2)*k0y/NYlocal);
-    coslookup[ind] = cos(angle);
-    sinlookup[ind] = sin(angle);
+    float angle = fact * M_PI * ((j-NXlocal/2)*k0x + (i-NYlocal/2)*k0y) * dxy;
+	sincosf(angle, sinlookup+ind, coslookup+ind);
   }
 }
 
@@ -2251,5 +2259,3 @@ __global__ void scale_kernel(float * img, double factor, int n)
   if (ind < n)
     img[ind] *= factor;
 }
-
-

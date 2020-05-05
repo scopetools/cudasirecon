@@ -41,7 +41,7 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->equalizez = 0;
   pParams->equalizet = 0;
   pParams->bNoKz0 = 0;
-  pParams->bUseEstimatedWiener = 1;
+  // pParams->bUseEstimatedWiener = 1;
 
   pParams->bRadAvgOTF = 0;  /* default to use non-radially averaged OTFs */
   pParams->bOneOTFperAngle = 0;  /* default to use one OTF for all SIM angles */
@@ -52,17 +52,13 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->constbkgd = 0.0;
   pParams->bBgInExtHdr = 0;
   pParams->bUsecorr = 0;
-  pParams->corrfiles[0] = '\0';  /* name of CCD correction file if usecorr is 1 */
   pParams->electrons_per_bit = 0.6528;
   pParams->readoutNoiseVar = 32.42;  // electron^2
 
   pParams->bMakemodel = 0;
   pParams->bSaveAlignedRaw = 0;
-  pParams->fileSeparated[0] = '\0';
   pParams->bSaveSeparated = 0;
-  pParams->fileRawAligned[0] = '\0';
   pParams->bSaveOverlaps = 0;
-  pParams->fileOverlaps[0] = '\0';
   pParams->bWriteTitle = 0;
 
   pParams -> bTIFF = false;
@@ -122,21 +118,21 @@ void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER
   imgParams->wave[2]=header.iwav3;
   imgParams->wave[3]=header.iwav4;
   imgParams->wave[4]=header.iwav5;
-  /* dy: lateral pixel size; dz: axial pixel size; both in microns */
-  imgParams->dy = header.ylen;
+  //! dxy: lateral pixel size; dz: axial pixel size; both in microns */
+  imgParams->dxy = header.ylen;
   imgParams->dz = header.zlen;
 
   /* Initialize headers for intermediate output files if requested */
   if (params.bSaveAlignedRaw) {
     memcpy(&aligned_header, &header, sizeof(header));
-    IMOpen(aligned_stream_no, params.fileRawAligned, "new");
+    IMOpen(aligned_stream_no, params.fileRawAligned.c_str(), "new");
     aligned_header.mode = IW_FLOAT;
     aligned_header.inbsym = 0;
     IMPutHdr(aligned_stream_no, &aligned_header);
   }
   if (params.bSaveSeparated) {
     memcpy(&sep_header, &header, sizeof(header));
-    IMOpen(separated_stream_no, params.fileSeparated, "new");
+    IMOpen(separated_stream_no, params.fileSeparated.c_str(), "new");
     sep_header.nx = (imgParams->nx+2)/2;    // saved will be separated FFTs
     sep_header.mode = IW_COMPLEX;
     sep_header.inbsym = 0;
@@ -144,7 +140,7 @@ void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER
   }
   if (params.bSaveOverlaps) {
     memcpy(&overlaps_header, &header, sizeof(header));
-    IMOpen(overlaps_stream_no, params.fileOverlaps, "new");
+    IMOpen(overlaps_stream_no, params.fileOverlaps.c_str(), "new");
     overlaps_header.nz = imgParams->nz*2*params.ndirs*imgParams->ntimes*imgParams->nwaves;
     overlaps_header.num_waves = 2;  // save overlap 0 and 1 as wave 0 and 1 respectively
     overlaps_header.interleaved = WZT_SEQUENCE;
@@ -226,7 +222,7 @@ void bgAndSlope(const ReconParams& myParams,
   if (myParams.bUsecorr) {
     // flatfield correction of measured data using calibration data
     printf("loading CCD calibration file\n");
-    getbg_and_slope(myParams.corrfiles,
+    getbg_and_slope(myParams.corrfiles.c_str(),
         (float*)reconData->background.getPtr(),
         (float*)reconData->slope.getPtr(), imgParams.nx, imgParams.ny);
   } else {
@@ -277,6 +273,10 @@ void findModulationVectorsAndPhasesForAllDirections(
 
   // 2D FFT every 2D slice:
   transformXYSlice(zoffset, params, imgParams, driftParams, data);
+
+  float dkx = 1./(imgParams.dxy * imgParams.nx);
+  float dky = 1./(imgParams.dxy * imgParams.ny);
+  float k0magguess = 1.0 / params->linespacing;
 
   for (int direction = 0; direction < params->ndirs; ++direction) {
 
@@ -335,7 +335,7 @@ void findModulationVectorsAndPhasesForAllDirections(
        * DM: k0 is not initialized but has memory allocate at this point.
        * k0 initialization code is near lines 430ff in sirecon.c */
       makemodeldata(imgParams.nx, imgParams.ny, imgParams.nz0, bands,
-          params->norders, data->k0[direction], imgParams.dy, imgParams.dz,
+          params->norders, data->k0[direction], imgParams.dxy, imgParams.dz,
           &data->otf[0], imgParams.wave[0], params);
     }
 
@@ -366,8 +366,8 @@ void findModulationVectorsAndPhasesForAllDirections(
     if (! (imgParams.ntimes > 1 && imgParams.curTimeIdx > 0
            && params->bUseTime0k0) ) {
       data->k0[direction] = data->k0guess[direction];
-      printf("k0guess[direction %d] = (%f, %f)\n", direction,
-          data->k0guess[direction].x, data->k0guess[direction].y);
+      printf("k0guess[direction %d] = (%f, %f) pixels\n", direction,
+          data->k0guess[direction].x/dkx, data->k0guess[direction].y/dky);
     }
 
     // Now to fix 3D drift between dirs estimated by determinedrift_3D()
@@ -394,7 +394,7 @@ void findModulationVectorsAndPhasesForAllDirections(
        * cross-correlation. */
       findk0(bands, &data->overlap0, &data->overlap1, imgParams.nx,
              imgParams.ny, imgParams.nz0, params->norders,
-             &(data->k0[direction]), imgParams.dy, imgParams.dz, &(data->otf[dir_]),
+             &(data->k0[direction]), imgParams.dxy, imgParams.dz, &(data->otf[dir_]),
              imgParams.wave[0], params);
 
       if (params->bSaveOverlaps) {
@@ -405,7 +405,7 @@ void findModulationVectorsAndPhasesForAllDirections(
           data->overlap1.set(&tmp0, 0, data->overlap1.getSize(), data->overlap0.getSize());
           CImg<> ovlp0((float* )tmp0.getPtr(), imgParams.nx*2, imgParams.ny, imgParams.nz*2, 1,
                        true);  // ovlp0 shares buffer with tmp0 (hence "true" in the final parameter)
-          ovlp0.save_tiff(params->fileOverlaps);
+          ovlp0.save_tiff(params->fileOverlaps.c_str());
         }
         else {
           CPUBuffer tmp0(data->overlap0.getSize());
@@ -420,8 +420,8 @@ void findModulationVectorsAndPhasesForAllDirections(
           }
         }
       }
-      printf("Initial guess by findk0() of k0[direction %d] = (%f,%f)\n", 
-          direction, data->k0[direction].x, data->k0[direction].y);
+      printf("Initial guess by findk0() of k0[direction %d] = (%f,%f) pixels\n", 
+          direction, data->k0[direction].x/dkx, data->k0[direction].y/dky);
 
       /* refine the cross-corr estimate of k0 by a search for best k0
        * vector direction and magnitude using real space waves*/
@@ -434,7 +434,7 @@ void findModulationVectorsAndPhasesForAllDirections(
 
       fitk0andmodamps(bands, &data->overlap0, &data->overlap1, imgParams.nx,
           imgParams.ny, imgParams.nz0, params->norders, &(data->k0[direction]),
-          imgParams.dy, imgParams.dz, &(data->otf[dir_]), imgParams.wave[0],
+          imgParams.dxy, imgParams.dz, &(data->otf[dir_]), imgParams.wave[0],
           &data->amp[direction][0], params);
 
       if (imgParams.curTimeIdx == 0) {
@@ -445,10 +445,10 @@ void findModulationVectorsAndPhasesForAllDirections(
       deltak0.x = data->k0[direction].x - data->k0guess[direction].x;
       deltak0.y = data->k0[direction].y - data->k0guess[direction].y;
       float dist = sqrt(deltak0.x * deltak0.x + deltak0.y * deltak0.y);
-      if (dist > K0_WARNING_THRESH) {
+      if (dist/k0magguess > K0_WARNING_THRESH) {
         printf("WARNING: ");
       }
-      printf("best fit for k0 is %f pixels from expected value.\n", dist);
+      printf("best fit for k0 is %.3f%% from expected value.\n", dist/k0magguess*100);
 
       if (imgParams.ntimes > 1 && imgParams.curTimeIdx > 0
           && dist > 2*K0_WARNING_THRESH) {
@@ -459,13 +459,13 @@ void findModulationVectorsAndPhasesForAllDirections(
           if (imgParams.nz0>1)
             corr_coeff = findrealspacemodamp(bands, &data->overlap0,
               &data->overlap1, imgParams.nx, imgParams.ny, imgParams.nz0,
-              0, order, data->k0[direction], imgParams.dy, imgParams.dz,
+              0, order, data->k0[direction], imgParams.dxy, imgParams.dz,
               &(data->otf[dir_]), imgParams.wave[0], &data->amp[direction][order],
               &amp_inv, &amp_combo, 1, params);
           else
             corr_coeff = findrealspacemodamp(bands, &data->overlap0,
               &data->overlap1, imgParams.nx, imgParams.ny, imgParams.nz0,
-              order-1, order, data->k0[direction], imgParams.dy, imgParams.dz,
+              order-1, order, data->k0[direction], imgParams.dxy, imgParams.dz,
               &(data->otf[dir_]), imgParams.wave[0], &data->amp[direction][order],
               &amp_inv, &amp_combo, 1, params);
           printf("modamp mag=%f, phase=%f\n, correlation coeff=%f\n\n",
@@ -476,12 +476,12 @@ void findModulationVectorsAndPhasesForAllDirections(
       }
     } else {
       /* assume k0 vector known, so just fit for the modulation amplitude and phase */
-      printf("known k0 for direction %d = (%f, %f) \n", direction, 
-          data->k0[direction].x, data->k0[direction].y);
+      printf("known k0 for direction %d = (%f, %f) pixels \n", direction, 
+          data->k0[direction].x/dkx, data->k0[direction].y/dky);
       for (int order = 1; order < params->norders; ++order) {
         float corr_coeff = findrealspacemodamp(bands, &data->overlap0,
             &data->overlap1, imgParams.nx, imgParams.ny, imgParams.nz0, 
-            0, order, data->k0[direction], imgParams.dy, imgParams.dz,
+            0, order, data->k0[direction], imgParams.dxy, imgParams.dz,
             &(data->otf[dir_]), imgParams.wave[0], &data->amp[direction][order],
             &amp_inv, &amp_combo, 1, params);
         printf("modamp mag=%f, phase=%f\n",
@@ -806,168 +806,168 @@ void matrix_transpose(float* mat, int nRows, int nCols)
   free(tmpmat);
 }
 
-int rdistcutoff(int iw, const ReconParams& params, const ImageParams& imgParams)
-{
-  float dkr = 1.0 / (imgParams.ny * imgParams.dy);
-  int result = (int)floor((params.na * 2.0 / (
-          imgParams.wave[iw] / 1000.0)) / dkr);
-  return result;
-}
+// int rdistcutoff(int iw, const ReconParams& params, const ImageParams& imgParams)
+// {
+//   float dkr = 1.0 / (imgParams.ny * imgParams.dxy);
+//   int result = (int)floor((params.na * 2.0 / (
+//           imgParams.wave[iw] / 1000.0)) / dkr);
+//   return result;
+// }
 
-int fitXYdrift(vector3d *drifts, float * timestamps, int nPoints, vector3d *fitted_drift, float *eval_timestamps, int nEvalPoints)
-  /*
-     fit a curve using the data points of (x,y) vectors in "drifts" versus "timestamps". Then evaluate drifts for
-     the nEvalPoints points using the fitted curve; return the result in fitted_drifts.
-     Note: if nPoints is greater than 3, the use cubic fit? otherwise use parabola fit?
-     drifts[0] should always be (0, 0)?
-     */
-{
-  int   i, j;
-  int   nPolyTerms = 4; // highest order term is nPolyTerms-1; this could be passed in as an argument
-  float *matrix_A, *vecRHS;
-  float *workspace, wkopt;
-  int   info, lwork, nRHS=2;  // 2 because of solving for both x and y
-  int   bForceZero = 1;
+// // int fitXYdrift(vector3d *drifts, float * timestamps, int nPoints, vector3d *fitted_drift, float *eval_timestamps, int nEvalPoints)
+// //   /*
+// //      fit a curve using the data points of (x,y) vectors in "drifts" versus "timestamps". Then evaluate drifts for
+// //      the nEvalPoints points using the fitted curve; return the result in fitted_drifts.
+// //      Note: if nPoints is greater than 3, the use cubic fit? otherwise use parabola fit?
+// //      drifts[0] should always be (0, 0)?
+// //      */
+// // {
+// //   int   i, j;
+// //   int   nPolyTerms = 4; // highest order term is nPolyTerms-1; this could be passed in as an argument
+// //   float *matrix_A, *vecRHS;
+// //   float *workspace, wkopt;
+// //   int   info, lwork, nRHS=2;  // 2 because of solving for both x and y
+// //   int   bForceZero = 1;
 
-  if (bForceZero) {  /* for the curve to go through time point 0 */
-    int nPoints_minus1, nPolyTerms_minus1;
-    /* subtract all time stamps by the first */
-    for (i=1; i<nPoints; i++)
-      timestamps[i] -= timestamps[0];
+// //   if (bForceZero) {  /* for the curve to go through time point 0 */
+// //     int nPoints_minus1, nPolyTerms_minus1;
+// //     /* subtract all time stamps by the first */
+// //     for (i=1; i<nPoints; i++)
+// //       timestamps[i] -= timestamps[0];
 
-    /* Therefore, the solution to the constant is drifts[0].
-       Now we have 2 coefficients to solve. */ 
+// //     /* Therefore, the solution to the constant is drifts[0].
+// //        Now we have 2 coefficients to solve. */ 
 
-    // construct the forward matrix; it's a transpose of the C-style matrix
-    matrix_A = (float*)malloc((nPoints-1) * (nPolyTerms-1) * sizeof(float));
-    // leading dimension is nPoints (column in Fortran, row in C)
-    for (i=0; i<nPolyTerms-1; i++)
-      for (j=0; j<nPoints-1; j++)
-        matrix_A[i*(nPoints-1) + j] = pow(timestamps[j+1], i+1);
+// //     // construct the forward matrix; it's a transpose of the C-style matrix
+// //     matrix_A = (float*)malloc((nPoints-1) * (nPolyTerms-1) * sizeof(float));
+// //     // leading dimension is nPoints (column in Fortran, row in C)
+// //     for (i=0; i<nPolyTerms-1; i++)
+// //       for (j=0; j<nPoints-1; j++)
+// //         matrix_A[i*(nPoints-1) + j] = pow(timestamps[j+1], i+1);
 
-    // construct the right-hand-side vectors
-    vecRHS = (float*)malloc((nPoints-1) * nRHS * sizeof(float));
-    for (j=0; j<nPoints-1; j++) {
-      vecRHS[j]           = drifts[j+1].x - drifts[0].x;
-      vecRHS[j+nPoints-1] = drifts[j+1].y - drifts[0].y;
-    }
+// //     // construct the right-hand-side vectors
+// //     vecRHS = (float*)malloc((nPoints-1) * nRHS * sizeof(float));
+// //     for (j=0; j<nPoints-1; j++) {
+// //       vecRHS[j]           = drifts[j+1].x - drifts[0].x;
+// //       vecRHS[j+nPoints-1] = drifts[j+1].y - drifts[0].y;
+// //     }
 
-    /* Because of calling Fortran subroutines, every parameter has to be passed as a pointer */
-    nPoints_minus1 = nPoints - 1;
-    nPolyTerms_minus1 = nPolyTerms - 1;
-    /* Query and allocate the optimal workspace */
-    lwork = -1;
-    sgels_("No transpose", &nPoints_minus1, &nPolyTerms_minus1, &nRHS, matrix_A, &nPoints_minus1,
-        vecRHS, &nPoints_minus1, &wkopt, &lwork, &info );
-    lwork = wkopt;
-    workspace = (float*)malloc( lwork* sizeof(float) );
+// //     /* Because of calling Fortran subroutines, every parameter has to be passed as a pointer */
+// //     nPoints_minus1 = nPoints - 1;
+// //     nPolyTerms_minus1 = nPolyTerms - 1;
+// //     /* Query and allocate the optimal workspace */
+// //     lwork = -1;
+// //     sgels_("No transpose", &nPoints_minus1, &nPolyTerms_minus1, &nRHS, matrix_A, &nPoints_minus1,
+// //         vecRHS, &nPoints_minus1, &wkopt, &lwork, &info );
+// //     lwork = wkopt;
+// //     workspace = (float*)malloc( lwork* sizeof(float) );
 
-    sgels_("No transpose", &nPoints_minus1, &nPolyTerms_minus1, &nRHS, matrix_A, &nPoints_minus1,
-        vecRHS, &nPoints_minus1, workspace, &lwork, &info);
+// //     sgels_("No transpose", &nPoints_minus1, &nPolyTerms_minus1, &nRHS, matrix_A, &nPoints_minus1,
+// //         vecRHS, &nPoints_minus1, workspace, &lwork, &info);
 
-    if (info != 0)
-      return 0;
+// //     if (info != 0)
+// //       return 0;
 
-    /* Now subtract timestamp[0] from all eval_timestamps */
-    for (i=0; i<nEvalPoints; i++)
-      eval_timestamps[i] -= timestamps[0];
+// //     /* Now subtract timestamp[0] from all eval_timestamps */
+// //     for (i=0; i<nEvalPoints; i++)
+// //       eval_timestamps[i] -= timestamps[0];
 
-    /* Evaluate at datapoints eval_timestamps */
-    for (i=0; i<nEvalPoints; i++) {
-      fitted_drift[i].x = drifts[0].x;
-      fitted_drift[i].y = drifts[0].y;
-      for (j=0; j<nPolyTerms-1; j++) {
-        fitted_drift[i].x += vecRHS[j] * pow(eval_timestamps[i], j+1);
-        fitted_drift[i].y += vecRHS[j+nPoints-1] * pow(eval_timestamps[i], j+1);
-      }
-    }
-  }
-  else {
-    // construct the forward matrix; it's a transpose of the C-style matrix
-    matrix_A = (float*)malloc(nPoints * nPolyTerms * sizeof(float));
-    // leading dimension is nPoints (column in Fortran, row in C)
-    for (i=0; i<nPolyTerms; i++)
-      for (j=0; j<nPoints; j++)
-        matrix_A[i*nPoints + j] = pow(timestamps[j], i);
+// //     /* Evaluate at datapoints eval_timestamps */
+// //     for (i=0; i<nEvalPoints; i++) {
+// //       fitted_drift[i].x = drifts[0].x;
+// //       fitted_drift[i].y = drifts[0].y;
+// //       for (j=0; j<nPolyTerms-1; j++) {
+// //         fitted_drift[i].x += vecRHS[j] * pow(eval_timestamps[i], j+1);
+// //         fitted_drift[i].y += vecRHS[j+nPoints-1] * pow(eval_timestamps[i], j+1);
+// //       }
+// //     }
+// //   }
+// //   else {
+// //     // construct the forward matrix; it's a transpose of the C-style matrix
+// //     matrix_A = (float*)malloc(nPoints * nPolyTerms * sizeof(float));
+// //     // leading dimension is nPoints (column in Fortran, row in C)
+// //     for (i=0; i<nPolyTerms; i++)
+// //       for (j=0; j<nPoints; j++)
+// //         matrix_A[i*nPoints + j] = pow(timestamps[j], i);
 
-    // construct the right-hand-side vectors
-    vecRHS = (float*)malloc(nPoints * nRHS * sizeof(float));
+// //     // construct the right-hand-side vectors
+// //     vecRHS = (float*)malloc(nPoints * nRHS * sizeof(float));
 
-    for (j=0; j<nPoints; j++) {
-      vecRHS[j] = drifts[j].x;
-      vecRHS[j+nPoints] = drifts[j].y;
-    }
+// //     for (j=0; j<nPoints; j++) {
+// //       vecRHS[j] = drifts[j].x;
+// //       vecRHS[j+nPoints] = drifts[j].y;
+// //     }
 
-    /* Query and allocate the optimal workspace */
-    lwork = -1;
-    sgels_("No transpose", &nPoints, &nPolyTerms, &nRHS, matrix_A, &nPoints, vecRHS, &nPoints, &wkopt, &lwork, &info );
-    lwork = wkopt;
-    workspace = (float*)malloc( lwork* sizeof(float) );
+// //     /* Query and allocate the optimal workspace */
+// //     lwork = -1;
+// //     sgels_("No transpose", &nPoints, &nPolyTerms, &nRHS, matrix_A, &nPoints, vecRHS, &nPoints, &wkopt, &lwork, &info );
+// //     lwork = wkopt;
+// //     workspace = (float*)malloc( lwork* sizeof(float) );
 
-    sgels_("No transpose", &nPoints, &nPolyTerms, &nRHS, matrix_A, &nPoints, vecRHS, &nPoints, workspace, &lwork, &info);
+// //     sgels_("No transpose", &nPoints, &nPolyTerms, &nRHS, matrix_A, &nPoints, vecRHS, &nPoints, workspace, &lwork, &info);
 
-    if (info != 0)
-      return 0;
+// //     if (info != 0)
+// //       return 0;
 
-    /* Evaluate at datapoints eval_timestamps */
-    for (i=0; i<nEvalPoints; i++) {
-      fitted_drift[i].x = 0;
-      fitted_drift[i].y = 0;
-      for (j=0; j<nPolyTerms; j++) {
-        fitted_drift[i].x += vecRHS[j] * pow(eval_timestamps[i], j);
-        fitted_drift[i].y += vecRHS[j+nPoints] * pow(eval_timestamps[i], j);
-      }
-    }
-  }
+// //     /* Evaluate at datapoints eval_timestamps */
+// //     for (i=0; i<nEvalPoints; i++) {
+// //       fitted_drift[i].x = 0;
+// //       fitted_drift[i].y = 0;
+// //       for (j=0; j<nPolyTerms; j++) {
+// //         fitted_drift[i].x += vecRHS[j] * pow(eval_timestamps[i], j);
+// //         fitted_drift[i].y += vecRHS[j+nPoints] * pow(eval_timestamps[i], j);
+// //       }
+// //     }
+// //   }
 
-  free(matrix_A);
-  free(vecRHS);
-  free(workspace);
+// //   free(matrix_A);
+// //   free(vecRHS);
+// //   free(workspace);
 
-  return 1;
-}
+// //   return 1;
+// // }
 
-void calcPhaseList(float * phaseList, vector3d *driftlist,
-    float *phaseAbs, float k0angle, float linespacing, float dr,
-    int nphases, int nz, int direction, int z)
-  /*
-     Calculate the actual pattern phase value for each exposure, taking into account drift estimation, acquisition-time
-     phase values, and the k0 vector of this direction.
-     phaseAbs -- acquisition-time absolute phase used, recorded in extended header
-     */
-{
-  int p;
-  float phistep, k0mag;
-  vector3d kvec, drift;
+// // void calcPhaseList(float * phaseList, vector3d *driftlist,
+// //     float *phaseAbs, float k0angle, float linespacing, float dr,
+// //     int nphases, int nz, int direction, int z)
+// //   /*
+// //      Calculate the actual pattern phase value for each exposure, taking into account drift estimation, acquisition-time
+// //      phase values, and the k0 vector of this direction.
+// //      phaseAbs -- acquisition-time absolute phase used, recorded in extended header
+// //      */
+// // {
+// //   int p;
+// //   float phistep, k0mag;
+// //   vector3d kvec, drift;
 
-  phistep = 2*M_PI / nphases;
+// //   phistep = 2*M_PI / nphases;
 
-  k0mag = 1/linespacing;
-  kvec.x = k0mag * cos(k0angle);
-  kvec.y = k0mag * sin(k0angle);
+// //   k0mag = 1/linespacing;
+// //   kvec.x = k0mag * cos(k0angle);
+// //   kvec.y = k0mag * sin(k0angle);
 
-  /* The "standard" evenly-spaced phases + phase correction caused by drift correction - 
-     acquisition-time phase correction */
-  for (p=0; p<nphases; p++) {
-    float phiDrift;
-    drift = driftlist[direction*nz*nphases + z*nphases + p];
-    phiDrift = (drift.x*kvec.x + drift.y*kvec.y) * dr * 2 * M_PI;
+// //   /* The "standard" evenly-spaced phases + phase correction caused by drift correction - 
+// //      acquisition-time phase correction */
+// //   for (p=0; p<nphases; p++) {
+// //     float phiDrift;
+// //     drift = driftlist[direction*nz*nphases + z*nphases + p];
+// //     phiDrift = (drift.x*kvec.x + drift.y*kvec.y) * dr * 2 * M_PI;
 
-    if (phaseAbs && nz == 1)
-      // here the absolute phases of the off images are used; not necessary but simply because phase starts at 0 for off images
-      phaseList[p] = phaseAbs[direction*nphases + p]  + phiDrift;
+// //     if (phaseAbs && nz == 1)
+// //       // here the absolute phases of the off images are used; not necessary but simply because phase starts at 0 for off images
+// //       phaseList[p] = phaseAbs[direction*nphases + p]  + phiDrift;
 
-    else
-      phaseList[p] = p * phistep + phiDrift;
+// //     else
+// //       phaseList[p] = p * phistep + phiDrift;
 
-    printf("phaseAbs[%d]=%10.5f, phaseList[%d]=%10.5f, phase error=%8.3f, phase drift=%8.3f deg\n",
-        p, phaseAbs[direction*nphases + p]*180/M_PI,
-        p, phaseList[p]*180/M_PI, 
-        (phaseList[p] - p *phistep)*180/M_PI,
-        phiDrift*180/M_PI);
-  }
+// //     printf("phaseAbs[%d]=%10.5f, phaseList[%d]=%10.5f, phase error=%8.3f, phase drift=%8.3f deg\n",
+// //         p, phaseAbs[direction*nphases + p]*180/M_PI,
+// //         p, phaseList[p]*180/M_PI, 
+// //         (phaseList[p] - p *phistep)*180/M_PI,
+// //         phiDrift*180/M_PI);
+// //   }
 
-}
+// // }
 
 float get_phase(cuFloatComplex b)
 {
@@ -987,7 +987,7 @@ cuFloatComplex cmul(cuFloatComplex a, cuFloatComplex b)
   return result;
 }
 
-void saveIntermediateDataForDebugging(const ReconParams& params)
+int saveIntermediateDataForDebugging(const ReconParams& params)
 {
   if (params.bSaveSeparated) {
     IMWrHdr(separated_stream_no,
@@ -1011,8 +1011,9 @@ void saveIntermediateDataForDebugging(const ReconParams& params)
     printf(
         "\nQuit processing because either bSaveSeparated, "
         "bSaveAlignedRaw, or bSaveOverlaps is TRUE\n");
-    exit(0);
+    return 1;
   }
+  return 0;
 }
 
 
@@ -1231,13 +1232,14 @@ int SIM_Reconstructor::setupProgramOptions()
      "Bessel SIM excitation NA)")
     ("deskew", po::value<float>(&m_myParams.deskewAngle)->default_value(0.0f),
      "Deskew angle; if not 0.0 then perform deskewing before processing")
-    ("deskewshift", po::value<int>(&m_myParams.extraShift)->default_value(0), "If deskewed, the output image's extra shift in X (positive->left)")
+    ("deskewshift", po::value<int>(&m_myParams.extraShift)->default_value(0),
+     "If deskewed, the output image's extra shift in X (positive->left)")
     ("noRecon", po::bool_switch(&m_myParams.bNoRecon)->default_value(false),
      "No reconstruction will be performed; useful when combined with --deskew")
     ("cropXY", po::value<unsigned>(&m_myParams.cropXYto)->default_value(0),
      "Crop the X-Y dimension to this number; 0 means no cropping")
 
-    ("xyres", po::value<float>(&m_imgParams.dy)->default_value(0.1),
+    ("xyres", po::value<float>(&m_imgParams.dxy)->default_value(0.1),
      "x-y pixel size (only used for TIFF files)")
     ("zres", po::value<float>(&m_imgParams.dz)->default_value(0.2),
      "z pixel size (only used for TIFF files)")
@@ -1270,7 +1272,7 @@ int SIM_Reconstructor::setParams()
   }
 
   if (m_varsmap.count("usecorr")) {
-    strcpy(m_myParams.corrfiles, m_varsmap["usecorr"].as<std::string>().c_str());
+    m_myParams.corrfiles = m_varsmap["usecorr"].as<std::string>();
     m_myParams.bUsecorr = 1;
   }
 
@@ -1279,8 +1281,8 @@ int SIM_Reconstructor::setParams()
   }
 
   if (m_varsmap.count("wiener")) {
-    if (m_myParams.wiener > 0)
-      m_myParams.bUseEstimatedWiener = false;
+    // if (m_myParams.wiener > 0)
+    //   m_myParams.bUseEstimatedWiener = false;
     std::cout<< "wiener=" << m_myParams.wiener << std::endl;
   }
 
@@ -1290,17 +1292,17 @@ int SIM_Reconstructor::setParams()
   }
 
   if (m_varsmap.count("saveprefiltered")) {
-    strcpy(m_myParams.fileSeparated, m_varsmap["saveprefiltered"].as<std::string>().c_str());
+    m_myParams.fileSeparated = m_varsmap["saveprefiltered"].as<std::string>();
     m_myParams.bSaveSeparated = 1;
   }
 
   if (m_varsmap.count("savealignedraw")) {
-    strcpy(m_myParams.fileRawAligned, m_varsmap["savealignedraw"].as<std::string>().c_str());
+    m_myParams.fileRawAligned = m_varsmap["savealignedraw"].as<std::string>();
     m_myParams.bSaveAlignedRaw = 1;
   }
 
   if (m_varsmap.count("saveoverlaps")) {
-    strcpy(m_myParams.fileOverlaps, m_varsmap["saveoverlaps"].as<std::string>().c_str());
+    m_myParams.fileOverlaps = m_varsmap["saveoverlaps"].as<std::string>();
     m_myParams.bSaveOverlaps = 1;
   }
 
@@ -1388,9 +1390,6 @@ void SIM_Reconstructor::setup_common()
     m_imgParams.nz0 = m_imgParams.nz;
   }
 
-  //! Important for non-MRC files
-  m_imgParams.dx = m_imgParams.dy;
-
   //! Deskewing, if requested, will be performed after this function returns;
   //  "nx" is altered to be equal to "ny" and "dz" is multiplied by sin(deskewAngle)
   if (fabs(m_myParams.deskewAngle) > 0.) {
@@ -1409,7 +1408,7 @@ void SIM_Reconstructor::setup_common()
   printf("nx=%d, ny=%d, nz=%d, nz0 = %d, nwaves=%d\n",
          m_imgParams.nx, m_imgParams.ny, m_imgParams.nz,
          m_imgParams.nz0, m_imgParams.nwaves);
-  printf("dx=%f, dy=%f, dz=%f\n", m_imgParams.dx, m_imgParams.dy, m_imgParams.dz);
+  printf("dxy=%f, dz=%f um\n", m_imgParams.dxy, m_imgParams.dz);
 
   m_myParams.norders = 0;
   if (m_myParams.norders_output != 0) {
@@ -1436,8 +1435,8 @@ void SIM_Reconstructor::setup_common()
   m_reconData.k0_time0 = std::vector<vector>(m_myParams.ndirs);
   m_reconData.k0guess = std::vector<vector>(m_myParams.ndirs);
   float delta_angle = M_PI / m_myParams.ndirs;
-  float dkr = 1 / (m_imgParams.ny * m_imgParams.dy);  // assuming square images sizes
-  float k0magguess = (1.0 / m_myParams.linespacing) / dkr;
+
+  float k0magguess = 1.0 / m_myParams.linespacing; // in 1/um, not assuming square images sizes
   if (m_imgParams.nz > 1) {
     int nordersIn = m_myParams.nphases / 2 + 1;
     k0magguess /= nordersIn - 1; 
@@ -1449,8 +1448,8 @@ void SIM_Reconstructor::setup_common()
     } else {
       k0angleguess = m_myParams.k0angles[i];
     }
-    m_reconData.k0guess[i].x = k0magguess * cos(k0angleguess);
-    m_reconData.k0guess[i].y = k0magguess * sin(k0angleguess);
+    m_reconData.k0guess[i].x = k0magguess * cos(k0angleguess); // in 1/um
+    m_reconData.k0guess[i].y = k0magguess * sin(k0angleguess); // in 1/um
   }
 
   m_reconData.sum_dir0_phase0 = std::vector<double>(m_imgParams.nz * m_imgParams.nwaves);
@@ -1463,7 +1462,7 @@ void SIM_Reconstructor::setup_common()
 }
 
 
-void SIM_Reconstructor::processOneVolume()
+int SIM_Reconstructor::processOneVolume()
 {
   // process one SIM volume (i.e., for the time point timeIdx)
 
@@ -1485,7 +1484,8 @@ void SIM_Reconstructor::processOneVolume()
 
   // deviceMemoryUsage();
 
-  saveIntermediateDataForDebugging(m_myParams);
+  if (saveIntermediateDataForDebugging(m_myParams))
+    return 0;
 
   m_reconData.bigbuffer.resize((m_myParams.zoomfact * m_imgParams.nx) *
       (m_myParams.zoomfact * m_imgParams.ny) * (m_myParams.z_zoom * m_imgParams.nz0) *
@@ -1508,16 +1508,18 @@ void SIM_Reconstructor::processOneVolume()
 
     filterbands(direction, &m_reconData.savedBands[direction],
         m_reconData.k0, m_myParams.ndirs, m_myParams.norders,
-        m_reconData.otf[dir_], m_imgParams.dy, m_imgParams.dz,
+        m_reconData.otf[dir_], m_imgParams.dxy, m_imgParams.dz,
         m_reconData.amp, m_reconData.noiseVarFactors,
-        m_imgParams.nx, m_imgParams.ny, m_imgParams.nz0, m_imgParams.wave[0],
+        m_imgParams.nx, m_imgParams.ny, m_imgParams.nz0,
+        m_imgParams.wave[0],
         &m_myParams);
     assemblerealspacebands(direction, &m_reconData.outbuffer,
         &m_reconData.bigbuffer, &m_reconData.savedBands[direction],
         m_myParams.ndirs, m_myParams.norders, m_reconData.k0,
-        m_imgParams.nx, m_imgParams.ny, m_imgParams.nz0,
+        m_imgParams.nx, m_imgParams.ny, m_imgParams.nz0, m_imgParams.dxy,
         m_myParams.zoomfact, m_myParams.z_zoom, m_myParams.explodefact);
   }
+  return 1;
 }
 
 void SIM_Reconstructor::loadAndRescaleImage(int timeIdx, int waveIdx)
@@ -1566,7 +1568,7 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
 
   float dskewA = m_myParams.deskewAngle;
   if ( dskewA<0) dskewA += 180.;
-  float deskewFactor = cos(dskewA * M_PI/180.) * m_imgParams.dz_raw / m_imgParams.dy;
+  float deskewFactor = cos(dskewA * M_PI/180.) * m_imgParams.dz_raw / m_imgParams.dxy;
 
   for (int direction = 0; direction < m_myParams.ndirs; ++direction) {
     // What does "PinnedCPUBuffer" really do? Using it here messes things up.
@@ -1660,7 +1662,7 @@ void SIM_Reconstructor::determine_otf_dimensions()
         m_myParams.nyotf = nyotf;
       m_myParams.nzotf = 1;
       // m_myParams.dkrotf = xres;  // dkrotf's unit is 1/micron
-      m_myParams.dkrotf = 1/(m_imgParams.dx * (nxotf-1)*2);  // dkrotf's unit is 1/micron
+      m_myParams.dkrotf = 1/(m_imgParams.dxy * (nxotf-1)*2);  // dkrotf's unit is 1/micron
       m_myParams.dkzotf = 1;
     }
     else {   // 3D
@@ -1669,14 +1671,14 @@ void SIM_Reconstructor::determine_otf_dimensions()
         m_myParams.nxotf = nyotf;
         m_myParams.nyotf = 1;
         m_myParams.dkzotf = 1/(m_myParams.dzPSF * m_myParams.nzotf);
-        m_myParams.dkrotf = 1/(m_imgParams.dx * (m_myParams.nxotf-1)*2);
+        m_myParams.dkrotf = 1/(m_imgParams.dxy * (m_myParams.nxotf-1)*2);
       }
       else {
         m_myParams.nzotf = nzotf / m_myParams.norders; // each order has a 3D OTF stack (non-negative kx half of Fourier space)
         m_myParams.nxotf = nxotf;
         m_myParams.nyotf = nyotf;
         m_myParams.dkzotf = 1/(m_myParams.dzPSF * m_myParams.nzotf);
-        m_myParams.dkrotf = 1/(m_imgParams.dx * m_myParams.nxotf);
+        m_myParams.dkrotf = 1/(m_imgParams.dxy * m_myParams.nxotf);
       }
     }
   }

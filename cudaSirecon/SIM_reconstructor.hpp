@@ -74,7 +74,7 @@ public:
     2. Fine-tune k0 vectors, modulation amplitudes and phases for all directions and orders
     3. For all directions, pre-filter separated bands, inverse FFT, and assemble the bands
    */
-  void processOneVolume();
+  int processOneVolume();
 
   //! Off-load processed result to host and save it to disk
   void writeResult(int timeIdx, int waveIdx);

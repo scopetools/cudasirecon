@@ -46,8 +46,9 @@ using namespace cimg_library;
 /**ratio of beam size in pupil to pupil size */
 #define SPOTRATIO 0.1
 #define MAXPHASES 25
-/** If k0 initial estimate is off from the guess by over this many pixels, a warning will be displayed */
-#define K0_WARNING_THRESH 2
+
+/** If k0 initial estimate is off from the guess by over this percentage, a warning will be displayed */
+#define K0_WARNING_THRESH 0.05
 
 
 #define CHECKED_DELETE(PTR) \
@@ -136,7 +137,7 @@ struct ReconParams {
   int   equalizet;
   int   bNoKz0;   /** if true, no kz=0 plane is used in modamp fit and assemblerealspace() */
   float wiener, wienerInr;
-  int   bUseEstimatedWiener;
+  // // int   bUseEstimatedWiener;
 
   /** OTF specific parameters */
   int   nxotf, nyotf, nzotf;
@@ -153,18 +154,18 @@ struct ReconParams {
   float constbkgd;
   int bBgInExtHdr; /** In Andor EMCCD, background varies with each exposure, esp. in EM mode. Hidden-behind-aluminum-foil pixels can be used to estimate background of each exposure and stored in the extended header. When this option is true, the 3rd float of the extended header stores such estimated background values. */
   int   bUsecorr;    /** whether to use a camera flat-fielding (or correction) file */
-  char  corrfiles[400];  /** name of the camera correction file if bUsecorr is 1 */
+  std::string  corrfiles;  /** name of the camera correction file if bUsecorr is 1 */
   float readoutNoiseVar;
   float electrons_per_bit;
 
   /* Debugging flags */
   int   bMakemodel;  /** whether to fake an ideal point source and obtain a recontruction of it (i.e., an effective PSF in some sense) */
   int   bSaveSeparated; /** whether to save separated bands and then quit before filterbands */
-  char  fileSeparated[400];
+  std::string  fileSeparated;
   int   bSaveAlignedRaw; /** whether to save dirft-corrected raw images (within each direction) and then quit before filterbands */
-  char  fileRawAligned[400];
+  std::string  fileRawAligned;
   int   bSaveOverlaps; /** whether to save makeoverlaps() output into a file */
-  char  fileOverlaps[400];
+  std::string  fileOverlaps;
 
   bool bTIFF;
   std::string ifiles;
@@ -181,8 +182,7 @@ struct ImageParams {
   short wave[5];
   short ntimes;
   unsigned short curTimeIdx;
-  float dx;
-  float dy;
+  float dxy;
   float dz;
   float dz_raw; //! used when deskew is performed on raw data; to remember the original dz before de-skewing
   float inscale;
@@ -278,7 +278,7 @@ void deskewOneSection(CImg<> &rawSection, float* nxp2OutBuff, int z, int nz,
 //     float *background, float backgroundExtra, float *slope, float inscale,
 //     int bUsecorr);
 
-void saveIntermediateDataForDebugging(const ReconParams& params);
+int saveIntermediateDataForDebugging(const ReconParams& params);
 
 void matrix_transpose(float* mat, int nRows, int nCols);
 
@@ -293,11 +293,11 @@ void rescaleDriver(int it, int iw, int zoffset, ReconParams* params,
 void transformXYSlice(int zoffset, ReconParams* params,
     const ImageParams& imgParams, DriftParams* driftParams, ReconData* data);
 
-int fitXYdrift(vector3d *drifts, float * timestamps, int nPoints,
-    vector3d *fitted_drift, float *eval_timestamps, int nEvalPoints);
-void calcPhaseList(float * phaseList, vector3d *driftlist,
-    float *phaseAbs, float k0angle, float linespacing,
-    float dr, int nphases, int nz, int direction, int z);
+// // int fitXYdrift(vector3d *drifts, float * timestamps, int nPoints,
+// //     vector3d *fitted_drift, float *eval_timestamps, int nEvalPoints);
+// // void calcPhaseList(float * phaseList, vector3d *driftlist,
+// //     float *phaseAbs, float k0angle, float linespacing,
+// //     float dr, int nphases, int nz, int direction, int z);
 
 void writeResult(int it, int iw, const ReconParams& params,
     const ImageParams& imgParams, const ReconData& reconData);
@@ -314,7 +314,7 @@ void rescale_GPU(GPUBuffer &img, int nx, int ny, int nz, float scale);
 // void deskew_GPU(std::vector<GPUBuffer> * pImgs, int nx, int ny, int nz, float deskewAngle, float dz_prior_to, float dr, int extraShift, float fillVal);
 
 // Compute rdistcutoff
-int rdistcutoff(int iw, const ReconParams& params, const ImageParams& imgParams);
+// int rdistcutoff(int iw, const ReconParams& params, const ImageParams& imgParams);
 float get_phase(cuFloatComplex b);
 float cmag(cuFloatComplex a);
 cuFloatComplex cmul(cuFloatComplex a, cuFloatComplex b);
