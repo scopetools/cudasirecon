@@ -32,7 +32,6 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->bSearchforvector = 1;
   pParams->bUseTime0k0 = 1;  /* default to use time 0's k0 fit for the rest in a time series data */
   pParams->apodizeoutput = 0;  /* 0-no apodize; 1-cosine apodize; 2-triangle apodize; used in filterbands() */
-  pParams->apoGamma = 1;  /* 0-no apodize; 1-cosine apodize; 2-triangle apodize; used in filterbands() */
   pParams->bSuppress_singularities = 1;  /* whether to dampen the OTF values near band centers; used in filterbands() */
   pParams->suppression_radius = 10;   /* if suppress_singularities is 1, the range within which suppresion is applied; used in filterbands() */
   pParams->bDampenOrder0 = 0;  /* whether to dampen order 0 contribution; used in filterbands() */
@@ -41,7 +40,6 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->equalizez = 0;
   pParams->equalizet = 0;
   pParams->bNoKz0 = 0;
-  // pParams->bUseEstimatedWiener = 1;
 
   pParams->bRadAvgOTF = 0;  /* default to use non-radially averaged OTFs */
   pParams->bOneOTFperAngle = 0;  /* default to use one OTF for all SIM angles */
@@ -62,9 +60,6 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->bWriteTitle = 0;
 
   pParams -> bTIFF = false;
-  // pParams->ifilein = 0;
-  // pParams->ofilein = 0;
-  // pParams->otffilein = 0;
 }
 
 
@@ -104,7 +99,7 @@ void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER
   float mean;
   IMRdHdr(istream_no, ixyz, mxyz, &pixeltype, &min, &max, &mean);
   IMGetHdr(istream_no, &header);
-  imgParams->nx = header.nx;
+  imgParams->nx = 0;  // deferred till deskewing situation is figured out
   imgParams->nx_raw = header.nx;
   imgParams->ny = header.ny;
   imgParams->nz = header.nz / (header.num_waves * header.num_times);
@@ -122,40 +117,6 @@ void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER
   imgParams->dxy = header.ylen;
   imgParams->dz = header.zlen;
 
-  /* Initialize headers for intermediate output files if requested */
-  if (params.bSaveAlignedRaw) {
-    memcpy(&aligned_header, &header, sizeof(header));
-    IMOpen(aligned_stream_no, params.fileRawAligned.c_str(), "new");
-    aligned_header.mode = IW_FLOAT;
-    aligned_header.inbsym = 0;
-    IMPutHdr(aligned_stream_no, &aligned_header);
-  }
-  if (params.bSaveSeparated) {
-    memcpy(&sep_header, &header, sizeof(header));
-    IMOpen(separated_stream_no, params.fileSeparated.c_str(), "new");
-    sep_header.nx = (imgParams->nx+2)/2;    // saved will be separated FFTs
-    sep_header.mode = IW_COMPLEX;
-    sep_header.inbsym = 0;
-    IMPutHdr(separated_stream_no, &sep_header);
-  }
-  if (params.bSaveOverlaps) {
-    memcpy(&overlaps_header, &header, sizeof(header));
-    IMOpen(overlaps_stream_no, params.fileOverlaps.c_str(), "new");
-    overlaps_header.nz = imgParams->nz*2*params.ndirs*imgParams->ntimes*imgParams->nwaves;
-    overlaps_header.num_waves = 2;  // save overlap 0 and 1 as wave 0 and 1 respectively
-    overlaps_header.interleaved = WZT_SEQUENCE;
-    overlaps_header.mode = IW_COMPLEX;   // saved will be full-complex overlaps in real space
-    overlaps_header.inbsym = 0;
-    IMPutHdr(overlaps_stream_no, &overlaps_header);
-  }
-  if (params.nzPadTo) {
-    imgParams->nz0 = params.nzPadTo;
-  } else {
-    imgParams->nz0 = imgParams->nz;
-  }
-  printf("nx=%d, ny=%d, nz=%d, nz0 = %d, nwaves=%d, ntimes=%d\n",
-      imgParams->nx, imgParams->ny, imgParams->nz, imgParams->nz0,
-      imgParams->nwaves, imgParams->ntimes);
 }
 
 void allocateOTFs(ReconParams* pParams, int sizeOTF,
@@ -201,7 +162,7 @@ void setOutputHeader(const ReconParams& myParams, const ImageParams& imgParams,
   header.mode = IW_FLOAT;
   header.nz = imgParams.nz * imgParams.nwaves * imgParams.ntimes *
     myParams.z_zoom;
-  header.nx *= myParams.zoomfact;
+  header.nx = imgParams.nx * myParams.zoomfact;
   header.ny *= myParams.zoomfact;
   header.xlen /= myParams.zoomfact;
   header.ylen /= myParams.zoomfact;
@@ -347,12 +308,12 @@ void findModulationVectorsAndPhasesForAllDirections(
         for (int z = 0; z < imgParams.nz; ++z) {
           float* imgPtr = (float*)tmp.getPtr();
           IMWrSec(separated_stream_no,
-              imgPtr + (z + zoffset) * (imgParams.nx + 2) * imgParams.ny);
+              imgPtr + (z + zoffset) * (imgParams.nx/2 + 1)*2 * imgParams.ny);
         }
       }
       continue; // skip the k0 search and modamp fitting
     }
-    else if (params->bTIFF) {
+    else if (params->bTIFF && params->bSaveSeparated) {
       // TO-DO
       std::cout << "No unmixed raw images were saved in TIFF mode\n";
     }
@@ -573,7 +534,7 @@ void apodizationDriver(int zoffset, ReconParams* params,
           // Goes through here
           apodize(params->napodize, imgParams.nx, imgParams.ny,
               &(rawImages->at(phase)),
-              (z + zoffset) * (imgParams.nx + 2) * imgParams.ny);
+              (z + zoffset) * (imgParams.nx/2 + 1)*2 * imgParams.ny);
         } else if (params->napodize == -1) {
           cosapodize(imgParams.nx, imgParams.ny, &(*rawImages)[phase],
               (z + zoffset) * imgParams.nx * imgParams.ny);
@@ -610,9 +571,9 @@ void transformXYSlice(int zoffset, ReconParams* params,
 {
   cufftHandle rfftplanGPU;
   int fftN[2] = {imgParams.ny, imgParams.nx};
-  int inembed[2] = {imgParams.nx * imgParams.ny, imgParams.nx + 2};
+  int inembed[2] = {imgParams.nx * imgParams.ny, (imgParams.nx/2 + 1)*2};
   int istride = 1;
-  int idist = (imgParams.nx + 2) * imgParams.ny;
+  int idist = (imgParams.nx/2 + 1)*2 * imgParams.ny;
   int onembed[2] = {imgParams.nx * imgParams.ny, imgParams.nx /2 +1};
   int ostride = 1;
   int odist = (imgParams.nx / 2 + 1) * imgParams.ny;
@@ -806,168 +767,6 @@ void matrix_transpose(float* mat, int nRows, int nCols)
   free(tmpmat);
 }
 
-// int rdistcutoff(int iw, const ReconParams& params, const ImageParams& imgParams)
-// {
-//   float dkr = 1.0 / (imgParams.ny * imgParams.dxy);
-//   int result = (int)floor((params.na * 2.0 / (
-//           imgParams.wave[iw] / 1000.0)) / dkr);
-//   return result;
-// }
-
-// // int fitXYdrift(vector3d *drifts, float * timestamps, int nPoints, vector3d *fitted_drift, float *eval_timestamps, int nEvalPoints)
-// //   /*
-// //      fit a curve using the data points of (x,y) vectors in "drifts" versus "timestamps". Then evaluate drifts for
-// //      the nEvalPoints points using the fitted curve; return the result in fitted_drifts.
-// //      Note: if nPoints is greater than 3, the use cubic fit? otherwise use parabola fit?
-// //      drifts[0] should always be (0, 0)?
-// //      */
-// // {
-// //   int   i, j;
-// //   int   nPolyTerms = 4; // highest order term is nPolyTerms-1; this could be passed in as an argument
-// //   float *matrix_A, *vecRHS;
-// //   float *workspace, wkopt;
-// //   int   info, lwork, nRHS=2;  // 2 because of solving for both x and y
-// //   int   bForceZero = 1;
-
-// //   if (bForceZero) {  /* for the curve to go through time point 0 */
-// //     int nPoints_minus1, nPolyTerms_minus1;
-// //     /* subtract all time stamps by the first */
-// //     for (i=1; i<nPoints; i++)
-// //       timestamps[i] -= timestamps[0];
-
-// //     /* Therefore, the solution to the constant is drifts[0].
-// //        Now we have 2 coefficients to solve. */ 
-
-// //     // construct the forward matrix; it's a transpose of the C-style matrix
-// //     matrix_A = (float*)malloc((nPoints-1) * (nPolyTerms-1) * sizeof(float));
-// //     // leading dimension is nPoints (column in Fortran, row in C)
-// //     for (i=0; i<nPolyTerms-1; i++)
-// //       for (j=0; j<nPoints-1; j++)
-// //         matrix_A[i*(nPoints-1) + j] = pow(timestamps[j+1], i+1);
-
-// //     // construct the right-hand-side vectors
-// //     vecRHS = (float*)malloc((nPoints-1) * nRHS * sizeof(float));
-// //     for (j=0; j<nPoints-1; j++) {
-// //       vecRHS[j]           = drifts[j+1].x - drifts[0].x;
-// //       vecRHS[j+nPoints-1] = drifts[j+1].y - drifts[0].y;
-// //     }
-
-// //     /* Because of calling Fortran subroutines, every parameter has to be passed as a pointer */
-// //     nPoints_minus1 = nPoints - 1;
-// //     nPolyTerms_minus1 = nPolyTerms - 1;
-// //     /* Query and allocate the optimal workspace */
-// //     lwork = -1;
-// //     sgels_("No transpose", &nPoints_minus1, &nPolyTerms_minus1, &nRHS, matrix_A, &nPoints_minus1,
-// //         vecRHS, &nPoints_minus1, &wkopt, &lwork, &info );
-// //     lwork = wkopt;
-// //     workspace = (float*)malloc( lwork* sizeof(float) );
-
-// //     sgels_("No transpose", &nPoints_minus1, &nPolyTerms_minus1, &nRHS, matrix_A, &nPoints_minus1,
-// //         vecRHS, &nPoints_minus1, workspace, &lwork, &info);
-
-// //     if (info != 0)
-// //       return 0;
-
-// //     /* Now subtract timestamp[0] from all eval_timestamps */
-// //     for (i=0; i<nEvalPoints; i++)
-// //       eval_timestamps[i] -= timestamps[0];
-
-// //     /* Evaluate at datapoints eval_timestamps */
-// //     for (i=0; i<nEvalPoints; i++) {
-// //       fitted_drift[i].x = drifts[0].x;
-// //       fitted_drift[i].y = drifts[0].y;
-// //       for (j=0; j<nPolyTerms-1; j++) {
-// //         fitted_drift[i].x += vecRHS[j] * pow(eval_timestamps[i], j+1);
-// //         fitted_drift[i].y += vecRHS[j+nPoints-1] * pow(eval_timestamps[i], j+1);
-// //       }
-// //     }
-// //   }
-// //   else {
-// //     // construct the forward matrix; it's a transpose of the C-style matrix
-// //     matrix_A = (float*)malloc(nPoints * nPolyTerms * sizeof(float));
-// //     // leading dimension is nPoints (column in Fortran, row in C)
-// //     for (i=0; i<nPolyTerms; i++)
-// //       for (j=0; j<nPoints; j++)
-// //         matrix_A[i*nPoints + j] = pow(timestamps[j], i);
-
-// //     // construct the right-hand-side vectors
-// //     vecRHS = (float*)malloc(nPoints * nRHS * sizeof(float));
-
-// //     for (j=0; j<nPoints; j++) {
-// //       vecRHS[j] = drifts[j].x;
-// //       vecRHS[j+nPoints] = drifts[j].y;
-// //     }
-
-// //     /* Query and allocate the optimal workspace */
-// //     lwork = -1;
-// //     sgels_("No transpose", &nPoints, &nPolyTerms, &nRHS, matrix_A, &nPoints, vecRHS, &nPoints, &wkopt, &lwork, &info );
-// //     lwork = wkopt;
-// //     workspace = (float*)malloc( lwork* sizeof(float) );
-
-// //     sgels_("No transpose", &nPoints, &nPolyTerms, &nRHS, matrix_A, &nPoints, vecRHS, &nPoints, workspace, &lwork, &info);
-
-// //     if (info != 0)
-// //       return 0;
-
-// //     /* Evaluate at datapoints eval_timestamps */
-// //     for (i=0; i<nEvalPoints; i++) {
-// //       fitted_drift[i].x = 0;
-// //       fitted_drift[i].y = 0;
-// //       for (j=0; j<nPolyTerms; j++) {
-// //         fitted_drift[i].x += vecRHS[j] * pow(eval_timestamps[i], j);
-// //         fitted_drift[i].y += vecRHS[j+nPoints] * pow(eval_timestamps[i], j);
-// //       }
-// //     }
-// //   }
-
-// //   free(matrix_A);
-// //   free(vecRHS);
-// //   free(workspace);
-
-// //   return 1;
-// // }
-
-// // void calcPhaseList(float * phaseList, vector3d *driftlist,
-// //     float *phaseAbs, float k0angle, float linespacing, float dr,
-// //     int nphases, int nz, int direction, int z)
-// //   /*
-// //      Calculate the actual pattern phase value for each exposure, taking into account drift estimation, acquisition-time
-// //      phase values, and the k0 vector of this direction.
-// //      phaseAbs -- acquisition-time absolute phase used, recorded in extended header
-// //      */
-// // {
-// //   int p;
-// //   float phistep, k0mag;
-// //   vector3d kvec, drift;
-
-// //   phistep = 2*M_PI / nphases;
-
-// //   k0mag = 1/linespacing;
-// //   kvec.x = k0mag * cos(k0angle);
-// //   kvec.y = k0mag * sin(k0angle);
-
-// //   /* The "standard" evenly-spaced phases + phase correction caused by drift correction - 
-// //      acquisition-time phase correction */
-// //   for (p=0; p<nphases; p++) {
-// //     float phiDrift;
-// //     drift = driftlist[direction*nz*nphases + z*nphases + p];
-// //     phiDrift = (drift.x*kvec.x + drift.y*kvec.y) * dr * 2 * M_PI;
-
-// //     if (phaseAbs && nz == 1)
-// //       // here the absolute phases of the off images are used; not necessary but simply because phase starts at 0 for off images
-// //       phaseList[p] = phaseAbs[direction*nphases + p]  + phiDrift;
-
-// //     else
-// //       phaseList[p] = p * phistep + phiDrift;
-
-// //     printf("phaseAbs[%d]=%10.5f, phaseList[%d]=%10.5f, phase error=%8.3f, phase drift=%8.3f deg\n",
-// //         p, phaseAbs[direction*nphases + p]*180/M_PI,
-// //         p, phaseList[p]*180/M_PI, 
-// //         (phaseList[p] - p *phistep)*180/M_PI,
-// //         phiDrift*180/M_PI);
-// //   }
-
-// // }
 
 float get_phase(cuFloatComplex b)
 {
@@ -1281,14 +1080,14 @@ int SIM_Reconstructor::setParams()
   }
 
   if (m_varsmap.count("wiener")) {
-    // if (m_myParams.wiener > 0)
-    //   m_myParams.bUseEstimatedWiener = false;
     std::cout<< "wiener=" << m_myParams.wiener << std::endl;
   }
 
   if (m_varsmap.count("gammaApo")) {
+    // because "gammaApo" has a default value set, this block is always entered;
+    // and therefore, "apodizeoutput" is always 2 (triangular or gamma apo)
     m_myParams.apodizeoutput = 2;
-    std::cout << "gamma=" << m_myParams.apoGamma << std::endl;
+    std::cout << "gamma = " << m_myParams.apoGamma << std::endl;
   }
 
   if (m_varsmap.count("saveprefiltered")) {
@@ -1311,7 +1110,7 @@ int SIM_Reconstructor::setParams()
     boost::tokenizer<boost::char_separator<char>> tokens(m_varsmap["k0angles"].as< std::string >(), sep);
     for ( auto it = tokens.begin(); it != tokens.end(); ++it)
         m_myParams.k0angles.push_back(strtod(it->c_str(), NULL));
-//    std::cout << m_myParams.k0angles << std::endl;
+    // std::cout << m_myParams.k0angles << std::endl;
   }
 
   return 0;
@@ -1363,7 +1162,7 @@ void SIM_Reconstructor::setup()
 {
   if (m_myParams.bTIFF) {
     CImg<> tiff0(m_all_matching_files[0].c_str());
-    m_imgParams.nx = tiff0.width();
+    m_imgParams.nx = 0;
     m_imgParams.nx_raw = tiff0.width();
     m_imgParams.ny = tiff0.height();
     m_imgParams.nz = tiff0.depth();
@@ -1372,6 +1171,9 @@ void SIM_Reconstructor::setup()
   }
   else 
     ::loadHeader(m_myParams, &m_imgParams, m_in_out_header);
+
+  printf("nx_raw=%d, ny=%d, nz=%d, nz0=%d\n",
+         m_imgParams.nx_raw, m_imgParams.ny, m_imgParams.nz, m_imgParams.nz0);
 
   setup_common();
 }
@@ -1393,15 +1195,21 @@ void SIM_Reconstructor::setup_common()
   //! Deskewing, if requested, will be performed after this function returns;
   //  "nx" is altered to be equal to "ny" and "dz" is multiplied by sin(deskewAngle)
   if (fabs(m_myParams.deskewAngle) > 0.) {
-    m_imgParams.nx = m_imgParams.ny;   // To keep images square; can be improved to allow non-square images -- lin
+    if (m_myParams.deskewAngle <0) m_myParams.deskewAngle += 180.;
+    m_imgParams.nx = findOptimalDimension(m_imgParams.nx_raw + m_imgParams.nz0 * cos(m_myParams.deskewAngle*M_PI/180.) * m_imgParams.dz / m_imgParams.dxy);
+//    m_imgParams.nx = m_imgParams.ny;
     m_imgParams.dz_raw = m_imgParams.dz;
-    m_imgParams.dz *= fabs(sin(m_myParams.deskewAngle * M_PI/180.));  // cos() or sin() ?? --lin
+    m_imgParams.dz *= fabs(sin(m_myParams.deskewAngle * M_PI/180.));
+  }
+  else {
+    m_imgParams.nx = m_imgParams.nx_raw;
+    m_imgParams.dz_raw = 0;
   }
 
   //! If cropping is requested, change nx, ny accordingly: (does this work or make sense?)
-  if (m_myParams.cropXYto > 0 && m_myParams.cropXYto < m_imgParams.nx && m_myParams.cropXYto < m_imgParams.ny) {
+  if (m_myParams.cropXYto > 0 && m_myParams.cropXYto < m_imgParams.nx) {
     m_imgParams.nx = m_myParams.cropXYto;
-    m_imgParams.ny = m_myParams.cropXYto;
+    // m_imgParams.ny = m_myParams.cropXYto;
   }
 
   
@@ -1409,6 +1217,37 @@ void SIM_Reconstructor::setup_common()
          m_imgParams.nx, m_imgParams.ny, m_imgParams.nz,
          m_imgParams.nz0, m_imgParams.nwaves);
   printf("dxy=%f, dz=%f um\n", m_imgParams.dxy, m_imgParams.dz);
+
+  // // Initialize headers for intermediate output files if requested
+  if (!m_myParams.bTIFF) {
+    if (m_myParams.bSaveAlignedRaw) {
+      memcpy(&aligned_header, &m_in_out_header, sizeof(m_in_out_header));
+      IMOpen(aligned_stream_no, m_myParams.fileRawAligned.c_str(), "new");
+      aligned_header.mode = IW_FLOAT;
+      aligned_header.nx = m_imgParams.nx;
+      aligned_header.inbsym = 0;
+      IMPutHdr(aligned_stream_no, &aligned_header);
+    }
+    if (m_myParams.bSaveSeparated) {
+      memcpy(&sep_header, &m_in_out_header, sizeof(m_in_out_header));
+      IMOpen(separated_stream_no, m_myParams.fileSeparated.c_str(), "new");
+      sep_header.nx = m_imgParams.nx/2+1;    // saved will be separated FFTs
+      sep_header.mode = IW_COMPLEX;
+      sep_header.inbsym = 0;
+      IMPutHdr(separated_stream_no, &sep_header);
+    }
+    if (m_myParams.bSaveOverlaps) {
+      memcpy(&overlaps_header, &m_in_out_header, sizeof(m_in_out_header));
+      IMOpen(overlaps_stream_no, m_myParams.fileOverlaps.c_str(), "new");
+      overlaps_header.nz = m_imgParams.nz*2*m_myParams.ndirs*m_imgParams.ntimes*m_imgParams.nwaves;
+      overlaps_header.nx = m_imgParams.nx;
+      overlaps_header.num_waves = 2;  // save overlap 0 and 1 as wave 0 and 1 respectively
+      overlaps_header.interleaved = WZT_SEQUENCE;
+      overlaps_header.mode = IW_COMPLEX;   // saved will be full-complex overlaps in real space
+      overlaps_header.inbsym = 0;
+      IMPutHdr(overlaps_stream_no, &overlaps_header);
+    }
+  }
 
   m_myParams.norders = 0;
   if (m_myParams.norders_output != 0) {
@@ -1527,26 +1366,6 @@ void SIM_Reconstructor::loadAndRescaleImage(int timeIdx, int waveIdx)
   loadImageData(timeIdx, waveIdx);
   if (m_myParams.bBessel && m_myParams.bNoRecon) return;
 
-//   if (m_myParams.bTIFF) {
-//     std::vector<GPUBuffer>* rawImages = &(m_reconData.savedBands[0]);
-//     double intensity_overall = 0;
-//     for (int p=0; p<m_myParams.nphases; p++)
-//       intensity_overall += meanAboveBackground_GPU(rawImages->at(p),
-//                                                    m_imgParams.nx+2,
-//                                                    m_imgParams.ny,
-//                                                    m_imgParams.nz);
-//     printf("intensity_overall=%e\n", intensity_overall);
-// //    intensity_overall /= m_myParams.nphases;
-//     if (timeIdx ==0) {
-//       m_intensity_overall0 = intensity_overall;
-//     }
-//     else
-//       for (int p=0; p<m_myParams.nphases; p++)
-//         rescale_GPU(rawImages->at(p), m_imgParams.nx+2, m_imgParams.ny, m_imgParams.nz,
-//                     m_intensity_overall0/intensity_overall);
-    
-//   }
-//   else
   ::rescaleDriver(timeIdx, waveIdx, m_zoffset, &m_myParams, m_imgParams, 
                   &m_driftParams, &m_reconData);
 }
@@ -1567,12 +1386,14 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
 //  rawFromFile.display();
 
   float dskewA = m_myParams.deskewAngle;
-  if ( dskewA<0) dskewA += 180.;
-  float deskewFactor = cos(dskewA * M_PI/180.) * m_imgParams.dz_raw / m_imgParams.dxy;
+  // if ( dskewA<0) dskewA += 180.; already done in setup_common()
+  float deskewFactor = 0;
+  if (fabs(dskewA) > 0.0)
+    deskewFactor = cos(dskewA * M_PI/180.) * m_imgParams.dz_raw / m_imgParams.dxy;
 
   for (int direction = 0; direction < m_myParams.ndirs; ++direction) {
     // What does "PinnedCPUBuffer" really do? Using it here messes things up.
-    /*Pinned*/CPUBuffer nxExtendedBuff(sizeof(float) * (m_imgParams.nx + 2) * m_imgParams.ny);
+    /*Pinned*/CPUBuffer nxExtendedBuff(sizeof(float) * (m_imgParams.nx/2 + 1)*2 * m_imgParams.ny);
 
     std::vector<GPUBuffer>* rawImages = &(m_reconData.savedBands[direction]);
     int z = 0;
@@ -1610,9 +1431,10 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
                          m_imgParams.nx, deskewFactor, m_myParams.extraShift);
         // Transfer the data from nxExtendedBuff to device buffer previously allocated
         // (see m_reconData.savedBands)
-        nxExtendedBuff.set(&(rawImages->at(phase)), 0, (m_imgParams.nx + 2) * m_imgParams.ny * sizeof(float),
-                           (z + m_zoffset) * (m_imgParams.nx + 2) * m_imgParams.ny * sizeof(float));
-
+        // std::cout << "z=" << z;
+        nxExtendedBuff.set(&(rawImages->at(phase)), 0, (m_imgParams.nx/2 + 1)*2 * m_imgParams.ny * sizeof(float),
+                           (z + m_zoffset) * (m_imgParams.nx/2 + 1)*2 * m_imgParams.ny * sizeof(float));
+        // std::cout << ", phase=" << phase << std::endl;
         ++zsec;
       } // end for (phase)
     } // end for (z)
@@ -1927,14 +1749,16 @@ void deskewOneSection(CImg<> &rawSection, float* nxp2OutBuff, int z, int nz,
   unsigned nx_in = rawSection.width();
   unsigned ny_in = rawSection.height();
   float *in = rawSection.data();
+  int nx_out_ext = (nx_out/2+1)*2;
+//  std::cout << "In deskewOneSection, deskewFactor=" << deskewFactor << std::endl;
 #pragma omp parallel for
-  for (auto xout=0; xout<nx_out+2; xout++) {
+  for (auto xout=0; xout<nx_out_ext; xout++) {
     float xin = xout;
     if (fabs(deskewFactor) > 0)
       xin = xout - nx_out/2. + extraShift - deskewFactor*(z-nz/2.) + nx_in/2.;
 
     for (int y=0; y<ny_in; y++) {
-      unsigned indout = y * (nx_out+2) + xout;
+      unsigned indout = y * nx_out_ext + xout;
       if (xin >= 0 && xin < nx_in-1) {
 
         unsigned indin = y * nx_in + (unsigned int) floor(xin);

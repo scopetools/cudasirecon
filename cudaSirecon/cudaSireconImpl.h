@@ -173,7 +173,7 @@ struct ReconParams {
   std::string otffiles;
 };
 struct ImageParams {
-  int nx;
+  int nx;   //! image's width after deskewing or same as "nx_raw"
   int nx_raw; //! raw image's width before deskewing
   int ny;
   int nz;

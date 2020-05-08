@@ -53,13 +53,14 @@ __global__ void apodize_x_kernel(int napodize, int nx, int ny,
     float* image)
 {
   int k = blockDim.x * blockIdx.x + threadIdx.x;
+  int xdim = (nx/2+1) * 2;
   if (k < nx) {
-    float diff = (image[(ny - 1) * (nx + 2) + k] - image[k]) / 2.0;
+    float diff = (image[(ny - 1) * xdim + k] - image[k]) / 2.0;
     for (int l = 0; l < napodize; ++l) {
       float fact = 1.0 - sinf((((float)l + 0.5) / (float)napodize) *
           M_PI * 0.5);
-      image[l * (nx + 2) + k] = image[l * (nx + 2) + k] + diff * fact;
-      image[(ny - 1 - l) * (nx + 2) + k] = image[(ny - 1 - l) * (nx + 2) + k] -
+      image[l * xdim + k] = image[l * xdim + k] + diff * fact;
+      image[(ny - 1 - l) * xdim + k] = image[(ny - 1 - l) * xdim + k] -
         diff * fact;
     }
   }
@@ -69,14 +70,15 @@ __global__ void apodize_y_kernel(int napodize, int nx, int ny,
     float* image)
 {
   int l = blockDim.x * blockIdx.x + threadIdx.x;
+  int xdim = (nx/2+1) * 2;
   if (l < ny) {
-    float diff = (image[l * (nx + 2) + nx - 1] - image[l * (nx + 2)]) / 2.0;
+    float diff = (image[l * xdim + nx - 1] - image[l * xdim]) / 2.0;
     for (int k = 0; k < napodize; ++k) {
       float fact = 1.0 - sinf(((k + 0.5) / (float)napodize) * M_PI *
           0.5);
-      image[l * (nx + 2) + k] = image[l * (nx + 2) + k] + diff * fact;
-      image[l * (nx + 2) + (nx - 1 - k)] =
-        image[l * (nx + 2) + (nx - 1 - k)] - diff * fact;
+      image[l * xdim + k] = image[l * xdim + k] + diff * fact;
+      image[l * xdim + (nx - 1 - k)] =
+        image[l * xdim + (nx - 1 - k)] - diff * fact;
     }
   }
 }
@@ -99,10 +101,11 @@ __global__ void cosapodize_kernel(int nx, int ny, float* image)
 {
   int k = blockDim.x * blockIdx.x + threadIdx.x;
   int l = blockDim.y * blockIdx.y + threadIdx.y;
+  int xdim = (nx/2+1) * 2;
   if (k<nx && l<ny) {
     float xfact = sinf(M_PI * ((float)k + 0.5) / nx);
     float yfact = sinf(M_PI * ((float)l + 0.5) / ny);
-    image[l * (nx + 2) + k] *= xfact * yfact;
+    image[l * xdim + k] *= xfact * yfact;
   }
 }
 
@@ -120,13 +123,14 @@ __host__ void rescale(int nx, int ny, int nz, int z, int zoffset, int direction,
   numBlocks.x = (int)(ceil((float)nx / blockSize.x));
   numBlocks.y = (int)(ceil((float)ny / blockSize.y));
   numBlocks.z = 1;
+  int xdim = (nx/2 + 1) * 2;
 
   GPUBuffer sumTmpDev(numBlocks.x * numBlocks.y * sizeof(float), 0);
   CPUBuffer sumTmpHost(numBlocks.x * numBlocks.y * sizeof(float));
   for (int phase = 0; phase < nphases; ++phase) {
     sum_reduction_kernel<<<numBlocks, blockSize>>>(
          ((float*)(images->at(phase).getPtr())) +
-         (z + zoffset) * (nx + 2) * ny, nx, ny,
+         (z + zoffset) * xdim * ny, nx, ny,
         (float*)sumTmpDev.getPtr());
     sumTmpDev.set(&sumTmpHost, 0, sumTmpDev.getSize(), 0);
     sum[phase] = 0.0f;
@@ -149,7 +153,7 @@ __host__ void rescale(int nx, int ny, int nz, int z, int zoffset, int direction,
     float ratio = ref / sum[phase];
     rescale_kernel<<<numBlocks, blockSize>>>(
          (float*)((*images)[phase].getPtr()) +
-         (z + zoffset) * (nx + 2) * ny, nx, ny,
+         (z + zoffset) * xdim * ny, nx, ny,
         ratio);
   }
 }
@@ -159,10 +163,11 @@ __global__ void sum_reduction_kernel(float* img, int nx, int ny,
 {
   int k = blockDim.x * blockIdx.x + threadIdx.x;
   int l = blockDim.y * blockIdx.y + threadIdx.y;
+  int xdim = (nx/2+1) * 2;
   __shared__ float locRedBuffer[RED_BLOCK_SIZE_X * RED_BLOCK_SIZE_Y];
   if (k < nx && l < ny) {
     locRedBuffer[threadIdx.x + blockDim.x * threadIdx.y] =
-      img[k + l * (nx+2)];
+      img[k + l * xdim];
   } else {
     locRedBuffer[threadIdx.x + blockDim.x * threadIdx.y] = 0.0f;
   }
@@ -185,18 +190,11 @@ __global__ void rescale_kernel(float* img, int nx, int ny,
 {
   int k = blockDim.x * blockIdx.x + threadIdx.x;
   int l = blockDim.y * blockIdx.y + threadIdx.y;
+  int xdim = (nx/2 + 1) * 2;
   if (k < nx && l < ny) {
-    img[l * (nx + 2) + k] *= scaleFactor;
+    img[l * xdim + k] *= scaleFactor;
   }
 }
-
-// __host__ float estimate_Wiener(const std::vector<GPUBuffer>& rawImages, int nx,
-//           int ny, int z, int nphases, int rdistcutoff)
-// {
-//   printf("In estimate_Wiener.\n");
-//   fflush(stdout);
-//   return 0.0f;
-// }
 
 __host__ void fixdrift_2D(std::vector<GPUBuffer>* CrawImages,
     vector3d *driftlist, int nphases, int nx, int ny, int nz, int dir,
@@ -215,16 +213,6 @@ __host__ int calcRefImage(const std::vector<GPUBuffer>& rawImages,
   return 0;
 }
 
-// __host__ void determinedrift_2D(const std::vector<GPUBuffer>& rawImages,
-//       const std::vector<GPUBuffer>& offImages, int nOffImages,
-//       const GPUBuffer& CrefImage,
-//       vector3d *drifts, int nphases, int nx, int ny, int dir,
-//       float rdistcutoff, float drift_filter_fact)
-// {
-//   printf("In determinedrift_2D.\n");
-//   fflush(stdout);
-// }
-
 __host__ void separate(int nx, int ny, int nz, int direction, int nphases,
     int norders, std::vector<GPUBuffer>*rawImages, float *sepMatrix)
 {
@@ -234,8 +222,9 @@ __host__ void separate(int nx, int ny, int nz, int direction, int nphases,
 #endif
   // Allocate memory for result (have to do this out-of-place)
   std::vector<float*> output(norders * 2 - 1);
+  int xdim = (nx/2 + 1) * 2;
   for (auto i = output.begin(); i != output.end(); ++i) {
-    cutilSafeCall(cudaMalloc((void**)&(*i), nz * ny * (nx + 2) *
+    cutilSafeCall(cudaMalloc((void**)&(*i), nz * ny * xdim *
           sizeof(float)));
   }
   cutilSafeCall(cudaMemcpyToSymbol(const_outputPtrs, &output[0],
@@ -257,7 +246,7 @@ __host__ void separate(int nx, int ny, int nz, int direction, int nphases,
   int nThreadsX = 16;
   int nThreadsY = 16;
   dim3 nThreads(nThreadsX, nThreadsY, 1);
-  int numBlocksX = (int)ceil((float)(nx + 2) / nThreadsX);
+  int numBlocksX = (int)ceil((float)xdim / nThreadsX);
   int numBlocksY = (int)ceil((float)ny / nThreadsY);
   dim3 nBlocks(numBlocksX, numBlocksY, 1);
   separate_kernel<<<nBlocks, nThreads>>>( norders, nphases, nx, ny, nz);
@@ -268,7 +257,7 @@ __host__ void separate(int nx, int ny, int nz, int direction, int nphases,
   for (int i = 0; i < nphases; ++i) {
     rawImages->at(i).resize(0);
     rawImages->at(i).setPtr((char*)output[i],
-        nz * ny * (nx + 2) * sizeof(float), 0);
+        nz * ny * xdim * sizeof(float), 0);
   }
 #ifndef NDEBUG
   for (auto i = rawImages->begin(); i != rawImages->end(); ++i) {
@@ -282,9 +271,10 @@ __global__ void separate_kernel(int norders, int nphases,
 {
   int x = blockIdx.x * blockDim.x + threadIdx.x;
   int y = blockIdx.y * blockDim.y  + threadIdx.y;
-  int nxy2 = (nx + 2) * ny;
-  int offset = y * (nx + 2) + x;
-  if (x < nx + 2 && y < ny) {
+  int xdim = (nx/2 + 1) * 2;
+  int nxy2 = xdim * ny;
+  int offset = y * xdim + x;
+  if (x < xdim && y < ny) {
     for (int i = 0; i < norders * 2 - 1; ++i) {
       float* outBasePtr = const_outputPtrs[i];
       for (int z = 0; z < nz; ++z) {
@@ -610,22 +600,14 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
   cuFloatComplex* band2im;
   //  std::cout << "bands in makeoverlaps:\n";
   if (order1 == 0) {
-    //    bands->at(0).dump(std::cout, nx + 2, 0, 2 * (nx + 2) *
-    //        sizeof(float));
     band1re = (cuFloatComplex*)bands->at(0).getPtr();
     band1im = 0;
   } else {
-    //    bands->at(order1 * 2 - 1).dump(std::cout, nx + 2, 0, 2 * (nx + 2) *
-    //        sizeof(float));
     band1re = (cuFloatComplex*)bands->at(order1 * 2 - 1).getPtr();
-    //    bands->at(order1 * 2).dump(std::cout, nx + 2, 0, 2 * (nx + 2) *
-    //        sizeof(float));
     band1im = (cuFloatComplex*)bands->at(order1 * 2).getPtr();
   }
   // It is assumed that order2 is never 0
-  //  bands->at(order2 * 2 - 1).dump(std::cout, nx + 2, 0, 2 * (nx + 2) * sizeof(float));
   band2re = (cuFloatComplex*)bands->at(order2 * 2 - 1).getPtr();
-  // bands->at(order2 * 2).dump(std::cout, nx + 2, 0, 2 * (nx + 2) * sizeof(float));
   band2im = (cuFloatComplex*)bands->at(order2 * 2).getPtr();
 
   printf("In makeoverlaps(), order1=%d, order2=%d, k0x=%f, k0y=%f, rdistcutoff=%f, zdistcutoff=%f pixels\n", order1, order2, kx/dkx, ky/dky, rdistcutoff/dky, zdistcutoff);
@@ -890,45 +872,6 @@ __global__ void makeOverlaps1Kernel(int nx, int ny, int nz,
     }
   }
 }
-
-// // __device__ cuFloatComplex dev_otfinterpolateMkOvrLps(
-// //     cuFloatComplex * otf, float kx, float ky, int kz, float kzscale, int mask) {
-// //   cuFloatComplex otfval = make_cuFloatComplex(0.0f, 0.0f);
-// //   if (const_pParams_bRadAvgOTF) {
-// //     int irindex, izindex, indices[2][2];
-// //     float krindex, kzindex;
-// //     float ar, az;
-
-// //     krindex = sqrt(kx*kx+ky*ky) * krscale;
-// //     kzindex = kz * kzscale;
-// //     if (kzindex<0) kzindex += const_pParams_nzotf;
-
-// //     irindex = floor(krindex);
-// //     izindex = floor(kzindex);
-
-// //     ar = krindex - irindex;
-// //     az = kzindex - izindex;
-// //     if (izindex == const_pParams_nzotf-1) {
-// //       indices[0][0] = irindex*const_pParams_nzotf+izindex;
-// //       indices[0][1] = irindex*const_pParams_nzotf;
-// //       indices[1][0] = (irindex+1)*const_pParams_nzotf+izindex;
-// //       indices[1][1] = (irindex+1)*const_pParams_nzotf;
-// //     }
-// //     else {
-// //       indices[0][0] = irindex*const_pParams_nzotf+izindex;
-// //       indices[0][1] = irindex*const_pParams_nzotf+(izindex+1);
-// //       indices[1][0] = (irindex+1)*const_pParams_nzotf+izindex;
-// //       indices[1][1] = (irindex+1)*const_pParams_nzotf+(izindex+1);
-// //     }
-// //     if (mask) {
-// //       otfval.x = (1-ar)*(otf[indices[0][0]].x*(1-az) + otf[indices[0][1]].x*az) +
-// //         ar*(otf[indices[1][0]].x*(1-az) + otf[indices[1][1]].x*az);
-// //       otfval.y = (1-ar)*(otf[indices[0][0]].y*(1-az) + otf[indices[0][1]].y*az) +
-// //         ar*(otf[indices[1][0]].y*(1-az) + otf[indices[1][1]].y*az);
-// //     }
-// //   }
-// //   return otfval;
-// // }
 
 __host__ void fitk0andmodamps(std::vector<GPUBuffer>* bands,
     GPUBuffer* overlap0, GPUBuffer* overlap1, int nx, int ny, int nz,
@@ -1285,12 +1228,8 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
     const std::vector<float>& noiseVarFactors, int nx, int ny, int nz,
     short wave, ReconParams* pParams)
 {
-  float *ampmag2;
-  cuFloatComplex *conjamp;
-  int order, order2, dir2, *zdistcutoff;
-  float apocutoff, zapocutoff;
+  int order, order2, dir2;
   float dkz;
-  /* int iin, jin, conj, xyind, ind, z0, iz, z; */
   float lambdaem, lambdaexc, alpha, beta, betamin, wiener;
 
   wiener = pParams->wiener*pParams->wiener;
@@ -1312,7 +1251,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
   if (rdistcutoff> 1./(2.*dxy)) rdistcutoff = 1./(2.*dxy);
 
   /* 080201: zdistcutoff[0] depends on options -- single or double lenses */
-  zdistcutoff = (int *) malloc(norders * sizeof(int));
+  int * zdistcutoff = (int *) malloc(norders * sizeof(int));
   if (!pParams->bTwolens && !pParams->bBessel) {
     zdistcutoff[0] = (int) ceil(((1-cosf(alpha))/lambdaem) / dkz);    /* OTF support axial limit in data pixels */
     zdistcutoff[norders-1] = 1.3*zdistcutoff[0];    /* approx max axial support limit of the OTF of the high frequency side band */
@@ -1325,7 +1264,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
     kzExMax = 2 *pParams->BesselNA / pParams->BesselLambdaEx;
 
     zdistcutoff[0] = (int) rint((kzExMax + (1-cosf(alpha))/lambdaem) / dkz);    /* OTF support axial limit in data pixels */
-    printf("norders=%d, zdistcutoff[%d]=%d\n", norders, 0 ,zdistcutoff[0]);
+    printf("norders=%d, zdistcutoff[%d]=%d\n", norders, 0, zdistcutoff[0]);
     for (order=1; order<norders; order++) {
       halfangle = acosf(k0mag * order / (norders-1) / kzExMax);
       zdistcutoff[order] = ceil((kzExMax * sinf(halfangle) + (1.0 - cosf(alpha)) / lambdaem) / dkz);
@@ -1351,15 +1290,16 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
     /* printf("order=%d, rdistcutoff=%f, zdistcutoff=%d\n", order, rdistcutoff, zdistcutoff[order]); */
   }
 
-  apocutoff = rdistcutoff+ k0mag * (norders-1);
+  float apocutoff = rdistcutoff+ k0mag * (norders-1);
 
+  float zapocutoff;
   if (pParams->bTwolens || pParams->bBessel)
     zapocutoff = zdistcutoff[0];
   else
     zapocutoff = zdistcutoff[1];
 
-  ampmag2 = (float *) malloc(norders * sizeof(float));
-  conjamp = (cuFloatComplex *) malloc(norders * sizeof(cuFloatComplex));
+  float *ampmag2 = (float *) malloc(norders * sizeof(float));
+  cuFloatComplex *conjamp = (cuFloatComplex *) malloc(norders * sizeof(cuFloatComplex));
   for (order=0;order<norders;order++) {
     ampmag2[order] = amp[dir][order].x * amp[dir][order].x +
       amp[dir][order].y * amp[dir][order].y;
@@ -1382,6 +1322,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
         &pParams->bFilteroverlaps, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_apodizeoutput,
         &pParams->apodizeoutput, sizeof(int)));
+  std::cout << "apodizeoutput = " << pParams->apodizeoutput << std::endl;
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_apoGamma,
         &pParams->apoGamma, sizeof(float)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_bBessel,
@@ -1401,8 +1342,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
         norders * sizeof(float), 0, cudaMemcpyHostToDevice));
 
   // Explicitly calculate mag2 of amp for all orders
-  float * ampmag2_alldirs;
-  ampmag2_alldirs = (float *) malloc(ndirs*norders*sizeof(float));
+  float * ampmag2_alldirs = (float *) malloc(ndirs*norders*sizeof(float));
   for (dir2=0; dir2<ndirs; dir2++) {
     for (order2=0;order2<norders;order2++) {
       ampmag2_alldirs[dir2*norders+order2] =
@@ -1490,7 +1430,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
     //
     if ((nz-zdistcutoff[order]) > (zdistcutoff[order]+1)) {
       NZblock = (nz-zdistcutoff[order]) - (zdistcutoff[order]+1);
-      NXblock = (int) ceil( (float)(nx+2)/2./nThreads );
+      NXblock = (int) ceil( ((float)(nx/2+1))/nThreads );
       dim3 grid2(NXblock, NYblock, NZblock);
       filterbands_kernel3<<<grid2,block>>>(order, nx, ny, nz, dev_bandptr, dev_bandptr2);
       cutilSafeCall(cudaGetLastError());
@@ -1571,11 +1511,11 @@ __global__ void filterbands_kernel1(int dir, int ndirs, int order, int norders, 
     
       // this one is thread dependent ... from the rdist calculation
       if (const_pParams_bSuppress_singularities && order != 0 && rdist1 <=suppRadius)
-        dampfact *= dev_suppress(rdist1);
+        dampfact *= dev_suppress(rdist1/min_dkr);
     
       // these next two are not thread dependent
-      else if (!const_pParams_bDampenOrder0 && const_pParams_bSuppress_singularities && order ==0)
-        dampfact *= dev_suppress(rdist1);
+      else if (!const_pParams_bDampenOrder0 && const_pParams_bSuppress_singularities && order ==0  && rdist1 <=suppRadius)
+        dampfact *= dev_suppress(rdist1/min_dkr);
     
       else if (const_pParams_bDampenOrder0 && order ==0)
         dampfact *= dev_order0damping(rdist1, z0, rdistcutoff, const_zdistcutoff[0]);
@@ -1606,11 +1546,11 @@ __global__ void filterbands_kernel1(int dir, int ndirs, int order, int norders, 
             weight = dev_mag2(otf2) / const_noiseVarFactors[dir2*norders+abs(order2)];
             if (order2 != 0) weight *= amp2mag2;
       
-            if (const_pParams_bSuppress_singularities && order2 != 0 && rdist2 <= const_pParams_suppression_radius)
-              weight *= dev_suppress(rdist2);
+            if (const_pParams_bSuppress_singularities && order2 != 0 && rdist2 <= suppRadius)
+              weight *= dev_suppress(rdist2/min_dkr);
       
-            else if (!const_pParams_bDampenOrder0 && const_pParams_bSuppress_singularities && order2 ==0)
-              weight *= dev_suppress(rdist2);
+            else if (!const_pParams_bDampenOrder0 && const_pParams_bSuppress_singularities && order2 ==0 &&  rdist2 <= suppRadius)
+              weight *= dev_suppress(rdist2/min_dkr);
       
             else if (const_pParams_bDampenOrder0 && order2==0)
               weight *= dev_order0damping(rdist2, z0, rdistcutoff, const_zdistcutoff[0]);
@@ -1798,7 +1738,7 @@ __device__ float dev_suppress(float x)
   float x6, out;
   x6 = x*x*x;
   x6 *= x6;
-  out = 1.0/(1+1000/(x6+.2));
+  out = 1.0/(1+20000/(x6+20));
   return out;
 }
 

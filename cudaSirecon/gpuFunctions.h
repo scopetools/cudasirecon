@@ -28,18 +28,9 @@ void rescale(int nx, int ny, int nz, int z, int zoffset, int direction,
     int wave, int t, int phases, std::vector<GPUBuffer>* images, int equalizez,
     int equalizet, double* sum_dir0_phase0);
 
-/* float estimate_Wiener(const std::vector<GPUBuffer>& rawImages, int nx, */
-/* 	      int ny, int z, int nphases, int rdistcutoff); */
-
 int calcRefImage(const std::vector<GPUBuffer>& rawImages,
     GPUBuffer* refImage, const std::vector<GPUBuffer>& offImages,
     int nOffImages, int nx, int ny, int nphases, int type_of_refImage);
-
-/* void determinedrift_2D(const std::vector<GPUBuffer>& rawImages, */
-/*       const std::vector<GPUBuffer>& offImages, int nOffImages, */
-/*       const GPUBuffer& CrefImage, */
-/*       vector3d *drifts, int nphases, int nx, int ny, int dir, */
-/*       float rdistcutoff, float drift_filter_fact); */
 
 void fixdrift_2D(std::vector<GPUBuffer>* CrawImages,
     vector3d *driftlist, int nphases, int nx, int ny, int nz, int dir,

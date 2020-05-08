@@ -115,7 +115,7 @@ if(WIN32)
 
 endif(WIN32)
 
-find_package( Boost REQUIRED COMPONENTS program_options filesystem system regex)
+find_package( Boost REQUIRED COMPONENTS program_options filesystem system)
 message(STATUS "Boost_INCLUDE_DIRS " ${Boost_INCLUDE_DIRS})
 message(STATUS "Boost_LIBRARY_DIRS " ${Boost_LIBRARY_DIRS})
 message(STATUS "Boost_LIBRARIES " ${Boost_LIBRARIES})

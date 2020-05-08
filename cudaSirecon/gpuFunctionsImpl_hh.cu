@@ -76,8 +76,6 @@ __global__ void makeOverlaps1Kernel(int nx, int ny, int nz,
 	float order0_2_factor, float dkx, float dky, float kzscale,
     cuFloatComplex *band2im, cuFloatComplex *band2re,
     cuFloatComplex *overlap1);
-// __device__ cuFloatComplex dev_otfinterpolateMkOvrLps(
-//     cuFloatComplex * otf, float kx, float ky, int kz, float kzscale, int mask);
 
 __host__ void aTimesConjB(GPUBuffer* overlap0, GPUBuffer* overlap1,
     int nx, int ny, int nz, GPUBuffer* crosscorr_c);
