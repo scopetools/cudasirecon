@@ -7,30 +7,31 @@ std::string version_number = "1.0.2";
 
 void SetDefaultParams(ReconParams *pParams)
 {
-  pParams->k0startangle =1.57193;
-  pParams->linespacing = 0.177;  /* default to Nikon TIRF 100x */
-  pParams->na=1.36;
-  pParams->nimm=1.515;
+  pParams->k0startangle = 1.57193;
+  pParams->linespacing = 0.177;
+  pParams->na = 1.36;
+  pParams->nimm = 1.515;
   pParams->ndirs = 3;
   pParams->nphases = 3;
   pParams->phaseSteps = 0;
   pParams->norders_output = 0;
   pParams->bTwolens = 0;
   pParams->bFastSIM = 0;
+  pParams->bBessel = 0;
+  pParams->BesselNA = 0.45;
 
   pParams->zoomfact = 2;
   pParams->z_zoom = 1;
   pParams->nzPadTo = 0;
-  pParams->explodefact=1.0;
-  pParams->bFilteroverlaps=1;
-  pParams->recalcarrays = 1; /* whether to calculate the overlaping regions between bands just once or always; used in fitk0andmodamps() */
+  pParams->explodefact= 1.0;
+  pParams->bFilteroverlaps = 1;
+  pParams->recalcarrays = 1; //! whether to calculate the overlaping regions between bands just once or always; used in fitk0andmodamps()
   pParams->napodize = 10;
   pParams->forceamp.assign(1, 0.f);
   // pParams->k0angles = NULL;
   pParams->bSearchforvector = 1;
   pParams->bUseTime0k0 = 1;  /* default to use time 0's k0 fit for the rest in a time series data */
   pParams->apodizeoutput = 0;  /* 0-no apodize; 1-cosine apodize; 2-triangle apodize; used in filterbands() */
-  pParams->apoGamma = 1;  /* 0-no apodize; 1-cosine apodize; 2-triangle apodize; used in filterbands() */
   pParams->bSuppress_singularities = 1;  /* whether to dampen the OTF values near band centers; used in filterbands() */
   pParams->suppression_radius = 10;   /* if suppress_singularities is 1, the range within which suppresion is applied; used in filterbands() */
   pParams->bDampenOrder0 = 0;  /* whether to dampen order 0 contribution; used in filterbands() */
@@ -39,7 +40,6 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->equalizez = 0;
   pParams->equalizet = 0;
   pParams->bNoKz0 = 0;
-  pParams->bUseEstimatedWiener = 1;
 
   pParams->bRadAvgOTF = 0;  /* default to use non-radially averaged OTFs */
   pParams->bOneOTFperAngle = 0;  /* default to use one OTF for all SIM angles */
@@ -50,22 +50,16 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->constbkgd = 0.0;
   pParams->bBgInExtHdr = 0;
   pParams->bUsecorr = 0;
-  pParams->corrfiles[0] = '\0';  /* name of CCD correction file if usecorr is 1 */
   pParams->electrons_per_bit = 0.6528;
   pParams->readoutNoiseVar = 32.42;  // electron^2
 
   pParams->bMakemodel = 0;
   pParams->bSaveAlignedRaw = 0;
-  pParams->fileSeparated[0] = '\0';
   pParams->bSaveSeparated = 0;
-  pParams->fileRawAligned[0] = '\0';
   pParams->bSaveOverlaps = 0;
-  pParams->fileOverlaps[0] = '\0';
   pParams->bWriteTitle = 0;
 
-  pParams->ifilein = 0;
-  pParams->ofilein = 0;
-  pParams->otffilein = 0;
+  pParams -> bTIFF = false;
 }
 
 
@@ -94,53 +88,7 @@ unsigned findOptimalDimension(unsigned inSize, int step=-1)
   return outSize;
 }
 
-void setup_part2(ReconParams* params, ImageParams* imgParams, ReconData* reconData)
-{
-#ifdef __SIRECON_USE_TIFF__
-  imgParams->nz0 = findOptimalDimension(imgParams->nz);
-#endif
-
-  getOTFs(params, *imgParams, reconData);
-  allocSepMatrixAndNoiseVarFactors(*params, reconData);
-  makematrix(params->nphases, params->norders, 0, 0,
-      &(reconData->sepMatrix[0]), &(reconData->noiseVarFactors[0]));
-
-  allocateImageBuffers(*params, *imgParams, reconData);
-
-  imgParams->inscale = 1.0 / (imgParams->nx * imgParams->ny * imgParams->nz0 *
-      params->zoomfact * params->zoomfact * params->z_zoom * params->ndirs);
-  reconData->k0 = std::vector<vector>(params->ndirs);
-  reconData->k0_time0 = std::vector<vector>(params->ndirs);
-  reconData->k0guess = std::vector<vector>(params->ndirs);
-  float delta_angle = M_PI / params->ndirs;
-  float dkr = 1 / (imgParams->ny * imgParams->dy);  // assuming square images sizes
-  float k0magguess = (1.0 / params->linespacing) / dkr;
-  if (imgParams->nz > 1) {
-    int nordersIn = params->nphases / 2 + 1;
-    k0magguess /= nordersIn - 1; 
-  }
-  for (int i = 0; i < params->ndirs; ++i) {
-    float k0angleguess;
-    if (params->k0angles.size() < params->ndirs) {
-      k0angleguess = params->k0startangle + i * delta_angle;
-    } else {
-      k0angleguess = params->k0angles[i];
-    }
-    reconData->k0guess[i].x = k0magguess * cos(k0angleguess);
-    reconData->k0guess[i].y = k0magguess * sin(k0angleguess);
-  }
-
-  reconData->sum_dir0_phase0 = std::vector<double>(imgParams->nz *
-      imgParams->nwaves);
-  reconData->amp = std::vector<std::vector<cuFloatComplex> >(
-      params->ndirs, std::vector<cuFloatComplex>(params->norders));
-  for (int i = 0; i < params->ndirs; ++i) {
-    reconData->amp[i][0].x = 1.0f;
-    reconData->amp[i][0].y = 0.0f;
-  }
-}
-
-#ifndef __SIRECON_USE_TIFF__
+// MRC header parser
 void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER &header)
 {
   int ixyz[3];
@@ -151,7 +99,8 @@ void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER
   float mean;
   IMRdHdr(istream_no, ixyz, mxyz, &pixeltype, &min, &max, &mean);
   IMGetHdr(istream_no, &header);
-  imgParams->nx = header.nx;
+  imgParams->nx = 0;  // deferred till deskewing situation is figured out
+  imgParams->nx_raw = header.nx;
   imgParams->ny = header.ny;
   imgParams->nz = header.nz / (header.num_waves * header.num_times);
   /* header.nz is defined as the total number of sections =
@@ -164,148 +113,10 @@ void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER
   imgParams->wave[2]=header.iwav3;
   imgParams->wave[3]=header.iwav4;
   imgParams->wave[4]=header.iwav5;
-  /* dy: lateral pixel size; dz: axial pixel size; both in microns */
-  imgParams->dy = header.ylen;
+  //! dxy: lateral pixel size; dz: axial pixel size; both in microns */
+  imgParams->dxy = header.ylen;
   imgParams->dz = header.zlen;
 
-  /* Initialize headers for intermediate output files if requested */
-  if (params.bSaveAlignedRaw) {
-    memcpy(&aligned_header, &header, sizeof(header));
-    IMOpen(aligned_stream_no, params.fileRawAligned, "new");
-    aligned_header.mode = IW_FLOAT;
-    aligned_header.inbsym = 0;
-    IMPutHdr(aligned_stream_no, &aligned_header);
-  }
-  if (params.bSaveSeparated) {
-    memcpy(&sep_header, &header, sizeof(header));
-    IMOpen(separated_stream_no, params.fileSeparated, "new");
-    sep_header.nx = (imgParams->nx+2)/2;    // saved will be separated FFTs
-    sep_header.mode = IW_COMPLEX;
-    sep_header.inbsym = 0;
-    IMPutHdr(separated_stream_no, &sep_header);
-  }
-  if (params.bSaveOverlaps) {
-    memcpy(&overlaps_header, &header, sizeof(header));
-    IMOpen(overlaps_stream_no, params.fileOverlaps, "new");
-    overlaps_header.nz = imgParams->nz*2*params.ndirs*imgParams->ntimes*imgParams->nwaves;
-    overlaps_header.num_waves = 2;  // save overlap 0 and 1 as wave 0 and 1 respectively
-    overlaps_header.interleaved = WZT_SEQUENCE;
-    overlaps_header.mode = IW_COMPLEX;   // saved will be full-complex overlaps in real space
-    overlaps_header.inbsym = 0;
-    IMPutHdr(overlaps_stream_no, &overlaps_header);
-  }
-  if (params.nzPadTo) {
-    imgParams->nz0 = params.nzPadTo;
-  } else {
-    imgParams->nz0 = imgParams->nz;
-  }
-  printf("nx=%d, ny=%d, nz=%d, nz0 = %d, nwaves=%d, ntimes=%d\n",
-      imgParams->nx, imgParams->ny, imgParams->nz, imgParams->nz0,
-      imgParams->nwaves, imgParams->ntimes);
-}
-#endif
-
-void getOTFs(ReconParams* params, const ImageParams& imgParams,
-    ReconData* data)
-{
-  params->norders = 0;
-  if (params->norders_output != 0) {
-    params->norders = params->norders_output;
-  } else {
-    params->norders = params->nphases / 2 + 1;
-  }
-  determine_otf_dimensions(params, imgParams.nz, &(data->sizeOTF));
-  allocateOTFs(params, data->sizeOTF, data->otf);
-  loadOTFs(*params, imgParams, data);
-}
-
-void determine_otf_dimensions(ReconParams *pParams, int nz, int *sizeOTF)
-{
-#ifdef __SIRECON_USE_TIFF__
-  uint32 nxotf, nyotf, nzotf;
-  float xres, yres;
-  TIFFGetField(otf_tiff, TIFFTAG_IMAGEWIDTH, &nxotf);
-  TIFFGetField(otf_tiff, TIFFTAG_IMAGELENGTH, &nyotf);
-  TIFFGetField(otf_tiff, TIFFTAG_XRESOLUTION, &xres);
-  TIFFGetField(otf_tiff, TIFFTAG_YRESOLUTION, &yres);
-  nzotf = 0;
-  do ++nzotf; while (TIFFReadDirectory(otf_tiff));
-
-  /* determine nzotf, nxotf, nyotf, dkrotf, dkzotf based on dataset being 2D/3D and 
-     flags bRadAvgOTF and bOneOTFperAngle */
-
-  if (nz == 1) {  /* 2D */
-    pParams->nxotf = nxotf;
-    if (pParams->bRadAvgOTF)
-      pParams->nyotf = 1;
-    else
-      pParams->nyotf = nyotf;
-    pParams->nzotf = 1;
-    pParams->dkrotf = xres;  // dkrotf's unit is 1/micron
-    pParams->dkzotf = 1;
-  }
-  else {   /* 3D */
-    if (pParams->bRadAvgOTF) {
-      pParams->nzotf = nxotf;
-      pParams->nxotf = nyotf;
-      pParams->nyotf = 1;
-      pParams->dkzotf = xres;
-      pParams->dkrotf = yres;
-    }
-    else {
-      pParams->nzotf = nzotf / pParams->norders; // each order has a 3D OTF stack (non-negative kx half of Fourier space)
-      pParams->nxotf = nxotf;
-      pParams->nyotf = nyotf;
-      pParams->dkzotf = xres;
-      pParams->dkrotf = yres;
-    }
-  }
-#else
-  int ixyz[3], mxyz[3], pixeltype;
-  float min, max, mean;
-  IW_MRC_HEADER otfheader;
-  /* Retrieve OTF file header info */
-  IMRdHdr(otfstream_no, ixyz, mxyz, &pixeltype, &min, &max, &mean);
-  IMGetHdr(otfstream_no, &otfheader);
-  IMAlCon(otfstream_no, 0);
-  /* determine nzotf, nxotf, nyotf, dkrotf, dkzotf based on dataset
-   * being 2D/3D and flags bRadAvgOTF and bOneOTFperAngle */
-  if (nz == 1) {  // 2D, ignore bOneOTFperAngle
-    pParams->nxotf = otfheader.nx;
-    if (pParams->bRadAvgOTF)
-      pParams->nyotf = 1;
-    else
-      pParams->nyotf = otfheader.ny;
-    pParams->nzotf = 1;
-    pParams->dkrotf = otfheader.xlen;  // dkrotf's unit is 1/micron
-    pParams->dkzotf = 1;
-  } else {   // 3D, take into account bOneOTFperAngle
-    if (pParams->bRadAvgOTF) {
-      pParams->nzotf = otfheader.nx;
-      pParams->nxotf = otfheader.ny;
-      pParams->nyotf = 1;
-      pParams->dkzotf = otfheader.xlen;
-      pParams->dkrotf = otfheader.ylen;
-    } else {
-      // each order has a 3D OTF stack (non-negative kx half of Fourier
-      // space)
-      pParams->nzotf = otfheader.nz / pParams->norders;
-      if (pParams->bOneOTFperAngle)
-        pParams->nzotf /= pParams->ndirs;
-      pParams->nxotf = otfheader.nx;
-      pParams->nyotf = otfheader.ny;
-      pParams->dkzotf = otfheader.zlen;
-      pParams->dkrotf = otfheader.xlen;
-    }
-  }
-#endif
-  printf("nzotf=%d, dkzotf=%f, nxotf=%d, nyotf=%d, dkrotf=%f\n",
-      pParams->nzotf, pParams->dkzotf, pParams->nxotf, pParams->nyotf,
-      pParams->dkrotf);
-
-  /* sizeOTF are determined so that correct memory can be
-   * allocated for otf */
-  *sizeOTF = pParams->nzotf*pParams->nxotf*pParams->nyotf;
 }
 
 void allocateOTFs(ReconParams* pParams, int sizeOTF,
@@ -322,110 +133,6 @@ void allocateOTFs(ReconParams* pParams, int sizeOTF,
       buff.resize(sizeOTF * sizeof(cuFloatComplex));
       otfs[dir].push_back(buff);
   }
-}
-
-int loadOTFs(const ReconParams& params, const ImageParams& imgParams, ReconData* data)
-{
-#ifdef __SIRECON_USE_TIFF__
-  int i, nzotf;
-  float *realpart, *imagpart;
-  nzotf = 0;
-  TIFFSetDirectory(otf_tiff, 0);
-  do ++nzotf; while (TIFFReadDirectory(otf_tiff));
-
-  realpart = (float *) malloc(data->sizeOTF * sizeof(float));
-  imagpart = (float *) malloc(data->sizeOTF * sizeof(float));
-
-  cuFloatComplex * otfTmp= (cuFloatComplex *) malloc(data->sizeOTF * sizeof(cuFloatComplex));
-  CPUBuffer otfTmpBuffer(data->sizeOTF * sizeof(cuFloatComplex));
-
-  /* Load OTF data, no matter 2D, 3D, radially averaged or not. */
-  for (i=0; i<norders; i++) {
-    int j;
-    /* If OTF file has multiple sections, then read them into otf[i]; */
-    if (imgParams.nz == 1 || params.bRadAvgOTF) {
-      if (nzotf > i) { /* each section in OTF file is OTF of one order; so load that section into otf[i]  */
-        load_tiff(otf_tiff, i, 0, realpart);
-        load_tiff(otf_tiff, i, 1, imagpart);
-        for (j=0; j<data->sizeOTF; j++) {
-          otfTmp[j].x = realpart[j];
-          otfTmp[j].y = imagpart[j];
-        }
-        otfTmpBuffer.setFrom((void*) otfTmp, 0, data->sizeOTF * sizeof(cuFloatComplex), 0);
-        data->otf[i].setFrom(otfTmpBuffer, 0, data->sizeOTF * sizeof(cuFloatComplex), 0);
-      }
-      else   /* If there's just 1 OTF image, do not read any more and just duplicate otf[0] into otf[i] */
-        data->otf[0].set(&(data->otf[i]), 0,
-            data->otf[0].getSize(), 0);
-    }
-    else {  // non-radially averaged 3D OTF
-      int nxyotf = params.nxotf * params.nyotf, z;
-      for (z=0; z < params.nzotf; z++) {
-        load_tiff(otf_tiff, z+i*nxyotf, 0, realpart);
-        load_tiff(otf_tiff, z+i*nxyotf, 1, imagpart);
-        for (j=0; j<nxyotf; j++) {
-          otfTmp[j].x = realpart[j];
-          otfTmp[j].y = imagpart[j];
-        }
-        otfTmpBuffer.setFrom((void*) otfTmp, 0, nxyotf * sizeof(cuFloatComplex), 0);
-        data->otf[i].setFrom(otfTmpBuffer, 0, nxyotf * sizeof(cuFloatComplex),
-                             z * nxyotf * sizeof(cuFloatComplex));
-      }
-    }
-  }
-  TIFFClose(otf_tiff);
-  free(realpart);
-  free(imagpart);
-#else
-  int ixyz[3], mxyz[3], pixeltype;
-  float min, max, mean;
-  IW_MRC_HEADER otfheader;
-  /* Retrieve OTF file header info */
-  IMRdHdr(otfstream_no, ixyz, mxyz, &pixeltype, &min, &max, &mean);
-  IMGetHdr(otfstream_no, &otfheader);
-
-  CPUBuffer otfTmp(data->sizeOTF * sizeof(cuFloatComplex));
-  // If one OTF per dir is used, then load all dirs of OTF
-  unsigned short nDirsOTF = 1; // used in the upcoming for{} loop
-  if (params.bOneOTFperAngle)
-    nDirsOTF = params.ndirs;
-
-  // Load OTF data, no matter 2D, 3D, radially averaged or not. */
-  for (int dir = 0; dir< nDirsOTF; dir++) {
-    for (int i = 0; i < params.norders; i++) {
-      /* If OTF file has multiple sections, then read them into otf[i]; */
-      if (imgParams.nz == 1 || params.bRadAvgOTF) {
-        if (otfheader.nz > i + dir*params.norders) {
-          /* each section in OTF file is OTF of one order; so load that
-           * section into otf[i]  */
-          IMRdSec(otfstream_no, otfTmp.getPtr());
-          otfTmp.set(&(data->otf[dir][i]), 0, otfTmp.getSize(), 0);
-        } else {
-          /* If it's 2D image, do not read any more and just
-           * duplicate otf[0][0] into otf[*][i] */
-          data->otf[0][0].set(&(data->otf[dir][i]), 0,
-                           data->otf[0][0].getSize(), 0);
-        }
-      } else {  // non-radially averaged 3D OTF
-        for (int z = 0; z < params.nzotf; ++z) {
-          IMRdSec(otfstream_no, otfTmp.getPtr());
-          otfTmp.set(&(data->otf[dir][i]),
-                     0, params.nxotf * params.nyotf * sizeof(cuFloatComplex),
-                     z * params.nxotf * params.nyotf * sizeof(cuFloatComplex));
-        }
-      }
-    }
-  }
-  IMClose(otfstream_no);
-#endif
-
-#ifndef NDEBUG
-  for (std::vector<GPUBuffer>::iterator i = data->otf.begin();
-      i != data->otf.end(); ++i) {
-    assert(i->hasNaNs() == false);
-  }
-#endif
-  return 1;
 }
 
 void allocateImageBuffers(const ReconParams& params,
@@ -449,14 +156,13 @@ void allocateImageBuffers(const ReconParams& params,
   }
 }
 
-#ifndef __SIRECON_USE_TIFF__
 void setOutputHeader(const ReconParams& myParams, const ImageParams& imgParams,
                      IW_MRC_HEADER &header)
 {
   header.mode = IW_FLOAT;
   header.nz = imgParams.nz * imgParams.nwaves * imgParams.ntimes *
     myParams.z_zoom;
-  header.nx *= myParams.zoomfact;
+  header.nx = imgParams.nx * myParams.zoomfact;
   header.ny *= myParams.zoomfact;
   header.xlen /= myParams.zoomfact;
   header.ylen /= myParams.zoomfact;
@@ -465,7 +171,6 @@ void setOutputHeader(const ReconParams& myParams, const ImageParams& imgParams,
   IMPutHdr(ostream_no, &header);
   IMAlCon(ostream_no, 0);
 }
-#endif
 
 void bgAndSlope(const ReconParams& myParams,
     const ImageParams& imgParams, ReconData* reconData)
@@ -474,27 +179,23 @@ void bgAndSlope(const ReconParams& myParams,
       imgParams.ny);
   reconData->slope.resize(sizeof(float) * imgParams.nx *
       imgParams.ny);
-#ifndef __SIRECON_USE_TIFF__
+
   if (myParams.bUsecorr) {
     // flatfield correction of measured data using calibration data
     printf("loading CCD calibration file\n");
-    getbg_and_slope(myParams.corrfiles,
+    getbg_and_slope(myParams.corrfiles.c_str(),
         (float*)reconData->background.getPtr(),
         (float*)reconData->slope.getPtr(), imgParams.nx, imgParams.ny);
   } else {
-#endif
     for (int i = 0; i < imgParams.nx * imgParams.ny; i++) {
       /* use the constant background value given by user */
       ((float*)(reconData->background.getPtr()))[i] = myParams.constbkgd;
       ((float*)(reconData->slope.getPtr()))[i] = 1.0;
     }
-#ifndef __SIRECON_USE_TIFF__
   }
-#endif
   reconData->backgroundExtra = 0;
 }
 
-#ifndef __SIRECON_USE_TIFF__
 void getbg_and_slope(const char *corrfiles, float *background,
     float *slope, int nx, int ny)
 {
@@ -523,7 +224,6 @@ void getbg_and_slope(const char *corrfiles, float *background,
 
   IMClose(cstream_no);
 }
-#endif
 
 void findModulationVectorsAndPhasesForAllDirections(
     int zoffset, ReconParams* params, const ImageParams& imgParams,
@@ -534,6 +234,10 @@ void findModulationVectorsAndPhasesForAllDirections(
 
   // 2D FFT every 2D slice:
   transformXYSlice(zoffset, params, imgParams, driftParams, data);
+
+  float dkx = 1./(imgParams.dxy * imgParams.nx);
+  float dky = 1./(imgParams.dxy * imgParams.ny);
+  float k0magguess = 1.0 / params->linespacing;
 
   for (int direction = 0; direction < params->ndirs; ++direction) {
 
@@ -592,25 +296,27 @@ void findModulationVectorsAndPhasesForAllDirections(
        * DM: k0 is not initialized but has memory allocate at this point.
        * k0 initialization code is near lines 430ff in sirecon.c */
       makemodeldata(imgParams.nx, imgParams.ny, imgParams.nz0, bands,
-          params->norders, data->k0[direction], imgParams.dy, imgParams.dz,
+          params->norders, data->k0[direction], imgParams.dxy, imgParams.dz,
           &data->otf[0], imgParams.wave[0], params);
     }
 
-#ifndef __SIRECON_USE_TIFF__
     /* save the separated raw if requested */
-    if (params->bSaveSeparated) {
+    if (!params->bTIFF && params->bSaveSeparated) {
       CPUBuffer tmp((*rawImages)[0].getSize());
       for (int phase = 0; phase < params->nphases; ++ phase) {
         (*rawImages)[phase].set(&tmp, 0, tmp.getSize(), 0);
         for (int z = 0; z < imgParams.nz; ++z) {
           float* imgPtr = (float*)tmp.getPtr();
           IMWrSec(separated_stream_no,
-              imgPtr + (z + zoffset) * (imgParams.nx + 2) * imgParams.ny);
+              imgPtr + (z + zoffset) * (imgParams.nx/2 + 1)*2 * imgParams.ny);
         }
       }
       continue; // skip the k0 search and modamp fitting
     }
-#endif
+    else if (params->bTIFF && params->bSaveSeparated) {
+      // TO-DO
+      std::cout << "No unmixed raw images were saved in TIFF mode\n";
+    }
 
     /* After separation and FFT, the std::vector rawImages, now referred to as
      * the std::vector bands, contains the center band (bands[0])
@@ -621,14 +327,14 @@ void findModulationVectorsAndPhasesForAllDirections(
     if (! (imgParams.ntimes > 1 && imgParams.curTimeIdx > 0
            && params->bUseTime0k0) ) {
       data->k0[direction] = data->k0guess[direction];
-      printf("k0guess[direction %d] = (%f, %f)\n", direction,
-          data->k0guess[direction].x, data->k0guess[direction].y);
+      printf("k0guess[direction %d] = (%f, %f) pixels\n", direction,
+          data->k0guess[direction].x/dkx, data->k0guess[direction].y/dky);
     }
 
     // Now to fix 3D drift between dirs estimated by determinedrift_3D()
     if (direction != 0 && params->bFixdrift) {
       fixdrift_bt_dirs(bands, params->norders, driftParams->drift_bt_dirs[direction],
-          imgParams.nx, imgParams.ny, imgParams.nz0);
+                       imgParams.nx, imgParams.ny, imgParams.nz0);
     }
 
     /* assume k0 vector not well known, so fit for it */
@@ -648,34 +354,35 @@ void findModulationVectorsAndPhasesForAllDirections(
        * Find initial estimate of modulation wave vector k0 by
        * cross-correlation. */
       findk0(bands, &data->overlap0, &data->overlap1, imgParams.nx,
-          imgParams.ny, imgParams.nz0, params->norders,
-          &(data->k0[direction]), imgParams.dy, imgParams.dz, &(data->otf[dir_]),
-          imgParams.wave[0], params);
+             imgParams.ny, imgParams.nz0, params->norders,
+             &(data->k0[direction]), imgParams.dxy, imgParams.dz, &(data->otf[dir_]),
+             imgParams.wave[0], params);
 
       if (params->bSaveOverlaps) {
         // output the overlaps
-#ifdef __SIRECON_USE_TIFF__
-        CPUBuffer tmp0(data->overlap0.getSize()*2);
-        data->overlap0.set(&tmp0, 0, data->overlap0.getSize(), 0);
-        data->overlap1.set(&tmp0, 0, data->overlap1.getSize(), data->overlap0.getSize());
-        CImg<> ovlp0((float* )tmp0.getPtr(), imgParams.nx*2, imgParams.ny, imgParams.nz*2, 1,
-          true);  // ovlp0 shares buffer with tmp0 (hence "true" in the final parameter)
-        ovlp0.save_tiff(params->fileOverlaps);
-#else
-        CPUBuffer tmp0(data->overlap0.getSize());
-        data->overlap0.set(&tmp0, 0, tmp0.getSize(), 0);
-        CPUBuffer tmp1(data->overlap1.getSize());
-        data->overlap1.set(&tmp1, 0, tmp1.getSize(), 0);
-        cuFloatComplex* ol0Ptr = (cuFloatComplex*)tmp0.getPtr();
-        cuFloatComplex* ol1Ptr = (cuFloatComplex*)tmp1.getPtr();
-        for (int z = 0; z < imgParams.nz0; ++z) {
-          IMWrSec(overlaps_stream_no, ol0Ptr + z * imgParams.nx * imgParams.ny);
-          IMWrSec(overlaps_stream_no, ol1Ptr + z * imgParams.nx * imgParams.ny);
+        if (params->bTIFF) {
+          CPUBuffer tmp0(data->overlap0.getSize()*2);
+          data->overlap0.set(&tmp0, 0, data->overlap0.getSize(), 0);
+          data->overlap1.set(&tmp0, 0, data->overlap1.getSize(), data->overlap0.getSize());
+          CImg<> ovlp0((float* )tmp0.getPtr(), imgParams.nx*2, imgParams.ny, imgParams.nz*2, 1,
+                       true);  // ovlp0 shares buffer with tmp0 (hence "true" in the final parameter)
+          ovlp0.save_tiff(params->fileOverlaps.c_str());
         }
-#endif
+        else {
+          CPUBuffer tmp0(data->overlap0.getSize());
+          data->overlap0.set(&tmp0, 0, tmp0.getSize(), 0);
+          CPUBuffer tmp1(data->overlap1.getSize());
+          data->overlap1.set(&tmp1, 0, tmp1.getSize(), 0);
+          cuFloatComplex* ol0Ptr = (cuFloatComplex*)tmp0.getPtr();
+          cuFloatComplex* ol1Ptr = (cuFloatComplex*)tmp1.getPtr();
+          for (int z = 0; z < imgParams.nz0; ++z) {
+            IMWrSec(overlaps_stream_no, ol0Ptr + z * imgParams.nx * imgParams.ny);
+            IMWrSec(overlaps_stream_no, ol1Ptr + z * imgParams.nx * imgParams.ny);
+          }
+        }
       }
-      printf("Initial guess by findk0() of k0[direction %d] = (%f,%f)\n", 
-          direction, data->k0[direction].x, data->k0[direction].y);
+      printf("Initial guess by findk0() of k0[direction %d] = (%f,%f) pixels\n", 
+          direction, data->k0[direction].x/dkx, data->k0[direction].y/dky);
 
       /* refine the cross-corr estimate of k0 by a search for best k0
        * vector direction and magnitude using real space waves*/
@@ -688,7 +395,7 @@ void findModulationVectorsAndPhasesForAllDirections(
 
       fitk0andmodamps(bands, &data->overlap0, &data->overlap1, imgParams.nx,
           imgParams.ny, imgParams.nz0, params->norders, &(data->k0[direction]),
-          imgParams.dy, imgParams.dz, &(data->otf[dir_]), imgParams.wave[0],
+          imgParams.dxy, imgParams.dz, &(data->otf[dir_]), imgParams.wave[0],
           &data->amp[direction][0], params);
 
       if (imgParams.curTimeIdx == 0) {
@@ -699,10 +406,10 @@ void findModulationVectorsAndPhasesForAllDirections(
       deltak0.x = data->k0[direction].x - data->k0guess[direction].x;
       deltak0.y = data->k0[direction].y - data->k0guess[direction].y;
       float dist = sqrt(deltak0.x * deltak0.x + deltak0.y * deltak0.y);
-      if (dist > K0_WARNING_THRESH) {
+      if (dist/k0magguess > K0_WARNING_THRESH) {
         printf("WARNING: ");
       }
-      printf("best fit for k0 is %f pixels from expected value.\n", dist);
+      printf("best fit for k0 is %.3f%% from expected value.\n", dist/k0magguess*100);
 
       if (imgParams.ntimes > 1 && imgParams.curTimeIdx > 0
           && dist > 2*K0_WARNING_THRESH) {
@@ -713,13 +420,13 @@ void findModulationVectorsAndPhasesForAllDirections(
           if (imgParams.nz0>1)
             corr_coeff = findrealspacemodamp(bands, &data->overlap0,
               &data->overlap1, imgParams.nx, imgParams.ny, imgParams.nz0,
-              0, order, data->k0[direction], imgParams.dy, imgParams.dz,
+              0, order, data->k0[direction], imgParams.dxy, imgParams.dz,
               &(data->otf[dir_]), imgParams.wave[0], &data->amp[direction][order],
               &amp_inv, &amp_combo, 1, params);
           else
             corr_coeff = findrealspacemodamp(bands, &data->overlap0,
               &data->overlap1, imgParams.nx, imgParams.ny, imgParams.nz0,
-              order-1, order, data->k0[direction], imgParams.dy, imgParams.dz,
+              order-1, order, data->k0[direction], imgParams.dxy, imgParams.dz,
               &(data->otf[dir_]), imgParams.wave[0], &data->amp[direction][order],
               &amp_inv, &amp_combo, 1, params);
           printf("modamp mag=%f, phase=%f\n, correlation coeff=%f\n\n",
@@ -730,12 +437,12 @@ void findModulationVectorsAndPhasesForAllDirections(
       }
     } else {
       /* assume k0 vector known, so just fit for the modulation amplitude and phase */
-      printf("known k0 for direction %d = (%f, %f) \n", direction, 
-          data->k0[direction].x, data->k0[direction].y);
+      printf("known k0 for direction %d = (%f, %f) pixels \n", direction, 
+          data->k0[direction].x/dkx, data->k0[direction].y/dky);
       for (int order = 1; order < params->norders; ++order) {
         float corr_coeff = findrealspacemodamp(bands, &data->overlap0,
             &data->overlap1, imgParams.nx, imgParams.ny, imgParams.nz0, 
-            0, order, data->k0[direction], imgParams.dy, imgParams.dz,
+            0, order, data->k0[direction], imgParams.dxy, imgParams.dz,
             &(data->otf[dir_]), imgParams.wave[0], &data->amp[direction][order],
             &amp_inv, &amp_combo, 1, params);
         printf("modamp mag=%f, phase=%f\n",
@@ -746,8 +453,7 @@ void findModulationVectorsAndPhasesForAllDirections(
         printf("combined modamp mag=%f, phase=%f\n",
             cmag(amp_combo), atan2(amp_combo.y, amp_combo.x));
         printf("correlation coeff=%f\n\n", corr_coeff);
-#ifndef __SIRECON_USE_TIFF__
-        if (order == 1 && params->bSaveOverlaps) {// output the overlaps
+        if (!params->bTIFF && order == 1 && params->bSaveOverlaps) {// output the overlaps
           // output the overlaps
           CPUBuffer tmp0(data->overlap0.getSize());
           data->overlap0.set(&tmp0, 0, tmp0.getSize(), 0);
@@ -760,7 +466,10 @@ void findModulationVectorsAndPhasesForAllDirections(
             IMWrSec(overlaps_stream_no, ol1Ptr + z * imgParams.nx * imgParams.ny);
           }
         }
-#endif
+        else if (params->bTIFF) {
+          // To-DO
+          std::cout << "No overlaps were saved in TIFF mode";
+        }
       }
     }     /* if(searchforvector) ... else ... */
 
@@ -810,71 +519,6 @@ void findModulationVectorsAndPhasesForAllDirections(
   } /* end for (dir)  */   /* done finding the modulation vectors and phases for all directions */
 }
 
-void SIM_Reconstructor::loadImageData(int it, int iw, int zoffset)
-{
-#ifdef __SIRECON_USE_TIFF__
-  // set up m_myParams, m_imgParams, and m_reconData based on the first input TIFF
-  CImg<> rawtiff(m_all_matching_files[it].c_str());
-  if (it == 0)
-    ::setup(rawtiff, &m_myParams, &m_imgParams, &m_reconData);
-
-  if (m_imgParams.nz0 < rawtiff.depth())
-    rawtiff.crop(0,0,0,0,rawtiff.width()-1,rawtiff.height()-1,
-                 m_imgParams.nz0*m_myParams.ndirs*m_myParams.nphases-1,0);
-#endif
-
-  for (int direction = 0; direction < m_myParams.ndirs; ++direction) {
-    // Temporary Buffers for reading switch-off images
-    PinnedCPUBuffer buffer(sizeof(float) * m_imgParams.nx * m_imgParams.ny);
-    /*Pinned*/CPUBuffer offBuff(sizeof(float) * (m_imgParams.nx + 2) * m_imgParams.ny);
-
-    std::vector<GPUBuffer>* rawImages = &(m_reconData.savedBands[direction]);
-    std::vector<GPUBuffer>* bands = &(m_reconData.savedBands[direction]);
-
-    int z = 0;
-    for (z = 0; z < m_imgParams.nz; ++z) {
-      int zsec;
-      /* First determine which section of the raw data to load */
-      if (m_myParams.bFastSIM) {
-        /* data organized into (nz, ndirs, nphases) */
-        zsec = (z * m_myParams.ndirs * m_myParams.nphases +
-                direction * m_myParams.nphases);
-      } else { /* data organized into (ndirs, nz, nphases) */
-        zsec = direction * m_imgParams.nz * m_myParams.nphases + z * m_myParams.nphases;
-      }
-
-      for (int phase = 0; phase < m_myParams.nphases; ++phase) {
-#ifdef __SIRECON_USE_TIFF__
-        load_and_flatfield(rawtiff, zsec, (float*)offBuff.getPtr(), m_myParams.constbkgd, 
-                           m_imgParams.inscale);
-#else
-        if (m_myParams.bBgInExtHdr) {
-          /* subtract the background value of each exposure stored in
-           * extended header, indexed by the section number. */
-          int extInts;
-          float extFloats[3];
-          IMRtExHdrZWT(istream_no, zsec, iw, it, &extInts, extFloats);
-          m_reconData.backgroundExtra = extFloats[2];
-        }
-        load_and_flatfield(zsec, iw, it,
-            (float*)offBuff.getPtr(), (float*)buffer.getPtr(),
-            m_imgParams.nx, m_imgParams.ny,
-            (float*)m_reconData.background.getPtr(), m_reconData.backgroundExtra,
-            (float*)m_reconData.slope.getPtr(),
-            m_imgParams.inscale, m_myParams.bUsecorr);
-#endif
-        assert(offBuff.hasNaNs() == false);
-        // Transfer the data from offBuff to device buffer previously allocated (see m_reconData.savedBands)
-        offBuff.set(&(rawImages->at(phase)),
-            0, (m_imgParams.nx + 2) * m_imgParams.ny * sizeof(float),
-            (z + zoffset) * (m_imgParams.nx + 2) * m_imgParams.ny * sizeof(float));
-
-        ++zsec;
-      } // end for (phase)
-    } // end for (z)
-  } // end for (direction)
-}
-
 void apodizationDriver(int zoffset, ReconParams* params,
     const ImageParams& imgParams, DriftParams* driftParams, ReconData* data)
 {
@@ -890,7 +534,7 @@ void apodizationDriver(int zoffset, ReconParams* params,
           // Goes through here
           apodize(params->napodize, imgParams.nx, imgParams.ny,
               &(rawImages->at(phase)),
-              (z + zoffset) * (imgParams.nx + 2) * imgParams.ny);
+              (z + zoffset) * (imgParams.nx/2 + 1)*2 * imgParams.ny);
         } else if (params->napodize == -1) {
           cosapodize(imgParams.nx, imgParams.ny, &(*rawImages)[phase],
               (z + zoffset) * imgParams.nx * imgParams.ny);
@@ -909,14 +553,16 @@ void rescaleDriver(int it, int iw, int zoffset, ReconParams* params,
     std::vector<GPUBuffer>* rawImages = &(data->savedBands[direction]);
     std::vector<GPUBuffer>* bands = &(data->savedBands[direction]);
 
-    for (int z = 0; z < imgParams.nz; ++z) {
+    for (int z = 0; z < imgParams.nz; ++z)
       if (params->do_rescale) {
         // Goes through here
         rescale(imgParams.nx, imgParams.ny, imgParams.nz, z, zoffset,
             direction, iw, it, params->nphases, rawImages, params->equalizez,
             params->equalizet, &data->sum_dir0_phase0[0]);
       }
-    }
+#ifndef NDEBUG
+    std::cout<< "rescaleDriver(): " << cudaGetErrorString(cudaGetLastError()) << std::endl;
+#endif
   }
 }
 
@@ -925,9 +571,9 @@ void transformXYSlice(int zoffset, ReconParams* params,
 {
   cufftHandle rfftplanGPU;
   int fftN[2] = {imgParams.ny, imgParams.nx};
-  int inembed[2] = {imgParams.nx * imgParams.ny, imgParams.nx + 2};
+  int inembed[2] = {imgParams.nx * imgParams.ny, (imgParams.nx/2 + 1)*2};
   int istride = 1;
-  int idist = (imgParams.nx + 2) * imgParams.ny;
+  int idist = (imgParams.nx/2 + 1)*2 * imgParams.ny;
   int onembed[2] = {imgParams.nx * imgParams.ny, imgParams.nx /2 +1};
   int ostride = 1;
   int odist = (imgParams.nx / 2 + 1) * imgParams.ny;
@@ -936,7 +582,7 @@ void transformXYSlice(int zoffset, ReconParams* params,
       onembed, istride, odist,
       CUFFT_R2C, imgParams.nz);
   if (cuFFTErr != CUFFT_SUCCESS) {
-    std::cout << "Error code: " << cuFFTErr << std::endl;
+    std::cout << "Error code: " << cuFFTErr << " at " __FILE__ << ":" << __LINE__ << std::endl;
     throw std::runtime_error("cufftPlanMany() failed.");
   }
 
@@ -954,7 +600,7 @@ void transformXYSlice(int zoffset, ReconParams* params,
 
   cufftDestroy(rfftplanGPU);
   if (cuFFTErr != CUFFT_SUCCESS) {
-    std::cout << "Error code: " << cuFFTErr << std::endl;
+    std::cout << "Error code: " << cuFFTErr << " at " __FILE__ << ":" << __LINE__<< std::endl;
     throw std::runtime_error("cufftDestroy() failed.");
   }
 }
@@ -1109,57 +755,6 @@ void allocSepMatrixAndNoiseVarFactors(const ReconParams& params, ReconData* reco
   reconData->noiseVarFactors.resize(params.ndirs * params.norders, 1.0f);
 }
 
-#ifdef __SIRECON_USE_TIFF__
-void load_and_flatfield(CImg<> &cimg, int section_no, float *bufDestiny,
-                        float background, float inscale)
-{
-  float *buffer = cimg.data(0, 0, section_no);
-  int nx = cimg.width();
-  int ny = cimg.height();
-#pragma omp parallel for
-  for (int l=0; l<ny; l++) {
-    for (int k=0; k<nx; k++) {
-      bufDestiny[l*(nx+2) + k] = (buffer[l*nx + k] - background) * inscale;
-    }
-    for(int k=nx;k<nx+2;k++)
-      bufDestiny[l*(nx+2) + k] = 0.0;
-  }
-}
-#else
-void load_and_flatfield(int section_no, int wave_no, int time_no,
-    float *bufDestiny, float *buffer, int nx, int ny, float *background,
-    float backgroundExtra, float *slope, float inscale, int bUsecorr)
-  /*
-     Load the next 2D section from the MRC file identified by "istream_no".
-     "bufDestiny" is where the current loaded section ends up being; it's assumed to have 2 extra columns for in-place FFT later
-     "buffer" is a nx*ny sized array to hold temporarily the loaded data before it is flat-fielded and copied to "bufDestiny"
-     */
-{
-  IMPosnZWT(istream_no, section_no, wave_no, time_no);
-  IMRdSec(istream_no, buffer);
-
-  if (bUsecorr) {
-#pragma omp parallel for
-    for (int l=0; l<ny; l++) {
-      for (int k=0; k<nx; k++) {
-        bufDestiny[l*(nx+2) + k] = ((buffer[l*nx + k]-background[l*nx+k]-backgroundExtra) * slope[l*nx+k]) * inscale;
-      }
-      for(int k=nx;k<nx+2;k++)
-        bufDestiny[l*(nx+2) + k] = 0.0;
-    }
-  } else {
-#pragma omp parallel for
-    for (int l=0; l<ny; l++) {
-      for (int k=0; k<nx; k++) {
-        bufDestiny[l*(nx+2) + k] = (buffer[l*nx + k]-background[l*nx+k]-backgroundExtra) * inscale;
-      }
-      for(int k=nx;k<nx+2;k++)
-        bufDestiny[l*(nx+2) + k] = 0.0;
-    }
-  }
-}
-#endif
-
 void matrix_transpose(float* mat, int nRows, int nCols)
 {
   int i, j;
@@ -1172,168 +767,6 @@ void matrix_transpose(float* mat, int nRows, int nCols)
   free(tmpmat);
 }
 
-int rdistcutoff(int iw, const ReconParams& params, const ImageParams& imgParams)
-{
-  float dkr = 1.0 / (imgParams.ny * imgParams.dy);
-  int result = (int)floor((params.na * 2.0 / (
-          imgParams.wave[iw] / 1000.0)) / dkr);
-  return result;
-}
-
-int fitXYdrift(vector3d *drifts, float * timestamps, int nPoints, vector3d *fitted_drift, float *eval_timestamps, int nEvalPoints)
-  /*
-     fit a curve using the data points of (x,y) vectors in "drifts" versus "timestamps". Then evaluate drifts for
-     the nEvalPoints points using the fitted curve; return the result in fitted_drifts.
-     Note: if nPoints is greater than 3, the use cubic fit? otherwise use parabola fit?
-     drifts[0] should always be (0, 0)?
-     */
-{
-  int   i, j;
-  int   nPolyTerms = 4; // highest order term is nPolyTerms-1; this could be passed in as an argument
-  float *matrix_A, *vecRHS;
-  float *workspace, wkopt;
-  int   info, lwork, nRHS=2;  // 2 because of solving for both x and y
-  int   bForceZero = 1;
-
-  if (bForceZero) {  /* for the curve to go through time point 0 */
-    int nPoints_minus1, nPolyTerms_minus1;
-    /* subtract all time stamps by the first */
-    for (i=1; i<nPoints; i++)
-      timestamps[i] -= timestamps[0];
-
-    /* Therefore, the solution to the constant is drifts[0].
-       Now we have 2 coefficients to solve. */ 
-
-    // construct the forward matrix; it's a transpose of the C-style matrix
-    matrix_A = (float*)malloc((nPoints-1) * (nPolyTerms-1) * sizeof(float));
-    // leading dimension is nPoints (column in Fortran, row in C)
-    for (i=0; i<nPolyTerms-1; i++)
-      for (j=0; j<nPoints-1; j++)
-        matrix_A[i*(nPoints-1) + j] = pow(timestamps[j+1], i+1);
-
-    // construct the right-hand-side vectors
-    vecRHS = (float*)malloc((nPoints-1) * nRHS * sizeof(float));
-    for (j=0; j<nPoints-1; j++) {
-      vecRHS[j]           = drifts[j+1].x - drifts[0].x;
-      vecRHS[j+nPoints-1] = drifts[j+1].y - drifts[0].y;
-    }
-
-    /* Because of calling Fortran subroutines, every parameter has to be passed as a pointer */
-    nPoints_minus1 = nPoints - 1;
-    nPolyTerms_minus1 = nPolyTerms - 1;
-    /* Query and allocate the optimal workspace */
-    lwork = -1;
-    sgels_("No transpose", &nPoints_minus1, &nPolyTerms_minus1, &nRHS, matrix_A, &nPoints_minus1,
-        vecRHS, &nPoints_minus1, &wkopt, &lwork, &info );
-    lwork = wkopt;
-    workspace = (float*)malloc( lwork* sizeof(float) );
-
-    sgels_("No transpose", &nPoints_minus1, &nPolyTerms_minus1, &nRHS, matrix_A, &nPoints_minus1,
-        vecRHS, &nPoints_minus1, workspace, &lwork, &info);
-
-    if (info != 0)
-      return 0;
-
-    /* Now subtract timestamp[0] from all eval_timestamps */
-    for (i=0; i<nEvalPoints; i++)
-      eval_timestamps[i] -= timestamps[0];
-
-    /* Evaluate at datapoints eval_timestamps */
-    for (i=0; i<nEvalPoints; i++) {
-      fitted_drift[i].x = drifts[0].x;
-      fitted_drift[i].y = drifts[0].y;
-      for (j=0; j<nPolyTerms-1; j++) {
-        fitted_drift[i].x += vecRHS[j] * pow(eval_timestamps[i], j+1);
-        fitted_drift[i].y += vecRHS[j+nPoints-1] * pow(eval_timestamps[i], j+1);
-      }
-    }
-  }
-  else {
-    // construct the forward matrix; it's a transpose of the C-style matrix
-    matrix_A = (float*)malloc(nPoints * nPolyTerms * sizeof(float));
-    // leading dimension is nPoints (column in Fortran, row in C)
-    for (i=0; i<nPolyTerms; i++)
-      for (j=0; j<nPoints; j++)
-        matrix_A[i*nPoints + j] = pow(timestamps[j], i);
-
-    // construct the right-hand-side vectors
-    vecRHS = (float*)malloc(nPoints * nRHS * sizeof(float));
-
-    for (j=0; j<nPoints; j++) {
-      vecRHS[j] = drifts[j].x;
-      vecRHS[j+nPoints] = drifts[j].y;
-    }
-
-    /* Query and allocate the optimal workspace */
-    lwork = -1;
-    sgels_("No transpose", &nPoints, &nPolyTerms, &nRHS, matrix_A, &nPoints, vecRHS, &nPoints, &wkopt, &lwork, &info );
-    lwork = wkopt;
-    workspace = (float*)malloc( lwork* sizeof(float) );
-
-    sgels_("No transpose", &nPoints, &nPolyTerms, &nRHS, matrix_A, &nPoints, vecRHS, &nPoints, workspace, &lwork, &info);
-
-    if (info != 0)
-      return 0;
-
-    /* Evaluate at datapoints eval_timestamps */
-    for (i=0; i<nEvalPoints; i++) {
-      fitted_drift[i].x = 0;
-      fitted_drift[i].y = 0;
-      for (j=0; j<nPolyTerms; j++) {
-        fitted_drift[i].x += vecRHS[j] * pow(eval_timestamps[i], j);
-        fitted_drift[i].y += vecRHS[j+nPoints] * pow(eval_timestamps[i], j);
-      }
-    }
-  }
-
-  free(matrix_A);
-  free(vecRHS);
-  free(workspace);
-
-  return 1;
-}
-
-void calcPhaseList(float * phaseList, vector3d *driftlist,
-    float *phaseAbs, float k0angle, float linespacing, float dr,
-    int nphases, int nz, int direction, int z)
-  /*
-     Calculate the actual pattern phase value for each exposure, taking into account drift estimation, acquisition-time
-     phase values, and the k0 vector of this direction.
-     phaseAbs -- acquisition-time absolute phase used, recorded in extended header
-     */
-{
-  int p;
-  float phistep, k0mag;
-  vector3d kvec, drift;
-
-  phistep = 2*M_PI / nphases;
-
-  k0mag = 1/linespacing;
-  kvec.x = k0mag * cos(k0angle);
-  kvec.y = k0mag * sin(k0angle);
-
-  /* The "standard" evenly-spaced phases + phase correction caused by drift correction - 
-     acquisition-time phase correction */
-  for (p=0; p<nphases; p++) {
-    float phiDrift;
-    drift = driftlist[direction*nz*nphases + z*nphases + p];
-    phiDrift = (drift.x*kvec.x + drift.y*kvec.y) * dr * 2 * M_PI;
-
-    if (phaseAbs && nz == 1)
-      // here the absolute phases of the off images are used; not necessary but simply because phase starts at 0 for off images
-      phaseList[p] = phaseAbs[direction*nphases + p]  + phiDrift;
-
-    else
-      phaseList[p] = p * phistep + phiDrift;
-
-    printf("phaseAbs[%d]=%10.5f, phaseList[%d]=%10.5f, phase error=%8.3f, phase drift=%8.3f deg\n",
-        p, phaseAbs[direction*nphases + p]*180/M_PI,
-        p, phaseList[p]*180/M_PI, 
-        (phaseList[p] - p *phistep)*180/M_PI,
-        phiDrift*180/M_PI);
-  }
-
-}
 
 float get_phase(cuFloatComplex b)
 {
@@ -1353,8 +786,7 @@ cuFloatComplex cmul(cuFloatComplex a, cuFloatComplex b)
   return result;
 }
 
-#ifndef __SIRECON_USE_TIFF__
-void saveIntermediateDataForDebugging(const ReconParams& params)
+int saveIntermediateDataForDebugging(const ReconParams& params)
 {
   if (params.bSaveSeparated) {
     IMWrHdr(separated_stream_no,
@@ -1378,30 +810,25 @@ void saveIntermediateDataForDebugging(const ReconParams& params)
     printf(
         "\nQuit processing because either bSaveSeparated, "
         "bSaveAlignedRaw, or bSaveOverlaps is TRUE\n");
-    exit(0);
+    return 1;
   }
+  return 0;
 }
-#endif
 
 
 void dumpBands(std::vector<GPUBuffer>* bands, int nx, int ny, int nz0)
 {
   int n = 0;
-  for (std::vector<GPUBuffer>::iterator i = bands->begin();
-      i != bands->end(); ++i) {
+  for (auto i = bands->begin(); i != bands->end(); ++i) {
     std::stringstream s;
-#ifdef  __SIRECON_USE_TIFF__
+
     s << "band" << n << ".tif";
-    TIFF * band_tiff = TIFFOpen(s.str().c_str(), "w");
+
     CPUBuffer buf(nx*ny*nz0*sizeof(float));
     i->set(&buf, 0, buf.getSize(), 0);
-    float *ptr = (float*) buf.getPtr();
-    for (int z=0; z<nz0; z++) {
-      save_tiff(band_tiff, z, 0, 1, nx, ny, ptr, 0);
-      ptr += nx * ny;
-    }
-    TIFFClose(band_tiff);
-#endif
+    CImg<> band_tiff((float *) buf.getPtr(), nx, ny, nz0, 1, true);
+    band_tiff.save_tiff(s.str().c_str());
+
     std::stringstream ss;
     ss << "band" << n << ".dat";
     std::ofstream os(ss.str().c_str());
@@ -1410,17 +837,6 @@ void dumpBands(std::vector<GPUBuffer>* bands, int nx, int ny, int nz0)
   }
 }
 
-#ifndef NDEBUG
-#ifndef _WIN32
-void deviceMemoryUsage()
-{
-  nvmlDeviceGetMemoryInfo(nvmldevice, &memoryStruct);
-  printf("****** Used memory %lldM; free memory %lldM\n", memoryStruct.used/1024/1024, memoryStruct.free/1024/1024);
-}
-#endif
-#endif
-
-#include <ostream>
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
@@ -1429,17 +845,11 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 }
 
 // IMPLEMENTATION OF CLASS SIM_RECONSTRUCTOR FOLLOWS:
-
+#include <boost/filesystem.hpp>
 SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
 {
   // Call this constructor from a command-line based program
 
-#ifndef NDEBUG
-#ifndef _WIN32
-  nvmlInit();
-  nvmlDeviceGetHandleByIndex(0, &nvmldevice);
-#endif
-#endif
   m_argc = argc;
   m_argv = argv;
 
@@ -1482,38 +892,63 @@ SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
 
   printf("nphases=%d, ndirs=%d\n", m_myParams.nphases, m_myParams.ndirs);
   
-  // std::cout << m_myParams.bNoKz0 << std::endl;
-
-#ifdef __SIRECON_USE_TIFF__
-  /* Suppress "unknown field" warnings */
-  TIFFSetWarningHandler(NULL);
-
-  // gather all TIFF files with matching names under the same folder:
-  m_all_matching_files = gatherMatchingFiles(std::string(m_myParams.ifiles), 
-                                             std::string(m_myParams.ofiles));
   // In TIFF mode, m_myParams.ifiles refers to the name of the folder raw data resides in;
   // and m_myParams.ofiles refers to a pattern in all the raw data file names.
-  m_imgParams.ntimes = m_all_matching_files.size();
+  // To help decide if input is in TIFF or MRC format, gather all TIFF files with
+  // matching names under the same folder:
+  if (boost::filesystem::is_directory(m_myParams.ifiles)) {
+    m_all_matching_files = gatherMatchingFiles(m_myParams.ifiles, m_myParams.ofiles);
+    // If there is no name-matching TIFF files, then presumably input is MRC
+    m_myParams.bTIFF = (m_all_matching_files.size() > 0);
+  }
 
-#else
+  if (m_myParams.bTIFF) {
+    // Suppress "unknown field" warnings
+    TIFFSetWarningHandler(NULL);
+
+    m_imgParams.ntimes = m_all_matching_files.size();
+  }
+  else
   /* Suppress IVE display of file headers */
-  IMAlPrt(0);
-#endif
+    IMAlPrt(0);
 
+  m_OTFfile_valid = false;
   openFiles();
   // deviceMemoryUsage();
 
-  m_zoffset = 0;
-#ifndef __SIRECON_USE_TIFF__
   setup();
-  ::setOutputHeader(m_myParams, m_imgParams, m_in_out_header);
+  if (!m_myParams.bTIFF)
+    ::setOutputHeader(m_myParams, m_imgParams, m_in_out_header);
 
-  if (m_myParams.nzPadTo) {
-    m_zoffset = (m_imgParams.nz0 - m_imgParams.nz) / 2;
-  }
-
+  //! Load flat-field correction data
   bgAndSlope(m_myParams, m_imgParams, &m_reconData);
-#endif
+}
+
+
+//! To-do
+SIM_Reconstructor::SIM_Reconstructor(int nx, int ny,
+                                     int nimages,      // number of raw images per volume
+                                     std::string configFileName)
+{
+  // define all the commandline and config file options
+  setupProgramOptions();
+  std::ifstream ifs(configFileName.c_str());
+  if (!ifs) {
+    std::ostringstream oss;
+    oss << "can not open config file: " << configFileName << "\n";
+    throw std::runtime_error(oss.str());
+  }
+  else {
+    // parse config file
+    store(parse_config_file(ifs, m_progopts), m_varsmap);
+    notify(m_varsmap);
+  }
+  // fill in m_myParams fields that have not been set yet
+  setParams();
+
+  
+  m_OTFfile_valid = false;
+  setup(nx, ny, nimages, 1);
 }
 
 SIM_Reconstructor::~SIM_Reconstructor()
@@ -1526,8 +961,8 @@ int SIM_Reconstructor::setupProgramOptions()
   // Declare a group of options that will be 
   // allowed both on command line and in a config file
   m_progopts.add_options()
-    ("input-file", po::value<std::string>()->required(), "input file (or data folder in TIFF mode)")
-    ("output-file", po::value<std::string>()->required(), "output file (or filename pattern in TIFF mode)")
+    ("input-file", po::value<std::string>(), "input file (or data folder in TIFF mode)")
+    ("output-file", po::value<std::string>(), "output file (or filename pattern in TIFF mode)")
     ("otf-file", po::value<std::string>()->required(), "OTF file")
     ("usecorr", po::value<std::string>(), "use the flat-field correction file provided")
     ("ndirs", po::value<int>(&m_myParams.ndirs)->default_value(3),
@@ -1589,17 +1024,31 @@ int SIM_Reconstructor::setupProgramOptions()
     ("config,c", po::value<std::string>(&m_config_file)->default_value(""),
      "name of a file of a configuration.")
     ("2lenses", po::value<int>(&m_myParams.bTwolens)->implicit_value(true), "I5S data")
+    ("bessel", po::value<int>(&m_myParams.bBessel)->implicit_value(1), "bessel-SIM data")
+    ("besselExWave", po::value<float>(&m_myParams.BesselLambdaEx)->default_value(0.488f),
+     "Bessel SIM excitation wavelength in microns")
+    ("besselNA", po::value<float>(&m_myParams.BesselNA)->default_value(0.144f),
+     "Bessel SIM excitation NA)")
+    ("deskew", po::value<float>(&m_myParams.deskewAngle)->default_value(0.0f),
+     "Deskew angle; if not 0.0 then perform deskewing before processing")
+    ("deskewshift", po::value<int>(&m_myParams.extraShift)->default_value(0),
+     "If deskewed, the output image's extra shift in X (positive->left)")
+    ("noRecon", po::bool_switch(&m_myParams.bNoRecon)->default_value(false),
+     "No reconstruction will be performed; useful when combined with --deskew")
+    ("cropXY", po::value<unsigned>(&m_myParams.cropXYto)->default_value(0),
+     "Crop the X-Y dimension to this number; 0 means no cropping")
+
+    ("xyres", po::value<float>(&m_imgParams.dxy)->default_value(0.1),
+     "x-y pixel size (only used for TIFF files)")
+    ("zres", po::value<float>(&m_imgParams.dz)->default_value(0.2),
+     "z pixel size (only used for TIFF files)")
+    ("zresPSF", po::value<float>(&m_myParams.dzPSF)->default_value(0.15),
+     "z pixel size used in PSF TIFF files)")
+    ("wavelength", po::value<short>(&m_imgParams.wave[0])->default_value(530),
+     "emission wavelength (only used for TIFF files)")
     ("writeTitle", po::value<int>(&m_myParams.bWriteTitle)->implicit_value(true),
      "Write command line to image header (may cause issues with bioformats)")
     ("help,h", "produce help message")
-#ifdef __SIRECON_USE_TIFF__
-    ("xyres", po::value<float>(&m_imgParams.dy)->default_value(0.1),
-     "x-y pixel size (only used for TIFF files)")
-    ("zres", po::value<float>(&m_imgParams.dz)->default_value(0.144),
-     "z pixel size (only used for TIFF files)")
-    ("wavelength", po::value<short>(&m_imgParams.wave[0])->default_value(530),
-     "emission wavelength (only used for TIFF files)")
-#endif
     ;
 
   return 0;
@@ -1607,25 +1056,22 @@ int SIM_Reconstructor::setupProgramOptions()
 
 int SIM_Reconstructor::setParams()
 {
-  // "input-file", "output-file", and "otf-file" are now all required arguments.
+  // "otf-file" is required argument
 
   if (m_varsmap.count("input-file")) {
-    strcpy(m_myParams.ifiles, m_varsmap["input-file"].as<std::string>().c_str());
-    // m_myParams.ifilein = 1;
+    m_myParams.ifiles = m_varsmap["input-file"].as<std::string>();
   }
   
   if (m_varsmap.count("output-file")) {
-    strcpy(m_myParams.ofiles, m_varsmap["output-file"].as<std::string>().c_str());
-    // m_myParams.ofilein = 1;
+    m_myParams.ofiles = m_varsmap["output-file"].as<std::string>();
   }
 
   if (m_varsmap.count("otf-file")) {
-    strcpy(m_myParams.otffiles, m_varsmap["otf-file"].as<std::string>().c_str());
-    // m_myParams.otffilein = 1;
+    m_myParams.otffiles = m_varsmap["otf-file"].as<std::string>();
   }
 
   if (m_varsmap.count("usecorr")) {
-    strcpy(m_myParams.corrfiles, m_varsmap["usecorr"].as<std::string>().c_str());
+    m_myParams.corrfiles = m_varsmap["usecorr"].as<std::string>();
     m_myParams.bUsecorr = 1;
   }
 
@@ -1634,39 +1080,37 @@ int SIM_Reconstructor::setParams()
   }
 
   if (m_varsmap.count("wiener")) {
-    if (m_myParams.wiener > 0)
-      m_myParams.bUseEstimatedWiener = false;
     std::cout<< "wiener=" << m_myParams.wiener << std::endl;
   }
 
   if (m_varsmap.count("gammaApo")) {
+    // because "gammaApo" has a default value set, this block is always entered;
+    // and therefore, "apodizeoutput" is always 2 (triangular or gamma apo)
     m_myParams.apodizeoutput = 2;
-    std::cout << "gamma=" << m_myParams.apoGamma << std::endl;
+    std::cout << "gamma = " << m_myParams.apoGamma << std::endl;
   }
 
   if (m_varsmap.count("saveprefiltered")) {
-    strcpy(m_myParams.fileSeparated, m_varsmap["saveprefiltered"].as<std::string>().c_str());
+    m_myParams.fileSeparated = m_varsmap["saveprefiltered"].as<std::string>();
     m_myParams.bSaveSeparated = 1;
   }
 
   if (m_varsmap.count("savealignedraw")) {
-    strcpy(m_myParams.fileRawAligned, m_varsmap["savealignedraw"].as<std::string>().c_str());
+    m_myParams.fileRawAligned = m_varsmap["savealignedraw"].as<std::string>();
     m_myParams.bSaveAlignedRaw = 1;
   }
 
   if (m_varsmap.count("saveoverlaps")) {
-    strcpy(m_myParams.fileOverlaps, m_varsmap["saveoverlaps"].as<std::string>().c_str());
+    m_myParams.fileOverlaps = m_varsmap["saveoverlaps"].as<std::string>();
     m_myParams.bSaveOverlaps = 1;
   }
 
   if (m_varsmap.count("k0angles")) {
     boost::char_separator<char> sep(",");
-    boost::tokenizer<boost::char_separator<char> > tokens(m_varsmap["k0angles"].as< std::string >(), sep);
-    for ( boost::tokenizer<boost::char_separator<char> >::iterator it = tokens.begin();
-          it != tokens.end();
-          ++it)
+    boost::tokenizer<boost::char_separator<char>> tokens(m_varsmap["k0angles"].as< std::string >(), sep);
+    for ( auto it = tokens.begin(); it != tokens.end(); ++it)
         m_myParams.k0angles.push_back(strtod(it->c_str(), NULL));
-//    std::cout << m_myParams.k0angles << std::endl;
+    // std::cout << m_myParams.k0angles << std::endl;
   }
 
   return 0;
@@ -1674,41 +1118,192 @@ int SIM_Reconstructor::setParams()
 
 void SIM_Reconstructor::openFiles()
 {
-#ifdef __SIRECON_USE_TIFF__
-  if (!m_all_matching_files.size()) // TIFF files are not opened till loadAndRescaleImage()
-#else
-  if (IMOpen(istream_no, m_myParams.ifiles, "ro"))
-#endif
-    throw std::runtime_error("Input file not found");
+  if (!m_myParams.ifiles.size() || !m_myParams.ofiles.size())
+    throw std::runtime_error("Calling openFiles() but no input or output files were specified");
 
-  /* Create output file */
-  // In TIFF mode, output files are not created until writeResult() is called
-#ifndef __SIRECON_USE_TIFF__
-  if (IMOpen(ostream_no, m_myParams.ofiles, "new")) {
-    std::cerr << "File " << m_myParams.ofiles << " can not be created.\n";
-    throw std::runtime_error("File not found");
+  if (!m_myParams.bTIFF && IMOpen(istream_no, m_myParams.ifiles.c_str(), "ro"))
+    // TIFF files are not opened till loadAndRescaleImage()
+    throw std::runtime_error("No matching input TIFF or MRC files not found");
+
+  // Create output file in MRC mode;
+  // in TIFF mode, output files are not created until writeResult() is called
+  if (!m_myParams.bTIFF)
+    if (IMOpen(ostream_no, m_myParams.ofiles.c_str(), "new")) {
+      std::cerr << "File " << m_myParams.ofiles << " can not be created.\n";
+      throw std::runtime_error("Error creating output file");
+    }
+
+  if (m_myParams.bTIFF) {
+    m_otf_tiff.assign(m_myParams.otffiles.c_str()); // will throw CImgIOException if file cannot be opened
+    m_OTFfile_valid = true;
   }
-#endif
+  else
+    if (IMOpen(otfstream_no, m_myParams.otffiles.c_str(), "ro"))
+      throw std::runtime_error("OTF file not found");
+    else
+      m_OTFfile_valid = true;
+}
 
-#ifdef __SIRECON_USE_TIFF__
-  if (!(otf_tiff = TIFFOpen(m_myParams.otffiles, "r")))
-  // m_otf_tiff.assign(m_myParams.otffiles); // will throw CImgIOException if file cannot be opened
-#else
-  if (IMOpen(otfstream_no, m_myParams.otffiles, "ro"))
-#endif
-    throw std::runtime_error("OTF file not found");
+void SIM_Reconstructor::setup(unsigned nx, unsigned ny, unsigned nImages, unsigned nChannels)
+// for mem buffer inputs
+{
+  m_imgParams.nx = nx;
+  m_imgParams.nx_raw = nx;
+  m_imgParams.ny = ny;
+  m_imgParams.nz = nImages;
+  m_imgParams.nwaves = nChannels;
+  m_imgParams.nz /= m_imgParams.nwaves * m_myParams.nphases * m_myParams.ndirs;
+
+  setup_common();
+}
+
+//! Find out memory requirements and call setup_common allocate memory
+void SIM_Reconstructor::setup()
+{
+  if (m_myParams.bTIFF) {
+    CImg<> tiff0(m_all_matching_files[0].c_str());
+    m_imgParams.nx = 0;
+    m_imgParams.nx_raw = tiff0.width();
+    m_imgParams.ny = tiff0.height();
+    m_imgParams.nz = tiff0.depth();
+    m_imgParams.nwaves = tiff0.spectrum(); // multi-color not supported yet
+    m_imgParams.nz /= m_imgParams.nwaves * m_myParams.nphases * m_myParams.ndirs;
+  }
+  else 
+    ::loadHeader(m_myParams, &m_imgParams, m_in_out_header);
+
+  printf("nx_raw=%d, ny=%d, nz=%d, nz0=%d\n",
+         m_imgParams.nx_raw, m_imgParams.ny, m_imgParams.nz, m_imgParams.nz0);
+
+  setup_common();
+}
+
+void SIM_Reconstructor::setup_common()
+{
+  // Do we need to keep this?? -lin
+  // if (m_myParams.bTIFF)
+  //   m_imgParams.nz0 = ::findOptimalDimension(m_imgParams.nz);
+
+  m_zoffset = 0;
+  if (m_myParams.nzPadTo) {  // 'nzPadTo' ~never used
+    m_imgParams.nz0 = m_myParams.nzPadTo;
+    m_zoffset = (m_imgParams.nz0 - m_imgParams.nz) / 2;
+  } else {
+    m_imgParams.nz0 = m_imgParams.nz;
+  }
+
+  //! Deskewing, if requested, will be performed after this function returns;
+  //  "nx" is altered to be equal to "ny" and "dz" is multiplied by sin(deskewAngle)
+  if (fabs(m_myParams.deskewAngle) > 0.) {
+    if (m_myParams.deskewAngle <0) m_myParams.deskewAngle += 180.;
+    m_imgParams.nx = findOptimalDimension(m_imgParams.nx_raw + m_imgParams.nz0 * cos(m_myParams.deskewAngle*M_PI/180.) * m_imgParams.dz / m_imgParams.dxy);
+//    m_imgParams.nx = m_imgParams.ny;
+    m_imgParams.dz_raw = m_imgParams.dz;
+    m_imgParams.dz *= fabs(sin(m_myParams.deskewAngle * M_PI/180.));
+  }
+  else {
+    m_imgParams.nx = m_imgParams.nx_raw;
+    m_imgParams.dz_raw = 0;
+  }
+
+  //! If cropping is requested, change nx, ny accordingly: (does this work or make sense?)
+  if (m_myParams.cropXYto > 0 && m_myParams.cropXYto < m_imgParams.nx) {
+    m_imgParams.nx = m_myParams.cropXYto;
+    // m_imgParams.ny = m_myParams.cropXYto;
+  }
+
+  
+  printf("nx=%d, ny=%d, nz=%d, nz0 = %d, nwaves=%d\n",
+         m_imgParams.nx, m_imgParams.ny, m_imgParams.nz,
+         m_imgParams.nz0, m_imgParams.nwaves);
+  printf("dxy=%f, dz=%f um\n", m_imgParams.dxy, m_imgParams.dz);
+
+  // // Initialize headers for intermediate output files if requested
+  if (!m_myParams.bTIFF) {
+    if (m_myParams.bSaveAlignedRaw) {
+      memcpy(&aligned_header, &m_in_out_header, sizeof(m_in_out_header));
+      IMOpen(aligned_stream_no, m_myParams.fileRawAligned.c_str(), "new");
+      aligned_header.mode = IW_FLOAT;
+      aligned_header.nx = m_imgParams.nx;
+      aligned_header.inbsym = 0;
+      IMPutHdr(aligned_stream_no, &aligned_header);
+    }
+    if (m_myParams.bSaveSeparated) {
+      memcpy(&sep_header, &m_in_out_header, sizeof(m_in_out_header));
+      IMOpen(separated_stream_no, m_myParams.fileSeparated.c_str(), "new");
+      sep_header.nx = m_imgParams.nx/2+1;    // saved will be separated FFTs
+      sep_header.mode = IW_COMPLEX;
+      sep_header.inbsym = 0;
+      IMPutHdr(separated_stream_no, &sep_header);
+    }
+    if (m_myParams.bSaveOverlaps) {
+      memcpy(&overlaps_header, &m_in_out_header, sizeof(m_in_out_header));
+      IMOpen(overlaps_stream_no, m_myParams.fileOverlaps.c_str(), "new");
+      overlaps_header.nz = m_imgParams.nz*2*m_myParams.ndirs*m_imgParams.ntimes*m_imgParams.nwaves;
+      overlaps_header.nx = m_imgParams.nx;
+      overlaps_header.num_waves = 2;  // save overlap 0 and 1 as wave 0 and 1 respectively
+      overlaps_header.interleaved = WZT_SEQUENCE;
+      overlaps_header.mode = IW_COMPLEX;   // saved will be full-complex overlaps in real space
+      overlaps_header.inbsym = 0;
+      IMPutHdr(overlaps_stream_no, &overlaps_header);
+    }
+  }
+
+  m_myParams.norders = 0;
+  if (m_myParams.norders_output != 0) {
+    m_myParams.norders = m_myParams.norders_output;
+  } else {
+    m_myParams.norders = m_myParams.nphases / 2 + 1;
+  }
+
+  std::cout << "nphases=" << m_myParams.nphases << ", norders=" <<
+    m_myParams.norders << ", ndirs=" << m_myParams.ndirs << std::endl;
+
+  if (m_OTFfile_valid)
+    setupOTFsFromFile();
+
+  ::allocSepMatrixAndNoiseVarFactors(m_myParams, &m_reconData);
+  ::makematrix(m_myParams.nphases, m_myParams.norders, 0, 0,
+      &(m_reconData.sepMatrix[0]), &(m_reconData.noiseVarFactors[0]));
+
+  ::allocateImageBuffers(m_myParams, m_imgParams, &m_reconData);
+
+  m_imgParams.inscale = 1.0 / (m_imgParams.nx * m_imgParams.ny * m_imgParams.nz0 *
+      m_myParams.zoomfact * m_myParams.zoomfact * m_myParams.z_zoom * m_myParams.ndirs);
+  m_reconData.k0 = std::vector<vector>(m_myParams.ndirs);
+  m_reconData.k0_time0 = std::vector<vector>(m_myParams.ndirs);
+  m_reconData.k0guess = std::vector<vector>(m_myParams.ndirs);
+  float delta_angle = M_PI / m_myParams.ndirs;
+
+  float k0magguess = 1.0 / m_myParams.linespacing; // in 1/um, not assuming square images sizes
+  if (m_imgParams.nz > 1) {
+    int nordersIn = m_myParams.nphases / 2 + 1;
+    k0magguess /= nordersIn - 1; 
+  }
+  for (int i = 0; i < m_myParams.ndirs; ++i) {
+    float k0angleguess;
+    if (m_myParams.k0angles.size() < m_myParams.ndirs) {
+      k0angleguess = m_myParams.k0startangle + i * delta_angle;
+    } else {
+      k0angleguess = m_myParams.k0angles[i];
+    }
+    m_reconData.k0guess[i].x = k0magguess * cos(k0angleguess); // in 1/um
+    m_reconData.k0guess[i].y = k0magguess * sin(k0angleguess); // in 1/um
+  }
+
+  m_reconData.sum_dir0_phase0 = std::vector<double>(m_imgParams.nz * m_imgParams.nwaves);
+  m_reconData.amp = std::vector<std::vector<cuFloatComplex> >(
+      m_myParams.ndirs, std::vector<cuFloatComplex>(m_myParams.norders));
+  for (int i = 0; i < m_myParams.ndirs; ++i) {
+    m_reconData.amp[i][0].x = 1.0f;
+    m_reconData.amp[i][0].y = 0.0f;
+  }
 }
 
 
-
-void SIM_Reconstructor::processOneVolume()
+int SIM_Reconstructor::processOneVolume()
 {
   // process one SIM volume (i.e., for the time point timeIdx)
-
-  int zoffset = 0;
-  if (m_myParams.nzPadTo) {
-    zoffset = (m_imgParams.nz0 - m_imgParams.nz) / 2;
-  }
 
   m_reconData.bigbuffer.resize(0);
   m_reconData.outbuffer.resize(0);
@@ -1720,7 +1315,7 @@ void SIM_Reconstructor::processOneVolume()
       sizeof(cuFloatComplex));
   m_reconData.overlap1.setToZero();
 
-  findModulationVectorsAndPhasesForAllDirections(zoffset,
+  findModulationVectorsAndPhasesForAllDirections(m_zoffset,
       &m_myParams, m_imgParams, &m_driftParams, &m_reconData);
 
   m_reconData.overlap0.resize(0);
@@ -1728,9 +1323,9 @@ void SIM_Reconstructor::processOneVolume()
 
   // deviceMemoryUsage();
 
-#ifndef __SIRECON_USE_TIFF__
-  saveIntermediateDataForDebugging(m_myParams);
-#endif
+  if (saveIntermediateDataForDebugging(m_myParams))
+    return 0;
+
   m_reconData.bigbuffer.resize((m_myParams.zoomfact * m_imgParams.nx) *
       (m_myParams.zoomfact * m_imgParams.ny) * (m_myParams.z_zoom * m_imgParams.nz0) *
       sizeof(cuFloatComplex));
@@ -1752,54 +1347,292 @@ void SIM_Reconstructor::processOneVolume()
 
     filterbands(direction, &m_reconData.savedBands[direction],
         m_reconData.k0, m_myParams.ndirs, m_myParams.norders,
-        m_reconData.otf[dir_], m_imgParams.dy, m_imgParams.dz,
+        m_reconData.otf[dir_], m_imgParams.dxy, m_imgParams.dz,
         m_reconData.amp, m_reconData.noiseVarFactors,
-        m_imgParams.nx, m_imgParams.ny, m_imgParams.nz0, m_imgParams.wave[0],
+        m_imgParams.nx, m_imgParams.ny, m_imgParams.nz0,
+        m_imgParams.wave[0],
         &m_myParams);
     assemblerealspacebands(direction, &m_reconData.outbuffer,
         &m_reconData.bigbuffer, &m_reconData.savedBands[direction],
         m_myParams.ndirs, m_myParams.norders, m_reconData.k0,
-        m_imgParams.nx, m_imgParams.ny, m_imgParams.nz0,
+        m_imgParams.nx, m_imgParams.ny, m_imgParams.nz0, m_imgParams.dxy,
         m_myParams.zoomfact, m_myParams.z_zoom, m_myParams.explodefact);
   }
+  return 1;
 }
-
-#ifdef __SIRECON_USE_TIFF__
-void SIM_Reconstructor::setup(CImg<> &inTIFF)
-{
-  m_imgParams.nx = inTIFF.width();
-  m_imgParams.ny = inTIFF.height();
-  m_imgParams.nz = inTIFF.depth();
-  m_imgParams.nwaves = inTIFF.spectrum();
-  m_imgParams.nz /= m_imgParams.nwaves * params->nphases * params->ndirs;
-  //  dy, dz, wavelength[0] from command line input or config file
-  if (params->nzPadTo) {
-    m_imgParams.nz0 = params->nzPadTo;
-  } else {
-    m_imgParams.nz0 = m_imgParams.nz;
-  }
-
-  printf("nx=%d, ny=%d, nz=%d, nz0 = %d, nwaves=%d, ntimes=%d\n",
-      m_imgParams.nx, m_imgParams.ny, m_imgParams.nz, m_imgParams.nz0,
-      m_imgParams.nwaves, m_imgParams.ntimes);
-
-  ::setup_part2(&m_myParams, &m_imgParams, &m_reconData);
-
-}
-#else
-void SIM_Reconstructor::setup()
-{
-  ::loadHeader(m_myParams, &m_imgParams, m_in_out_header);
-  ::setup_part2(&m_myParams, &m_imgParams, &m_reconData);
-}
-#endif
 
 void SIM_Reconstructor::loadAndRescaleImage(int timeIdx, int waveIdx)
 {
-  loadImageData(timeIdx, waveIdx, m_zoffset);
+  loadImageData(timeIdx, waveIdx);
+  if (m_myParams.bBessel && m_myParams.bNoRecon) return;
 
   ::rescaleDriver(timeIdx, waveIdx, m_zoffset, &m_myParams, m_imgParams, 
-                    &m_driftParams, &m_reconData);
+                  &m_driftParams, &m_reconData);
+}
+
+void SIM_Reconstructor::loadImageData(int it, int iw)
+{
+  CImg<> rawFromFile;
+  if (m_myParams.bTIFF) {
+    rawFromFile.assign(m_all_matching_files[it].c_str());
+  }
+  else {
+    rawFromFile.assign(m_imgParams.nx_raw, m_imgParams.ny, m_imgParams.nz * m_myParams.nphases * m_myParams.ndirs);
+    for (unsigned sec=0; sec<rawFromFile.depth(); sec++) {
+      IMPosnZWT(istream_no, sec, iw, it);
+      IMRdSec(istream_no, rawFromFile.data(0, 0, sec));
+    }
+  }
+//  rawFromFile.display();
+
+  float dskewA = m_myParams.deskewAngle;
+  // if ( dskewA<0) dskewA += 180.; already done in setup_common()
+  float deskewFactor = 0;
+  if (fabs(dskewA) > 0.0)
+    deskewFactor = cos(dskewA * M_PI/180.) * m_imgParams.dz_raw / m_imgParams.dxy;
+
+  for (int direction = 0; direction < m_myParams.ndirs; ++direction) {
+    // What does "PinnedCPUBuffer" really do? Using it here messes things up.
+    /*Pinned*/CPUBuffer nxExtendedBuff(sizeof(float) * (m_imgParams.nx/2 + 1)*2 * m_imgParams.ny);
+
+    std::vector<GPUBuffer>* rawImages = &(m_reconData.savedBands[direction]);
+    int z = 0;
+    for (z = 0; z < m_imgParams.nz; ++z) {
+      CImg<> rawSection(m_imgParams.nx_raw, m_imgParams.ny);
+
+      int zsec;
+      // First determine which section of the raw data to load
+      if (m_myParams.bFastSIM) {
+        // data organized into (nz, ndirs, nphases)
+        zsec = (z * m_myParams.ndirs * m_myParams.nphases +
+                direction * m_myParams.nphases);
+      }
+      else { // data organized into (ndirs, nz, nphases)
+        zsec = direction * m_imgParams.nz * m_myParams.nphases + z * m_myParams.nphases;
+      }
+
+      for (int phase = 0; phase < m_myParams.nphases; ++phase) {
+        if (m_myParams.bBgInExtHdr) {
+          /* subtract the background value of each exposure stored in MRC files'
+             extended header, indexed by the section number. */
+          int extInts;
+          float extFloats[3];
+          IMRtExHdrZWT(istream_no, zsec, iw, it, &extInts, extFloats);
+          m_reconData.backgroundExtra = extFloats[2];
+        }
+        load_and_flatfield(rawFromFile, zsec, rawSection.data(),
+                           (float*)m_reconData.background.getPtr(), m_reconData.backgroundExtra,
+                           (float*)m_reconData.slope.getPtr(),
+                           m_imgParams.inscale);
+        // if deskewFactor > 0, then do deskew for current z; otherwise, simply transfer
+        // from "rawSection" to "nxExtendedBuff". In either case, "nxExtendedBuff" holds
+        // result of current z.
+        deskewOneSection(rawSection, (float*)nxExtendedBuff.getPtr(), z, m_imgParams.nz,
+                         m_imgParams.nx, deskewFactor, m_myParams.extraShift);
+        // Transfer the data from nxExtendedBuff to device buffer previously allocated
+        // (see m_reconData.savedBands)
+        // std::cout << "z=" << z;
+        nxExtendedBuff.set(&(rawImages->at(phase)), 0, (m_imgParams.nx/2 + 1)*2 * m_imgParams.ny * sizeof(float),
+                           (z + m_zoffset) * (m_imgParams.nx/2 + 1)*2 * m_imgParams.ny * sizeof(float));
+        // std::cout << ", phase=" << phase << std::endl;
+        ++zsec;
+      } // end for (phase)
+    } // end for (z)
+
+#ifndef NDEBUG
+    for (auto i = rawImages->begin(); i != rawImages->end(); ++i)
+      assert(i->hasNaNs() == false);
+#endif
+    //! 
+    if (fabs(m_myParams.deskewAngle) > 0. && m_myParams.bNoRecon) {
+
+      // To-do: add code to off load rawImages into rawtiff_uint16
+      // if (m_myParams.bNoRecon) {
+      //   CImg<unsigned short> rawtiff_uint16;
+      //   rawtiff_uint16.save_tiff(makeOutputFilePath(m_all_matching_files[it],
+      //                                               std::string("_deskewed")).c_str());
+      //   std::cout << "Deskewed images written\n";
+      //   return;
+      // }
+    }
+  } // end for (direction)
+}
+
+void SIM_Reconstructor::setupOTFsFromFile()
+{
+  determine_otf_dimensions();
+  ::allocateOTFs(&m_myParams, m_reconData.sizeOTF, m_reconData.otf);
+  loadOTFs();
+}
+
+void SIM_Reconstructor::determine_otf_dimensions()
+{
+  if (m_myParams.bTIFF) {
+    uint32 nxotf, nyotf, nzotf;
+    nxotf = m_otf_tiff.width()/2;  // "/2" because of real and imaginary parts
+    nyotf = m_otf_tiff.height();
+    nzotf = m_otf_tiff.depth();
+
+    /* determine nzotf, nxotf, nyotf, dkrotf, dkzotf based on dataset being 2D/3D and 
+       flags bRadAvgOTF and bOneOTFperAngle */
+
+    if (m_imgParams.nz == 1) {  // 2D
+      m_myParams.nxotf = nxotf;
+      if (m_myParams.bRadAvgOTF)
+        m_myParams.nyotf = 1;
+      else
+        m_myParams.nyotf = nyotf;
+      m_myParams.nzotf = 1;
+      // m_myParams.dkrotf = xres;  // dkrotf's unit is 1/micron
+      m_myParams.dkrotf = 1/(m_imgParams.dxy * (nxotf-1)*2);  // dkrotf's unit is 1/micron
+      m_myParams.dkzotf = 1;
+    }
+    else {   // 3D
+      if (m_myParams.bRadAvgOTF) {
+        m_myParams.nzotf = nxotf;
+        m_myParams.nxotf = nyotf;
+        m_myParams.nyotf = 1;
+        m_myParams.dkzotf = 1/(m_myParams.dzPSF * m_myParams.nzotf);
+        m_myParams.dkrotf = 1/(m_imgParams.dxy * (m_myParams.nxotf-1)*2);
+      }
+      else {
+        m_myParams.nzotf = nzotf / m_myParams.norders; // each order has a 3D OTF stack (non-negative kx half of Fourier space)
+        m_myParams.nxotf = nxotf;
+        m_myParams.nyotf = nyotf;
+        m_myParams.dkzotf = 1/(m_myParams.dzPSF * m_myParams.nzotf);
+        m_myParams.dkrotf = 1/(m_imgParams.dxy * m_myParams.nxotf);
+      }
+    }
+  }
+  else {
+    int ixyz[3], mxyz[3], pixeltype;
+    float min, max, mean;
+    IW_MRC_HEADER otfheader;
+    /* Retrieve OTF file header info */
+    IMRdHdr(otfstream_no, ixyz, mxyz, &pixeltype, &min, &max, &mean);
+    IMGetHdr(otfstream_no, &otfheader);
+    IMAlCon(otfstream_no, 0);
+    /* determine nzotf, nxotf, nyotf, dkrotf, dkzotf based on dataset
+     * being 2D/3D and flags bRadAvgOTF and bOneOTFperAngle */
+    if (m_imgParams.nz == 1) {  // 2D, ignore bOneOTFperAngle
+      m_myParams.nxotf = otfheader.nx;
+      if (m_myParams.bRadAvgOTF)
+        m_myParams.nyotf = 1;
+      else
+        m_myParams.nyotf = otfheader.ny;
+      m_myParams.nzotf = 1;
+      m_myParams.dkrotf = otfheader.xlen;  // dkrotf's unit is 1/micron
+      m_myParams.dkzotf = 1;
+    } else {   // 3D, take into account bOneOTFperAngle
+      if (m_myParams.bRadAvgOTF) {
+        m_myParams.nzotf = otfheader.nx;
+        m_myParams.nxotf = otfheader.ny;
+        m_myParams.nyotf = 1;
+        m_myParams.dkzotf = otfheader.xlen;
+        m_myParams.dkrotf = otfheader.ylen;
+      } else {
+        // each order has a 3D OTF stack (non-negative kx half of Fourier
+        // space)
+        m_myParams.nzotf = otfheader.nz / m_myParams.norders;
+        if (m_myParams.bOneOTFperAngle)
+          m_myParams.nzotf /= m_myParams.ndirs;
+        m_myParams.nxotf = otfheader.nx;
+        m_myParams.nyotf = otfheader.ny;
+        m_myParams.dkzotf = otfheader.zlen;
+        m_myParams.dkrotf = otfheader.xlen;
+      }
+    }
+  }
+  printf("nzotf=%d, dkzotf=%f, nxotf=%d, nyotf=%d, dkrotf=%f\n",
+      m_myParams.nzotf, m_myParams.dkzotf, m_myParams.nxotf, m_myParams.nyotf,
+      m_myParams.dkrotf);
+
+  //! sizeOTF are determined so that correct memory can be allocated for otf
+  m_reconData.sizeOTF = m_myParams.nzotf*m_myParams.nxotf*m_myParams.nyotf;
+}
+
+int SIM_Reconstructor::loadOTFs()
+{
+  // If one OTF per direction is used, then load all dirs of OTF
+  unsigned short nDirsOTF = 1;
+  if (m_myParams.bOneOTFperAngle)
+    nDirsOTF = m_myParams.ndirs;
+
+  // Load OTF data, no matter 2D, 3D, radially averaged or not.
+  if (m_myParams.bTIFF) {
+    size_t nzotf = m_otf_tiff.depth();
+    cuFloatComplex * otfTmp;
+    CPUBuffer otfTmpBuffer(m_reconData.sizeOTF * sizeof(cuFloatComplex));
+
+    for (int dir = 0; dir < nDirsOTF; dir++) {
+      for (int i=0; i<m_myParams.norders; i++) {
+        // If OTF file has multiple sections, then read them into otf[i]
+        if (m_imgParams.nz == 1 || m_myParams.bRadAvgOTF) {
+          if (nzotf > i + dir*m_myParams.norders) {
+            // each section in OTF file is OTF of one order; so load that section into otf[dir][i]
+            otfTmp = (cuFloatComplex *) m_otf_tiff.data(0, 0, i);
+            otfTmpBuffer.setFrom((void*) otfTmp, 0, m_reconData.sizeOTF * sizeof(cuFloatComplex), 0);
+            m_reconData.otf[dir][i].setFrom(otfTmpBuffer, 0, m_reconData.sizeOTF
+                                            * sizeof(cuFloatComplex), 0);
+          }
+          else // If there's just 1 OTF image, do not read any more and just duplicate otf[0][0] into otf[*][i]
+            m_reconData.otf[0][0].set(&(m_reconData.otf[dir][i]), 0,
+                                      m_reconData.otf[0][0].getSize(), 0);
+        }
+        else {  // non-radially averaged 3D OTF
+          otfTmp = (cuFloatComplex *) m_otf_tiff.data(0, 0, i * m_myParams.nzotf);
+          otfTmpBuffer.setFrom((void*) otfTmp, 0, m_reconData.sizeOTF * sizeof(cuFloatComplex), 0);
+          m_reconData.otf[dir][i].setFrom(otfTmpBuffer, 0,
+                                          m_reconData.sizeOTF * sizeof(cuFloatComplex),
+                                          0);
+        }
+      }
+    }
+  }
+  else {
+    int ixyz[3], mxyz[3], pixeltype;
+    float min, max, mean;
+    IW_MRC_HEADER otfheader;
+    /* Retrieve OTF file header info */
+    IMRdHdr(otfstream_no, ixyz, mxyz, &pixeltype, &min, &max, &mean);
+    IMGetHdr(otfstream_no, &otfheader);
+
+    CPUBuffer otfTmp(m_reconData.sizeOTF * sizeof(cuFloatComplex));
+
+    for (int dir = 0; dir< nDirsOTF; dir++) {
+      for (int i = 0; i < m_myParams.norders; i++) {
+        /* If OTF file has multiple sections, then read them into otf[i]; */
+        if (m_imgParams.nz == 1 || m_myParams.bRadAvgOTF) {
+          if (otfheader.nz > i + dir*m_myParams.norders) {
+            // each section in OTF file is OTF of one order; so load that section into otf[dir][i]
+            IMRdSec(otfstream_no, otfTmp.getPtr());
+            otfTmp.set(&(m_reconData.otf[dir][i]), 0, otfTmp.getSize(), 0);
+          } else {
+            /* If it's 2D image, do not read any more and just
+             * duplicate otf[0][0] into otf[*][i] */
+            m_reconData.otf[0][0].set(&(m_reconData.otf[dir][i]), 0,
+                                m_reconData.otf[0][0].getSize(), 0);
+          }
+        } else {  // non-radially averaged 3D OTF
+          for (int z = 0; z < m_myParams.nzotf; ++z) {
+            IMRdSec(otfstream_no, otfTmp.getPtr());
+            otfTmp.set(&(m_reconData.otf[dir][i]),
+                       0, m_myParams.nxotf * m_myParams.nyotf * sizeof(cuFloatComplex),
+                       z * m_myParams.nxotf * m_myParams.nyotf * sizeof(cuFloatComplex));
+          }
+        }
+      }
+    }
+    IMClose(otfstream_no);
+  }
+
+#ifndef NDEBUG
+  for (int dir = 0; dir < nDirsOTF; dir++)
+    for (auto i = m_reconData.otf[dir].begin();
+         i != m_reconData.otf[dir].end(); ++i)
+      assert(i->hasNaNs() == false);
+#endif
+  return 1;
 }
 
 void SIM_Reconstructor::writeResult(int it, int iw)
@@ -1819,45 +1652,44 @@ void SIM_Reconstructor::writeResult(int it, int iw)
   double t1 = omp_get_wtime();
 #endif
 
-#ifdef __SIRECON_USE_TIFF__
+  if (m_myParams.bTIFF) {
   CImg<> outCimg((float*) outbufferHost.getPtr(),
     m_myParams.zoomfact * m_imgParams.nx,
     m_myParams.zoomfact * m_imgParams.ny,
     m_myParams.z_zoom * m_imgParams.nz0, true);  // "true" means outCimg does not allocate host memory
 
   outCimg.save(makeOutputFilePath(m_all_matching_files[it], std::string("_proc")).c_str());
-
-#else
-
-  int zoffset = 0;
-  if (m_myParams.nzPadTo) {
-    zoffset = (m_imgParams.nz0 - m_imgParams.nz) / 2;
   }
-  float* ptr = ((float*)outbufferHost.getPtr()) +
-    (int)(zoffset * m_myParams.z_zoom * m_imgParams.nx * m_imgParams.ny *
-        m_myParams.zoomfact * m_myParams.zoomfact);
-  for (int i = 0; i < m_imgParams.nz * m_myParams.z_zoom; ++i) {
-    IMWrSec(ostream_no, ptr);
-    if (it == 0) {
-      for (int j = 0;
-          j < (int)(m_imgParams.nx * m_imgParams.ny *
+
+  else {
+    float maxval = -FLT_MAX;
+    float minval = FLT_MAX;
+
+    float* ptr = ((float*)outbufferHost.getPtr()) +
+      (int)(m_zoffset * m_myParams.z_zoom * m_imgParams.nx * m_imgParams.ny *
             m_myParams.zoomfact * m_myParams.zoomfact);
-          ++j) {
-        if (ptr[j] > maxval) {
-          maxval = ptr[j];
-        } else if (ptr[j] < minval) {
-          minval = ptr[j];
+    for (int i = 0; i < m_imgParams.nz * m_myParams.z_zoom; ++i) {
+      IMWrSec(ostream_no, ptr);
+      if (it == 0) {
+        for (int j = 0;
+             j < (int)(m_imgParams.nx * m_imgParams.ny *
+                       m_myParams.zoomfact * m_myParams.zoomfact);
+             ++j) {
+          if (ptr[j] > maxval) {
+            maxval = ptr[j];
+          } else if (ptr[j] < minval) {
+            minval = ptr[j];
+          }
         }
       }
+      ptr += (int)(m_myParams.zoomfact * m_imgParams.nx *
+                   m_myParams.zoomfact * m_imgParams.ny);
     }
-    ptr += (int)(m_myParams.zoomfact * m_imgParams.nx *
-        m_myParams.zoomfact * m_imgParams.ny);
+    if (it == 0 && iw == 0) {
+      m_in_out_header.amin = minval;
+      m_in_out_header.amax = maxval;
+    }
   }
-  if (it == 0 && iw == 0) {
-    m_in_out_header.amin = minval;
-    m_in_out_header.amax = maxval;
-  }
-#endif
 
 #ifndef __clang__
   double t2 = omp_get_wtime();
@@ -1867,7 +1699,6 @@ void SIM_Reconstructor::writeResult(int it, int iw)
   printf("Time point %d, wave %d done\n", it, iw);
 }
 
-#ifndef __SIRECON_USE_TIFF__
 void saveCommandLineToHeader(int argc, char **argv, IW_MRC_HEADER &header, const ReconParams& myParams)
 {
   char titles[1000];
@@ -1882,13 +1713,61 @@ void saveCommandLineToHeader(int argc, char **argv, IW_MRC_HEADER &header, const
   IMWrHdr(ostream_no, header.label, 1, header.amin, header.amax,
       header.amean);
 }
-#endif
 
 void SIM_Reconstructor::closeFiles()
 {
-#ifndef __SIRECON_USE_TIFF__
-  ::IMClose(istream_no);
-  ::saveCommandLineToHeader(m_argc, m_argv, m_in_out_header, m_myParams);
-  ::IMClose(ostream_no);
-#endif
+  if (m_myParams.bTIFF)
+    {}
+  else {
+    ::IMClose(istream_no);
+    ::saveCommandLineToHeader(m_argc, m_argv, m_in_out_header, m_myParams);
+    ::IMClose(ostream_no);
+  }
+}
+
+void load_and_flatfield(CImg<> &cimg, int section_no, float *bufDestiny,
+                        float *background, float backgroundExtra,
+                        float *slope, float inscale)
+{
+  float *buffer = cimg.data(0, 0, section_no);
+  int nx = cimg.width();
+  int ny = cimg.height();
+  unsigned extraX = 0;
+#pragma omp parallel for
+  for (int l=0; l<ny; l++) {
+    for (int k=0; k<nx; k++) {
+      bufDestiny[l*(nx+extraX) + k] = (buffer[l*nx+k] - background[l*nx+k] - backgroundExtra) * slope[l*nx+k] * inscale;
+    }
+    for(int k=nx; k<nx+extraX; k++)
+      bufDestiny[l*(nx+extraX) + k] = 0.0;
+  }
+}
+
+void deskewOneSection(CImg<> &rawSection, float* nxp2OutBuff, int z, int nz,
+                      int nx_out, float deskewFactor, int extraShift)
+{
+  unsigned nx_in = rawSection.width();
+  unsigned ny_in = rawSection.height();
+  float *in = rawSection.data();
+  int nx_out_ext = (nx_out/2+1)*2;
+//  std::cout << "In deskewOneSection, deskewFactor=" << deskewFactor << std::endl;
+#pragma omp parallel for
+  for (auto xout=0; xout<nx_out_ext; xout++) {
+    float xin = xout;
+    if (fabs(deskewFactor) > 0)
+      xin = xout - nx_out/2. + extraShift - deskewFactor*(z-nz/2.) + nx_in/2.;
+
+    for (int y=0; y<ny_in; y++) {
+      unsigned indout = y * nx_out_ext + xout;
+      if (xin >= 0 && xin < nx_in-1) {
+
+        unsigned indin = y * nx_in + (unsigned int) floor(xin);
+
+        float offset = xin - floor(xin);
+        nxp2OutBuff[indout] = (1-offset) * in[indin] + offset * in[indin+1];
+      }
+      else
+        nxp2OutBuff[indout] = 0.;
+    }
+  }
 }

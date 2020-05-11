@@ -113,7 +113,7 @@ dampenOrder0=1
 
 ## Requirements
 
-* Currently only accepts images as .dv or .mrc format.  If you need to convert TIFF files (or any other format you can get into a numpy array) to DV/MRC format you can install the [mrc python package](https://github.com/tlambert03/mrc) with `pip install mrc`.  Then use something like:
+* Currently only accepts images as .dv (or .mrc) and TIFF format.  If you need to convert TIFF files (or any other format you can get into a numpy array) to DV/MRC format you can install the [mrc python package](https://github.com/tlambert03/mrc) with `pip install mrc`.  Then use something like:
 ```python
 import tifffile
 import mrc
@@ -144,7 +144,7 @@ If you run into trouble, feel free to [open an issue](https://github.com/scopeto
 
 # Multichannel reconstruction
 
-`cudasirecon` does not currently accept multi-channel files (or TIFF files).  So it is necessary to temporarily pull out each channel into a new file prior to reconstruction.  The provided `recon.py` script is an example of how to use the [`mrc`](https://github.com/tlambert03/mrc) package to extract individual channels from a .dv file, reconstruct them, and merge them back (and clean up the intermediate file).  It is used as follows (note, `mrc`, `numpy`, and `cudasirecon` must be in your path):
+`cudasirecon` does not currently accept multi-channel files.  So it is necessary to temporarily pull out each channel into a new file prior to reconstruction.  The provided `recon.py` script is an example of how to use the [`mrc`](https://github.com/tlambert03/mrc) package to extract individual channels from a .dv file, reconstruct them, and merge them back (and clean up the intermediate file).  It is used as follows (note, `mrc`, `numpy`, and `cudasirecon` must be in your path):
 
 ```
 python recon.py /path/to/raw_data.dv
@@ -277,13 +277,14 @@ Unforunately, I have not been able to get autolinking to work with the boost lib
 Finally, create a [conda](https://docs.conda.io/en/latest/miniconda.html) environment to install the remaining dependencies and build as follows:
 
 ```bash
-> conda create -n simbuild -c conda-forge -y ninja cmake openblas
+> conda create -n simbuild -c conda-forge -y ninja cmake openblas fftw
 > conda activate simbuild
 
 # as of this writing, versions were
-# cmake=3.15.3
-# openblas=0.3.7
-# ninja=1.9.0
+# cmake=3.17.0
+# openblas=0.3.9
+# fftw=3.3.8
+# ninja=1.10.0
 
 # create a build directory inside of cudasirecon
 > mkdir build
@@ -304,31 +305,5 @@ If all went well, the executable should be at `./build/cudaSirecon/cudaSireconDr
 
 ## Building `makeotf`
 
+To build the `makeotf` program you also need precompiled FFTW3 libs, which is easily obtainable on Linux and Mac with native package management system or conda. On Windows, conda package "fftw" takes care of it.
 
-To build the `makeotf` program you also need precompiled fftw-2.x (not 3) libs in a folder called fftw2 in the base directory, with subfolders for each platform that you want to build for (darwin64, linux64, win64), as demonstrated above for the IVE libraries.  See notes below about installing and compiling for mac/linux
-
-The `CMakeLists.txt` file in the root of the project will try to build `makeotf` by default, but you can also build it all manually as follows:
-
-```bash
-export SRC_DIR=/path/to/cudasirecon  # fix this for your system
-export FFTW_ROOT="${SRC_DIR}/fftw2"
-export PLATFORM=linux64  # or darwin64 for mac
-export IVE_ROOT="${SRC_DIR}/IVE/${PLATFORM}"
-
-# download, compile, and install fftw
-wget http://www.fftw.org/fftw-2.1.5.tar.gz
-tar -zxvf fftw-2.1.5.tar.gz
-cd fftw-2.1.5
-./configure --prefix=$FFTW_ROOT --enable-type-prefix --enable-float --enable-threads
-make -j 4
-make install
-
-# then build makeotf
-gcc "${SRC_DIR}/otf/makeotf.c" \
-    -I"${IVE_ROOT}/INCLUDE" \
-    -I"${FFTW_ROOT}/include" \
-    -L"${IVE_ROOT}/LIB" \
-    -L"${FFTW_ROOT}/lib" \
-    -limlib -lsrfftw -lsfftw -lm \
-    -o "${SRC_DIR}/otf/makeotf"
-```

@@ -12,27 +12,55 @@ set(PRIISM_LIB_PATH "${CMAKE_SOURCE_DIR}/IVE/${PLATFORM}/LIB")
 set(PRIISM_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/IVE/${PLATFORM}/INCLUDE")
 
 include_directories(${PRIISM_INCLUDE_PATH})
+include_directories("${CMAKE_SOURCE_DIR}/cudaSirecon")  # for CImg.h
 link_directories(${PRIISM_LIB_PATH})
 find_library(IMLIB imlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
 find_library(IVELIB ive PATHS ${PRIISM_LIB_PATH} REQUIRED)
 
-# FFTW2
-include_directories("${CMAKE_SOURCE_DIR}/fftw2/${PLATFORM}/include")
-find_library(FFTW sfftw
-             PATHS "${CMAKE_SOURCE_DIR}/fftw2/${PLATFORM}/lib" REQUIRED)
-find_library(RFFTW srfftw
-             PATHS "${CMAKE_SOURCE_DIR}/fftw2/${PLATFORM}/lib" REQUIRED)
+# FFTW3
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/findFFTW")
+if (WIN32)
+  find_package(FFTW3 REQUIRED COMPONENTS single)
+  include_directories( ${TIFF_INCLUDE_DIR} )
+  include_directories( ${FFTW3_INCLUDE_DIR} )
 
-add_executable(makeotf makeotf.c)
-
-target_link_libraries(makeotf
-                      ${IMLIB}
-                      ${IVELIB}
-                      ${FFTW}
-                      ${RFFTW})
-
-if(UNIX AND NOT APPLE)
-  target_link_libraries(makeotf m)
+else ()
+  find_package(FFTW3 REQUIRED COMPONENTS single threads)
 endif()
+
+
+if(WIN32)
+endif(WIN32)
+
+# add_executable(makeotf makeotf.c)
+add_executable(makeotf radialft.cpp)
+
+if (WIN32)
+  if ( ${MSVC_VERSION} GREATER 1800)
+	target_link_libraries(makeotf
+      ${IMLIB}
+      ${IVELIB}
+	  ${FFTW3F_LIBRARY}
+	  ${TIFF_LIBRARIES}
+      ${LEG_STDIO}
+	  )
+  else()
+	target_link_libraries(makeotf
+      ${IMLIB}
+      ${IVELIB}
+	  ${FFTW3F_LIBRARY}
+	  ${TIFF_LIBRARIES}
+	  )
+  endif()
+else ()
+  target_link_libraries(makeotf
+    ${IMLIB}
+    ${IVELIB}
+	${FFTW3F_LIBRARY}
+	${FFTW3F_THREADS_LIBRARY}
+	${TIFF_LIBRARIES}
+	X11
+	)
+endif(WIN32)
 
 install(TARGETS makeotf RUNTIME DESTINATION bin)

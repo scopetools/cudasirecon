@@ -1,13 +1,12 @@
 #ifndef __CUDA_SIRECON_H
 #define __CUDA_SIRECON_H
+
 #ifdef _WIN32
 #define _USE_MATH_DEFINES
 #endif
+
 #include <cuda.h>
 #include <cufft.h>
-#include <cuComplex.h>
-#include <cuda_runtime_api.h>
-#include <driver_types.h>
 #include <iostream>
 #include <vector>
 #include <cstring>
@@ -27,28 +26,17 @@
 
 #include <complex>
 
-#ifndef NDEBUG
-#ifndef _WIN32
-#include <nvml.h>  //for memory query
-static nvmlDevice_t nvmldevice;
-static nvmlMemory_t memoryStruct;
-#endif
-#endif
-
 #include "Buffer.h"
 #include "GPUBuffer.h"
 #include "CPUBuffer.h"
 #include "PinnedCPUBuffer.h"
 #include "gpuFunctions.h"
 
-#ifdef __SIRECON_USE_TIFF__
-#include <tiffio.h>
 #define cimg_use_tiff
 #include <CImg.h>
 using namespace cimg_library;
-#else
+
 #include <IMInclude.h>  // MRC file I/O routines
-#endif
 
 // Block sizes for reduction kernels
 #define RED_BLOCK_SIZE_X 64
@@ -58,8 +46,9 @@ using namespace cimg_library;
 /**ratio of beam size in pupil to pupil size */
 #define SPOTRATIO 0.1
 #define MAXPHASES 25
-/** If k0 initial estimate is off from the guess by over this many pixels, a warning will be displayed */
-#define K0_WARNING_THRESH 2
+
+/** If k0 initial estimate is off from the guess by over this percentage, a warning will be displayed */
+#define K0_WARNING_THRESH 0.05
 
 
 #define CHECKED_DELETE(PTR) \
@@ -73,9 +62,8 @@ using namespace cimg_library;
     PTR = 0;\
   }                         
 
-#ifdef __SIRECON_USE_TIFF__
-static TIFF *otf_tiff;  // TODO: get rid of this; use "CImg<> m_otf_tiff" member in SIM_reconstructor instead.
-#else
+//static TIFF *otf_tiff;  // TODO: get rid of this; use "CImg<> m_otf_tiff" member in SIM_reconstructor instead.
+
 static const int istream_no = 1;
 static const int ostream_no = 2;
 static const int otfstream_no = 3;
@@ -95,10 +83,6 @@ struct myExtHeader {
   float xdrift;
   float ydrift;
 };
-#endif
-
-static float maxval = -FLT_MAX;
-static float minval = FLT_MAX;
 
 
 struct vector {
@@ -120,6 +104,13 @@ struct ReconParams {
   float *phaseSteps; /** user-specified non-ideal phase steps, one for each orientation */
   int   bTwolens;    /** whether to process I{^5}S dataset */
   int   bFastSIM;   /** fast SIM data is organized differently */
+  int   bBessel;    /** whether to process Bessel-Sheet SIM dataset */
+  float BesselNA;  /* excitation NA of the Bessel beam */
+  float BesselLambdaEx; /* excitation wavelength of the Bessel beam */
+  float deskewAngle; /* Beseel-sheet sample scan angle */
+  int extraShift; // If deskewed, the output image's extra shift in X
+  bool  bNoRecon; // whether not to reconstruct; used usually when deskewing
+  unsigned cropXYto; // crop the X-Y dimension to this size; 0 means no cropping
   int   bWriteTitle;   /** whether to write command line args to title field in mrc header */
 
   /* algorithm related parameters */
@@ -146,10 +137,11 @@ struct ReconParams {
   int   equalizet;
   int   bNoKz0;   /** if true, no kz=0 plane is used in modamp fit and assemblerealspace() */
   float wiener, wienerInr;
-  int   bUseEstimatedWiener;
+  // // int   bUseEstimatedWiener;
 
-  /* OTF specific parameters */
+  /** OTF specific parameters */
   int   nxotf, nyotf, nzotf;
+  float dzPSF;    /** PSF's z step size (for non-MRC formats) */
   float dkzotf, dkrotf;  /** OTF's pixel size in inverse mirons */
   int   bRadAvgOTF;   /** is radially-averaged OTF used? */
   int   bOneOTFperAngle; /** one OTF per SIM angle (instead of common OTF for all angles)?*/
@@ -162,28 +154,27 @@ struct ReconParams {
   float constbkgd;
   int bBgInExtHdr; /** In Andor EMCCD, background varies with each exposure, esp. in EM mode. Hidden-behind-aluminum-foil pixels can be used to estimate background of each exposure and stored in the extended header. When this option is true, the 3rd float of the extended header stores such estimated background values. */
   int   bUsecorr;    /** whether to use a camera flat-fielding (or correction) file */
-  char  corrfiles[400];  /** name of the camera correction file if bUsecorr is 1 */
+  std::string  corrfiles;  /** name of the camera correction file if bUsecorr is 1 */
   float readoutNoiseVar;
   float electrons_per_bit;
 
   /* Debugging flags */
   int   bMakemodel;  /** whether to fake an ideal point source and obtain a recontruction of it (i.e., an effective PSF in some sense) */
   int   bSaveSeparated; /** whether to save separated bands and then quit before filterbands */
-  char  fileSeparated[400];
+  std::string  fileSeparated;
   int   bSaveAlignedRaw; /** whether to save dirft-corrected raw images (within each direction) and then quit before filterbands */
-  char  fileRawAligned[400];
+  std::string  fileRawAligned;
   int   bSaveOverlaps; /** whether to save makeoverlaps() output into a file */
-  char  fileOverlaps[400];
+  std::string  fileOverlaps;
 
-  char ifiles[400];
-  char ofiles[400];
-  char otffiles[400];
-  int ifilein;
-  int ofilein;
-  int otffilein;
+  bool bTIFF;
+  std::string ifiles;
+  std::string ofiles;
+  std::string otffiles;
 };
 struct ImageParams {
-  int nx;
+  int nx;   //! image's width after deskewing or same as "nx_raw"
+  int nx_raw; //! raw image's width before deskewing
   int ny;
   int nz;
   int nz0;
@@ -191,9 +182,9 @@ struct ImageParams {
   short wave[5];
   short ntimes;
   unsigned short curTimeIdx;
-  float dx;
-  float dy;
+  float dxy;
   float dz;
+  float dz_raw; //! used when deskew is performed on raw data; to remember the original dz before de-skewing
   float inscale;
 };
 struct DriftParams {
@@ -221,7 +212,7 @@ struct DriftParams {
   };
 };
 struct ReconData {
-  int sizeOTF;
+  size_t sizeOTF;
   std::vector<std::vector<GPUBuffer> > otf;
   CPUBuffer background;
   CPUBuffer slope;
@@ -252,17 +243,8 @@ void SetDefaultParams(ReconParams *pParams);
  * */
 // void setup(ReconParams* params, ImageParams*
 //     imgParams, DriftParams* driftParams, ReconData* data);
-void setup_part2(ReconParams* params, ImageParams* imgParams, ReconData* reconData);
-// #ifdef __SIRECON_USE_TIFF__
-// void setup(CImg<> &inTIFF, ReconParams* params, ImageParams* imgParams, ReconData* reconData);
-// #endif
 void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER &header);
-// void readDriftData(const ReconParams& params, DriftParams* driftParams);
-void getOTFs(ReconParams* params, const ImageParams& imgParams,
-    ReconData* data);
-void determine_otf_dimensions(ReconParams *pParams, int nz, int *sizeOTF);
 void allocateOTFs(ReconParams *pParams, int sizeOTF, std::vector<std::vector<GPUBuffer> > & otfs);
-int loadOTFs(const ReconParams& params, const ImageParams& imgParams, ReconData* data);
 void allocateImageBuffers(const ReconParams& params,
     const ImageParams& imgParams, ReconData* reconData);
 
@@ -281,23 +263,25 @@ void makematrix(int nphases, int norders, int dir, float *arrPhases,
 void allocSepMatrixAndNoiseVarFactors(const ReconParams& params,
     ReconData* reconData);
 
-#ifdef __SIRECON_USE_TIFF__
-void load_and_flatfield(CImg<> &cimg, int section_no, float *bufDestiny, 
-    float background, float inscale);
-#endif
+void load_and_flatfield(CImg<> &cimg, int section_no, float *bufDestiny,
+                        float *background, float backgroundExtra,
+                        float *slope, float inscale);
+void deskewOneSection(CImg<> &rawSection, float* nxp2OutBuff, int z, int nz,
+                      int nx_out, float deskewFactor, int extraShift);
+// For TIFF inputs
+// void load_and_flatfield(CImg<> &cimg, int section_no, float *bufDestiny, 
+//     float background, float inscale);
 
-void load_and_flatfield(int section_no, int wave_no,
-    int time_no, float *bufDestiny, float *buffer, int nx, int ny,
-    float *background, float backgroundExtra, float *slope, float inscale,
-    int bUsecorr);
+// // For MRC inputs
+// void load_and_flatfield(int section_no, int wave_no,
+//     int time_no, float *bufDestiny, float *buffer, int nx, int ny,
+//     float *background, float backgroundExtra, float *slope, float inscale,
+//     int bUsecorr);
 
-void saveIntermediateDataForDebugging(const ReconParams& params);
+int saveIntermediateDataForDebugging(const ReconParams& params);
 
 void matrix_transpose(float* mat, int nRows, int nCols);
 
-/*!
-  
-*/
 void findModulationVectorsAndPhasesForAllDirections(
     int zoffset, ReconParams* params, const ImageParams& imgParams,
     DriftParams* driftParams, ReconData* data);
@@ -309,17 +293,17 @@ void rescaleDriver(int it, int iw, int zoffset, ReconParams* params,
 void transformXYSlice(int zoffset, ReconParams* params,
     const ImageParams& imgParams, DriftParams* driftParams, ReconData* data);
 
-int fitXYdrift(vector3d *drifts, float * timestamps, int nPoints,
-    vector3d *fitted_drift, float *eval_timestamps, int nEvalPoints);
-void calcPhaseList(float * phaseList, vector3d *driftlist,
-    float *phaseAbs, float k0angle, float linespacing,
-    float dr, int nphases, int nz, int direction, int z);
+// // int fitXYdrift(vector3d *drifts, float * timestamps, int nPoints,
+// //     vector3d *fitted_drift, float *eval_timestamps, int nEvalPoints);
+// // void calcPhaseList(float * phaseList, vector3d *driftlist,
+// //     float *phaseAbs, float k0angle, float linespacing,
+// //     float dr, int nphases, int nz, int direction, int z);
 
 void writeResult(int it, int iw, const ReconParams& params,
     const ImageParams& imgParams, const ReconData& reconData);
-#ifndef __SIRECON_USE_TIFF__
+
+// This only works for MRC/DV files for now:
 void saveCommandLineToHeader(int argc, char **argv, IW_MRC_HEADER &header);
-#endif
 
 void dumpBands(std::vector<GPUBuffer>* bands, int nx, int ny, int nz0);
 
@@ -327,9 +311,10 @@ void deviceMemoryUsage();
 
 double meanAboveBackground_GPU(GPUBuffer &img, int nx, int ny, int nz);
 void rescale_GPU(GPUBuffer &img, int nx, int ny, int nz, float scale);
+// void deskew_GPU(std::vector<GPUBuffer> * pImgs, int nx, int ny, int nz, float deskewAngle, float dz_prior_to, float dr, int extraShift, float fillVal);
 
 // Compute rdistcutoff
-int rdistcutoff(int iw, const ReconParams& params, const ImageParams& imgParams);
+// int rdistcutoff(int iw, const ReconParams& params, const ImageParams& imgParams);
 float get_phase(cuFloatComplex b);
 float cmag(cuFloatComplex a);
 cuFloatComplex cmul(cuFloatComplex a, cuFloatComplex b);
@@ -342,12 +327,9 @@ extern "C" void sgetri_(int*, float*, int*, int*, float*, int*, int*);
 extern "C" void sgels_(const char*, int*, int*, int*, float*, int*, float*,
     int*, float*, int*, int*);
 
-#ifdef __SIRECON_USE_TIFF__
 extern "C" int load_tiff(TIFF *const tif, const unsigned int directory, const unsigned colind, float *const buffer);
 extern "C" int save_tiff(TIFF *tif, const unsigned int directory, int colind, const int nwaves, int width, int height, float * buffer , int bIsComplex);
-
 std::vector<std::string> gatherMatchingFiles(std::string target_path, std::string pattern);
 std::string makeOutputFilePath(std::string inputFileName, std::string insert);
-#endif
 
 #endif

@@ -28,18 +28,9 @@ void rescale(int nx, int ny, int nz, int z, int zoffset, int direction,
     int wave, int t, int phases, std::vector<GPUBuffer>* images, int equalizez,
     int equalizet, double* sum_dir0_phase0);
 
-float estimate_Wiener(const std::vector<GPUBuffer>& rawImages, int nx,
-	      int ny, int z, int nphases, int rdistcutoff);
-
 int calcRefImage(const std::vector<GPUBuffer>& rawImages,
     GPUBuffer* refImage, const std::vector<GPUBuffer>& offImages,
     int nOffImages, int nx, int ny, int nphases, int type_of_refImage);
-
-void determinedrift_2D(const std::vector<GPUBuffer>& rawImages,
-      const std::vector<GPUBuffer>& offImages, int nOffImages,
-      const GPUBuffer& CrefImage,
-      vector3d *drifts, int nphases, int nx, int ny, int dir,
-      float rdistcutoff, float drift_filter_fact);
 
 void fixdrift_2D(std::vector<GPUBuffer>* CrawImages,
     vector3d *driftlist, int nphases, int nx, int ny, int nz, int dir,
@@ -62,7 +53,7 @@ void findk0(std::vector<GPUBuffer>* bands, GPUBuffer* overlap0,
 
 void fitk0andmodamps(std::vector<GPUBuffer>* bands, GPUBuffer* overlap0,
     GPUBuffer* overlap1, int nx, int ny, int nz, int norders,
-    vector *k0, float dy, float dz, std::vector<GPUBuffer>* otf, short wave, 
+    vector *k0, float dxy, float dz, std::vector<GPUBuffer>* otf, short wave,
     cuFloatComplex* amps, ReconParams * pParams);
 
 float findrealspacemodamp(std::vector<GPUBuffer>* bands,
@@ -81,7 +72,8 @@ void filterbands(int dir, std::vector<GPUBuffer>* bands,
 
 void assemblerealspacebands(int dir, GPUBuffer* outbuffer, GPUBuffer* bigbuffer,
     std::vector<GPUBuffer>* bands, int ndirs, int norders,
-    const std::vector<vector>& k0, int nx, int ny, int nz, float zoomfact,
+    const std::vector<vector>& k0, int nx, int ny, int nz,
+    float dxy, float zoomfact,
     int z_zoom, float expfact);
 
 void computeAminAmax(const GPUBuffer* data, int nx, int ny, int nz,

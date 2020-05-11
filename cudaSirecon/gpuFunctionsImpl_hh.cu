@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include "../cutilSafeCall.h"
 
 #ifndef RED_BLOCK_SIZE_X
@@ -23,8 +24,10 @@ __constant__ int const_pParams_bNoKz0;
 __constant__ int const_pParams_bFilteroverlaps;
 __constant__ int const_pParams_apodizeoutput;
 __constant__ float const_pParams_apoGamma;
+__constant__ int const_pParams_bBessel;
 __constant__ int const_pParams_bRadAvgOTF;
 __constant__ int const_pParams_nzotf;
+__constant__ float const_pParams_dkrotf;
 __constant__ float const_wiener;
 
 /** These data are not modified in the kernels and can go in constant
@@ -64,18 +67,15 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
 __global__ void makeOverlaps0Kernel(int nx, int ny, int nz,
     int order1, int order2, float kx, float ky,
     float rdistcutoff, float otfcutoff, float zdistcutoff,
-    float order0_2_factor, float krscale, float kzscale,
+	float order0_2_factor, float dkx, float dky, float kzscale,
     cuFloatComplex *band1im, cuFloatComplex *band1re,
     cuFloatComplex *overlap0);
 __global__ void makeOverlaps1Kernel(int nx, int ny, int nz,
     int order1, int order2, float kx, float ky,
     float rdistcutoff, float otfcutoff, float zdistcutoff,
-    float order0_2_factor, float krscale, float kzscale,
+	float order0_2_factor, float dkx, float dky, float kzscale,
     cuFloatComplex *band2im, cuFloatComplex *band2re,
     cuFloatComplex *overlap1);
-__device__ cuFloatComplex dev_otfinterpolateMkOvrLps(
-    cuFloatComplex * otf, float kx, float ky, float krscale, int kz,
-    float kzscale, int mask);
 
 __host__ void aTimesConjB(GPUBuffer* overlap0, GPUBuffer* overlap1,
     int nx, int ny, int nz, GPUBuffer* crosscorr_c);
@@ -109,7 +109,7 @@ __host__ float findrealspacemodamp(std::vector<GPUBuffer>* bands,
 
 __global__ void reductionKernel(
     int nx, int ny, int nz,
-    float kx, float ky,
+    float kx, float ky, float dxy,
     const cuFloatComplex *overlap0, const cuFloatComplex *overlap1,
     cuFloatComplex *XStarY, float *sumXMag, float *sumYMag);
 
@@ -117,12 +117,11 @@ __host__ float fitxyparabola( float x1, float y1, float x2, float y2,
     float x3, float y3);
 
 __device__ cuFloatComplex dev_otfinterpolate(cuFloatComplex * otf, float
-    kx, float ky, float krscale, int kz, float kzscale);
+    kx, float ky, int kz, float kzscale);
 
 __device__ float dev_suppress(float x);
 __device__ float dev_mag2(cuFloatComplex x);
-__device__ float dev_order0damping(float radius, float zindex, int
-    rlimit, int zlimit);
+__device__ float dev_order0damping(float radius, float zindex, float rlimit, int zlimit);
 __global__ void move_kernel(cuFloatComplex *inarray1, cuFloatComplex *inarray2, int order, 
 			    cuFloatComplex *outarray, int nx, int ny, int nz, float
           zoomfact, int z_zoom);
@@ -131,8 +130,8 @@ __global__ void write_outbuffer_kernel1(cuFloatComplex * bigbuffer,
 __global__ void write_outbuffer_kernel2(float * coslookup, float * sinlookup, 
                                         cuFloatComplex * bigbuffer, float * outbuffer, int);
 
-__global__ void cos_sin_kernel(float k0x, float k0y, float fact, float *
-                               coslookup, float * sinlookup, int);
+__global__ void cos_sin_kernel(float k0x, float k0y, float dxy, float fact,
+							   float * coslookup, float * sinlookup, int);
 
 __global__ void filterbands_kernel1(int dir, int ndirs, int order, int norders, int nx, 
     int ny, int nz, float rdistcutoff, float zapocutoff, float apocutoff, 

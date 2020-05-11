@@ -101,20 +101,18 @@ endif()
 
 find_package(CUDA)
 
-if (WITH_TIFF)
-  if (WIN32)
-    set(TIFF_INCLUDE_DIR "c:/libtiff")
-    set(TIFF_LIBRARY "c:/libtiff")
-  endif(WIN32)
-  find_package(TIFF)
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -D__SIRECON_USE_TIFF__")
-endif()
+find_package(TIFF)
 
 if(WIN32)
   set (Boost_USE_STATIC_LIBS    ON)
   set (Boost_USE_MULTITHREADED  ON)
   set (Boost_USE_STATIC_RUNTIME OFF)
+
+  if ( ${MSVC_VERSION} GREATER 1800)
+    find_library(LEG_STDIO legacy_stdio_definitions)
+    message(STATUS "adding legacy stdio definitions for >VS14.0 " ${LEG_STDIO})
+  endif()
+
 endif(WIN32)
 
 find_package( Boost REQUIRED COMPONENTS program_options filesystem system)
@@ -156,17 +154,10 @@ if((${CUDA_VERSION_MAJOR} GREATER 9) AND (NOT APPLE))
   )
 endif()
 
-
-# if(WIN32)
-#   set(CUDA_NVCC_FLAGS
-#      ${CUDA_NVCC_FLAGS} -I${Boost_INCLUDE_DIRS}; --use-local-env --cl-version=2013)
-# endif(WIN32)
-
-
 message(STATUS "CUDA_NVCC_FLAGS: " ${CUDA_NVCC_FLAGS})
 
 add_subdirectory(Buffers)
 add_subdirectory(cudaSirecon)
-if(NOT WIN32)
-  add_subdirectory(otf)
-endif()
+#if(NOT WIN32)
+add_subdirectory(otf)
+#endif()

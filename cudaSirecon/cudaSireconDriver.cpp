@@ -20,14 +20,12 @@ int main(int argc, char **argv)
       for (int iw = 0; iw < 1; ++iw) {
         myreconstructor.loadAndRescaleImage(it, iw);
         myreconstructor.setCurTimeIdx(it);
-        myreconstructor.processOneVolume();
-        myreconstructor.writeResult(it, iw);
+        if (myreconstructor.processOneVolume())
+          myreconstructor.writeResult(it, iw);
       }
     }
 
-#ifndef __SIRECON_USE_TIFF__
     myreconstructor.closeFiles();
-#endif
   }
   catch (std::exception &e) {
     std::cerr << "\n!!Error occurred: " << e.what() << std::endl;

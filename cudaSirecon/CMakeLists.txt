@@ -16,10 +16,8 @@ if(WIN32)
   set(PRIISM_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/IVE/win64/INCLUDE")
 	include_directories(${PRIISM_INCLUDE_PATH})
     link_directories ( ${PRIISM_LIB_PATH} )
-    if(WITH_TIFF)
-        include_directories( ${TIFF_INCLUDE_DIR} )
-        link_directories ( ${TIFF_LIBRARY} )
-    endif(WITH_TIFF)
+    include_directories( ${TIFF_INCLUDE_DIR} )
+    link_directories ( ${TIFF_LIBRARY} )
 elseif(APPLE)
   set(PRIISM_LIB_PATH "${CMAKE_SOURCE_DIR}/IVE/darwin64/LIB")
   set(PRIISM_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/IVE/darwin64/INCLUDE")
@@ -41,24 +39,12 @@ if(WIN32)
   find_library(IMLIB libimlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
   find_library(IVELIB libive PATHS ${PRIISM_LIB_PATH} REQUIRED)
 
-  if ( ${MSVC_VERSION} GREATER 1800)
-    find_library(LEG_STDIO legacy_stdio_definitions)
-    message(STATUS "adding legacy stdio definitions for >VS14.0 " ${LEG_STDIO})
-  endif()
+  # if ( ${MSVC_VERSION} GREATER 1800)
+  #   find_library(LEG_STDIO legacy_stdio_definitions)
+  #   message(STATUS "adding legacy stdio definitions for >VS14.0 " ${LEG_STDIO})
+  # endif()
   message(STATUS "LAPACK: " ${LAPACK_LIBRARIES})
 
-  # find_library(BLAS openblas libblas 
-  #   PATHS 
-  #   "${CONDA_PREFIX}/Library/lib"
-  #   "${CMAKE_SOURCE_DIR}/lapack/win64"
-  #   REQUIRED
-  # )
-  # find_library(LAPACK liblapack
-  #   PATHS
-  #   "${CONDA_PREFIX}/Library/lib"
-  #   "${CMAKE_SOURCE_DIR}/lapack/win64"
-  #   REQUIRED
-  # )
 else()
   find_library(IMLIB imlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
   find_library(IVELIB ive PATHS ${PRIISM_LIB_PATH} REQUIRED)
@@ -72,15 +58,6 @@ message(STATUS "LEG_STDIO: " ${LEG_STDIO})
 find_package(CUDA)
 message(STATUS "CUDA: " ${CUDA_CUFFT_LIBRARIES})
 
-# if (APPLE)
-###############################################
-#### Lin: The path to the cuda libraries is hardcoded here. Let me know
-#### if this works for you.
-###############################################
-#   set(CUDA_LIBRARIES "/Developer/NVIDIA/CUDA-5.0/lib/libtlshook.dylib" ${CUDA_LIBRARIES} )
-# endif ()
-
-
 
 CUDA_ADD_LIBRARY(
   gpuFunctions
@@ -92,27 +69,12 @@ if (NOT APPLE)
 set (SHARED_OR_NOT SHARED)
 endif()
 
-if (WITH_TIFF AND WIN32)
 CUDA_ADD_LIBRARY(
   cudaSirecon
-  ${SHARED_OR_NOT}
+#  ${SHARED_OR_NOT}
   cudaSirecon.cpp
   boostfs.cpp
-  tiffhandle.cpp
   )
-elseif(APPLE)
-  CUDA_ADD_LIBRARY(
-    cudaSirecon
-    SHARED
-    cudaSirecon.cpp
-  )
-else ()
-  CUDA_ADD_LIBRARY(
-    cudaSirecon
-#    ${SHARED_OR_NOT}
-    cudaSirecon.cpp
-  )
-endif()
 
 CUDA_ADD_EXECUTABLE(
   cudaSireconDriver
@@ -124,28 +86,17 @@ add_dependencies(cudaSireconDriver
   gpuFunctions
   Buffer
   )
-if(WIN32)
 
-  if(WITH_TIFF)
-    target_link_libraries(
-      cudaSirecon
-      gpuFunctions
-      Buffer
-      ${LAPACK_LIBRARIES}
-      libtiff
+if(WIN32)
+  target_link_libraries(
+    cudaSirecon
+    gpuFunctions
+    Buffer
+    ${IMLIB}
+    ${IVELIB}
+    ${LAPACK_LIBRARIES}
+    ${TIFF_LIBRARIES}
     )
-  else(WITH_TIFF)
-    target_link_libraries(
-      cudaSirecon
-      gpuFunctions
-      Buffer
-      # ${IMLIB}
-      # ${IVELIB}
-	  libimlib
-	  libive
-      ${LAPACK_LIBRARIES}
-    )
-  endif(WITH_TIFF)
 
   if ( ${MSVC_VERSION} GREATER 1800)
     target_link_libraries(
@@ -157,17 +108,17 @@ if(WIN32)
       ${IMLIB}
       ${IVELIB}
       ${LAPACK_LIBRARIES}
-    )
+      )
   else()
-  target_link_libraries(
-    cudaSireconDriver
-    cudaSirecon
-    gpuFunctions
-    Buffer
-    ${IMLIB}
-    ${IVELIB}
-    ${LAPACK_LIBRARIES}
-  )
+	target_link_libraries(
+      cudaSireconDriver
+      cudaSirecon
+      gpuFunctions
+      Buffer
+      ${IMLIB}
+      ${IVELIB}
+      ${LAPACK_LIBRARIES}
+	  )
   endif()
 else(WIN32)
   target_link_libraries(
@@ -178,7 +129,6 @@ else(WIN32)
     ${IVELIB}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
-    ${Boost_REGEX_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
     blas
     lapack
