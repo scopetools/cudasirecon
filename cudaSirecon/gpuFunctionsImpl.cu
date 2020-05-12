@@ -1322,7 +1322,6 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
         &pParams->bFilteroverlaps, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_apodizeoutput,
         &pParams->apodizeoutput, sizeof(int)));
-  std::cout << "apodizeoutput = " << pParams->apodizeoutput << std::endl;
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_apoGamma,
         &pParams->apoGamma, sizeof(float)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_bBessel,

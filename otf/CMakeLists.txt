@@ -32,8 +32,8 @@ endif()
 if(WIN32)
 endif(WIN32)
 
-# add_executable(makeotf makeotf.c)
 add_executable(makeotf radialft.cpp)
+add_executable(otfviewer otfviewer.cpp)
 
 if (WIN32)
   if ( ${MSVC_VERSION} GREATER 1800)
@@ -44,11 +44,22 @@ if (WIN32)
 	  ${TIFF_LIBRARIES}
       ${LEG_STDIO}
 	  )
+	target_link_libraries(otfviewer
+      ${IMLIB}
+      ${IVELIB}
+	  ${TIFF_LIBRARIES}
+      ${LEG_STDIO}
+	  )
   else()
 	target_link_libraries(makeotf
       ${IMLIB}
       ${IVELIB}
 	  ${FFTW3F_LIBRARY}
+	  ${TIFF_LIBRARIES}
+	  )
+	target_link_libraries(otfviewer
+      ${IMLIB}
+      ${IVELIB}
 	  ${TIFF_LIBRARIES}
 	  )
   endif()
@@ -61,6 +72,13 @@ else ()
 	${TIFF_LIBRARIES}
 	X11
 	)
+  target_link_libraries(otfviewer
+    ${IMLIB}
+    ${IVELIB}
+	${TIFF_LIBRARIES}
+	X11
+	)
 endif(WIN32)
 
 install(TARGETS makeotf RUNTIME DESTINATION bin)
+install(TARGETS otfviewer RUNTIME DESTINATION bin)
