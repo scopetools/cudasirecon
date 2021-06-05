@@ -31,10 +31,10 @@
 #
 #######################################################################
 
-
 cmake_minimum_required (VERSION 3.0)
 
 project (cudaSIMRecon CXX CUDA)
+
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -44,10 +44,8 @@ file(READ "version.txt" ver)
 
 string(REGEX MATCH "VERSION_MAJOR ([0-9]*)" _ ${ver})
 set(ver_major ${CMAKE_MATCH_1})
-
 string(REGEX MATCH "VERSION_MINOR ([0-9]*)" _ ${ver})
 set(ver_minor ${CMAKE_MATCH_1})
-
 string(REGEX MATCH "VERSION_PATCH ([0-9]*)" _ ${ver})
 set(ver_patch ${CMAKE_MATCH_1})
 
@@ -78,8 +76,8 @@ if(BUILD_DOCUMENTATION)
       install it correctly")
     endif()
     #-- Configure the Template Doxyfile for our specific project
-    configure_file(Doxyfile.in
-      ${PROJECT_BINARY_DIR}/Doxyfile  @ONLY IMMEDIATE)
+    # configure_file(Doxyfile.in
+    #   ${PROJECT_BINARY_DIR}/Doxyfile  @ONLY IMMEDIATE)
     #-- Add a custom target to run Doxygen when ever the project is built
     add_custom_target (Docs ALL 
       COMMAND ${DOXYGEN_EXECUTABLE}
@@ -89,7 +87,6 @@ if(BUILD_DOCUMENTATION)
 endif()
 
 find_package(CUDA)
-
 find_package(TIFF)
 
 if(WIN32)
@@ -109,10 +106,10 @@ message(STATUS "Boost_INCLUDE_DIRS " ${Boost_INCLUDE_DIRS})
 message(STATUS "Boost_LIBRARY_DIRS " ${Boost_LIBRARY_DIRS})
 message(STATUS "Boost_LIBRARIES " ${Boost_LIBRARIES})
 
-if(WIN32 OR APPLE)
-  link_directories ( ${Boost_LIBRARY_DIRS} )
-  include_directories(  ${Boost_INCLUDE_DIRS} )
-endif()
+# if(WIN32)
+#   link_directories ( ${Boost_LIBRARY_DIRS} )
+#   include_directories(  ${Boost_INCLUDE_DIRS} )
+# endif()
 
 
 set(CUDA_NVCC_FLAGS
@@ -137,8 +134,6 @@ if(${CUDA_VERSION_MAJOR} GREATER 9)
     -gencode=arch=compute_75,code=compute_75
   )
 endif()
-
-
 message(STATUS "CUDA_NVCC_FLAGS: " ${CUDA_NVCC_FLAGS})
 
 add_subdirectory(Buffers)

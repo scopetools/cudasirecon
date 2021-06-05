@@ -1,5 +1,4 @@
 rm -rf cmake_build
-
 wget src/ https://www.dropbox.com/s/2twvw0go3dr3aim/IVE.zip
 unzip -o -d src IVE.zip
 rm IVE.zip
@@ -20,5 +19,5 @@ cmake $CMAKE_ARGS \
     -DCMAKE_BUILD_TYPE=Release \
     ../src
 
-make -j 2
+make -j 4
 # make install

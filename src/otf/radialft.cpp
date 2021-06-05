@@ -27,7 +27,9 @@
 #include <CImg.h>
 using namespace cimg_library;
 
+#ifdef _MRC
 #include <IMInclude.h>
+#endif
 
 #include <complex>
 #include <fftw3.h>
@@ -63,10 +65,11 @@ void rescale(std::complex<float> *otfkxkz, int order, int nx, int nz, float *sca
 void outputdata(std::string &tiffile, std::vector<std::complex<float> *> &bands, int norders,
                 int nx, int ny, int nz, float dkr, float dkz, int five_bands);
 
+#ifdef _MRC
 void outputdata(int ostream_no, IW_MRC_HEADER *header, std::vector<std::complex<float> *> &bands,
                 int norders, int nx, int ny, int nz, float dkr, float dkz, int five_bands);
-
 void mrc_file_write(float *buffer, int nx, int ny, int nz, float rlen, float zlen, int mode, int iwave, const char *files);
+#endif
 int commandline(int argc, char *argv[], int * twolens, int *rescale, float *beaddiam, float *k0angle, float *linespacing, int *five_bands, int *nphases, int *interpkr, int *leavekz, int *do_compen, int *I2M_inc, std::string &I2Mfiles, float *background, int *bBgInExtHdr, int *order0gen, std::string &order0files, int *conjugate, float *na, float *nimm, int *ifixz, int *ifixr, unsigned *wavelength, float *dr, float *dz, int *bCoherentBSIM, int *bForcedPIshift, std::string &ifiles, std::string &ofiles, int *ifilein, int *ofilein);
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900)
@@ -84,7 +87,6 @@ extern "C" FILE *  __iob_func(void)
 int main(int argc, char **argv)
 {
   std::string ifiles, ofiles, I2Mfiles, order0files;
-  IW_MRC_HEADER header, otfheader;
   int nphases=DEFAULTNPHASES, napodize=10;
   int border_size;
   float dr=0.106f, dz=0.1f, background_dummy=-1.f, background_i2m, xcofm, ycofm, zcofm, xcofm_i2m, ycofm_i2m, zcofm_i2m;
@@ -98,8 +100,11 @@ int main(int argc, char **argv)
   int bCoherentBSIM = 0; /* In coherent Bessel-SIM, do fixorigin() differently? */
   int bForcedPIshift=0;
 
-
+  #ifdef _MRC
+  IW_MRC_HEADER header, otfheader;
   IMAlPrt(0);       
+  #endif
+
 
   interpkr[0] = 0;
   interpkr[1] = 0;
@@ -130,6 +135,7 @@ int main(int argc, char **argv)
     PSFtiff.assign(ifiles.c_str());
     bTIFF = true;
   }
+  #ifdef _MRC
   else {
     std::cout << "Not a TIFF file; now try MRC\n";
     if (IMOpen(istream_no, ifiles.c_str(), "ro")) {
@@ -137,15 +143,18 @@ int main(int argc, char **argv)
       return -1;
     }
   }
+  #endif
   if (!ofilein) {
     std::cout << "Output OTF file name: ";
     getline(std::cin, ofiles);
   }
+  #ifdef _MRC
   if (!bTIFF)
     if (IMOpen(ostream_no, ofiles.c_str(), "new")) {
       std::cerr << "File " << ofiles << " cannot be created.\n";
       return -1;
     }
+  #endif
 
   unsigned nx, nxExtra, ny, nz, nxy;
   if (bTIFF) {
@@ -157,6 +166,8 @@ int main(int argc, char **argv)
     if (user_dz>0)
       dz = user_dz;
   }
+
+  #ifdef _MRC
   else {
     int ixyz[3], mxyz[3], pixeltype;
     float min, max, mean;
@@ -170,6 +181,7 @@ int main(int argc, char **argv)
     dz = header.zlen;
     wavelength = header.iwav1;
   }
+  #endif
 
   if (!I2M_inc)
     nz /= nphases;
@@ -212,16 +224,24 @@ int main(int argc, char **argv)
     for(int phase=0; phase<nphases; phase++) {
       if (bTIFF)
         buffer.assign(PSFtiff.data(0, 0, zsec), nx, ny, 1, 1, true); // Reuse buffer from "PSFtiff"; check
+      #ifdef _MRC
       else {
         buffer.assign(nx, ny);
         IMRdSec(istream_no, buffer.data());
       }
-
+      #endif
       // Fix camera error at even binnings for some very old Photometric CCD
       if(buffer(nx-1, ny-1) < 0)
         buffer(nx-1, ny-1) = buffer(nx-2, ny-1);
 
-      if (!bTIFF && bBgInExtHdr) {
+      if (bTIFF) {
+        if (background_dummy >=0)
+          background[zsec] = background_dummy;
+        else
+          background[zsec] = estimate_background(buffer, border_size);
+      }
+      #ifdef _MRC
+      else if (bBgInExtHdr) {
         // Some Andor EMCCDs have hidden border pixels that can be used to report fluctuating dark
         // pixel values, which can be saved in MRC's per-exposure extra header info
         int extInts;
@@ -229,12 +249,8 @@ int main(int argc, char **argv)
         IMRtExHdrZWT(istream_no, zsec, 0, 0, &extInts, extFloats);
         background[zsec] = extFloats[2];
       }
-      else {
-        if (background_dummy >=0)
-          background[zsec] = background_dummy;
-        else
-          background[zsec] = estimate_background(buffer, border_size);
-      }
+      #endif
+
 
       for(auto i=0u; i<ny; i++) {
         // Copy from "buffer" to floatimage[phase] at section z row-by-row
@@ -257,8 +273,10 @@ int main(int argc, char **argv)
     if (I2M_inc) {  // Data contains one extra section of I2M image
       if (bTIFF) {
       }
+      #ifdef _MRC
       else 
         IMRdSec(istream_no, buffer.data());
+      #endif
       if(buffer(nx-1, ny-1) == -1.0)  /* fix camera error at even binnings */
         buffer(nx-1, ny-1) = buffer(nx-2, ny-1);
       if (z==nz/2)
@@ -303,8 +321,10 @@ int main(int argc, char **argv)
   if (Generate_band0) {
     if (bTIFF)
       floatimage[0].save_tiff(order0files.c_str());
+    #ifdef _MRC
     else
       mrc_file_write(floatimage[0], nxExtra, ny, nz, dr, dz, 0, wavelength, order0files.c_str());
+    #endif
   }
 
   printf("Before fft\n");
@@ -399,19 +419,22 @@ int main(int argc, char **argv)
       for (auto i=0; i<(nx/2+1)*nz; i++)
         avg_output[phase][i] = std::conj(avg_output[phase][i]);
 
-  if (!bTIFF) {
+  if (bTIFF) {
+    outputdata(ofiles, avg_output, norders, nx, ny, nz, dkx, dkz, five_bands);
+  }
+  #ifdef _MRC
+  else 
     otfheader = header;
     outputdata(ostream_no, &otfheader, avg_output, norders, nx, ny, nz, dkx, dkz, five_bands);
-  }
-  else 
-    outputdata(ofiles, avg_output, norders, nx, ny, nz, dkx, dkz, five_bands);
-  
+
   if (I2M_inc) {
 /*     cleanup_I2M(I2Mavg_output, nx, nz, dkr, dkz, wavelength, icleanup, NA, NIMM); */
     fixorigin(I2Mavg_output, nx, nz, interpkr[0], interpkr[1]);
     rescale(I2Mavg_output, 0, nx, nz, &scalefactor, dorescale);
     mrc_file_write((float *)I2Mavg_output, nz, nx/2+1, 1, dkz, dkx, 2, wavelength, I2Mfiles.c_str());
   }
+  #endif
+
   return 0;
 }
 
@@ -1089,6 +1112,7 @@ void outputdata(std::string &tiff_filename, std::vector<std::complex<float> *> &
 }
 
 
+#ifdef _MRC
 void outputdata(int ostream_no, IW_MRC_HEADER *header,  std::vector<std::complex<float> *> &bands, int norders, int nx, int ny, int nz, float dkr, float dkz, int five_bands)
 {
   header->nx = nz;
@@ -1116,6 +1140,7 @@ void outputdata(int ostream_no, IW_MRC_HEADER *header,  std::vector<std::complex
   IMWrHdr(ostream_no, header->label, 0, header->amin, header->amax, header->amean);
   IMClose(ostream_no);
 }
+#endif
 
 /* According to Mats's derivation, FT of a sphere with radius R is f(k)=(R/Pi*k^2)*g(2*Pi*k*R), where g(x)=sin(x)/x - cos(x) */
 /* The limit at the origin of F space is 4*Pi*R^3/3 */
@@ -1519,6 +1544,7 @@ int commandline(int argc, char *argv[], int * twolens, int *rescale, float *bead
    return 1;
 }
 
+#ifdef _MRC
 void mrc_file_write(float *buffer, int nx, int ny, int nz, float rlen, float zlen, int mode, int iwave, const char *files)
 {
   int ostream_no=19;
@@ -1602,3 +1628,4 @@ void mrc_file_write(float *buffer, int nx, int ny, int nz, float rlen, float zle
   IMWrHdr(ostream_no, "Processed", 1, amin, amax, amean);
   IMClose(ostream_no);
 }
+#endif
