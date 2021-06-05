@@ -36,7 +36,7 @@
 #include <CImg.h>
 using namespace cimg_library;
 
-#ifdef _MRC
+#ifdef MRC
 #include <IMInclude.h>  // MRC file I/O routines
 #endif
 
@@ -74,7 +74,7 @@ static const int aligned_stream_no = 10;
 static const int separated_stream_no = 11;
 static const int overlaps_stream_no = 12;
 
-#ifdef _MRC
+#ifdef MRC
 // static IW_MRC_HEADER header;
 static IW_MRC_HEADER aligned_header;
 static IW_MRC_HEADER sep_header;
@@ -248,7 +248,7 @@ void SetDefaultParams(ReconParams *pParams);
  * */
 // void setup(ReconParams* params, ImageParams*
 //     imgParams, DriftParams* driftParams, ReconData* data);
-#ifdef _MRC
+#ifdef MRC
 void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER &header);
 #endif
 
@@ -256,7 +256,7 @@ void allocateOTFs(ReconParams *pParams, int sizeOTF, std::vector<std::vector<GPU
 void allocateImageBuffers(const ReconParams& params,
     const ImageParams& imgParams, ReconData* reconData);
 
-#ifdef _MRC
+#ifdef MRC
 void setOutputHeader(const ReconParams& myParams, const ImageParams& imgParams,
                      IW_MRC_HEADER &header);
 #endif
@@ -288,7 +288,7 @@ void deskewOneSection(CImg<> &rawSection, float* nxp2OutBuff, int z, int nz,
 //     float *background, float backgroundExtra, float *slope, float inscale,
 //     int bUsecorr);
 
-#ifdef _MRC
+#ifdef MRC
 int saveIntermediateDataForDebugging(const ReconParams& params);
 #endif
 
@@ -315,7 +315,7 @@ void writeResult(int it, int iw, const ReconParams& params,
     const ImageParams& imgParams, const ReconData& reconData);
 
 // This only works for MRC/DV files for now:
-#ifdef _MRC
+#ifdef MRC
 void saveCommandLineToHeader(int argc, char **argv, IW_MRC_HEADER &header);
 #endif
 

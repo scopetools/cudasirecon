@@ -27,7 +27,7 @@
 #include <CImg.h>
 using namespace cimg_library;
 
-#ifdef _MRC
+#ifdef MRC
 #include <IMInclude.h>
 #endif
 
@@ -65,7 +65,7 @@ void rescale(std::complex<float> *otfkxkz, int order, int nx, int nz, float *sca
 void outputdata(std::string &tiffile, std::vector<std::complex<float> *> &bands, int norders,
                 int nx, int ny, int nz, float dkr, float dkz, int five_bands);
 
-#ifdef _MRC
+#ifdef MRC
 void outputdata(int ostream_no, IW_MRC_HEADER *header, std::vector<std::complex<float> *> &bands,
                 int norders, int nx, int ny, int nz, float dkr, float dkz, int five_bands);
 void mrc_file_write(float *buffer, int nx, int ny, int nz, float rlen, float zlen, int mode, int iwave, const char *files);
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
   int bCoherentBSIM = 0; /* In coherent Bessel-SIM, do fixorigin() differently? */
   int bForcedPIshift=0;
 
-  #ifdef _MRC
+  #ifdef MRC
   IW_MRC_HEADER header, otfheader;
   IMAlPrt(0);       
   #endif
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
     PSFtiff.assign(ifiles.c_str());
     bTIFF = true;
   }
-  #ifdef _MRC
+  #ifdef MRC
   else {
     std::cout << "Not a TIFF file; now try MRC\n";
     if (IMOpen(istream_no, ifiles.c_str(), "ro")) {
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
     std::cout << "Output OTF file name: ";
     getline(std::cin, ofiles);
   }
-  #ifdef _MRC
+  #ifdef MRC
   if (!bTIFF)
     if (IMOpen(ostream_no, ofiles.c_str(), "new")) {
       std::cerr << "File " << ofiles << " cannot be created.\n";
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
       dz = user_dz;
   }
 
-  #ifdef _MRC
+  #ifdef MRC
   else {
     int ixyz[3], mxyz[3], pixeltype;
     float min, max, mean;
@@ -224,7 +224,7 @@ int main(int argc, char **argv)
     for(int phase=0; phase<nphases; phase++) {
       if (bTIFF)
         buffer.assign(PSFtiff.data(0, 0, zsec), nx, ny, 1, 1, true); // Reuse buffer from "PSFtiff"; check
-      #ifdef _MRC
+      #ifdef MRC
       else {
         buffer.assign(nx, ny);
         IMRdSec(istream_no, buffer.data());
@@ -240,7 +240,7 @@ int main(int argc, char **argv)
         else
           background[zsec] = estimate_background(buffer, border_size);
       }
-      #ifdef _MRC
+      #ifdef MRC
       else if (bBgInExtHdr) {
         // Some Andor EMCCDs have hidden border pixels that can be used to report fluctuating dark
         // pixel values, which can be saved in MRC's per-exposure extra header info
@@ -273,7 +273,7 @@ int main(int argc, char **argv)
     if (I2M_inc) {  // Data contains one extra section of I2M image
       if (bTIFF) {
       }
-      #ifdef _MRC
+      #ifdef MRC
       else 
         IMRdSec(istream_no, buffer.data());
       #endif
@@ -321,7 +321,7 @@ int main(int argc, char **argv)
   if (Generate_band0) {
     if (bTIFF)
       floatimage[0].save_tiff(order0files.c_str());
-    #ifdef _MRC
+    #ifdef MRC
     else
       mrc_file_write(floatimage[0], nxExtra, ny, nz, dr, dz, 0, wavelength, order0files.c_str());
     #endif
@@ -422,7 +422,7 @@ int main(int argc, char **argv)
   if (bTIFF) {
     outputdata(ofiles, avg_output, norders, nx, ny, nz, dkx, dkz, five_bands);
   }
-  #ifdef _MRC
+  #ifdef MRC
   else 
     otfheader = header;
     outputdata(ostream_no, &otfheader, avg_output, norders, nx, ny, nz, dkx, dkz, five_bands);
@@ -1112,7 +1112,7 @@ void outputdata(std::string &tiff_filename, std::vector<std::complex<float> *> &
 }
 
 
-#ifdef _MRC
+#ifdef MRC
 void outputdata(int ostream_no, IW_MRC_HEADER *header,  std::vector<std::complex<float> *> &bands, int norders, int nx, int ny, int nz, float dkr, float dkz, int five_bands)
 {
   header->nx = nz;
@@ -1544,7 +1544,7 @@ int commandline(int argc, char *argv[], int * twolens, int *rescale, float *bead
    return 1;
 }
 
-#ifdef _MRC
+#ifdef MRC
 void mrc_file_write(float *buffer, int nx, int ny, int nz, float rlen, float zlen, int mode, int iwave, const char *files)
 {
   int ostream_no=19;

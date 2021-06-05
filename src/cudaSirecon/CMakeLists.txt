@@ -56,6 +56,7 @@ add_dependencies(cudaSireconDriver cudasirecon gpuFunctions Buffer)
 target_link_libraries(cudasirecon gpuFunctions Buffer ${TIFF_LIBRARIES})
 
 if (IMLIB)
+  add_definitions(-DMRC)
   target_link_libraries(cudasirecon ${IMLIB} ${IVELIB})
 endif()
 

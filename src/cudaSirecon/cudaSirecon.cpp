@@ -88,7 +88,7 @@ unsigned findOptimalDimension(unsigned inSize, int step=-1)
   return outSize;
 }
 
-#ifdef _MRC
+#ifdef MRC
 // MRC header parser
 void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER &header)
 {
@@ -158,7 +158,7 @@ void allocateImageBuffers(const ReconParams& params,
   }
 }
 
-#ifdef _MRC
+#ifdef MRC
 void setOutputHeader(const ReconParams& myParams, const ImageParams& imgParams,
                      IW_MRC_HEADER &header)
 {
@@ -207,7 +207,7 @@ void getbg_and_slope(const char *corrfiles, float *background,
   int ixyz[3], mxyz[3], pixeltype;      /* variables for IMRdHdr call */
   float min, max, mean;      /* variables for IMRdHdr call */
   
-#ifdef _MRC
+#ifdef MRC
   IW_MRC_HEADER header;
   if (IMOpen(cstream_no, corrfiles, "ro")) {
     fprintf(stderr, "File %s does not exist\n", corrfiles);
@@ -311,7 +311,7 @@ void findModulationVectorsAndPhasesForAllDirections(
       // TO-DO
       std::cout << "No unmixed raw images were saved in TIFF mode\n";
     }
-    #ifdef _MRC
+    #ifdef MRC
     else if (!params->bTIFF && params->bSaveSeparated) {
       CPUBuffer tmp((*rawImages)[0].getSize());
       for (int phase = 0; phase < params->nphases; ++ phase) {
@@ -377,7 +377,7 @@ void findModulationVectorsAndPhasesForAllDirections(
                        true);  // ovlp0 shares buffer with tmp0 (hence "true" in the final parameter)
           ovlp0.save_tiff(params->fileOverlaps.c_str());
         }
-        #ifdef _MRC
+        #ifdef MRC
         else {
           CPUBuffer tmp0(data->overlap0.getSize());
           data->overlap0.set(&tmp0, 0, tmp0.getSize(), 0);
@@ -469,7 +469,7 @@ void findModulationVectorsAndPhasesForAllDirections(
           // To-DO
           std::cout << "No overlaps were saved in TIFF mode";
         }
-        #ifdef _MRC
+        #ifdef MRC
         else if (!params->bTIFF && order == 1 && params->bSaveOverlaps) {// output the overlaps
           // output the overlaps
           CPUBuffer tmp0(data->overlap0.getSize());
@@ -800,7 +800,7 @@ cuFloatComplex cmul(cuFloatComplex a, cuFloatComplex b)
   return result;
 }
 
-#ifdef _MRC
+#ifdef MRC
 int saveIntermediateDataForDebugging(const ReconParams& params)
 {
   if (params.bSaveSeparated) {
@@ -923,7 +923,7 @@ SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
 
     m_imgParams.ntimes = m_all_matching_files.size();
   }
-  #ifdef _MRC
+  #ifdef MRC
   else
   /* Suppress IVE display of file headers */
     IMAlPrt(0);
@@ -933,7 +933,7 @@ SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
   // deviceMemoryUsage();
 
   setup();
-  #ifdef _MRC
+  #ifdef MRC
   if (!m_myParams.bTIFF)
     ::setOutputHeader(m_myParams, m_imgParams, m_in_out_header);
   #endif
@@ -1138,7 +1138,7 @@ void SIM_Reconstructor::openFiles()
   if (!m_myParams.ifiles.size() || !m_myParams.ofiles.size())
     throw std::runtime_error("Calling openFiles() but no input or output files were specified");
 
-  #ifdef _MRC
+  #ifdef MRC
   if (!m_myParams.bTIFF && IMOpen(istream_no, m_myParams.ifiles.c_str(), "ro"))
     // TIFF files are not opened till loadAndRescaleImage()
     throw std::runtime_error("No matching input TIFF or MRC files not found");
@@ -1157,7 +1157,7 @@ void SIM_Reconstructor::openFiles()
     m_OTFfile_valid = true;
   }
 
-  #ifdef _MRC
+  #ifdef MRC
   else
     if (IMOpen(otfstream_no, m_myParams.otffiles.c_str(), "ro"))
       throw std::runtime_error("OTF file not found");
@@ -1191,7 +1191,7 @@ void SIM_Reconstructor::setup()
     m_imgParams.nwaves = tiff0.spectrum(); // multi-color not supported yet
     m_imgParams.nz /= m_imgParams.nwaves * m_myParams.nphases * m_myParams.ndirs;
   }
-  #ifdef _MRC
+  #ifdef MRC
   else 
     ::loadHeader(m_myParams, &m_imgParams, m_in_out_header);
   #endif
@@ -1242,7 +1242,7 @@ void SIM_Reconstructor::setup_common()
          m_imgParams.nz0, m_imgParams.nwaves);
   printf("dxy=%f, dz=%f um\n", m_imgParams.dxy, m_imgParams.dz);
 
-  #ifdef _MRC
+  #ifdef MRC
   // // Initialize headers for intermediate output files if requested
   if (!m_myParams.bTIFF) {
     if (m_myParams.bSaveAlignedRaw) {
@@ -1349,7 +1349,7 @@ int SIM_Reconstructor::processOneVolume()
 
   // deviceMemoryUsage();
 
-  #ifdef _MRC
+  #ifdef MRC
   if (saveIntermediateDataForDebugging(m_myParams))
     return 0;
   #endif
@@ -1404,7 +1404,7 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
   if (m_myParams.bTIFF) {
     rawFromFile.assign(m_all_matching_files[it].c_str());
   }
-  #ifdef _MRC
+  #ifdef MRC
   else {
     rawFromFile.assign(m_imgParams.nx_raw, m_imgParams.ny, m_imgParams.nz * m_myParams.nphases * m_myParams.ndirs);
     for (unsigned sec=0; sec<rawFromFile.depth(); sec++) {
@@ -1442,7 +1442,7 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
       }
 
       for (int phase = 0; phase < m_myParams.nphases; ++phase) {
-        #ifdef _MRC
+        #ifdef MRC
         if (m_myParams.bBgInExtHdr) {
           /* subtract the background value of each exposure stored in MRC files'
              extended header, indexed by the section number. */
@@ -1536,7 +1536,7 @@ void SIM_Reconstructor::determine_otf_dimensions()
       }
     }
   }
-#ifdef _MRC
+#ifdef MRC
   else {
     int ixyz[3], mxyz[3], pixeltype;
     float min, max, mean;
@@ -1623,7 +1623,7 @@ int SIM_Reconstructor::loadOTFs()
       }
     }
   }
-#ifdef _MRC
+#ifdef MRC
   else {
 
     int ixyz[3], mxyz[3], pixeltype;
@@ -1697,7 +1697,7 @@ void SIM_Reconstructor::writeResult(int it, int iw)
 
   outCimg.save(makeOutputFilePath(m_all_matching_files[it], std::string("_proc")).c_str());
   }
-#ifdef _MRC
+#ifdef MRC
   else {
     float maxval = -FLT_MAX;
     float minval = FLT_MAX;
@@ -1737,7 +1737,7 @@ void SIM_Reconstructor::writeResult(int it, int iw)
   printf("Time point %d, wave %d done\n", it, iw);
 }
 
-#ifdef _MRC
+#ifdef MRC
 void saveCommandLineToHeader(int argc, char **argv, IW_MRC_HEADER &header, const ReconParams& myParams)
 {
   char titles[1000];
@@ -1759,7 +1759,7 @@ void SIM_Reconstructor::closeFiles()
   if (m_myParams.bTIFF)
     {}
   else {
-    #ifdef _MRC
+    #ifdef MRC
     ::IMClose(istream_no);
     ::saveCommandLineToHeader(m_argc, m_argv, m_in_out_header, m_myParams);
     ::IMClose(ostream_no);

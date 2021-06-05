@@ -29,6 +29,7 @@ add_executable(makeotf radialft.cpp)
 target_link_libraries(makeotf ${FFTW3F_LIBRARY} ${TIFF_LIBRARIES})
 
 if (IMLIB)
+  add_definitions(-DMRC)
   target_link_libraries(makeotf ${IMLIB} ${IVELIB})
 endif ()
 
