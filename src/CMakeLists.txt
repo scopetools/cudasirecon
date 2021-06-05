@@ -32,9 +32,10 @@
 #######################################################################
 
 
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.0)
 
-project (cudaSIMRecon)
+project (cudaSIMRecon CXX CUDA)
+
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -132,19 +133,18 @@ endif()
 
 set(CUDA_NVCC_FLAGS
   -D_USE_MATH_DEFINES
-  -gencode=arch=compute_50,code=sm_50; 
   -gencode=arch=compute_52,code=sm_52; 
   -gencode=arch=compute_60,code=sm_60; 
   -gencode=arch=compute_61,code=sm_61; 
   ${CUDA_NVCC_FLAGS} 
 )
 
-if(${CUDA_VERSION_MAJOR} GREATER 8)
+# if(${CUDA_VERSION_MAJOR} GREATER 8)
   set(CUDA_NVCC_FLAGS
     ${CUDA_NVCC_FLAGS};
     -gencode=arch=compute_70,code=sm_70;
   )
-endif()
+# endif()
 
 if((${CUDA_VERSION_MAJOR} GREATER 9) AND (NOT APPLE))
   set(CUDA_NVCC_FLAGS

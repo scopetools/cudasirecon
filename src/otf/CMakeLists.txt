@@ -18,19 +18,27 @@ find_library(IMLIB imlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
 find_library(IVELIB ive PATHS ${PRIISM_LIB_PATH} REQUIRED)
 
 # FFTW3
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/findFFTW")
-if (WIN32)
-  find_package(FFTW3 REQUIRED COMPONENTS single)
-  include_directories( ${TIFF_INCLUDE_DIR} )
-  include_directories( ${FFTW3_INCLUDE_DIR} )
+# set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/findFFTW")
+# if (WIN32)
+#   find_package(FFTW3 REQUIRED COMPONENTS single)
+#   include_directories( ${TIFF_INCLUDE_DIR} )
+#   include_directories( ${FFTW3_INCLUDE_DIR} )
 
-else ()
-  find_package(FFTW3 REQUIRED COMPONENTS single threads)
+# else ()
+#   find_package(FFTW3 REQUIRED COMPONENTS single threads)
+# endif()
+
+if (WIN32)
+  set (FFTW3_INCLUDE_DIR $ENV{CONDA_PREFIX}/Library/lib)
+  set (FFTW3F_LIBRARY fftw3f)
+  find_package(FFTW3 COMPONENTS single threads REQUIRED)
+else()
+  set (FFTW3_INCLUDE_DIR $ENV{CONDA_PREFIX}/include)
+  find_library(FFTW3F_LIBRARY fftw3f REQUIRED)
+  find_library(FFTW3F_THREADS_LIBRARY fftw3f_threads REQUIRED)
 endif()
 
 
-if(WIN32)
-endif(WIN32)
 
 # add_executable(makeotf makeotf.c)
 add_executable(makeotf radialft.cpp)

@@ -1,0 +1,13 @@
+name: simbuild
+channels:
+  - conda-forge
+dependencies:
+  - cudatoolkit-dev
+  - cxx-compiler
+  - make 
+  - fftw
+  - boost-cpp
+  - cmake
+  - libtiff
+  - xorg-libx11
+  - liblapack

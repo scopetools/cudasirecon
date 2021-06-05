@@ -6,7 +6,7 @@ include_directories(
 
 set(CMAKE_MACOSX_RPATH 1)
 
-if(WIN32)# OR APPLE)
+if(WIN32)
   link_directories ( ${Boost_LIBRARY_DIRS} )
   include_directories(  ${Boost_INCLUDE_DIRS} )
 endif()
@@ -55,9 +55,6 @@ message(STATUS "IVELIB: " ${IVELIB})
 message(STATUS "LEG_STDIO: " ${LEG_STDIO})
 
 
-find_package(CUDA)
-message(STATUS "CUDA: " ${CUDA_CUFFT_LIBRARIES})
-
 
 CUDA_ADD_LIBRARY(
   gpuFunctions
@@ -68,6 +65,8 @@ CUDA_ADD_LIBRARY(
 if (NOT APPLE)
 set (SHARED_OR_NOT SHARED)
 endif()
+
+set_property(TARGET gpuFunctions PROPERTY CUDA_ARCHITECTURES 52 60 70 72 75)
 
 CUDA_ADD_LIBRARY(
   cudaSirecon
@@ -157,7 +156,7 @@ set(HEADERS
 )
 
 install(
-  TARGETS cudaSireconDriver cudaSirecon
+  TARGETS cudaSireconDriver cudasirecon
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
@@ -166,7 +165,3 @@ install(
 install(
   FILES ${HEADERS} DESTINATION include
 )
-
-# install(
-#   FILES ${IMLIB} ${IVELIB} DESTINATION lib
-# )

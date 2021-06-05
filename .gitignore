@@ -8,3 +8,4 @@ IVE
 lapack
 *dist
 fftw2
+cmake_build
