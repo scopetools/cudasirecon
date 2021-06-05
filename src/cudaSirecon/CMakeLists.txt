@@ -69,7 +69,7 @@ endif()
 set_property(TARGET gpuFunctions PROPERTY CUDA_ARCHITECTURES 52 60 70 72 75)
 
 CUDA_ADD_LIBRARY(
-  cudaSirecon
+  cudasirecon
 #  ${SHARED_OR_NOT}
   cudaSirecon.cpp
   boostfs.cpp
@@ -81,14 +81,14 @@ CUDA_ADD_EXECUTABLE(
 )
 
 add_dependencies(cudaSireconDriver
-  cudaSirecon
+  cudasirecon
   gpuFunctions
   Buffer
   )
 
 if(WIN32)
   target_link_libraries(
-    cudaSirecon
+    cudasirecon
     gpuFunctions
     Buffer
     ${IMLIB}
@@ -100,7 +100,7 @@ if(WIN32)
   if ( ${MSVC_VERSION} GREATER 1800)
     target_link_libraries(
       cudaSireconDriver
-      cudaSirecon
+      cudasirecon
       gpuFunctions
       Buffer
       ${LEG_STDIO}
@@ -121,7 +121,7 @@ if(WIN32)
   endif()
 else(WIN32)
   target_link_libraries(
-    cudaSirecon
+    cudasirecon
     gpuFunctions
     Buffer
     ${IMLIB}
@@ -134,18 +134,16 @@ else(WIN32)
     ${TIFF_LIBRARIES}
     X11
   )
-  if(NOT APPLE)
-    target_link_libraries(
-      cudaSirecon
-      rt
-    )
-  endif()
+  target_link_libraries(
+    cudasirecon
+    rt
+  )
   target_link_libraries(
     cudaSireconDriver
-    cudaSirecon
+    cudasirecon
   )
 endif(WIN32)
-CUDA_ADD_CUFFT_TO_TARGET(cudaSirecon)
+CUDA_ADD_CUFFT_TO_TARGET(cudasirecon)
 CUDA_ADD_CUFFT_TO_TARGET(cudaSireconDriver)
 
 # added for make install to work in conda

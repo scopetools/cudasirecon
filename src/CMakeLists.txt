@@ -36,7 +36,6 @@ cmake_minimum_required (VERSION 3.0)
 
 project (cudaSIMRecon CXX CUDA)
 
-
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 ENABLE_TESTING()
@@ -56,27 +55,16 @@ message("version: ${ver_major}.${ver_minor}.${ver_patch}")
 set(PROJECT_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 
-######################################################################
-#
 # Set permissions before adding subdirectories
-#
-######################################################################
 set(SCI_GROUP_WRITE GROUP_WRITE)
 set(SCI_WORLD_FILE_PERMS WORLD_READ)
 set(SCI_WORLD_PROGRAM_PERMS WORLD_READ WORLD_EXECUTE)
+
 
 find_package(OpenMP)
 if(OPENMP_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
-
-if (APPLE)
-# Apple's default clang complier does not support OpenMP
-#  set(CMAKE_C_COMPILER gcc)
-#  set(CMAKE_CXX_COMPILER g++)
-#  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -undefined dynamic_lookup -flat_namespace")
-#  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -undefined dynamic_lookup -flat_namespace")
 endif()
 
 
@@ -126,10 +114,6 @@ if(WIN32 OR APPLE)
   include_directories(  ${Boost_INCLUDE_DIRS} )
 endif()
 
-if(APPLE)
-  find_package(X11)
-  link_directories ( ${X11_INCLUDE_DIR}/../lib )
-endif()
 
 set(CUDA_NVCC_FLAGS
   -D_USE_MATH_DEFINES
@@ -139,14 +123,14 @@ set(CUDA_NVCC_FLAGS
   ${CUDA_NVCC_FLAGS} 
 )
 
-# if(${CUDA_VERSION_MAJOR} GREATER 8)
+if(${CUDA_VERSION_MAJOR} GREATER 8)
   set(CUDA_NVCC_FLAGS
     ${CUDA_NVCC_FLAGS};
     -gencode=arch=compute_70,code=sm_70;
   )
-# endif()
+endif()
 
-if((${CUDA_VERSION_MAJOR} GREATER 9) AND (NOT APPLE))
+if(${CUDA_VERSION_MAJOR} GREATER 9)
   set(CUDA_NVCC_FLAGS
     ${CUDA_NVCC_FLAGS};
     -gencode=arch=compute_75,code=sm_75;
@@ -154,10 +138,9 @@ if((${CUDA_VERSION_MAJOR} GREATER 9) AND (NOT APPLE))
   )
 endif()
 
+
 message(STATUS "CUDA_NVCC_FLAGS: " ${CUDA_NVCC_FLAGS})
 
 add_subdirectory(Buffers)
 add_subdirectory(cudaSirecon)
-#if(NOT WIN32)
 add_subdirectory(otf)
-#endif()
