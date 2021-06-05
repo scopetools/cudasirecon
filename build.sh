@@ -12,7 +12,6 @@ cmake $CMAKE_ARGS \
     -DCMAKE_C_COMPILER=$CC \
     -DCMAKE_CXX_COMPILER=$CXX \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/home/tjl10/dev/cudasirecon/ \
     ../src
 
 make -j 2
