@@ -28,10 +28,10 @@ message(STATUS "IMLIB: " ${IMLIB})
 message(STATUS "IVELIB: " ${IVELIB})
 message(STATUS "LEG_STDIO: " ${LEG_STDIO})
 
-if(WIN32)
-  find_package(LAPACK)
-  message(STATUS "LAPACK: " ${LAPACK_LIBRARIES})
-endif()
+find_library(LAPACKLIB lapack REQUIRED)
+find_library(BLASLIB openblas REQUIRED)
+
+message(STATUS "LAPACK FOUND: " ${LAPACKLIB})
 
 CUDA_ADD_LIBRARY(
   gpuFunctions
@@ -52,8 +52,13 @@ CUDA_ADD_LIBRARY(
 
 CUDA_ADD_EXECUTABLE(cudaSireconDriver cudaSireconDriver.cpp)
 
+
 add_dependencies(cudaSireconDriver cudasirecon gpuFunctions Buffer)
-target_link_libraries(cudasirecon gpuFunctions Buffer ${TIFF_LIBRARIES})
+target_link_libraries(cudasirecon gpuFunctions Buffer ${TIFF_LIBRARIES} ${LAPACKLIB} ${BLASLIB}
+  ${Boost_PROGRAM_OPTIONS_LIBRARY}
+  ${Boost_FILESYSTEM_LIBRARY}
+  ${Boost_SYSTEM_LIBRARY}
+)
 
 if (IMLIB)
   add_definitions(-DMRC)
@@ -63,23 +68,11 @@ endif()
 target_link_libraries(cudaSireconDriver cudasirecon)
 
 if(WIN32)
-  target_link_libraries(cudasirecon ${LAPACK_LIBRARIES} )
-  target_link_libraries(cudaSireconDriver ${LAPACK_LIBRARIES})
-
   if ( ${MSVC_VERSION} GREATER 1800)
     target_link_libraries(cudaSireconDriver ${LEG_STDIO})
   endif()
 else()
-  target_link_libraries(
-    cudasirecon
-    ${Boost_PROGRAM_OPTIONS_LIBRARY}
-    ${Boost_FILESYSTEM_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
-    blas
-    lapack
-    X11
-    rt
-  )
+  target_link_libraries(cudasirecon blas X11 rt)
 endif(WIN32)
 
 CUDA_ADD_CUFFT_TO_TARGET(cudasirecon)
