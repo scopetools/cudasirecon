@@ -2,12 +2,10 @@ name: simbuild
 channels:
   - conda-forge
 dependencies:
-  - cudatoolkit-dev  # linux
-  - make             # linux 
-  - xorg-libx11      # linux
   - cxx-compiler
   - fftw
   - boost-cpp
   - cmake
   - libtiff
-  - liblapack
+  - liblapack=3.9.0=5_hd5c7e75_netlib
+  - ninja

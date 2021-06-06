@@ -35,7 +35,6 @@ cmake_minimum_required (VERSION 3.0)
 
 project (cudaSIMRecon CXX CUDA)
 
-
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 ENABLE_TESTING()
@@ -90,7 +89,8 @@ find_package(CUDA)
 find_package(TIFF)
 
 if(WIN32)
-  set (Boost_USE_STATIC_LIBS    ON)
+  set(Boost_DEBUG ON)
+  # set (Boost_USE_STATIC_LIBS    ON)
   set (Boost_USE_MULTITHREADED  ON)
   set (Boost_USE_STATIC_RUNTIME OFF)
 
@@ -106,10 +106,10 @@ message(STATUS "Boost_INCLUDE_DIRS " ${Boost_INCLUDE_DIRS})
 message(STATUS "Boost_LIBRARY_DIRS " ${Boost_LIBRARY_DIRS})
 message(STATUS "Boost_LIBRARIES " ${Boost_LIBRARIES})
 
-# if(WIN32)
-#   link_directories ( ${Boost_LIBRARY_DIRS} )
-#   include_directories(  ${Boost_INCLUDE_DIRS} )
-# endif()
+if(WIN32)
+  link_directories ( ${Boost_LIBRARY_DIRS} )
+  include_directories(  ${Boost_INCLUDE_DIRS} )
+endif()
 
 
 set(CUDA_NVCC_FLAGS
