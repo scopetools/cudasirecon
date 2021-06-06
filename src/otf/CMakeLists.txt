@@ -15,36 +15,26 @@ find_library(IMLIB NAMES imlib libimlib PATHS ${PRIISM_LIB_PATH})
 find_library(IVELIB NAMES ive libive PATHS ${PRIISM_LIB_PATH})
 
 
-find_library (FFTW3F_LIBRARY fftw3f REQUIRED)
-find_package(FFTW3 COMPONENTS single threads REQUIRED)
-
-# if (WIN32)
-#   # set (FFTW3_INCLUDE_DIR $ENV{CONDA_PREFIX}/Library/lib)
-#   find_library (FFTW3F_LIBRARY fftw3f REQUIRED)
-#   find_package(FFTW3 COMPONENTS single threads REQUIRED)
-# else()
-#   set (FFTW3_INCLUDE_DIR $ENV{CONDA_PREFIX}/include)
-#   find_library(FFTW3F_LIBRARY fftw3f REQUIRED)
-#   find_library(FFTW3F_THREADS_LIBRARY fftw3f_threads REQUIRED)
-# endif()
-
-message(STATUS "FFTW3F_LIBRARY " ${FFTW3F_LIBRARY})
-
 add_executable(makeotf radialft.cpp)
-target_link_libraries(makeotf ${FFTW3F_LIBRARY} ${TIFF_LIBRARIES})
-
 if (IMLIB)
   add_definitions(-DMRC)
   target_link_libraries(makeotf ${IMLIB} ${IVELIB})
 endif ()
 
 
+find_library (FFTW3F_LIBRARY fftw3f REQUIRED)
 if (WIN32)
+  find_package(FFTW3 COMPONENTS single threads REQUIRED)
   if (${MSVC_VERSION} GREATER 1800)
-  	target_link_libraries(makeotf ${LEG_STDIO})
+    target_link_libraries(makeotf ${LEG_STDIO})
   endif()
-else ()
+else()
+  find_library(FFTW3F_THREADS_LIBRARY fftw3f_threads REQUIRED)
   target_link_libraries(makeotf ${FFTW3F_THREADS_LIBRARY} X11)
-endif ()
+endif()
+
+message(STATUS "FFTW3F_LIBRARY " ${FFTW3F_LIBRARY})
+target_link_libraries(makeotf ${FFTW3F_LIBRARY} ${TIFF_LIBRARIES})
+
 
 install(TARGETS makeotf RUNTIME DESTINATION bin)

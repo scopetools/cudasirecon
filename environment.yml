@@ -11,3 +11,5 @@ dependencies:
   - cmake
   - libtiff
   - liblapack
+  - openblas
+

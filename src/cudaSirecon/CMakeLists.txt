@@ -72,7 +72,7 @@ if(WIN32)
     target_link_libraries(cudaSireconDriver ${LEG_STDIO})
   endif()
 else()
-  target_link_libraries(cudasirecon blas X11 rt)
+  target_link_libraries(cudasirecon X11 rt)
 endif(WIN32)
 
 CUDA_ADD_CUFFT_TO_TARGET(cudasirecon)
