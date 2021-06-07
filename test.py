@@ -18,13 +18,8 @@ import numpy as np
 import tifffile as tf
 
 BASE = Path("/home/tjl10/dev/cudasirecon")
-
-
-SO = str(BASE / "cmake_build/cudaSirecon/libpycudasirecon.so")
 CONFIG = str(BASE / "test_data/config-tiff")
-img = tf.imread(str(BASE / "test_data/raw.tif"))
-print("img: ", img.shape, img.dtype)
-lib = CDLL(SO)
+lib = CDLL(str(BASE / "cmake_build/cudaSirecon/libpycudasirecon.so"))
 
 _init = lib.SR_new
 _init.restype = c_void_p
@@ -170,4 +165,7 @@ class SimReconstructor:
         return ImageParams.from_address(_get_image_params(self.obj))
 
 
-sr = SimReconstructor(img)
+if __name__ == '__main__':
+    img = tf.imread(str(BASE / "test_data/raw.tif"))
+    print("img: ", img.shape, img.dtype)
+    sr = SimReconstructor(img)
