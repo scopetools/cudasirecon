@@ -13,7 +13,7 @@ cd cmake_build
 
 # This is just to remove the -std= from CXXFLAGS ... probably a better way
 INCLUDE=${CONDA_PREFIX}/include
-CXXFLAGS="-fvisibility-inlines-hidden -fmessage-length=0 \
+CXXFLAGS="-Wfatal-errors -fvisibility-inlines-hidden -fmessage-length=0 \
           -march=nocona -mtune=haswell -ftree-vectorize \
           -fPIC -fstack-protector-strong -fno-plt -O2 \
           -ffunction-sections -pipe -isystem $INCLUDE"
