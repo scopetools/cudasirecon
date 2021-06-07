@@ -51,9 +51,11 @@ CUDA_ADD_LIBRARY(
 )
 
 CUDA_ADD_EXECUTABLE(cudaSireconDriver cudaSireconDriver.cpp)
-
+CUDA_ADD_LIBRARY(pycudasirecon SHARED pyInterface.cpp)
 
 add_dependencies(cudaSireconDriver cudasirecon gpuFunctions Buffer)
+add_dependencies(pycudasirecon cudasirecon gpuFunctions Buffer)
+
 target_link_libraries(cudasirecon gpuFunctions Buffer ${TIFF_LIBRARIES} ${LAPACKLIB} ${BLASLIB}
   ${Boost_PROGRAM_OPTIONS_LIBRARY}
   ${Boost_FILESYSTEM_LIBRARY}
@@ -66,6 +68,7 @@ if (IMLIB)
 endif()
 
 target_link_libraries(cudaSireconDriver cudasirecon)
+target_link_libraries(pycudasirecon cudasirecon)
 
 if(WIN32)
   if ( ${MSVC_VERSION} GREATER 1800)

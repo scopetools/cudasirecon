@@ -18,6 +18,7 @@ int main(int argc, char **argv)
 
     for (int it = 0; it < myreconstructor.getNTimes(); ++it) {
       for (int iw = 0; iw < 1; ++iw) {
+        myreconstructor.setFile(it, iw);
         myreconstructor.loadAndRescaleImage(it, iw);
         myreconstructor.setCurTimeIdx(it);
         if (myreconstructor.processOneVolume())

@@ -119,20 +119,17 @@ struct ReconParams {
   int   bWriteTitle;   /** whether to write command line args to title field in mrc header */
 
   /* algorithm related parameters */
-  float zoomfact;
+  float  zoomfact;
   int   z_zoom;
   int   nzPadTo;  /** pad zero sections to this number of z sections */
-  float explodefact;
+  float  explodefact;
   int   bFilteroverlaps;
   int   recalcarrays; /** whether to calculate the overlaping regions between bands just once or always; used in fitk0andmodamps() */
   int   napodize;
-  std::vector<float> forceamp;
-  // float *k0angles;
-  std::vector<float> k0angles;
   int   bSearchforvector;
   int   bUseTime0k0;   /** whether to use time 0's k0 fit for the rest of a time series */
   int   apodizeoutput;  /** 0-no apodize; 1-cosine apodize; 2-triangle apodize; used in filterbands() */
-  float apoGamma;
+  float  apoGamma;
   int   bSuppress_singularities;  /** whether to dampen the OTF values near band centers; used in filterbands() */
   int   suppression_radius;   /** if suppress_singularities is 1, the range within which suppresion is applied; used in filterbands() */
   int   bDampenOrder0;  /** whether to dampen the OTF values near band centers; used in filterbands() */
@@ -141,8 +138,11 @@ struct ReconParams {
   int   equalizez;
   int   equalizet;
   int   bNoKz0;   /** if true, no kz=0 plane is used in modamp fit and assemblerealspace() */
-  float wiener, wienerInr;
+  float  wiener, wienerInr;
   // // int   bUseEstimatedWiener;
+  std::vector<float> forceamp;
+  // float *k0angles;
+  std::vector<float> k0angles;
 
   /** OTF specific parameters */
   int   nxotf, nyotf, nzotf;

@@ -4,8 +4,4 @@
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 APP="$parent_path/../cmake_build/cudaSirecon/cudaSireconDriver"
 
-# test TIFF
-$APP $parent_path raw $parent_path/psf.tif --xyres=0.08 --zres=0.125 --zresPSF=0.125 -c $parent_path/config
-
-# test MRC
 $APP $parent_path/raw.dv $parent_path/proc.dv $parent_path/otf.otf -c $parent_path/config
