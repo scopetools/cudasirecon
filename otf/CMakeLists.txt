@@ -20,10 +20,10 @@ find_library(IVELIB ive PATHS ${PRIISM_LIB_PATH} REQUIRED)
 # FFTW3
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/findFFTW")
 if (WIN32)
-  find_package(FFTW3 REQUIRED COMPONENTS single)
+  find_package(FFTW REQUIRED COMPONENTS FLOAT_LIB)
   include_directories( ${TIFF_INCLUDE_DIR} )
-  include_directories( ${FFTW3_INCLUDE_DIR} )
-
+  include_directories( ${FFTW_INCLUDE_DIR} )
+  message(STATUS "FFTW3 library" ${FFTW_FLOAT_LIB})
 else ()
   find_package(FFTW3 REQUIRED COMPONENTS single threads)
 endif()
@@ -37,31 +37,31 @@ add_executable(otfviewer otfviewer.cpp)
 
 if (WIN32)
   if ( ${MSVC_VERSION} GREATER 1800)
-	target_link_libraries(makeotf
+  target_link_libraries(makeotf
       ${IMLIB}
       ${IVELIB}
-	  ${FFTW3F_LIBRARY}
-	  ${TIFF_LIBRARIES}
+      ${FFTW_FLOAT_LIB}
+      ${TIFF_LIBRARIES}
       ${LEG_STDIO}
-	  )
-	target_link_libraries(otfviewer
+  )
+  target_link_libraries(otfviewer
       ${IMLIB}
       ${IVELIB}
-	  ${TIFF_LIBRARIES}
+      ${TIFF_LIBRARIES}
       ${LEG_STDIO}
-	  )
+  )
   else()
-	target_link_libraries(makeotf
+  target_link_libraries(makeotf
       ${IMLIB}
       ${IVELIB}
-	  ${FFTW3F_LIBRARY}
-	  ${TIFF_LIBRARIES}
-	  )
-	target_link_libraries(otfviewer
-      ${IMLIB}
-      ${IVELIB}
-	  ${TIFF_LIBRARIES}
-	  )
+      ${FFTW_FLOAT_LIB}
+      ${TIFF_LIBRARIES}
+  )
+  target_link_libraries(otfviewer
+    ${IMLIB}
+    ${IVELIB}
+    ${TIFF_LIBRARIES}
+  )
   endif()
 else ()
   target_link_libraries(makeotf

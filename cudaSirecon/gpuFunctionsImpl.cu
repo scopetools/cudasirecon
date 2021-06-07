@@ -610,7 +610,7 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
   band2re = (cuFloatComplex*)bands->at(order2 * 2 - 1).getPtr();
   band2im = (cuFloatComplex*)bands->at(order2 * 2).getPtr();
 
-  printf("In makeoverlaps(), order1=%d, order2=%d, k0x=%f, k0y=%f, rdistcutoff=%f, zdistcutoff=%f pixels\n", order1, order2, kx/dkx, ky/dky, rdistcutoff/dky, zdistcutoff);
+  // printf("In makeoverlaps(), order1=%d, order2=%d, k0x=%f, k0y=%f, rdistcutoff=%f, zdistcutoff=%f pixels\n", order1, order2, kx/dkx, ky/dky, rdistcutoff/dky, zdistcutoff);
   // Generate the overlap arrays
   int numThreads = 128;
   dim3 threads(numThreads, 1, 1);
@@ -1774,6 +1774,13 @@ __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
       (cuFloatComplex*)bands->at(0).getPtr(),
       0, (cuFloatComplex*)bigbuffer->getPtr(), nx, ny, nz, zoomfact, z_zoom);
 
+
+  // debug:
+  size_t free, total;
+  cudaMemGetInfo(&free, &total);
+  std::cout << "Before fftplan3d " << (free >> 20 ) << "MB free \n" ;
+  //gubed
+
   cufftHandle myGPUPlan;
   cufftResult cuFFTErr = cufftPlan3d(&myGPUPlan, (int) (z_zoom*nz), (int) rint(zoomfact*ny),
                                      (int) rint(zoomfact*nx), CUFFT_C2C);
@@ -1782,6 +1789,11 @@ __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
       printf("\n*** In assemblerealspacebands(), CUFFT failed to allocate GPU or CPU memory\n");
     throw std::runtime_error("CUFFT plan creation failed");
   }
+
+  // debug:
+  cudaMemGetInfo(&free, &total);
+  std::cout << "After fftplan " << (free >> 20 ) << "MB free \n" ;
+  //gubed
 
   /* transform it */
   printf("re-transforming centerband\n");
@@ -1806,7 +1818,7 @@ __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
     float k0x, k0y;
     /* move side bands to bigbuffer, fill in with zeroes */
     printf("moving order %d\n",order); 
-    cutilSafeCall(cudaMemset((void*) bigbuffer->getPtr(), 0,   unsigned (rint(zoomfact*nx)*rint(zoomfact*ny)*(z_zoom*nz)*sizeof(cuFloatComplex))));
+    cutilSafeCall(cudaMemset((void*) bigbuffer->getPtr(), 0, unsigned (rint(zoomfact*nx)*rint(zoomfact*ny)*(z_zoom*nz)*sizeof(cuFloatComplex))));
     move_kernel<<<grid,block>>>((cuFloatComplex*)bands->at(2*order-1).getPtr(),
         (cuFloatComplex*)bands->at(2*order).getPtr(), order,
         (cuFloatComplex*)bigbuffer->getPtr(), nx, ny, nz, zoomfact, z_zoom);
@@ -1825,6 +1837,8 @@ __host__ void assemblerealspacebands(int dir, GPUBuffer* outbuffer,
     NXblock = (int) ceil(zoomfact*nx/nThreads);
     dim3 grid3(NXblock, NYblock, NZblock);
     cos_sin_kernel<<<grid3,block>>>(k0x,  k0y, dxy/zoomfact, fact, dev_coslookup, dev_sinlookup, (int)(zoomfact*nx));
+    // cudaMemset((void*) dev_coslookup, 0, (unsigned)(rint(nx*zoomfact)*rint(ny*zoomfact)*sizeof(float)));
+    // cudaMemset((void*) dev_sinlookup, 0,  (unsigned)(rint(nx*zoomfact)*rint(ny*zoomfact)*sizeof(float)));
     write_outbuffer_kernel2<<<grid2, block>>>(dev_coslookup,
         dev_sinlookup, (cuFloatComplex*)bigbuffer->getPtr(), 
         (float*)outbuffer->getPtr(), (int) (zoomfact*nx));

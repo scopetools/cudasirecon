@@ -30,8 +30,8 @@ endif(WIN32)
 
 message(STATUS "PRIISM_LIB_PATH: " ${PRIISM_LIB_PATH})
 
-find_library(IMLIB imlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
-find_library(IVELIB ive PATHS ${PRIISM_LIB_PATH} REQUIRED)
+#find_library(IMLIB imlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
+#find_library(IVELIB ive PATHS ${PRIISM_LIB_PATH} REQUIRED)
 
 
 if(WIN32)
@@ -94,6 +94,9 @@ if(WIN32)
     Buffer
     ${IMLIB}
     ${IVELIB}
+    ${Boost_PROGRAM_OPTIONS_LIBRARY}
+    ${Boost_FILESYSTEM_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
     ${LAPACK_LIBRARIES}
     ${TIFF_LIBRARIES}
     )
@@ -110,7 +113,7 @@ if(WIN32)
       ${LAPACK_LIBRARIES}
       )
   else()
-	target_link_libraries(
+    target_link_libraries(
       cudaSireconDriver
       cudaSirecon
       gpuFunctions
@@ -118,7 +121,7 @@ if(WIN32)
       ${IMLIB}
       ${IVELIB}
       ${LAPACK_LIBRARIES}
-	  )
+  )
   endif()
 else(WIN32)
   target_link_libraries(
