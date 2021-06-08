@@ -8,7 +8,6 @@ dependencies:
   - fftw
   - boost-cpp
   - cmake
-  - cimg
   - libtiff
   - liblapack
 

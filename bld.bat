@@ -1,6 +1,7 @@
 mkdir cmake_build
 cd cmake_build
 
+
 cmake -G Ninja ^
     @REM -DCMAKE_PREFIX_PATH:PATH="%CONDA_PREFIX%" ^
     -DCMAKE_BUILD_TYPE=Release ^

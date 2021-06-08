@@ -6,7 +6,6 @@ dependencies:
   - ninja
   - cmake
   - fftw
-  - cimg
   - boost-cpp
   - libtiff
   - liblapack=*=*netlib
