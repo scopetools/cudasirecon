@@ -36,9 +36,12 @@ option(BUILD_MRC "Build cudasirecon with MRC support" ON)
 
 if (BUILD_MRC)
   message(STATUS "** Building WITH mrc support **")
+  # there's still something weird with cmake >3.14 when linking to the
+  # ancient IVE static libraries.
   cmake_minimum_required (VERSION 3.14)
 else()
   message(STATUS "** Building WITHOUT mrc support **")
+  # don't really need, but can provide nicer CUDA interface
   cmake_minimum_required (VERSION 3.19)
 endif()
 
