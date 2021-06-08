@@ -30,7 +30,7 @@ if (WIN32)
   endif()
 else()
   find_library(FFTW3F_THREADS_LIBRARY fftw3f_threads REQUIRED)
-  target_link_libraries(makeotf ${FFTW3F_THREADS_LIBRARY} X11)
+  target_link_libraries(makeotf ${FFTW3F_THREADS_LIBRARY})
 endif()
 
 message(STATUS "FFTW3F_LIBRARY " ${FFTW3F_LIBRARY})

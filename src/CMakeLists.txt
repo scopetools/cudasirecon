@@ -59,6 +59,8 @@ if(OPENMP_FOUND)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
+add_definitions(-Dcimg_display=0)
+
 find_package(CUDA)
 find_package(TIFF)
 find_package(Boost COMPONENTS program_options filesystem system REQUIRED)
