@@ -3,10 +3,9 @@ channels:
   - conda-forge
 dependencies:
   - cxx-compiler
+  - ninja
+  - cmake
   - fftw
   - boost-cpp
-  - cmake
   - libtiff
-  - liblapack=3.9.0=5_hd5c7e75_netlib
-  - openblas
-  - ninja
+  - liblapack=*=*netlib

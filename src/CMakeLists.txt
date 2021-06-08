@@ -31,16 +31,15 @@
 #
 #######################################################################
 
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.14)
 
 project (cudaSIMRecon CXX CUDA)
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+# set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 ENABLE_TESTING()
 
 file(READ "version.txt" ver)
-
 string(REGEX MATCH "VERSION_MAJOR ([0-9]*)" _ ${ver})
 set(ver_major ${CMAKE_MATCH_1})
 string(REGEX MATCH "VERSION_MINOR ([0-9]*)" _ ${ver})
@@ -52,64 +51,29 @@ message("version: ${ver_major}.${ver_minor}.${ver_patch}")
 set(PROJECT_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 
-# Set permissions before adding subdirectories
-set(SCI_GROUP_WRITE GROUP_WRITE)
-set(SCI_WORLD_FILE_PERMS WORLD_READ)
-set(SCI_WORLD_PROGRAM_PERMS WORLD_READ WORLD_EXECUTE)
-
 
 find_package(OpenMP)
+message(STATUS "OpenMP FOUND: " ${OPENMP_FOUND})
 if(OPENMP_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
-
-# Building the documentation
-option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
-if(BUILD_DOCUMENTATION)
-  FIND_PACKAGE(Doxygen)
-  if (NOT DOXYGEN_FOUND)
-    message(FATAL_ERROR 
-      "Doxygen is needed to build the documentation. Please
-      install it correctly")
-    endif()
-    #-- Configure the Template Doxyfile for our specific project
-    # configure_file(Doxyfile.in
-    #   ${PROJECT_BINARY_DIR}/Doxyfile  @ONLY IMMEDIATE)
-    #-- Add a custom target to run Doxygen when ever the project is built
-    add_custom_target (Docs ALL 
-      COMMAND ${DOXYGEN_EXECUTABLE}
-      ${PROJECT_BINARY_DIR}/Doxyfile
-      SOURCES
-      ${PROJECT_BINARY_DIR}/Doxyfile)
-endif()
-
 find_package(CUDA)
 find_package(TIFF)
+find_package(Boost COMPONENTS program_options filesystem system REQUIRED)
+if(Boost_FOUND)
+  link_directories ( ${Boost_LIBRARY_DIRS} )
+  include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
 
 if(WIN32)
-  set(Boost_DEBUG ON)
-  # set (Boost_USE_STATIC_LIBS    ON)
-  set (Boost_USE_MULTITHREADED  ON)
-  set (Boost_USE_STATIC_RUNTIME OFF)
-
   if ( ${MSVC_VERSION} GREATER 1800)
     find_library(LEG_STDIO legacy_stdio_definitions)
     message(STATUS "adding legacy stdio definitions for >VS14.0 " ${LEG_STDIO})
   endif()
-
 endif(WIN32)
-
-find_package( Boost REQUIRED COMPONENTS program_options filesystem system)
-message(STATUS "Boost_INCLUDE_DIRS " ${Boost_INCLUDE_DIRS})
-message(STATUS "Boost_LIBRARY_DIRS " ${Boost_LIBRARY_DIRS})
-message(STATUS "Boost_LIBRARIES " ${Boost_LIBRARIES})
-
-if(WIN32)
-  link_directories ( ${Boost_LIBRARY_DIRS} )
-  include_directories(  ${Boost_INCLUDE_DIRS} )
-endif()
 
 
 set(CUDA_NVCC_FLAGS
@@ -136,6 +100,32 @@ if(${CUDA_VERSION_MAJOR} GREATER 9)
 endif()
 message(STATUS "CUDA_NVCC_FLAGS: " ${CUDA_NVCC_FLAGS})
 
+# # Set permissions before adding subdirectories
+# set(SCI_GROUP_WRITE GROUP_WRITE)
+# set(SCI_WORLD_FILE_PERMS WORLD_READ)
+# set(SCI_WORLD_PROGRAM_PERMS WORLD_READ WORLD_EXECUTE)
+
+
 add_subdirectory(Buffers)
 add_subdirectory(cudaSirecon)
 add_subdirectory(otf)
+
+# Building the documentation
+# option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
+# if(BUILD_DOCUMENTATION)
+#   FIND_PACKAGE(Doxygen)
+#   if (NOT DOXYGEN_FOUND)
+#     message(FATAL_ERROR 
+#       "Doxygen is needed to build the documentation. Please
+#       install it correctly")
+#     endif()
+#     #-- Configure the Template Doxyfile for our specific project
+#     # configure_file(Doxyfile.in
+#     #   ${PROJECT_BINARY_DIR}/Doxyfile  @ONLY IMMEDIATE)
+#     #-- Add a custom target to run Doxygen when ever the project is built
+#     add_custom_target (Docs ALL 
+#       COMMAND ${DOXYGEN_EXECUTABLE}
+#       ${PROJECT_BINARY_DIR}/Doxyfile
+#       SOURCES
+#       ${PROJECT_BINARY_DIR}/Doxyfile)
+# endif()
