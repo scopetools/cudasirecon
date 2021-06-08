@@ -1426,7 +1426,7 @@ void SIM_Reconstructor::setupOTFsFromFile()
 void SIM_Reconstructor::determine_otf_dimensions()
 {
   if (m_myParams.bTIFF) {
-    uint32 nxotf, nyotf, nzotf;
+    uint32_t nxotf, nyotf, nzotf;
     nxotf = m_otf_tiff.width()/2;  // "/2" because of real and imaginary parts
     nyotf = m_otf_tiff.height();
     nzotf = m_otf_tiff.depth();
