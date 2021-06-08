@@ -1,37 +1,46 @@
 #######################################################################
 # Build instruction for CUDA SIMrecon project
 #
-# 1. Prerequisites
-#  1.1 Cmake (> 2.8.11)
-#  1.2 CUDA SDK (>=7.0 on Mac OS X, otherwise >=5.0)
-#  1.3a. If Linux or Mac OS X, GCC (version suitable to the CUDA version being used; read CUDA manuals to find out)
-#  1.3b. If Windows, Visual C++ (>= 2012)
-#  1.4 Boost libraries (> 1.48)
-#  1.5 If Linux or Mac, the development (not just the runtime) libraries of LAPACK, BLAS, and X11. For Mac, you can obtain these libraries and other  useful stuff by using tools like macports, homebrew, or fink.
-#  1.6 If Linux or Mac, Priism/IVE libraries (download from http://msg.ucsf.edu/IVE/Download/index.html; follow the installation instructions and put a line ". install_folder/Priism_setup.sh" in your .bashrc file, where install_folder is where the Priism package is installed and retart a BASH shell. To test if the environment is set up right, run "echo $IVE_BASE" and see if it prints out the installation folder name.
+# 1. Use conda to set up dependencies:
+# conda env create -f environment.yml  # for linux
+# conda env create -f environment_win.yml  # for windows
+# conda activate simbuild
 #
-# 2. Make a build dir (assumed to be "build" under the main folder where this 
-#    CMakeLists.txt is located) and cd into it
+# 2. CUDA:
+# The linux environment comes with the cudatoolkit-dev package that includes the nvcc compiler
+# For windows, you will need to install the CUDA toolkit manually
 #
-# 3. On Linux or Mac at a shell prompt, type:
-#  $ cmake -D CMAKE_BUILD_TYPE=Release ..
-#  On Windows, one extra flag is needed. Type the following in a 
-#  VS build environment:
-#  > cmake -D CMAKE_BUILD_TYPE=Release -G "NMake Makefiles" ..
-#  Make sure there isn't any error or warning messages. 
-#  Always delete everything in the build dir before re-run cmake
+# 3. MRC/DV support (optional)
+# If you want to build with MRC support add the IVE libraries to the src directory
+# with the following paths:
+#   For Linux:
+#     src/IVE/linux64/INCLUDE
+#     src/IVE/linux64/LIB
+#   For Windows:
+#     src/IVE/win64/INCLUDE
+#     src/IVE/win64/LIB
 #
-#  3.1 The nvcc flag specified here only works for CUDA compute-capability 6.1. If you need to include other compute-capabilities, add '-D CUDA_NVCC_FLAGS="-gencode arch=compute_xx,code=sm_xx" ' to the "cmake ..." command.
+# If you DON'T want to build with MRC or do not have access to the IVE libraries
+# please run cmake with the `-DBUILD_MRC=OFF` option
 #
-# 4. Type "make" on Linux/Mac or "nmake" on Window to build the executable
+# 4. run build.sh (linux) or bld.bat (windows)
+# inspect those scripts for more details
 #
-# 5. If building is successful, an executable cudaSireconDriveris generated in
-#  build/cudaSirecon. Run the test to make sure it works:
-#  $ ../testData/job.sh
+# 5. If building is successful, an executable cudaSireconDriver is generated in
+#  cmake_build/cudaSirecon. Run the test to make sure it works:
+#  $ test_data/run.sh
 #
 #######################################################################
 
-cmake_minimum_required (VERSION 3.14)
+option(BUILD_MRC "Build cudasirecon with MRC support" ON)
+
+if (BUILD_MRC)
+  message(STATUS "** Building WITH mrc support **")
+  cmake_minimum_required (VERSION 3.14)
+else()
+  message(STATUS "** Building WITHOUT mrc support **")
+  cmake_minimum_required (VERSION 3.19)
+endif()
 
 project (cudaSIMRecon CXX CUDA)
 

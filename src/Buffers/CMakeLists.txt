@@ -13,15 +13,13 @@ CUDA_ADD_LIBRARY(
   PinnedCPUBuffer.cpp
   )
 
+set_property(TARGET Buffer PROPERTY MSVC_RUNTIME_LIBRARY "")
+
 set(HEADERS
   Buffer.h
   CPUBuffer.h
   GPUBuffer.h
   PinnedCPUBuffer.h
-  # SIMrecon_TechX/Buffers/Buffer.h
-  # SIMrecon_TechX/Buffers/CPUBuffer.h
-  # SIMrecon_TechX/Buffers/GPUBuffer.h
-  # SIMrecon_TechX/Buffers/PinnedCPUBuffer.h
   )
 
 install(
