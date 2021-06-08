@@ -4,12 +4,10 @@ channels:
 dependencies:
   - cudatoolkit-dev  # linux
   - make             # linux 
-  - xorg-libx11      # linux
   - cxx-compiler
   - fftw
   - boost-cpp
   - cmake
   - libtiff
   - liblapack
-  - openblas
 

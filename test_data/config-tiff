@@ -12,4 +12,4 @@ dampenOrder0=1
 xyres=0.08
 zres=0.125
 zresPSF=0.125
-otf-file=/lattice/home/tjl10/dev/cudasirecon/test_data/psf.tif
+otf-file=/lattice/home/tjl10/dev/cudasirecon/test_data/otf.tif

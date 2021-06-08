@@ -49,7 +49,10 @@ PinnedCPUBuffer::~PinnedCPUBuffer() {
   if (ptr_) {
     cudaError_t err = cudaFreeHost(ptr_);
     if (err != cudaSuccess) {
-      throw std::runtime_error("cudaFreeHost() failed.");
+      // in C++11 destructors default to noexcept
+      // throw std::runtime_error("cudaFreeHost() failed.");
+      std::cout << "cudaFreeHost() failed: " << err << std::endl;
+      std::cout << cudaGetErrorString(err) << std::endl;
     }
   }
 }

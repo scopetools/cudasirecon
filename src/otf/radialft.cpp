@@ -19,11 +19,6 @@
 
 #define cimg_use_tiff
 
-#ifndef _WIN32
-#define cimg_use_openmp
-#endif
-
-#define cimg_use_cpp11 1
 #include <CImg.h>
 using namespace cimg_library;
 

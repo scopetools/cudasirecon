@@ -66,7 +66,8 @@ GPUBuffer::~GPUBuffer() {
     if (err != cudaSuccess) {
       std::cout << "Error code: " << err << std::endl;
       std::cout << "ptr_: " << (long long int)ptr_ << std::endl;
-      throw std::runtime_error("cudaFree failed.");
+      // in C++11 destructors default to noexcept
+      // throw std::runtime_error("cudaFree failed.");
     }
     ptr_ = 0;
   }
