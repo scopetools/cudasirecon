@@ -20,7 +20,8 @@ cmake ../src $CMAKE_ARGS \
     -DCMAKE_CXX_COMPILER=$CXX \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_MRC=OFF
+    # -DCMAKE_INSTALL_PREFIX=../install \
     
 
 make -j 2
-# make install
+# cd cmak   

@@ -68,7 +68,7 @@ endif(WIN32)
 set(HEADERS cudaSirecon.h cudaSireconImpl.h gpuFunctions.h)
 
 install(
-  TARGETS cudaSireconDriver cudasirecon
+  TARGETS cudaSireconDriver cudasirecon pycudasirecon
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
