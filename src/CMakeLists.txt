@@ -33,6 +33,7 @@
 #######################################################################
 
 option(BUILD_MRC "Build cudasirecon with MRC support" ON)
+option(BUILD_OTF_VIEWER "Build OTF viewer (requires X11)" OFF)
 
 if (BUILD_MRC)
   message(STATUS "** Building WITH mrc support **")

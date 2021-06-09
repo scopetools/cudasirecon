@@ -20,19 +20,33 @@ if (BUILD_MRC)
 endif()
 
 
-find_library (FFTW3F_LIBRARY fftw3f REQUIRED)
+
 if (WIN32)
-  find_package(FFTW3 COMPONENTS single threads REQUIRED)
+  find_package(FFTW REQUIRED COMPONENTS FLOAT_LIB)
+  # include_directories( ${FFTW_INCLUDE_DIRS} )
   if (${MSVC_VERSION} GREATER 1800)
     target_link_libraries(makeotf ${LEG_STDIO})
   endif()
 else()
-  find_library(FFTW3F_THREADS_LIBRARY fftw3f_threads REQUIRED)
-  target_link_libraries(makeotf ${FFTW3F_THREADS_LIBRARY})
+  find_package(FFTW REQUIRED COMPONENTS FLOAT_THREADS_LIB)
 endif()
-
-message(STATUS "FFTW3F_LIBRARY " ${FFTW3F_LIBRARY})
-target_link_libraries(makeotf ${FFTW3F_LIBRARY} ${TIFF_LIBRARIES})
+  
+message(STATUS "FFTW3 libraries: " ${FFTW_LIBRARIES})
+target_link_libraries(makeotf ${FFTW_LIBRARIES} ${TIFF_LIBRARIES})
 
 
 install(TARGETS makeotf RUNTIME DESTINATION bin)
+
+
+if (BUILD_OTF_VIEWER)
+  add_executable(otfviewer otfviewer.cpp)
+  target_link_libraries(otfviewer ${IMLIB} ${IVELIB} ${TIFF_LIBRARIES})
+  if (WIN32)
+    if ( ${MSVC_VERSION} GREATER 1800)
+      target_link_libraries(otfviewer ${LEG_STDIO})
+    else()
+  else()
+    target_link_libraries(otfviewer X11)
+  endif()
+  install(TARGETS otfviewer RUNTIME DESTINATION bin)
+endif()
