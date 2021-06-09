@@ -846,14 +846,13 @@ SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
   if (m_myParams.bTIFF) {
     // Suppress "unknown field" warnings
     TIFFSetWarningHandler(NULL);
-
     m_imgParams.ntimes = m_all_matching_files.size();
-  }
-  #ifdef MRC
-  else
-  /* Suppress IVE display of file headers */
-    IMAlPrt(0);
+  } else {
+  #ifndef MRC
+    throw std::runtime_error("No tiff files found, and program was not compiled with MRC support.");
   #endif
+  }
+
   m_OTFfile_valid = false;
   openFiles();
   // deviceMemoryUsage();
