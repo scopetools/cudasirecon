@@ -23,6 +23,8 @@
 # If you DON'T want to build with MRC or do not have access to the IVE libraries
 # please run cmake with the `-DBUILD_MRC=OFF` option
 #
+# To build the otfviewer, use `-DBUILD_OTF_VIEWER=ON`
+#
 # 4. run build.sh (linux) or bld.bat (windows)
 # inspect those scripts for more details
 #
@@ -122,6 +124,23 @@ message(STATUS "CUDA_NVCC_FLAGS: " ${CUDA_NVCC_FLAGS})
 # set(SCI_WORLD_FILE_PERMS WORLD_READ)
 # set(SCI_WORLD_PROGRAM_PERMS WORLD_READ WORLD_EXECUTE)
 
+
+if (BUILD_MRC OR BUILD_OTF_VIEWER)
+  if(WIN32)
+    set(PLATFORM win64)
+  else()
+    set(PLATFORM linux64)
+  endif(WIN32)
+
+  set(PRIISM_LIB_PATH "${CMAKE_SOURCE_DIR}/IVE/${PLATFORM}/LIB")
+  set(PRIISM_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/IVE/${PLATFORM}/INCLUDE")
+  include_directories(${PRIISM_INCLUDE_PATH})
+  link_directories(${PRIISM_LIB_PATH})
+
+  find_library(IMLIB NAMES imlib libimlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
+  find_library(IVELIB NAMES ive libive PATHS ${PRIISM_LIB_PATH} REQUIRED)
+  add_definitions(-DMRC)
+endif ()
 
 add_subdirectory(Buffers)
 add_subdirectory(cudaSirecon)
