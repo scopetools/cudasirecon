@@ -8,7 +8,12 @@ del /Q cmake_build
 mkdir cmake_build
 cd cmake_build
 
-cmake -G Ninja -DBUILD_MRC=ON -DBUILD_OTF_VIEWER=OFF -DCMAKE_BUILD_TYPE=Release ../src
+cmake -G Ninja ^
+    -DBUILD_MRC=ON ^
+    -DBUILD_OTF_VIEWER=OFF ^
+    -DCMAKE_BUILD_TYPE=Release ^
+    -DCMAKE_INSTALL_PREFIX="%CONDA_PREFIX%/Library" ^
+    ../src
 
 ninja
-@REM ninja install
+ninja install
