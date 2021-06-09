@@ -3,14 +3,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}
 
 find_package(LAPACK REQUIRED)
 
-add_library(gpuFunctions gpuFunctionsImpl.cu)
-add_library(cudasirecon cudaSirecon.cpp boostfs.cpp)
+add_library(cudasirecon SHARED cudaSirecon.cpp boostfs.cpp gpuFunctionsImpl.cu pyInterface.cpp)
 add_executable(cudaSireconDriver cudaSireconDriver.cpp)
 
 cuda_add_cufft_to_target(cudasirecon)
 cuda_add_cufft_to_target(cudaSireconDriver)
 
-set_property(TARGET gpuFunctions PROPERTY MSVC_RUNTIME_LIBRARY "")
+
 set_property(TARGET cudasirecon PROPERTY MSVC_RUNTIME_LIBRARY "")
 set_target_properties(cudaSireconDriver
   PROPERTIES
@@ -18,31 +17,25 @@ set_target_properties(cudaSireconDriver
   OUTPUT_NAME cudasirecon
 )
 
-if(BUILD_MRC)
-  target_link_libraries(cudasirecon ${IMLIB} ${IVELIB})
-endif()
-
 message(STATUS "IMLIB: " ${IMLIB})
 message(STATUS "IVELIB: " ${IVELIB})
 message(STATUS "LEG_STDIO: " ${LEG_STDIO})
 message(STATUS "LAPACK_FOUND: " ${LAPACK_FOUND})
 
-add_dependencies(cudaSireconDriver cudasirecon gpuFunctions Buffer)
 target_link_libraries(
   cudasirecon
-  gpuFunctions
   Buffer
   ${TIFF_LIBRARIES}
   ${LAPACK_LIBRARIES}
   ${BOOST_LIBRARIES}
   ${Boost_PROGRAM_OPTIONS_LIBRARY}
-  ${Boost_FILESYSTEM_LIBRARY})
+  ${Boost_FILESYSTEM_LIBRARY}
+  ${IMLIB}
+  ${IVELIB})
 
+add_dependencies(cudaSireconDriver cudasirecon Buffer)
 target_link_libraries(cudaSireconDriver cudasirecon)
 
-CUDA_ADD_LIBRARY(pycudasirecon SHARED pyInterface.cpp)
-add_dependencies(pycudasirecon cudasirecon gpuFunctions Buffer)
-target_link_libraries(pycudasirecon cudasirecon)
 
 if(WIN32)
   if(${MSVC_VERSION} GREATER 1800)
@@ -56,7 +49,7 @@ endif(WIN32)
 set(HEADERS cudaSirecon.h cudaSireconImpl.h gpuFunctions.h)
 
 install(
-  TARGETS cudaSireconDriver cudasirecon pycudasirecon
+  TARGETS cudaSireconDriver cudasirecon
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib)
