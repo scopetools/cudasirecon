@@ -12,7 +12,11 @@ cuda_add_cufft_to_target(cudaSireconDriver)
 
 set_property(TARGET gpuFunctions PROPERTY MSVC_RUNTIME_LIBRARY "")
 set_property(TARGET cudasirecon PROPERTY MSVC_RUNTIME_LIBRARY "")
-set_property(TARGET cudaSireconDriver PROPERTY MSVC_RUNTIME_LIBRARY "")
+set_target_properties(cudaSireconDriver
+  PROPERTIES
+  MSVC_RUNTIME_LIBRARY ""
+  OUTPUT_NAME cudasirecon
+)
 
 if(BUILD_MRC)
   target_link_libraries(cudasirecon ${IMLIB} ${IVELIB})
