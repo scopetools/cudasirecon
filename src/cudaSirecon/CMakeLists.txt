@@ -1,38 +1,26 @@
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  "${CMAKE_CURRENT_SOURCE_DIR}/../Buffers"
-)
-
-if(WIN32)
-  set(PLATFORM win64)
-else()
-  set(PLATFORM linux64)
-endif(WIN32)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}
+                    "${CMAKE_CURRENT_SOURCE_DIR}/../Buffers")
 
 find_package(LAPACK REQUIRED)
 
-CUDA_ADD_LIBRARY(gpuFunctions gpuFunctionsImpl.cu)
-CUDA_ADD_LIBRARY(cudasirecon cudaSirecon.cpp boostfs.cpp)
-CUDA_ADD_EXECUTABLE(cudaSireconDriver cudaSireconDriver.cpp)
+add_library(gpuFunctions gpuFunctionsImpl.cu)
+add_library(cudasirecon cudaSirecon.cpp boostfs.cpp)
+add_executable(cudaSireconDriver cudaSireconDriver.cpp)
 
-CUDA_ADD_CUFFT_TO_TARGET(cudasirecon)
-CUDA_ADD_CUFFT_TO_TARGET(cudaSireconDriver)
+cuda_add_cufft_to_target(cudasirecon)
+cuda_add_cufft_to_target(cudaSireconDriver)
 
 set_property(TARGET gpuFunctions PROPERTY MSVC_RUNTIME_LIBRARY "")
 set_property(TARGET cudasirecon PROPERTY MSVC_RUNTIME_LIBRARY "")
-set_property(TARGET cudaSireconDriver PROPERTY MSVC_RUNTIME_LIBRARY "")
+set_target_properties(cudaSireconDriver
+  PROPERTIES
+  MSVC_RUNTIME_LIBRARY ""
+  OUTPUT_NAME cudasirecon
+)
 
-if (BUILD_MRC)
-  set(PRIISM_LIB_PATH "${CMAKE_SOURCE_DIR}/IVE/${PLATFORM}/LIB")
-  set(PRIISM_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/IVE/${PLATFORM}/INCLUDE")
-  include_directories(${PRIISM_INCLUDE_PATH})
-  link_directories(${PRIISM_LIB_PATH})
-
-  find_library(IMLIB NAMES imlib libimlib PATHS ${PRIISM_LIB_PATH} REQUIRED)
-  find_library(IVELIB NAMES ive libive PATHS ${PRIISM_LIB_PATH} REQUIRED)
-  add_definitions(-DMRC)
+if(BUILD_MRC)
   target_link_libraries(cudasirecon ${IMLIB} ${IVELIB})
-endif ()
+endif()
 
 message(STATUS "IMLIB: " ${IMLIB})
 message(STATUS "IVELIB: " ${IVELIB})
@@ -48,8 +36,8 @@ target_link_libraries(
   ${LAPACK_LIBRARIES}
   ${BOOST_LIBRARIES}
   ${Boost_PROGRAM_OPTIONS_LIBRARY}
-  ${Boost_FILESYSTEM_LIBRARY}
-)
+  ${Boost_FILESYSTEM_LIBRARY})
+
 target_link_libraries(cudaSireconDriver cudasirecon)
 
 CUDA_ADD_LIBRARY(pycudasirecon SHARED pyInterface.cpp)
@@ -57,7 +45,7 @@ add_dependencies(pycudasirecon cudasirecon gpuFunctions Buffer)
 target_link_libraries(pycudasirecon cudasirecon)
 
 if(WIN32)
-  if ( ${MSVC_VERSION} GREATER 1800)
+  if(${MSVC_VERSION} GREATER 1800)
     target_link_libraries(cudaSireconDriver ${LEG_STDIO})
   endif()
 else()
@@ -71,7 +59,6 @@ install(
   TARGETS cudaSireconDriver cudasirecon pycudasirecon
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
+  ARCHIVE DESTINATION lib)
 
 install(FILES ${HEADERS} DESTINATION include)

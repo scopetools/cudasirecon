@@ -846,14 +846,13 @@ SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
   if (m_myParams.bTIFF) {
     // Suppress "unknown field" warnings
     TIFFSetWarningHandler(NULL);
-
     m_imgParams.ntimes = m_all_matching_files.size();
-  }
-  #ifdef MRC
-  else
-  /* Suppress IVE display of file headers */
-    IMAlPrt(0);
+  } else {
+  #ifndef MRC
+    throw std::runtime_error("No tiff files found, and program was not compiled with MRC support.");
   #endif
+  }
+
   m_OTFfile_valid = false;
   openFiles();
   // deviceMemoryUsage();
@@ -950,6 +949,8 @@ int SIM_Reconstructor::setupProgramOptions()
      "SIM data is organized in Z->Angle->Phase order; default being Angle->Z->Phase")
     ("k0searchAll", po::value<int>(&m_myParams.bUseTime0k0)->implicit_value(false),
      "search for k0 at all time points")
+    ("norescale", po::value<int>(&m_myParams.do_rescale)->implicit_value(false),
+     "bleach correcting for z")
     ("equalizez", po::value<int>(&m_myParams.equalizez)->implicit_value(true), 
      "bleach correcting for z")
     ("equalizet", po::value<int>(&m_myParams.equalizet)->implicit_value(true), 
@@ -1123,11 +1124,13 @@ void SIM_Reconstructor::setup()
     m_imgParams.nwaves = tiff0.spectrum(); // multi-color not supported yet
     m_imgParams.nz /= m_imgParams.nwaves * m_myParams.nphases * m_myParams.ndirs;
   }
-  #ifdef MRC
+#ifdef MRC
   else 
     ::loadHeader(m_myParams, &m_imgParams, m_in_out_header);
-  #endif
-  
+#endif
+  printf("nx_raw=%d, ny=%d, nz=%d\n",
+         m_imgParams.nx_raw, m_imgParams.ny, m_imgParams.nz);
+
   setup_common();
 }
 
@@ -1152,7 +1155,7 @@ void SIM_Reconstructor::setup_common()
   //  "nx" is altered to be equal to "ny" and "dz" is multiplied by sin(deskewAngle)
   if (fabs(m_myParams.deskewAngle) > 0.) {
     if (m_myParams.deskewAngle <0) m_myParams.deskewAngle += 180.;
-    m_imgParams.nx = findOptimalDimension(m_imgParams.nx_raw + m_imgParams.nz0 * cos(m_myParams.deskewAngle*M_PI/180.) * m_imgParams.dz / m_imgParams.dxy);
+    m_imgParams.nx = findOptimalDimension(m_imgParams.nx_raw + m_imgParams.nz0 * fabs(cos(m_myParams.deskewAngle*M_PI/180.)) * m_imgParams.dz / m_imgParams.dxy);
 //    m_imgParams.nx = m_imgParams.ny;
     m_imgParams.dz_raw = m_imgParams.dz;
     m_imgParams.dz *= fabs(sin(m_myParams.deskewAngle * M_PI/180.));
