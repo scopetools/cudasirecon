@@ -2,14 +2,16 @@
 #include "cudaSirecon.h"
 #include "cudaSireconImpl.h"
 #include "SIM_reconstructor.hpp"
-
+#include "cudasireconConfig.h"
 #include <boost/filesystem.hpp>
 
 #ifdef MRC
 #include "mrc.h"
 #endif
 
-std::string version_number = "1.0.2";
+std::string version_number = std::to_string(cudasirecon_VERSION_MAJOR) + "." +
+                             std::to_string(cudasirecon_VERSION_MINOR) + "." +
+                             std::to_string(cudasirecon_VERSION_PATCH);
 
 void SetDefaultParams(ReconParams *pParams)
 {
@@ -812,6 +814,11 @@ SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
     std::cout << m_progopts << "\n";
     exit(0);
   }
+  
+  if (m_varsmap.count("version")) {
+    std::cout << "Version " << version_number << std::endl;
+    exit(0);
+  }
 
   notify(m_varsmap);
 
@@ -997,6 +1004,7 @@ int SIM_Reconstructor::setupProgramOptions()
     ("writeTitle", po::value<int>(&m_myParams.bWriteTitle)->implicit_value(true),
      "Write command line to image header (may cause issues with bioformats)")
     ("help,h", "produce help message")
+    ("version", "show version")
     ;
 
   return 0;

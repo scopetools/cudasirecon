@@ -6,6 +6,9 @@ find_package(LAPACK REQUIRED)
 add_library(cudasirecon SHARED cudaSirecon.cpp boostfs.cpp gpuFunctionsImpl.cu pyInterface.cpp)
 add_executable(cudaSireconDriver cudaSireconDriver.cpp)
 
+target_include_directories(cudaSireconDriver PUBLIC "${PROJECT_BINARY_DIR}")
+
+
 cuda_add_cufft_to_target(cudasirecon)
 cuda_add_cufft_to_target(cudaSireconDriver)
 
