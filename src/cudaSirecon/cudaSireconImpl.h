@@ -36,7 +36,10 @@
 #include <CImg.h>
 using namespace cimg_library;
 
+#ifdef MRC
 #include <IMInclude.h>  // MRC file I/O routines
+#endif
+
 
 // Block sizes for reduction kernels
 #define RED_BLOCK_SIZE_X 64
@@ -71,10 +74,12 @@ static const int aligned_stream_no = 10;
 static const int separated_stream_no = 11;
 static const int overlaps_stream_no = 12;
 
+#ifdef MRC
 // static IW_MRC_HEADER header;
 static IW_MRC_HEADER aligned_header;
 static IW_MRC_HEADER sep_header;
 static IW_MRC_HEADER overlaps_header;
+#endif
 
 struct myExtHeader {
   float timestamp;
@@ -243,13 +248,18 @@ void SetDefaultParams(ReconParams *pParams);
  * */
 // void setup(ReconParams* params, ImageParams*
 //     imgParams, DriftParams* driftParams, ReconData* data);
+#ifdef MRC
 void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER &header);
+#endif
+
 void allocateOTFs(ReconParams *pParams, int sizeOTF, std::vector<std::vector<GPUBuffer> > & otfs);
 void allocateImageBuffers(const ReconParams& params,
     const ImageParams& imgParams, ReconData* reconData);
 
+#ifdef MRC
 void setOutputHeader(const ReconParams& myParams, const ImageParams& imgParams,
                      IW_MRC_HEADER &header);
+#endif
 
 void bgAndSlope(const ReconParams& myParams,
     const ImageParams& imgParams, ReconData* reconData);
@@ -278,7 +288,9 @@ void deskewOneSection(CImg<> &rawSection, float* nxp2OutBuff, int z, int nz,
 //     float *background, float backgroundExtra, float *slope, float inscale,
 //     int bUsecorr);
 
+#ifdef MRC
 int saveIntermediateDataForDebugging(const ReconParams& params);
+#endif
 
 void matrix_transpose(float* mat, int nRows, int nCols);
 
@@ -303,7 +315,9 @@ void writeResult(int it, int iw, const ReconParams& params,
     const ImageParams& imgParams, const ReconData& reconData);
 
 // This only works for MRC/DV files for now:
+#ifdef MRC
 void saveCommandLineToHeader(int argc, char **argv, IW_MRC_HEADER &header);
+#endif
 
 void dumpBands(std::vector<GPUBuffer>* bands, int nx, int ny, int nz0);
 

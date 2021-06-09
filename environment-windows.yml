@@ -1,0 +1,11 @@
+name: simbuild
+channels:
+  - conda-forge
+dependencies:
+  - cxx-compiler
+  - ninja
+  - cmake
+  - fftw
+  - boost-cpp
+  - libtiff
+  - liblapack=*=*netlib

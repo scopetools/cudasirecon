@@ -3,6 +3,12 @@
 #include "cudaSireconImpl.h"
 #include "SIM_reconstructor.hpp"
 
+#include <boost/filesystem.hpp>
+
+#ifdef MRC
+#include "mrc.h"
+#endif
+
 std::string version_number = "1.0.2";
 
 void SetDefaultParams(ReconParams *pParams)
@@ -88,36 +94,6 @@ unsigned findOptimalDimension(unsigned inSize, int step=-1)
   return outSize;
 }
 
-// MRC header parser
-void loadHeader(const ReconParams& params, ImageParams* imgParams, IW_MRC_HEADER &header)
-{
-  int ixyz[3];
-  int mxyz[3];
-  int pixeltype;
-  float min;
-  float max;
-  float mean;
-  IMRdHdr(istream_no, ixyz, mxyz, &pixeltype, &min, &max, &mean);
-  IMGetHdr(istream_no, &header);
-  imgParams->nx = 0;  // deferred till deskewing situation is figured out
-  imgParams->nx_raw = header.nx;
-  imgParams->ny = header.ny;
-  imgParams->nz = header.nz / (header.num_waves * header.num_times);
-  /* header.nz is defined as the total number of sections =
-   * nz*nwaves*ntimes (* ndirs*nphases in our case) */
-  imgParams->nz /= params.nphases  * params.ndirs;
-  imgParams->nwaves = header.num_waves;
-  imgParams->ntimes = header.num_times;
-  imgParams->wave[0]=header.iwav1;
-  imgParams->wave[1]=header.iwav2;
-  imgParams->wave[2]=header.iwav3;
-  imgParams->wave[3]=header.iwav4;
-  imgParams->wave[4]=header.iwav5;
-  //! dxy: lateral pixel size; dz: axial pixel size; both in microns */
-  imgParams->dxy = header.ylen;
-  imgParams->dz = header.zlen;
-
-}
 
 void allocateOTFs(ReconParams* pParams, int sizeOTF,
                   std::vector<std::vector<GPUBuffer> >& otfs)
@@ -156,21 +132,6 @@ void allocateImageBuffers(const ReconParams& params,
   }
 }
 
-void setOutputHeader(const ReconParams& myParams, const ImageParams& imgParams,
-                     IW_MRC_HEADER &header)
-{
-  header.mode = IW_FLOAT;
-  header.nz = imgParams.nz * imgParams.nwaves * imgParams.ntimes *
-    myParams.z_zoom;
-  header.nx = imgParams.nx * myParams.zoomfact;
-  header.ny *= myParams.zoomfact;
-  header.xlen /= myParams.zoomfact;
-  header.ylen /= myParams.zoomfact;
-  header.zlen /= myParams.z_zoom;
-  header.inbsym = 0;
-  IMPutHdr(ostream_no, &header);
-  IMAlCon(ostream_no, 0);
-}
 
 void bgAndSlope(const ReconParams& myParams,
     const ImageParams& imgParams, ReconData* reconData)
@@ -202,8 +163,9 @@ void getbg_and_slope(const char *corrfiles, float *background,
   int cstream_no=10;
   int ixyz[3], mxyz[3], pixeltype;      /* variables for IMRdHdr call */
   float min, max, mean;      /* variables for IMRdHdr call */
+  
+#ifdef MRC
   IW_MRC_HEADER header;
-
   if (IMOpen(cstream_no, corrfiles, "ro")) {
     fprintf(stderr, "File %s does not exist\n", corrfiles);
     exit(-1);
@@ -223,6 +185,7 @@ void getbg_and_slope(const char *corrfiles, float *background,
   IMRdSec(cstream_no, slope);
 
   IMClose(cstream_no);
+#endif
 }
 
 void findModulationVectorsAndPhasesForAllDirections(
@@ -301,7 +264,12 @@ void findModulationVectorsAndPhasesForAllDirections(
     }
 
     /* save the separated raw if requested */
-    if (!params->bTIFF && params->bSaveSeparated) {
+    if (params->bTIFF && params->bSaveSeparated) {
+      // TO-DO
+      std::cout << "No unmixed raw images were saved in TIFF mode\n";
+    }
+    #ifdef MRC
+    else if (!params->bTIFF && params->bSaveSeparated) {
       CPUBuffer tmp((*rawImages)[0].getSize());
       for (int phase = 0; phase < params->nphases; ++ phase) {
         (*rawImages)[phase].set(&tmp, 0, tmp.getSize(), 0);
@@ -313,10 +281,8 @@ void findModulationVectorsAndPhasesForAllDirections(
       }
       continue; // skip the k0 search and modamp fitting
     }
-    else if (params->bTIFF && params->bSaveSeparated) {
-      // TO-DO
-      std::cout << "No unmixed raw images were saved in TIFF mode\n";
-    }
+    #endif
+
 
     /* After separation and FFT, the std::vector rawImages, now referred to as
      * the std::vector bands, contains the center band (bands[0])
@@ -368,6 +334,7 @@ void findModulationVectorsAndPhasesForAllDirections(
                        true);  // ovlp0 shares buffer with tmp0 (hence "true" in the final parameter)
           ovlp0.save_tiff(params->fileOverlaps.c_str());
         }
+        #ifdef MRC
         else {
           CPUBuffer tmp0(data->overlap0.getSize());
           data->overlap0.set(&tmp0, 0, tmp0.getSize(), 0);
@@ -380,6 +347,7 @@ void findModulationVectorsAndPhasesForAllDirections(
             IMWrSec(overlaps_stream_no, ol1Ptr + z * imgParams.nx * imgParams.ny);
           }
         }
+        #endif
       }
       printf("Initial guess by findk0() of k0[direction %d] = (%f,%f) pixels\n", 
           direction, data->k0[direction].x/dkx, data->k0[direction].y/dky);
@@ -453,7 +421,13 @@ void findModulationVectorsAndPhasesForAllDirections(
         printf("combined modamp mag=%f, phase=%f\n",
             cmag(amp_combo), atan2(amp_combo.y, amp_combo.x));
         printf("correlation coeff=%f\n\n", corr_coeff);
-        if (!params->bTIFF && order == 1 && params->bSaveOverlaps) {// output the overlaps
+
+        if (params->bTIFF) {
+          // To-DO
+          std::cout << "No overlaps were saved in TIFF mode";
+        }
+        #ifdef MRC
+        else if (!params->bTIFF && order == 1 && params->bSaveOverlaps) {// output the overlaps
           // output the overlaps
           CPUBuffer tmp0(data->overlap0.getSize());
           data->overlap0.set(&tmp0, 0, tmp0.getSize(), 0);
@@ -466,10 +440,7 @@ void findModulationVectorsAndPhasesForAllDirections(
             IMWrSec(overlaps_stream_no, ol1Ptr + z * imgParams.nx * imgParams.ny);
           }
         }
-        else if (params->bTIFF) {
-          // To-DO
-          std::cout << "No overlaps were saved in TIFF mode";
-        }
+        #endif
       }
     }     /* if(searchforvector) ... else ... */
 
@@ -786,35 +757,6 @@ cuFloatComplex cmul(cuFloatComplex a, cuFloatComplex b)
   return result;
 }
 
-int saveIntermediateDataForDebugging(const ReconParams& params)
-{
-  if (params.bSaveSeparated) {
-    IMWrHdr(separated_stream_no,
-        "separated bands of all directions", 1, 0, 1, 0);
-    IMClose(separated_stream_no);
-  }
-  if (params.bSaveAlignedRaw) {
-    IMWrHdr(aligned_stream_no,
-        "drift-corrected raw images", 1, aligned_header.amin,
-        aligned_header.amax, aligned_header.amean);
-    IMClose(aligned_stream_no);
-  }
-  if (params.bSaveOverlaps) {
-    IMWrHdr(overlaps_stream_no,
-        "overlaps in real space", 1, 0, 1, 0);
-    IMClose(overlaps_stream_no);
-  }
-  if (params.bSaveSeparated ||
-      params.bSaveAlignedRaw ||
-      params.bSaveOverlaps) {
-    printf(
-        "\nQuit processing because either bSaveSeparated, "
-        "bSaveAlignedRaw, or bSaveOverlaps is TRUE\n");
-    return 1;
-  }
-  return 0;
-}
-
 
 void dumpBands(std::vector<GPUBuffer>* bands, int nx, int ny, int nz0)
 {
@@ -845,7 +787,6 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 }
 
 // IMPLEMENTATION OF CLASS SIM_RECONSTRUCTOR FOLLOWS:
-#include <boost/filesystem.hpp>
 SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
 {
   // Call this constructor from a command-line based program
@@ -905,21 +846,22 @@ SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
   if (m_myParams.bTIFF) {
     // Suppress "unknown field" warnings
     TIFFSetWarningHandler(NULL);
-
     m_imgParams.ntimes = m_all_matching_files.size();
+  } else {
+  #ifndef MRC
+    throw std::runtime_error("No tiff files found, and program was not compiled with MRC support.");
+  #endif
   }
-  else
-  /* Suppress IVE display of file headers */
-    IMAlPrt(0);
 
   m_OTFfile_valid = false;
   openFiles();
   // deviceMemoryUsage();
 
   setup();
+  #ifdef MRC
   if (!m_myParams.bTIFF)
     ::setOutputHeader(m_myParams, m_imgParams, m_in_out_header);
-
+  #endif
   //! Load flat-field correction data
   bgAndSlope(m_myParams, m_imgParams, &m_reconData);
 }
@@ -1123,6 +1065,7 @@ void SIM_Reconstructor::openFiles()
   if (!m_myParams.ifiles.size() || !m_myParams.ofiles.size())
     throw std::runtime_error("Calling openFiles() but no input or output files were specified");
 
+  #ifdef MRC
   if (!m_myParams.bTIFF && IMOpen(istream_no, m_myParams.ifiles.c_str(), "ro"))
     // TIFF files are not opened till loadAndRescaleImage()
     throw std::runtime_error("No matching input TIFF or MRC files not found");
@@ -1134,16 +1077,20 @@ void SIM_Reconstructor::openFiles()
       std::cerr << "File " << m_myParams.ofiles << " can not be created.\n";
       throw std::runtime_error("Error creating output file");
     }
+  #endif
 
   if (m_myParams.bTIFF) {
     m_otf_tiff.assign(m_myParams.otffiles.c_str()); // will throw CImgIOException if file cannot be opened
     m_OTFfile_valid = true;
   }
+
+  #ifdef MRC
   else
     if (IMOpen(otfstream_no, m_myParams.otffiles.c_str(), "ro"))
       throw std::runtime_error("OTF file not found");
     else
       m_OTFfile_valid = true;
+  #endif
 }
 
 void SIM_Reconstructor::setup(unsigned nx, unsigned ny, unsigned nImages, unsigned nChannels)
@@ -1171,9 +1118,10 @@ void SIM_Reconstructor::setup()
     m_imgParams.nwaves = tiff0.spectrum(); // multi-color not supported yet
     m_imgParams.nz /= m_imgParams.nwaves * m_myParams.nphases * m_myParams.ndirs;
   }
+#ifdef MRC
   else 
     ::loadHeader(m_myParams, &m_imgParams, m_in_out_header);
-
+#endif
   printf("nx_raw=%d, ny=%d, nz=%d\n",
          m_imgParams.nx_raw, m_imgParams.ny, m_imgParams.nz);
 
@@ -1220,6 +1168,7 @@ void SIM_Reconstructor::setup_common()
          m_imgParams.nz0, m_imgParams.nwaves);
   printf("dxy=%f, dz=%f um\n", m_imgParams.dxy, m_imgParams.dz);
 
+  #ifdef MRC
   // // Initialize headers for intermediate output files if requested
   if (!m_myParams.bTIFF) {
     if (m_myParams.bSaveAlignedRaw) {
@@ -1250,6 +1199,7 @@ void SIM_Reconstructor::setup_common()
       IMPutHdr(overlaps_stream_no, &overlaps_header);
     }
   }
+  #endif
 
   m_myParams.norders = 0;
   if (m_myParams.norders_output != 0) {
@@ -1325,8 +1275,10 @@ int SIM_Reconstructor::processOneVolume()
 
   // deviceMemoryUsage();
 
+  #ifdef MRC
   if (saveIntermediateDataForDebugging(m_myParams))
     return 0;
+  #endif
 
   m_reconData.bigbuffer.resize((m_myParams.zoomfact * m_imgParams.nx) *
       (m_myParams.zoomfact * m_imgParams.ny) * (m_myParams.z_zoom * m_imgParams.nz0) *
@@ -1378,6 +1330,7 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
   if (m_myParams.bTIFF) {
     rawFromFile.assign(m_all_matching_files[it].c_str());
   }
+  #ifdef MRC
   else {
     rawFromFile.assign(m_imgParams.nx_raw, m_imgParams.ny, m_imgParams.nz * m_myParams.nphases * m_myParams.ndirs);
     for (unsigned sec=0; sec<rawFromFile.depth(); sec++) {
@@ -1385,6 +1338,7 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
       IMRdSec(istream_no, rawFromFile.data(0, 0, sec));
     }
   }
+  #endif
 //  rawFromFile.display();
 
   float dskewA = m_myParams.deskewAngle;
@@ -1414,6 +1368,7 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
       }
 
       for (int phase = 0; phase < m_myParams.nphases; ++phase) {
+        #ifdef MRC
         if (m_myParams.bBgInExtHdr) {
           /* subtract the background value of each exposure stored in MRC files'
              extended header, indexed by the section number. */
@@ -1422,6 +1377,7 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
           IMRtExHdrZWT(istream_no, zsec, iw, it, &extInts, extFloats);
           m_reconData.backgroundExtra = extFloats[2];
         }
+        #endif
         load_and_flatfield(rawFromFile, zsec, rawSection.data(),
                            (float*)m_reconData.background.getPtr(), m_reconData.backgroundExtra,
                            (float*)m_reconData.slope.getPtr(),
@@ -1470,7 +1426,7 @@ void SIM_Reconstructor::setupOTFsFromFile()
 void SIM_Reconstructor::determine_otf_dimensions()
 {
   if (m_myParams.bTIFF) {
-    uint32 nxotf, nyotf, nzotf;
+    uint32_t nxotf, nyotf, nzotf;
     nxotf = m_otf_tiff.width()/2;  // "/2" because of real and imaginary parts
     nyotf = m_otf_tiff.height();
     nzotf = m_otf_tiff.depth();
@@ -1506,6 +1462,7 @@ void SIM_Reconstructor::determine_otf_dimensions()
       }
     }
   }
+#ifdef MRC
   else {
     int ixyz[3], mxyz[3], pixeltype;
     float min, max, mean;
@@ -1545,6 +1502,7 @@ void SIM_Reconstructor::determine_otf_dimensions()
       }
     }
   }
+#endif
   printf("nzotf=%d, dkzotf=%f, nxotf=%d, nyotf=%d, dkrotf=%f\n",
       m_myParams.nzotf, m_myParams.dkzotf, m_myParams.nxotf, m_myParams.nyotf,
       m_myParams.dkrotf);
@@ -1591,7 +1549,9 @@ int SIM_Reconstructor::loadOTFs()
       }
     }
   }
+#ifdef MRC
   else {
+
     int ixyz[3], mxyz[3], pixeltype;
     float min, max, mean;
     IW_MRC_HEADER otfheader;
@@ -1627,6 +1587,7 @@ int SIM_Reconstructor::loadOTFs()
     }
     IMClose(otfstream_no);
   }
+#endif
 
 #ifndef NDEBUG
   for (int dir = 0; dir < nDirsOTF; dir++)
@@ -1662,7 +1623,7 @@ void SIM_Reconstructor::writeResult(int it, int iw)
 
   outCimg.save(makeOutputFilePath(m_all_matching_files[it], std::string("_proc")).c_str());
   }
-
+#ifdef MRC
   else {
     float maxval = -FLT_MAX;
     float minval = FLT_MAX;
@@ -1692,6 +1653,7 @@ void SIM_Reconstructor::writeResult(int it, int iw)
       m_in_out_header.amax = maxval;
     }
   }
+#endif
 
 #ifndef __clang__
   double t2 = omp_get_wtime();
@@ -1701,29 +1663,17 @@ void SIM_Reconstructor::writeResult(int it, int iw)
   printf("Time point %d, wave %d done\n", it, iw);
 }
 
-void saveCommandLineToHeader(int argc, char **argv, IW_MRC_HEADER &header, const ReconParams& myParams)
-{
-  char titles[1000];
-  titles[0] = '\0';
-  for (int i = 3; i < argc; ++i) {
-    strcat(titles, argv[i]);
-    strcat(titles, " ");
-  }
-  if (myParams.bWriteTitle){
-    IMAlLab(ostream_no, titles, strlen(titles) / 80 + 1);
-  }
-  IMWrHdr(ostream_no, header.label, 1, header.amin, header.amax,
-      header.amean);
-}
 
 void SIM_Reconstructor::closeFiles()
 {
   if (m_myParams.bTIFF)
     {}
   else {
+    #ifdef MRC
     ::IMClose(istream_no);
     ::saveCommandLineToHeader(m_argc, m_argv, m_in_out_header, m_myParams);
     ::IMClose(ostream_no);
+    #endif
   }
 }
 
