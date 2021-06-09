@@ -1018,8 +1018,6 @@ int SIM_Reconstructor::setParams()
     m_myParams.otffiles = m_varsmap["otf-file"].as<std::string>();
   }
 
-  std::cout << "in setParams.  OTFfile:" <<  m_myParams.otffiles << std::endl;
-
   if (m_varsmap.count("usecorr")) {
     m_myParams.corrfiles = m_varsmap["usecorr"].as<std::string>();
     m_myParams.bUsecorr = 1;
@@ -1086,9 +1084,8 @@ void SIM_Reconstructor::openFiles() {
 #endif
 
   if (m_myParams.bTIFF) {
-    m_otf_tiff.assign(
-        // will throw CImgIOException if file cannot be opened
-        m_myParams.otffiles.c_str());
+    // will throw CImgIOException if file cannot be opened
+    m_otf_tiff.assign(m_myParams.otffiles.c_str());
     m_OTFfile_valid = true;
   }
 #ifdef MRC
@@ -1139,9 +1136,6 @@ void SIM_Reconstructor::setup_common()
   // Do we need to keep this?? -lin
   // if (m_myParams.bTIFF)
   //   m_imgParams.nz0 = ::findOptimalDimension(m_imgParams.nz);
-
-  printf("nx_raw=%d, ny=%d, nz=%d, nz0=%d\n",
-         m_imgParams.nx_raw, m_imgParams.ny, m_imgParams.nz, m_imgParams.nz0);
 
   m_zoffset = 0;
   if (m_myParams.nzPadTo) {  // 'nzPadTo' ~never used
@@ -1221,9 +1215,7 @@ void SIM_Reconstructor::setup_common()
     m_myParams.norders << ", ndirs=" << m_myParams.ndirs << std::endl;
 
   if (m_OTFfile_valid)
-    std::cout << "setting up otfs... ";
     setupOTFsFromFile();
-    std::cout << "done" << std::endl;
 
   ::allocSepMatrixAndNoiseVarFactors(m_myParams, &m_reconData);
   ::makematrix(m_myParams.nphases, m_myParams.norders, 0, 0,
@@ -1320,13 +1312,6 @@ int SIM_Reconstructor::processOneVolume()
         m_imgParams.nz0, m_imgParams.dxy, m_myParams.zoomfact,
         m_myParams.z_zoom, m_myParams.explodefact);
   }
-
-  std::cout << "processOne2: " << m_myParams.zoomfact << " "
-          << m_imgParams.nx << " " 
-          << m_imgParams.ny << " " 
-          << m_myParams.z_zoom << " " 
-          << m_imgParams.nz0 << " " << std::endl;
-
   return 1;
 }
 
@@ -1340,13 +1325,7 @@ void SIM_Reconstructor::loadAndRescaleImage(int timeIdx, int waveIdx)
 
 void SIM_Reconstructor::setRaw(CImg<> &input, int it, int iw)
 {
-  std::cout << "RAW: " << rawImage.width() << " x " << rawImage.height() 
-          << " x " << rawImage.depth()<< " x " << rawImage.pixel_type() << std::endl;
-
   rawImage.assign(input);
-  std::cout << "RAW: " << rawImage.width() << " x " << rawImage.height() 
-          << " x " << rawImage.depth()<< " x " << rawImage.pixel_type() << std::endl;
-
   loadImageData(it, iw);
 }
 
@@ -1391,7 +1370,8 @@ void SIM_Reconstructor::loadImageData(int it, int iw) {
         // data organized into (nz, ndirs, nphases)
         zsec = (z * m_myParams.ndirs * m_myParams.nphases +
                 direction * m_myParams.nphases);
-      } else {  // data organized into (ndirs, nz, nphases)
+      } else {
+        // data organized into (ndirs, nz, nphases)
         zsec = direction * m_imgParams.nz * m_myParams.nphases +
                z * m_myParams.nphases;
       }
@@ -1631,6 +1611,7 @@ int SIM_Reconstructor::loadOTFs()
   return 1;
 }
 
+// Transfer m_reconData from GPU to result buffer
 void SIM_Reconstructor::getResult(float * result) {
   CPUBuffer outbufferHost((m_myParams.zoomfact * m_imgParams.nx) *
                           (m_myParams.zoomfact * m_imgParams.ny) *
@@ -1649,7 +1630,6 @@ void SIM_Reconstructor::getResult(float * result) {
 
 void SIM_Reconstructor::writeResult(int it, int iw)
 {
-
   CPUBuffer outbufferHost(
       (m_myParams.zoomfact * m_imgParams.nx) *
       (m_myParams.zoomfact * m_imgParams.ny) *

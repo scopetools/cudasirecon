@@ -9,7 +9,6 @@ add_executable(cudaSireconDriver cudaSireconDriver.cpp)
 cuda_add_cufft_to_target(cudasirecon)
 cuda_add_cufft_to_target(cudaSireconDriver)
 
-
 set_property(TARGET cudasirecon PROPERTY MSVC_RUNTIME_LIBRARY "")
 set_target_properties(cudaSireconDriver
   PROPERTIES
