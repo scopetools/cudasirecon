@@ -12,3 +12,4 @@ fftw2
 cmake_build
 
 src/IVE
+_test.sh
