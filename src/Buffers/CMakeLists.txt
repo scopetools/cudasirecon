@@ -4,14 +4,14 @@ include_directories(
   "${CMAKE_SOURCE_DIR}/gtest/include"
   )
 
-CUDA_ADD_LIBRARY(
+add_library(
   Buffer
   Buffer.cpp
   bufferExample.cpp
   CPUBuffer.cpp
   GPUBuffer.cpp
   PinnedCPUBuffer.cpp
-  )
+)
 
 set_property(TARGET Buffer PROPERTY MSVC_RUNTIME_LIBRARY "")
 
@@ -41,7 +41,7 @@ set(LIBRARIES
   )
 
 #foreach(t ${TESTS})
-#  CUDA_ADD_EXECUTABLE(${t} ${t}.cpp)
+#  add_executable(${t} ${t}.cpp)
 #  add_dependencies(${t} ${LIBRARIES})
 #  target_link_libraries(${t} ${LIBRARIES})
 #  add_test(${t} ${t})

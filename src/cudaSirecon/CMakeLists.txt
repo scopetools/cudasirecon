@@ -5,12 +5,12 @@ include_directories(
 
 find_package(LAPACK REQUIRED)
 
-CUDA_ADD_LIBRARY(gpuFunctions gpuFunctionsImpl.cu)
-CUDA_ADD_LIBRARY(cudasirecon cudaSirecon.cpp boostfs.cpp)
-CUDA_ADD_EXECUTABLE(cudaSireconDriver cudaSireconDriver.cpp)
+add_library(gpuFunctions gpuFunctionsImpl.cu)
+add_library(cudasirecon cudaSirecon.cpp boostfs.cpp)
+add_executable(cudaSireconDriver cudaSireconDriver.cpp)
 
-CUDA_ADD_CUFFT_TO_TARGET(cudasirecon)
-CUDA_ADD_CUFFT_TO_TARGET(cudaSireconDriver)
+cuda_add_cufft_to_target(cudasirecon)
+cuda_add_cufft_to_target(cudaSireconDriver)
 
 set_property(TARGET gpuFunctions PROPERTY MSVC_RUNTIME_LIBRARY "")
 set_property(TARGET cudasirecon PROPERTY MSVC_RUNTIME_LIBRARY "")
