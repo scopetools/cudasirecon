@@ -1,7 +1,5 @@
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  "${CMAKE_CURRENT_SOURCE_DIR}/../Buffers"
-)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}
+                    "${CMAKE_CURRENT_SOURCE_DIR}/../Buffers")
 
 find_package(LAPACK REQUIRED)
 
@@ -16,9 +14,9 @@ set_property(TARGET gpuFunctions PROPERTY MSVC_RUNTIME_LIBRARY "")
 set_property(TARGET cudasirecon PROPERTY MSVC_RUNTIME_LIBRARY "")
 set_property(TARGET cudaSireconDriver PROPERTY MSVC_RUNTIME_LIBRARY "")
 
-if (BUILD_MRC)
+if(BUILD_MRC)
   target_link_libraries(cudasirecon ${IMLIB} ${IVELIB})
-endif ()
+endif()
 
 message(STATUS "IMLIB: " ${IMLIB})
 message(STATUS "IVELIB: " ${IVELIB})
@@ -34,13 +32,12 @@ target_link_libraries(
   ${LAPACK_LIBRARIES}
   ${BOOST_LIBRARIES}
   ${Boost_PROGRAM_OPTIONS_LIBRARY}
-  ${Boost_FILESYSTEM_LIBRARY}
-)
+  ${Boost_FILESYSTEM_LIBRARY})
 
 target_link_libraries(cudaSireconDriver cudasirecon)
 
 if(WIN32)
-  if ( ${MSVC_VERSION} GREATER 1800)
+  if(${MSVC_VERSION} GREATER 1800)
     target_link_libraries(cudaSireconDriver ${LEG_STDIO})
   endif()
 else()
@@ -54,7 +51,6 @@ install(
   TARGETS cudaSireconDriver cudasirecon
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
+  ARCHIVE DESTINATION lib)
 
 install(FILES ${HEADERS} DESTINATION include)
