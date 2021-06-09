@@ -48,7 +48,7 @@ else()
   cmake_minimum_required (VERSION 3.19)
 endif()
 
-project (cudaSIMRecon CXX CUDA)
+project (cudaSIMRecon C CXX CUDA)
 
 # set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
