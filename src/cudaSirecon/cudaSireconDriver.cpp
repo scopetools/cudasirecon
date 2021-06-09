@@ -1,15 +1,6 @@
 #include "cudaSireconImpl.h"
 #include "SIM_reconstructor.hpp"
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1900)
-// for IMLIB with vs >2015
-// https://stackoverflow.com/questions/30412951/unresolved-external-symbol-imp-fprintf-and-imp-iob-func-sdl2
-FILE _iob[] = {*stdin, *stdout, *stderr};
-extern "C" FILE * __cdecl __iob_func(void)
-{
-    return _iob;
-}
-#endif
 
 int main(int argc, char **argv)
 {
