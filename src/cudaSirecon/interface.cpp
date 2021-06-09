@@ -2,8 +2,9 @@
 #include "SIM_reconstructor.hpp"
 
 #ifdef _WIN32
-#define DllImport __declspec(dllimport)
 #define DllExport __declspec(dllexport)
+#else
+#define DllExport
 #endif
 
 extern "C"

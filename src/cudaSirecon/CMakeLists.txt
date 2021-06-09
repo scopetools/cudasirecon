@@ -15,7 +15,7 @@ set_target_properties(cudasirecon
   PROPERTIES
   MSVC_RUNTIME_LIBRARY ""
   WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-  target_link_libraries(
+target_link_libraries(
   cudasirecon
   Buffer
   ${TIFF_LIBRARIES}
