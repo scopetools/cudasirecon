@@ -3,44 +3,46 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}
 
 find_package(LAPACK REQUIRED)
 
-add_library(cudasirecon SHARED cudaSirecon.cpp boostfs.cpp gpuFunctionsImpl.cu pyInterface.cpp)
-add_executable(cudaSireconDriver cudaSireconDriver.cpp)
+set( CMAKE_SUPPORT_WINDOWS_EXPORT_ALL_SYMBOLS 1 )
 
-target_include_directories(cudaSireconDriver PUBLIC "${PROJECT_BINARY_DIR}")
-
-
+# tried to make executable depend on library ... but ran into hard windows
+# missing export issues
+add_library(cudasirecon SHARED cudaSirecon.cpp boostfs.cpp gpuFunctionsImpl.cu
+                               interface.cpp)
+add_executable(cudaSireconDriver cudaSireconDriver.cpp cudaSirecon.cpp
+                                 boostfs.cpp gpuFunctionsImpl.cu)
 cuda_add_cufft_to_target(cudasirecon)
 cuda_add_cufft_to_target(cudaSireconDriver)
 
+# target_include_directories(cudaSireconDriver PUBLIC "${PROJECT_BINARY_DIR}")
+
 set_property(TARGET cudasirecon PROPERTY MSVC_RUNTIME_LIBRARY "")
-set_target_properties(cudaSireconDriver
-  PROPERTIES
-  MSVC_RUNTIME_LIBRARY ""
-  OUTPUT_NAME cudasirecon
-)
+set_target_properties(cudaSireconDriver PROPERTIES MSVC_RUNTIME_LIBRARY ""
+                                                   OUTPUT_NAME cudasirecon)
 
 message(STATUS "IMLIB: " ${IMLIB})
 message(STATUS "IVELIB: " ${IVELIB})
 message(STATUS "LEG_STDIO: " ${LEG_STDIO})
 message(STATUS "LAPACK_FOUND: " ${LAPACK_FOUND})
 
-target_link_libraries(
-  cudasirecon
-  Buffer
-  ${TIFF_LIBRARIES}
-  ${LAPACK_LIBRARIES}
-  ${BOOST_LIBRARIES}
-  ${Boost_PROGRAM_OPTIONS_LIBRARY}
-  ${Boost_FILESYSTEM_LIBRARY}
-  ${IMLIB}
-  ${IVELIB})
+set(LIBS
+    Buffer
+    ${TIFF_LIBRARIES}
+    ${LAPACK_LIBRARIES}
+    ${BOOST_LIBRARIES}
+    ${Boost_PROGRAM_OPTIONS_LIBRARY}
+    ${Boost_FILESYSTEM_LIBRARY}
+    ${IMLIB}
+    ${IVELIB})
 
-add_dependencies(cudaSireconDriver cudasirecon Buffer)
-target_link_libraries(cudaSireconDriver cudasirecon)
+target_link_libraries(cudasirecon ${LIBS})
+target_link_libraries(cudaSireconDriver ${LIBS})
 
+# add_dependencies(cudaSireconDriver cudasirecon Buffer)
 
 if(WIN32)
   if(${MSVC_VERSION} GREATER 1800)
+    target_link_libraries(cudasirecon ${LEG_STDIO})
     target_link_libraries(cudaSireconDriver ${LEG_STDIO})
   endif()
 else()
