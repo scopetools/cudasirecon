@@ -33,20 +33,14 @@ option(BUILD_OTF_VIEWER "Build OTF viewer (requires X11)" OFF)
 
 cmake_minimum_required(VERSION 3.14)
 
-project(cudaSIMRecon)
-enable_language(CUDA)
+# This is the one place where version is set
+project(cudasirecon VERSION 1.1.0)
+configure_file("${PROJECT_SOURCE_DIR}/cudasireconConfig.h.in" "${PROJECT_SOURCE_DIR}/cudasireconConfig.h")
+include_directories("${PROJECT_SOURCE_DIR}")
 
+enable_language(CUDA)
 enable_testing()
 
-file(READ "version.txt" ver)
-string(REGEX MATCH "VERSION_MAJOR ([0-9]*)" _ ${ver})
-set(ver_major ${CMAKE_MATCH_1})
-string(REGEX MATCH "VERSION_MINOR ([0-9]*)" _ ${ver})
-set(ver_minor ${CMAKE_MATCH_1})
-string(REGEX MATCH "VERSION_PATCH ([0-9]*)" _ ${ver})
-set(ver_patch ${CMAKE_MATCH_1})
-message("version: ${ver_major}.${ver_minor}.${ver_patch}")
-set(PROJECT_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
   set(CMAKE_CUDA_ARCHITECTURES "52;60;61;70;72;75")

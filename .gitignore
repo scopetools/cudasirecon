@@ -12,3 +12,6 @@ fftw2
 cmake_build
 
 src/IVE
+_test.sh
+src/cudaSirecon/cudasireconConfig.h
+src/cudasireconConfig.h

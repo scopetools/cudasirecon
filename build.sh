@@ -12,7 +12,12 @@ mkdir cmake_build
 cd cmake_build
 
 CXXFLAGS="$CXXFLAGS -Wfatal-errors -Wno-deprecated-declarations"
-cmake ${CMAKE_ARGS} -DBUILD_MRC=OFF -DBUILD_OTF_VIEWER=OFF -DCMAKE_BUILD_TYPE=Release ../src
+cmake ${CMAKE_ARGS} \
+    -DBUILD_MRC=ON \
+    -DBUILD_OTF_VIEWER=OFF \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+    ../src
 
-make -j 4
-# make install
+make -j 2
+make install

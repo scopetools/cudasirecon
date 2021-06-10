@@ -67,6 +67,8 @@ public:
    * In the future, may add multi-color capability
    */
   void loadAndRescaleImage(int timeIdx, int waveIdx);
+  void setFile(int timeIdx, int waveIdx);
+  void setRaw(CImg<> &input, int timeIdx=0, int waveIdx=0);
 
   //! The main processing occurs inside this function:
   /*!
@@ -78,6 +80,7 @@ public:
 
   //! Off-load processed result to host and save it to disk
   void writeResult(int timeIdx, int waveIdx);
+  void getResult(float *result);
 
   int getNTimes() { return m_imgParams.ntimes; };
   void setCurTimeIdx(int it) { m_imgParams.curTimeIdx = it; };
@@ -93,6 +96,7 @@ public:
 
 
 private:
+  CImg<> rawImage;
   std::string m_config_file;
   ReconParams m_myParams;
   ImageParams m_imgParams;

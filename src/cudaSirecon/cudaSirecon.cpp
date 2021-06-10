@@ -2,14 +2,16 @@
 #include "cudaSirecon.h"
 #include "cudaSireconImpl.h"
 #include "SIM_reconstructor.hpp"
-
+#include "cudasireconConfig.h"
 #include <boost/filesystem.hpp>
 
 #ifdef MRC
 #include "mrc.h"
 #endif
 
-std::string version_number = "1.0.2";
+std::string version_number = std::to_string(cudasirecon_VERSION_MAJOR) + "." +
+                             std::to_string(cudasirecon_VERSION_MINOR) + "." +
+                             std::to_string(cudasirecon_VERSION_PATCH);
 
 void SetDefaultParams(ReconParams *pParams)
 {
@@ -228,7 +230,7 @@ void findModulationVectorsAndPhasesForAllDirections(
 #ifndef NDEBUG
     for (int phase = 0; phase < params->nphases; ++phase) {
       assert(rawImages->at(phase).hasNaNs(true) == false);
-      std::cout << "Phase " << phase << "ok." << std::endl;;
+      std::cout << "Phase " << phase << "ok." << std::endl;
     }
 #endif
 
@@ -812,6 +814,11 @@ SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
     std::cout << m_progopts << "\n";
     exit(0);
   }
+  
+  if (m_varsmap.count("version")) {
+    std::cout << "Version " << version_number << std::endl;
+    exit(0);
+  }
 
   notify(m_varsmap);
 
@@ -867,20 +874,16 @@ SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
 }
 
 
-//! To-do
+//! used by shared library
 SIM_Reconstructor::SIM_Reconstructor(int nx, int ny,
                                      int nimages,      // number of raw images per volume
                                      std::string configFileName)
 {
+  SetDefaultParams(&m_myParams);
   // define all the commandline and config file options
   setupProgramOptions();
   std::ifstream ifs(configFileName.c_str());
-  if (!ifs) {
-    std::ostringstream oss;
-    oss << "can not open config file: " << configFileName << "\n";
-    throw std::runtime_error(oss.str());
-  }
-  else {
+  if (ifs) {
     // parse config file
     store(parse_config_file(ifs, m_progopts), m_varsmap);
     notify(m_varsmap);
@@ -888,9 +891,17 @@ SIM_Reconstructor::SIM_Reconstructor(int nx, int ny,
   // fill in m_myParams fields that have not been set yet
   setParams();
 
-  
-  m_OTFfile_valid = false;
+  // TODO: allow more direct access
+  // will throw CImgIOException if file cannot be opened
+  m_otf_tiff.assign(m_myParams.otffiles.c_str());
+  m_OTFfile_valid = true;
+
+  m_myParams.bTIFF = true;  // not really: but we don't want it to use MRC stuff
+
+  std::cout << "zoomz: " << m_myParams.zoomfact << std::endl;
+
   setup(nx, ny, nimages, 1);
+  bgAndSlope(m_myParams, m_imgParams, &m_reconData);
 }
 
 SIM_Reconstructor::~SIM_Reconstructor()
@@ -993,6 +1004,7 @@ int SIM_Reconstructor::setupProgramOptions()
     ("writeTitle", po::value<int>(&m_myParams.bWriteTitle)->implicit_value(true),
      "Write command line to image header (may cause issues with bioformats)")
     ("help,h", "produce help message")
+    ("version", "show version")
     ;
 
   return 0;
@@ -1060,12 +1072,12 @@ int SIM_Reconstructor::setParams()
   return 0;
 }
 
-void SIM_Reconstructor::openFiles()
-{
+void SIM_Reconstructor::openFiles() {
   if (!m_myParams.ifiles.size() || !m_myParams.ofiles.size())
-    throw std::runtime_error("Calling openFiles() but no input or output files were specified");
+    throw std::runtime_error(
+        "Calling openFiles() but no input or output files were specified");
 
-  #ifdef MRC
+#ifdef MRC
   if (!m_myParams.bTIFF && IMOpen(istream_no, m_myParams.ifiles.c_str(), "ro"))
     // TIFF files are not opened till loadAndRescaleImage()
     throw std::runtime_error("No matching input TIFF or MRC files not found");
@@ -1077,20 +1089,19 @@ void SIM_Reconstructor::openFiles()
       std::cerr << "File " << m_myParams.ofiles << " can not be created.\n";
       throw std::runtime_error("Error creating output file");
     }
-  #endif
+#endif
 
   if (m_myParams.bTIFF) {
-    m_otf_tiff.assign(m_myParams.otffiles.c_str()); // will throw CImgIOException if file cannot be opened
+    // will throw CImgIOException if file cannot be opened
+    m_otf_tiff.assign(m_myParams.otffiles.c_str());
     m_OTFfile_valid = true;
   }
-
-  #ifdef MRC
+#ifdef MRC
+  else if (IMOpen(otfstream_no, m_myParams.otffiles.c_str(), "ro"))
+    throw std::runtime_error("OTF file not found");
   else
-    if (IMOpen(otfstream_no, m_myParams.otffiles.c_str(), "ro"))
-      throw std::runtime_error("OTF file not found");
-    else
-      m_OTFfile_valid = true;
-  #endif
+    m_OTFfile_valid = true;
+#endif
 }
 
 void SIM_Reconstructor::setup(unsigned nx, unsigned ny, unsigned nImages, unsigned nChannels)
@@ -1292,64 +1303,69 @@ int SIM_Reconstructor::processOneVolume()
   // deviceMemoryUsage();
 
   for (int direction = 0; direction < m_myParams.ndirs; ++direction) {
-
     // dir_ is used in upcoming calls involving otf, to differentiate the cases
     // of common OTF and dir-specific OTF
-    int dir_=0;
-    if (m_myParams.bOneOTFperAngle)
-      dir_ = direction;
+    int dir_ = 0;
+    if (m_myParams.bOneOTFperAngle) dir_ = direction;
 
-    filterbands(direction, &m_reconData.savedBands[direction],
-        m_reconData.k0, m_myParams.ndirs, m_myParams.norders,
-        m_reconData.otf[dir_], m_imgParams.dxy, m_imgParams.dz,
-        m_reconData.amp, m_reconData.noiseVarFactors,
-        m_imgParams.nx, m_imgParams.ny, m_imgParams.nz0,
-        m_imgParams.wave[0],
-        &m_myParams);
-    assemblerealspacebands(direction, &m_reconData.outbuffer,
-        &m_reconData.bigbuffer, &m_reconData.savedBands[direction],
-        m_myParams.ndirs, m_myParams.norders, m_reconData.k0,
-        m_imgParams.nx, m_imgParams.ny, m_imgParams.nz0, m_imgParams.dxy,
-        m_myParams.zoomfact, m_myParams.z_zoom, m_myParams.explodefact);
+    filterbands(direction, &m_reconData.savedBands[direction], m_reconData.k0,
+                m_myParams.ndirs, m_myParams.norders, m_reconData.otf[dir_],
+                m_imgParams.dxy, m_imgParams.dz, m_reconData.amp,
+                m_reconData.noiseVarFactors, m_imgParams.nx, m_imgParams.ny,
+                m_imgParams.nz0, m_imgParams.wave[0], &m_myParams);
+    assemblerealspacebands(
+        direction, &m_reconData.outbuffer, &m_reconData.bigbuffer,
+        &m_reconData.savedBands[direction], m_myParams.ndirs,
+        m_myParams.norders, m_reconData.k0, m_imgParams.nx, m_imgParams.ny,
+        m_imgParams.nz0, m_imgParams.dxy, m_myParams.zoomfact,
+        m_myParams.z_zoom, m_myParams.explodefact);
   }
   return 1;
 }
 
 void SIM_Reconstructor::loadAndRescaleImage(int timeIdx, int waveIdx)
 {
-  loadImageData(timeIdx, waveIdx);
   if (m_myParams.bBessel && m_myParams.bNoRecon) return;
 
   ::rescaleDriver(timeIdx, waveIdx, m_zoffset, &m_myParams, m_imgParams, 
                   &m_driftParams, &m_reconData);
 }
 
-void SIM_Reconstructor::loadImageData(int it, int iw)
+void SIM_Reconstructor::setRaw(CImg<> &input, int it, int iw)
 {
-  CImg<> rawFromFile;
+  rawImage.assign(input);
+  loadImageData(it, iw);
+}
+
+void SIM_Reconstructor::setFile(int it, int iw)
+{
   if (m_myParams.bTIFF) {
-    rawFromFile.assign(m_all_matching_files[it].c_str());
+    rawImage.assign(m_all_matching_files[it].c_str());
   }
   #ifdef MRC
   else {
-    rawFromFile.assign(m_imgParams.nx_raw, m_imgParams.ny, m_imgParams.nz * m_myParams.nphases * m_myParams.ndirs);
-    for (unsigned sec=0; sec<rawFromFile.depth(); sec++) {
+    rawImage.assign(m_imgParams.nx_raw, m_imgParams.ny, m_imgParams.nz * m_myParams.nphases * m_myParams.ndirs);
+    for (unsigned sec=0; sec<rawImage.depth(); sec++) {
       IMPosnZWT(istream_no, sec, iw, it);
-      IMRdSec(istream_no, rawFromFile.data(0, 0, sec));
+      IMRdSec(istream_no, rawImage.data(0, 0, sec));
     }
   }
   #endif
-//  rawFromFile.display();
+  loadImageData(it, iw);
+}
 
+void SIM_Reconstructor::loadImageData(int it, int iw) {
   float dskewA = m_myParams.deskewAngle;
   // if ( dskewA<0) dskewA += 180.; already done in setup_common()
   float deskewFactor = 0;
   if (fabs(dskewA) > 0.0)
-    deskewFactor = cos(dskewA * M_PI/180.) * m_imgParams.dz_raw / m_imgParams.dxy;
+    deskewFactor =
+        cos(dskewA * M_PI / 180.) * m_imgParams.dz_raw / m_imgParams.dxy;
 
   for (int direction = 0; direction < m_myParams.ndirs; ++direction) {
     // What does "PinnedCPUBuffer" really do? Using it here messes things up.
-    /*Pinned*/CPUBuffer nxExtendedBuff(sizeof(float) * (m_imgParams.nx/2 + 1)*2 * m_imgParams.ny);
+    CPUBuffer nxExtendedBuff(sizeof(float) * (m_imgParams.nx / 2 + 1) * 2 *
+                             m_imgParams.ny);
 
     std::vector<GPUBuffer>* rawImages = &(m_reconData.savedBands[direction]);
     int z = 0;
@@ -1362,13 +1378,14 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
         // data organized into (nz, ndirs, nphases)
         zsec = (z * m_myParams.ndirs * m_myParams.nphases +
                 direction * m_myParams.nphases);
-      }
-      else { // data organized into (ndirs, nz, nphases)
-        zsec = direction * m_imgParams.nz * m_myParams.nphases + z * m_myParams.nphases;
+      } else {
+        // data organized into (ndirs, nz, nphases)
+        zsec = direction * m_imgParams.nz * m_myParams.nphases +
+               z * m_myParams.nphases;
       }
 
       for (int phase = 0; phase < m_myParams.nphases; ++phase) {
-        #ifdef MRC
+#ifdef MRC
         if (m_myParams.bBgInExtHdr) {
           /* subtract the background value of each exposure stored in MRC files'
              extended header, indexed by the section number. */
@@ -1377,33 +1394,37 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
           IMRtExHdrZWT(istream_no, zsec, iw, it, &extInts, extFloats);
           m_reconData.backgroundExtra = extFloats[2];
         }
-        #endif
-        load_and_flatfield(rawFromFile, zsec, rawSection.data(),
-                           (float*)m_reconData.background.getPtr(), m_reconData.backgroundExtra,
+#endif
+
+        load_and_flatfield(rawImage, zsec, rawSection.data(),
+                           (float*)m_reconData.background.getPtr(),
+                           m_reconData.backgroundExtra,
                            (float*)m_reconData.slope.getPtr(),
                            m_imgParams.inscale);
-        // if deskewFactor > 0, then do deskew for current z; otherwise, simply transfer
-        // from "rawSection" to "nxExtendedBuff". In either case, "nxExtendedBuff" holds
-        // result of current z.
-        deskewOneSection(rawSection, (float*)nxExtendedBuff.getPtr(), z, m_imgParams.nz,
-                         m_imgParams.nx, deskewFactor, m_myParams.extraShift);
-        // Transfer the data from nxExtendedBuff to device buffer previously allocated
-        // (see m_reconData.savedBands)
-        // std::cout << "z=" << z;
-        nxExtendedBuff.set(&(rawImages->at(phase)), 0, (m_imgParams.nx/2 + 1)*2 * m_imgParams.ny * sizeof(float),
-                           (z + m_zoffset) * (m_imgParams.nx/2 + 1)*2 * m_imgParams.ny * sizeof(float));
+        // if deskewFactor > 0, then do deskew for current z; otherwise, simply
+        // transfer from "rawSection" to "nxExtendedBuff". In either case,
+        // "nxExtendedBuff" holds result of current z.
+        deskewOneSection(rawSection, (float*)nxExtendedBuff.getPtr(), z,
+                         m_imgParams.nz, m_imgParams.nx, deskewFactor,
+                         m_myParams.extraShift);
+        // Transfer the data from nxExtendedBuff to device buffer previously
+        // allocated (see m_reconData.savedBands) std::cout << "z=" << z;
+        nxExtendedBuff.set(
+            &(rawImages->at(phase)), 0,
+            (m_imgParams.nx / 2 + 1) * 2 * m_imgParams.ny * sizeof(float),
+            (z + m_zoffset) * (m_imgParams.nx / 2 + 1) * 2 * m_imgParams.ny *
+                sizeof(float));
         // std::cout << ", phase=" << phase << std::endl;
         ++zsec;
-      } // end for (phase)
-    } // end for (z)
+      }  // end for (phase)
+    }    // end for (z)
 
 #ifndef NDEBUG
     for (auto i = rawImages->begin(); i != rawImages->end(); ++i)
       assert(i->hasNaNs() == false);
 #endif
-    //! 
+    //!
     if (fabs(m_myParams.deskewAngle) > 0. && m_myParams.bNoRecon) {
-
       // To-do: add code to off load rawImages into rawtiff_uint16
       // if (m_myParams.bNoRecon) {
       //   CImg<unsigned short> rawtiff_uint16;
@@ -1413,7 +1434,7 @@ void SIM_Reconstructor::loadImageData(int it, int iw)
       //   return;
       // }
     }
-  } // end for (direction)
+  }  // end for (direction)
 }
 
 void SIM_Reconstructor::setupOTFsFromFile()
@@ -1596,6 +1617,23 @@ int SIM_Reconstructor::loadOTFs()
       assert(i->hasNaNs() == false);
 #endif
   return 1;
+}
+
+// Transfer m_reconData from GPU to result buffer
+void SIM_Reconstructor::getResult(float * result) {
+  CPUBuffer outbufferHost((m_myParams.zoomfact * m_imgParams.nx) *
+                          (m_myParams.zoomfact * m_imgParams.ny) *
+                          (m_myParams.z_zoom * m_imgParams.nz0) *
+                          sizeof(float));
+
+  m_reconData.outbuffer.set(&outbufferHost, 0, outbufferHost.getSize(), 0);
+
+  CImg<> outCimg(
+      (float*)outbufferHost.getPtr(), m_myParams.zoomfact * m_imgParams.nx,
+      m_myParams.zoomfact * m_imgParams.ny, m_myParams.z_zoom * m_imgParams.nz0,
+      true);
+
+  memcpy(result, outCimg.data(), outCimg.size() * sizeof(float));
 }
 
 void SIM_Reconstructor::writeResult(int it, int iw)
