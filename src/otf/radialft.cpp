@@ -418,10 +418,10 @@ int main(int argc, char **argv)
     outputdata(ofiles, avg_output, norders, nx, ny, nz, dkx, dkz, five_bands);
   }
   #ifdef MRC
-  else 
+  else {
     otfheader = header;
     outputdata(ostream_no, &otfheader, avg_output, norders, nx, ny, nz, dkx, dkz, five_bands);
-
+  }
   if (I2M_inc) {
 /*     cleanup_I2M(I2Mavg_output, nx, nz, dkr, dkz, wavelength, icleanup, NA, NIMM); */
     fixorigin(I2Mavg_output, nx, nz, interpkr[0], interpkr[1]);
@@ -544,9 +544,14 @@ void determine_center(std::vector< CImg<> > & stackNphases, CImg<> &I2M_image, f
   if( kminus<0 ) kminus+=nz;
   if( kplus>=nz ) kplus-=nz;
 
-  float valminus = stack3d(maxj, maxi, kminus);
-  float valplus  = stack3d(maxj, maxi, kplus);
-  *zc = maxk + fitparabola(valminus, maxval, valplus);
+  float valminus,valplus; 
+  if (nz > 1) {
+    valminus = stack3d(maxj, maxi, kminus);
+    valplus  = stack3d(maxj, maxi, kplus);
+    *zc = maxk + fitparabola(valminus, maxval, valplus);
+  }
+  else
+    *zc = maxk;
   
 #ifdef ACCURATE_PEAK
   if (!twolens)
@@ -1079,7 +1084,10 @@ void outputdata(std::string &tiff_filename, std::vector<std::complex<float> *> &
   if (five_bands)
     bandtemp.assign(nz*2, nx/2+1, 2*norders-1); /* "nz*2" because of complex type */
   else
-    bandtemp.assign(nz*2, nx/2+1, norders);
+    if (nz>1)
+      bandtemp.assign(nz*2, nx/2+1, norders);
+    else
+      bandtemp.assign(2*(nx/2+1), 1, norders); //??
 
   unsigned bufsize = nz*2*(nx/2+1)*sizeof(float);
   for (i=0; i<norders; i++)
@@ -1484,7 +1492,7 @@ int commandline(int argc, char *argv[], int * twolens, int *rescale, float *bead
      else if (strcmp(argv[ncomm], "-wavelength") == 0) {
        // if (!getinteger(argv[ncomm+1], wavelength)) {
        try {
-         * wavelength = std::stoi(argv[ncomm]);
+         * wavelength = std::stoi(argv[ncomm+1]);
          ncomm += 2;
        }
        catch (std::exception &e) {
