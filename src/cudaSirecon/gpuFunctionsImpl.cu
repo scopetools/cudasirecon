@@ -52,16 +52,15 @@ __host__ void apodize(int napodize, int nx,int ny, GPUBuffer* image,
 __global__ void apodize_x_kernel(int napodize, int nx, int ny,
     float* image)
 {
+  // This blends the top and bottom edges for column k
   int k = blockDim.x * blockIdx.x + threadIdx.x;
   int xdim = (nx/2+1) * 2;
   if (k < nx) {
     float diff = (image[(ny - 1) * xdim + k] - image[k]) / 2.0;
     for (int l = 0; l < napodize; ++l) {
-      float fact = 1.0 - sinf((((float)l + 0.5) / (float)napodize) *
-          M_PI * 0.5);
-      image[l * xdim + k] = image[l * xdim + k] + diff * fact;
-      image[(ny - 1 - l) * xdim + k] = image[(ny - 1 - l) * xdim + k] -
-        diff * fact;
+      float fact = 1.0 - sinf((l + 0.5) / (float)napodize * M_PI * 0.5);
+      image[l * xdim + k] += diff * fact;
+      image[(ny - 1 - l) * xdim + k] -=  diff * fact;
     }
   }
 }
@@ -69,16 +68,15 @@ __global__ void apodize_x_kernel(int napodize, int nx, int ny,
 __global__ void apodize_y_kernel(int napodize, int nx, int ny,
     float* image)
 {
+  // This blends the left and right edges for row l
   int l = blockDim.x * blockIdx.x + threadIdx.x;
   int xdim = (nx/2+1) * 2;
   if (l < ny) {
     float diff = (image[l * xdim + nx - 1] - image[l * xdim]) / 2.0;
     for (int k = 0; k < napodize; ++k) {
-      float fact = 1.0 - sinf(((k + 0.5) / (float)napodize) * M_PI *
-          0.5);
-      image[l * xdim + k] = image[l * xdim + k] + diff * fact;
-      image[l * xdim + (nx - 1 - k)] =
-        image[l * xdim + (nx - 1 - k)] - diff * fact;
+      float fact = 1.0 - sinf((k + 0.5) / (float)napodize * M_PI * 0.5);
+      image[l * xdim + k] += diff * fact;
+      image[l * xdim + (nx - 1 - k)] -= diff * fact;
     }
   }
 }
