@@ -503,14 +503,13 @@ void apodizationDriver(int zoffset, ReconParams* params,
 
     for (int z = 0; z < imgParams.nz; ++z) {
       for (int phase = 0; phase < params->nphases; ++phase) {
-        if (params->napodize >= 0) {
-          // Goes through here
+        if (params->napodize > 0) {
           apodize(params->napodize, imgParams.nx, imgParams.ny,
               &(rawImages->at(phase)),
               (z + zoffset) * (imgParams.nx/2 + 1)*2 * imgParams.ny);
         } else if (params->napodize == -1) {
           cosapodize(imgParams.nx, imgParams.ny, &(*rawImages)[phase],
-              (z + zoffset) * imgParams.nx * imgParams.ny);
+              (z + zoffset) * (imgParams.nx/2 +1)*2 * imgParams.ny);
         }
       } /* end for (phase), loading, flatfielding, and apodizing raw images */
     }
@@ -1749,7 +1748,7 @@ void deskewOneSection(CImg<> &rawSection, float* nxp2OutBuff, int z, int nz,
 
     for (int y=0; y<ny_in; y++) {
       unsigned indout = y * nx_out_ext + xout;
-      if (xin >= 0 && xin < nx_in-1) {
+      if (xin >= 0 && xin < nx_in) {
 
         unsigned indin = y * nx_in + (unsigned int) floor(xin);
 
