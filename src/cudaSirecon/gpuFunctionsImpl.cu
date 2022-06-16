@@ -1285,7 +1285,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
 
   for (order=0;order<norders;order++) {
     if (zdistcutoff[order]>=nz/2) zdistcutoff[order]=((nz/2-1) > 0 ? (nz/2-1) : 0);
-    /* printf("order=%d, rdistcutoff=%f, zdistcutoff=%d\n", order, rdistcutoff, zdistcutoff[order]); */
+    // printf("order=%d, rdistcutoff=%f, zdistcutoff=%d\n", order, rdistcutoff, zdistcutoff[order]);
   }
 
   float apocutoff = rdistcutoff+ k0mag * (norders-1);
@@ -1390,7 +1390,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
       dev_bandptr = (cuFloatComplex*)bands->at(0).getPtr();
     }
     else {
-      dev_bandptr = (cuFloatComplex*)bands->at(2*order-1).getPtr();     /* bands contains only the data of one direction -- dir*/
+      dev_bandptr = (cuFloatComplex*)bands->at(2*order-1).getPtr();
       dev_bandptr2 = (cuFloatComplex*)bands->at(2*order).getPtr();
     }
 
@@ -1443,7 +1443,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
 
 __global__ void filterbands_kernel1(int dir, int ndirs, int order, int norders, int nx, int ny, 
 									int nz, float rdistcutoff, float zapocutoff, float apocutoff, float dxy, float kzscale,
-    cuFloatComplex * dev_bandptr, cuFloatComplex * dev_bandptr2, bool bSecondEntry)
+									cuFloatComplex * dev_bandptr, cuFloatComplex * dev_bandptr2, bool bSecondEntry)
 {
 
   float kx, ky, rdist1, rdistabs, apofact;

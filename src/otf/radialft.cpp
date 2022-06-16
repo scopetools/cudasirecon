@@ -1073,12 +1073,7 @@ void cleanup_I2M(std::complex<float> *otfkxkz, int nx, int nz, float dkr, float 
 void outputdata(std::string &tiff_filename, std::vector<std::complex<float> *> &bands,
                 int norders, int nx, int ny, int nz, float dkr, float dkz, int five_bands)
 {
-  int i;
-
   printf("In outputdata()\n");
-
-  /* TIFFSetField(tif, TIFFTAG_XRESOLUTION, dkz); */
-  /* TIFFSetField(tif, TIFFTAG_YRESOLUTION, dkr); */
 
   CImg<> bandtemp;
   if (five_bands)
@@ -1090,10 +1085,8 @@ void outputdata(std::string &tiff_filename, std::vector<std::complex<float> *> &
       bandtemp.assign(2*(nx/2+1), 1, norders); //??
 
   unsigned bufsize = nz*2*(nx/2+1)*sizeof(float);
-  for (i=0; i<norders; i++)
+  for (auto i=0; i<norders; i++)
     if (i==0) {
-      /* save_tiff(tif, i, 0, 2, nz, nx/2+1, (float*) bands[i], 1);  // save real part */
-      /* save_tiff(tif, i, 1, 2, nz, nx/2+1, (float*) bands[i], 1);  // save imag part */
       memcpy(bandtemp.data(), (float *) bands[i], bufsize);
     }
     else {
@@ -1103,15 +1096,27 @@ void outputdata(std::string &tiff_filename, std::vector<std::complex<float> *> &
       }
       else
         memcpy(bandtemp.data(0, 0, i), bands[2*i-1], bufsize);
-      /* save_tiff(tif, i, 0, 2, nz, nx/2+1, (float*) bands[2*i-1], 1);  // save real part */
-      /* save_tiff(tif, i, 1, 2, nz, nx/2+1, (float*) bands[2*i-1], 1);  // save imag part */
-      /* if (five_bands) { */
-      /*   save_tiff(tif, i, 0, 2, nz, nx/2+1, (float*) bands[2*i], 1);  // save real part */
-      /*   save_tiff(tif, i, 1, 2, nz, nx/2+1, (float*) bands[2*i], 1);  // save imag part */
-      /* } */
     }
   bandtemp.save_tiff(tiff_filename.c_str());
-  /* TIFFClose(tif); */
+
+  // Output another TIFF file with the amplitudes square-rooted, to make it easy for checking with FIJI, say
+  
+  CImg<> amps(bandtemp.width()/2, bandtemp.height(), bandtemp.depth());
+
+  cimg_forXYZ (amps, x, y, z) {
+    amps(x, y, z) = sqrt(abs(std::complex<float> (bandtemp(2*x, y, z), bandtemp(2*x+1, y, z))));
+  }
+  std::string amptiffname(tiff_filename);
+  auto pos = tiff_filename.rfind(".tif");
+  if (pos == std::string::npos)
+    pos = tiff_filename.rfind(".TIF");
+
+  if (pos != std::string::npos) {
+    amptiffname.insert(pos, "_OnlyForViewing");
+    amps.save_tiff(amptiffname.c_str());
+  }
+  else
+    throw -1;
 }
 
 

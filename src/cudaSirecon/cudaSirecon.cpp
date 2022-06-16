@@ -23,9 +23,9 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->nphases = 3;
   pParams->phaseSteps = 0;
   pParams->norders_output = 0;
-  pParams->bTwolens = 0;
-  pParams->bFastSIM = 0;
-  pParams->bBessel = 0;
+  pParams->bTwolens = false;
+  pParams->bFastSIM = false;
+  pParams->bBessel = false;
   pParams->BesselNA = 0.45;
 
   pParams->zoomfact = 2;
@@ -42,15 +42,15 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->apodizeoutput = 0;  /* 0-no apodize; 1-cosine apodize; 2-triangle apodize; used in filterbands() */
   pParams->bSuppress_singularities = 1;  /* whether to dampen the OTF values near band centers; used in filterbands() */
   pParams->suppression_radius = 10;   /* if suppress_singularities is 1, the range within which suppresion is applied; used in filterbands() */
-  pParams->bDampenOrder0 = 0;  /* whether to dampen order 0 contribution; used in filterbands() */
+  pParams->bDampenOrder0 = false;  /* whether to dampen order 0 contribution; used in filterbands() */
   pParams->bFitallphases = 1;
   pParams->do_rescale=1; /* fading correction method: 0-no correction; 1-with correction */
-  pParams->equalizez = 0;
-  pParams->equalizet = 0;
-  pParams->bNoKz0 = 0;
+  pParams->equalizez = false;
+  pParams->equalizet = false;
+  pParams->bNoKz0 = false;
 
-  pParams->bRadAvgOTF = 0;  /* default to use non-radially averaged OTFs */
-  pParams->bOneOTFperAngle = 0;  /* default to use one OTF for all SIM angles */
+  pParams->bRadAvgOTF = false;  /* default to use non-radially averaged OTFs */
+  pParams->bOneOTFperAngle = false;  /* default to use one OTF for all SIM angles */
 
   pParams->bFixdrift = 0;
   pParams->drift_filter_fact = 0.0;
@@ -65,7 +65,7 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->bSaveAlignedRaw = 0;
   pParams->bSaveSeparated = 0;
   pParams->bSaveOverlaps = 0;
-  pParams->bWriteTitle = 0;
+  pParams->bWriteTitle = false;
 
   pParams -> bTIFF = false;
 }
@@ -808,9 +808,11 @@ SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
   store(po::command_line_parser(argc, argv).
         options(m_progopts).positional(p).run(), m_varsmap);
 
-  if (m_varsmap.count("help")) {
-    std::cout << "cudasirecon v" + version_number + " -- Written by Lin Shao. All rights reserved.\n" << "\n";
-    std::cout << m_progopts << "\n";
+  if (m_varsmap.count("help") || m_argc <= 1) {
+    std::cout << "cudasirecon v" + version_number + " -- Written by Lin Shao and Talley Lambert. All rights reserved.\n\n";
+    std::cout << "Usage:\n cudasirecon [--options] [option-arguments] input_file(or folder) output_file(or file name pattern) otf_file\n";
+    std::cout << "\n List of options:\n";
+    std::cout << m_progopts << std::endl;
     exit(0);
   }
   
@@ -838,7 +840,7 @@ SIM_Reconstructor::SIM_Reconstructor(int argc, char **argv)
   setParams();
 
   printf("nphases=%d, ndirs=%d\n", m_myParams.nphases, m_myParams.ndirs);
-  
+
   // In TIFF mode, m_myParams.ifiles refers to the name of the folder raw data resides in;
   // and m_myParams.ofiles refers to a pattern in all the raw data file names.
   // To help decide if input is in TIFF or MRC format, gather all TIFF files with
@@ -913,75 +915,69 @@ int SIM_Reconstructor::setupProgramOptions()
   // Declare a group of options that will be 
   // allowed both on command line and in a config file
   m_progopts.add_options()
-    ("input-file", po::value<std::string>(), "input file (or data folder in TIFF mode)")
-    ("output-file", po::value<std::string>(), "output file (or filename pattern in TIFF mode)")
-    ("otf-file", po::value<std::string>()->required(), "OTF file")
-    ("usecorr", po::value<std::string>(), "use the flat-field correction file provided")
+    ("input-file", po::value<std::string>(), "input file name (or data folder in TIFF mode)")
+    ("output-file", po::value<std::string>(), "output file name (or filename pattern in TIFF mode)")
+    ("otf-file", po::value<std::string>()->required(), "OTF file name")
+    ("config,c", po::value<std::string>(&m_config_file)->default_value(""),
+     "name of a config file with parameters in place of command-line options")
     ("ndirs", po::value<int>(&m_myParams.ndirs)->default_value(3),
-     "number of directions")
+     "number of SIM  directions")
     ("nphases", po::value<int>(&m_myParams.nphases)->default_value(5),
-     "number of phases per direction")
+     "number of pattern phases per SIM direction")
     ("nordersout", po::value<int>(&m_myParams.norders_output)->default_value(0),
-     "number of output orders; must be <= norders")
+     "number of output SIM orders (must be <= nphases//2; safe to ignore usually)")
     ("angle0", po::value<float>(&m_myParams.k0startangle)->default_value(1.648),
-     "angle of the first direction in radians")
-    ("ls", po::value<float>(&m_myParams.linespacing)->default_value(0.172),
+     "angle of the first SIM angle in radians")
+    ("ls", po::value<float>(&m_myParams.linespacing)->default_value(0.172, "0.172"),
      "line spacing of SIM pattern in microns")
-    ("na", po::value<float>(&m_myParams.na)->default_value(1.2),
-     "Detection numerical aperture")
-    ("nimm", po::value<float>(&m_myParams.nimm)->default_value(1.33),
+    ("na", po::value<float>(&m_myParams.na)->default_value(1.2, "1.2"),
+     "detection objective's numerical aperture")
+    ("nimm", po::value<float>(&m_myParams.nimm)->default_value(1.33, "1.33"),
      "refractive index of immersion medium")
+    ("wiener", po::value<float>(&m_myParams.wiener)->default_value(0.01, "0.01"),
+     "Wiener constant; lower value leads to higher resolution and noise; playing with it extensively is strongly encouraged")
     ("zoomfact", po::value<float>(&m_myParams.zoomfact)->default_value(2.),
-     "lateral zoom factor")
-    ("explodefact", po::value<float>(&m_myParams.explodefact)->default_value(1.),
-     "artificially exploding the reciprocal-space distance between orders by this factor")
+     "lateral zoom factor in the output over the input images; leaving it at 2 should be fine in most cases")
     ("zzoom", po::value<int>(&m_myParams.z_zoom)->default_value(1),
-     "axial zoom factor")
-    ("nofilteroverlaps", po::value<int>(&m_myParams.bFilteroverlaps)->implicit_value(false),
-     "do not filter the overlaping region between bands usually used in trouble shooting")
+     "axial zoom factor; almost never needed")
     ("background", po::value<float>(&m_myParams.constbkgd)->default_value(0.),
      "camera readout background")
-    ("wiener", po::value<float>(&m_myParams.wiener)->default_value(0.01),
-     "Wiener constant")
+    ("usecorr", po::value<std::string>(), "use a flat-field correction file if provided")
     ("forcemodamp", po::value< std::vector<float> >()->multitoken(),
-     "modamps forced to these values")
-    ("k0angles", po::value< std::string >(), //po::value< std::vector<float> >()->multitoken(),
-     "user given pattern vector k0 angles for all directions")
-    ("otfRA", po::value<int>(&m_myParams.bRadAvgOTF)->implicit_value(true),
-     "using rotationally averaged OTF")
-    ("otfPerAngle", po::value<int>(&m_myParams.bOneOTFperAngle)->implicit_value(true),
-     "using one OTF per SIM angle")
-    ("fastSI", po::value<int>(&m_myParams.bFastSIM)->implicit_value(true),
-     "SIM data is organized in Z->Angle->Phase order; default being Angle->Z->Phase")
+     "modamps to be forced to these values; useful when image quality is low and auto-estimated modamps are below, say, 0.1")
+    ("k0angles", po::value< std::string >(),
+     "user these pattern vector k0 angles for all directions (instead of inferring the rest agnles from angle0)")
+    ("otfRA", po::bool_switch(&m_myParams.bRadAvgOTF), "using rotationally averaged OTF; otherwise using 3/2D OTF for 3/2D raw data")
+    ("otfPerAngle", po::bool_switch(&m_myParams.bOneOTFperAngle), "using one OTF per SIM angle; otherwise one OTF is used for all angles, which is how it's been done traditionally")
+    ("fastSI", po::bool_switch(&m_myParams.bFastSIM),
+     "SIM image is organized in Z->Angle->Phase order; otherwise assuming Angle->Z->Phase image order")
     ("k0searchAll", po::value<int>(&m_myParams.bUseTime0k0)->implicit_value(false),
      "search for k0 at all time points")
-    ("norescale", po::value<int>(&m_myParams.do_rescale)->implicit_value(false),
-     "bleach correcting for z")
-    ("equalizez", po::value<int>(&m_myParams.equalizez)->implicit_value(true), 
-     "bleach correcting for z")
-    ("equalizet", po::value<int>(&m_myParams.equalizet)->implicit_value(true), 
-     "bleach correcting for time")
-    ("dampenOrder0", po::value<int>(&m_myParams.bDampenOrder0)->implicit_value(true),
-     "dampen order-0 in final assembly")
+    ("norescale", po::value<int>(&m_myParams.do_rescale)->implicit_value(false), "no bleach correction")
+    ("equalizez", po::bool_switch(&m_myParams.equalizez), "bleach correction for z")
+    ("equalizet", po::bool_switch(&m_myParams.equalizet), "bleach correction for time")
+    ("dampenOrder0", po::bool_switch(&m_myParams.bDampenOrder0),
+     "dampen order-0 in final assembly; do not use for 2D SIM; good choice for high-background images")
     ("nosuppress", po::value<int>(&m_myParams.bSuppress_singularities)->implicit_value(false),
-     "do not suppress DC singularity in final assembly (good idea for 2D/TIRF data)")
-    ("nokz0", po::value<int>(&m_myParams.bNoKz0)->implicit_value(true),
-     "do not use kz=0 plane of the 0th order in the final assembly")
+     "do not suppress DC singularity in the result (good choice for 2D/TIRF data)")
+    ("nokz0", po::bool_switch(&m_myParams.bNoKz0), "not using kz=0 plane of the 0th order in the final assembly (mostly for debug)")
     ("gammaApo", po::value<float>(&m_myParams.apoGamma)->default_value(1.f),
-     "output apodization gamma; 1.0 means triangular apo")
+     "output apodization gamma; 1.0 means triangular apo; lower value means less dampening of high-resolution info at the tradeoff of higher noise")
+    ("explodefact", po::value<float>(&m_myParams.explodefact)->default_value(1.),
+     "artificially exploding the reciprocal-space distance between orders by this factor (for debug)")
+    ("nofilterovlps", po::value<bool>(&m_myParams.bFilteroverlaps)->implicit_value(false),
+     "not filtering the overlaping region between bands (for debug)")
     ("saveprefiltered", po::value<std::string>(),
-     "save separated bands (half Fourier space) into a file and exit")
+     "save separated bands (half Fourier space) into a file and exit (for debug)")
     ("savealignedraw", po::value<std::string>(),
-     "save drift-fixed raw data (half Fourier space) into a file and exit")
+     "save drift-fixed raw data (half Fourier space) into a file and exit (for debug)")
     ("saveoverlaps", po::value<std::string>(),
-     "save overlap0 and overlap1 (real-space complex data) into a file and exit")
-    ("config,c", po::value<std::string>(&m_config_file)->default_value(""),
-     "name of a file of a configuration.")
-    ("2lenses", po::value<int>(&m_myParams.bTwolens)->implicit_value(true), "I5S data")
-    ("bessel", po::value<int>(&m_myParams.bBessel)->implicit_value(1), "bessel-SIM data")
-    ("besselExWave", po::value<float>(&m_myParams.BesselLambdaEx)->default_value(0.488f),
+     "save overlap0 and overlap1 (real-space complex data) into a file and exit (for debug)")
+    ("2lenses", po::bool_switch(&m_myParams.bTwolens), "I5S data")
+    ("bessel", po::bool_switch(&m_myParams.bBessel), "bessel-SIM data")
+    ("besselExWave", po::value<float>(&m_myParams.BesselLambdaEx)->default_value(0.488, "0.488"),
      "Bessel SIM excitation wavelength in microns")
-    ("besselNA", po::value<float>(&m_myParams.BesselNA)->default_value(0.144f),
+    ("besselNA", po::value<float>(&m_myParams.BesselNA)->default_value(0.144, "0.144"),
      "Bessel SIM excitation NA)")
     ("deskew", po::value<float>(&m_myParams.deskewAngle)->default_value(0.0f),
      "Deskew angle; if not 0.0 then perform deskewing before processing")
@@ -992,16 +988,16 @@ int SIM_Reconstructor::setupProgramOptions()
     ("cropXY", po::value<unsigned>(&m_myParams.cropXYto)->default_value(0),
      "Crop the X-Y dimension to this number; 0 means no cropping")
 
-    ("xyres", po::value<float>(&m_imgParams.dxy)->default_value(0.1),
+    ("xyres", po::value<float>(&m_imgParams.dxy)->default_value(0.1, "0.1"),
      "x-y pixel size (only used for TIFF files)")
-    ("zres", po::value<float>(&m_imgParams.dz)->default_value(0.2),
+    ("zres", po::value<float>(&m_imgParams.dz)->default_value(0.2, "0.2"),
      "z pixel size (only used for TIFF files)")
-    ("zresPSF", po::value<float>(&m_myParams.dzPSF)->default_value(0.15),
+    ("zresPSF", po::value<float>(&m_myParams.dzPSF)->default_value(0.15, "0.15"),
      "z pixel size used in PSF TIFF files)")
     ("wavelength", po::value<short>(&m_imgParams.wave[0])->default_value(530),
-     "emission wavelength (only used for TIFF files)")
-    ("writeTitle", po::value<int>(&m_myParams.bWriteTitle)->implicit_value(true),
-     "Write command line to image header (may cause issues with bioformats)")
+     "emission wavelength in nanometers (only used for TIFF files)")
+    ("writeTitle", po::bool_switch(&m_myParams.bWriteTitle),
+     "Write command line to MRC/DV header (may cause issues with bioformats)")
     ("help,h", "produce help message")
     ("version", "show version")
     ;
@@ -1065,7 +1061,6 @@ int SIM_Reconstructor::setParams()
     boost::tokenizer<boost::char_separator<char>> tokens(m_varsmap["k0angles"].as< std::string >(), sep);
     for ( auto it = tokens.begin(); it != tokens.end(); ++it)
         m_myParams.k0angles.push_back(strtod(it->c_str(), NULL));
-    // std::cout << m_myParams.k0angles << std::endl;
   }
 
   return 0;
