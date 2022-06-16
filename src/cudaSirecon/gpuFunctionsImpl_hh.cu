@@ -30,8 +30,7 @@ __constant__ int const_pParams_nzotf;
 __constant__ float const_pParams_dkrotf;
 __constant__ float const_wiener;
 
-/** These data are not modified in the kernels and can go in constant
- * memory */
+/** These data are not modified in the kernels and can go in constant memory */
 __constant__ int const_zdistcutoff[3];
 __constant__ float const_ampmag2[3];
 __constant__ float const_ampmag2_alldirs[9];

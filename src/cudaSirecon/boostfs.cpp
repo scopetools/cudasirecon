@@ -8,8 +8,16 @@ static boost::filesystem::path outputDir;
 
 std::vector<std::string> gatherMatchingFiles(std::string target_path, std::string pattern)
 {
+  // Check if the pattern is specified as a full file name (i.e.; if '.tif' is in the name)
+  size_t p1 = pattern.rfind(".tif");
+  size_t p2 = pattern.rfind(".TIF");
+  if (p1 != std::string::npos || p2 != std::string::npos) {
+    // if no matches were found, rfind() returns 'string::npos'
+    // do not append ".*tif" at the end of pattern
+  }
+  else
+    pattern.append(".*\\.[tT][iI][fF]");
   pattern.insert(0, ".*");  // '.' is the wildcard in Perl regexp; '*' just means "repeat".
-  pattern.append(".*\\.tif");
 
   const std::regex my_filter(pattern);
 

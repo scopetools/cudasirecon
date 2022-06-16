@@ -105,40 +105,40 @@ struct ReconParams {
   float k0startangle, linespacing;
   float na, nimm;
   int   ndirs, nphases, norders_output;
-  int norders;
+  int   norders;
   float *phaseSteps; /** user-specified non-ideal phase steps, one for each orientation */
-  int   bTwolens;    /** whether to process I{^5}S dataset */
-  int   bFastSIM;   /** fast SIM data is organized differently */
-  int   bBessel;    /** whether to process Bessel-Sheet SIM dataset */
+  bool  bTwolens;    /** whether to process I{^5}S dataset */
+  bool  bFastSIM;   /** fast SIM data is organized differently */
+  bool  bBessel;    /** whether to process Bessel-Sheet SIM dataset */
   float BesselNA;  /* excitation NA of the Bessel beam */
   float BesselLambdaEx; /* excitation wavelength of the Bessel beam */
   float deskewAngle; /* Beseel-sheet sample scan angle */
-  int extraShift; // If deskewed, the output image's extra shift in X
+  int   extraShift; // If deskewed, the output image's extra shift in X
   bool  bNoRecon; // whether not to reconstruct; used usually when deskewing
   unsigned cropXYto; // crop the X-Y dimension to this size; 0 means no cropping
-  int   bWriteTitle;   /** whether to write command line args to title field in mrc header */
+  bool  bWriteTitle;   /** whether to write command line args to title field in mrc header */
 
   /* algorithm related parameters */
-  float  zoomfact;
+  float zoomfact;
   int   z_zoom;
   int   nzPadTo;  /** pad zero sections to this number of z sections */
-  float  explodefact;
-  int   bFilteroverlaps;
+  float explodefact;
+  bool  bFilteroverlaps;
   int   recalcarrays; /** whether to calculate the overlaping regions between bands just once or always; used in fitk0andmodamps() */
   int   napodize;
   int   bSearchforvector;
   int   bUseTime0k0;   /** whether to use time 0's k0 fit for the rest of a time series */
   int   apodizeoutput;  /** 0-no apodize; 1-cosine apodize; 2-triangle apodize; used in filterbands() */
-  float  apoGamma;
+  float apoGamma;
   int   bSuppress_singularities;  /** whether to dampen the OTF values near band centers; used in filterbands() */
   int   suppression_radius;   /** if suppress_singularities is 1, the range within which suppresion is applied; used in filterbands() */
-  int   bDampenOrder0;  /** whether to dampen the OTF values near band centers; used in filterbands() */
+  bool  bDampenOrder0;  /** whether to dampen the OTF values near band centers; used in filterbands() */
   int   bFitallphases;  /** In NL SIM, whether to use fitted phase for all orders or to infer higher order phase from order 1 phase fil */
   int   do_rescale; /** fading correction method: 0-no correction; 1-with correction */
-  int   equalizez;
-  int   equalizet;
-  int   bNoKz0;   /** if true, no kz=0 plane is used in modamp fit and assemblerealspace() */
-  float  wiener, wienerInr;
+  bool  equalizez;
+  bool  equalizet;
+  bool  bNoKz0;   /** if true, no kz=0 plane is used in modamp fit and assemblerealspace() */
+  float wiener, wienerInr;
   // // int   bUseEstimatedWiener;
   std::vector<float> forceamp;
   // float *k0angles;
@@ -148,8 +148,8 @@ struct ReconParams {
   int   nxotf, nyotf, nzotf;
   float dzPSF;    /** PSF's z step size (for non-MRC formats) */
   float dkzotf, dkrotf;  /** OTF's pixel size in inverse mirons */
-  int   bRadAvgOTF;   /** is radially-averaged OTF used? */
-  int   bOneOTFperAngle; /** one OTF per SIM angle (instead of common OTF for all angles)?*/
+  bool  bRadAvgOTF;   /** is radially-averaged OTF used? */
+  bool  bOneOTFperAngle; /** one OTF per SIM angle (instead of common OTF for all angles)?*/
 
   /* drift correction and phase step correction related flags */
   int   bFixdrift;   /** whether nor not to correct drift between pattern directions */
