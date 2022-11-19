@@ -28,6 +28,7 @@ void SetDefaultParams(ReconParams *pParams)
   pParams->bBessel = false;
   pParams->BesselNA = 0.45;
 
+  pParams->otfcutoff = 0.006;
   pParams->zoomfact = 2;
   pParams->z_zoom = 1;
   pParams->nzPadTo = 0;
@@ -936,6 +937,8 @@ int SIM_Reconstructor::setupProgramOptions()
      "refractive index of immersion medium")
     ("wiener", po::value<float>(&m_myParams.wiener)->default_value(0.01, "0.01"),
      "Wiener constant; lower value leads to higher resolution and noise; playing with it extensively is strongly encouraged")
+    ("otfcutoff", po::value<float>(&m_myParams.otfcutoff)->default_value(0.006, "0.006"),
+     "otf threshold below which it'll be considered noise and not used in makeoverlaps")
     ("zoomfact", po::value<float>(&m_myParams.zoomfact)->default_value(2.),
      "lateral zoom factor in the output over the input images; leaving it at 2 should be fine in most cases")
     ("zzoom", po::value<int>(&m_myParams.z_zoom)->default_value(1),

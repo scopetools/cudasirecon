@@ -550,7 +550,7 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
 
   float kx = k0x * (order2 - order1);
   float ky = k0y * (order2 - order1);
-  float otfcutoff = 0.008;
+  float otfcutoff = params->otfcutoff;
   if (params->bBessel)
     otfcutoff = 0.01;
 
@@ -573,7 +573,7 @@ __host__ void makeoverlaps(std::vector<GPUBuffer>* bands,
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_apodizeoutput,
         &params->apodizeoutput, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_bBessel,
-        &params->bBessel, sizeof(int)));
+        &params->bBessel, sizeof(bool)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_bRadAvgOTF,
         &params->bRadAvgOTF, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_nzotf,
@@ -1322,8 +1322,7 @@ __host__ void filterbands(int dir, std::vector<GPUBuffer>* bands,
         &pParams->apodizeoutput, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_apoGamma,
         &pParams->apoGamma, sizeof(float)));
-  cutilSafeCall(cudaMemcpyToSymbol(const_pParams_bBessel,
-        &pParams->bBessel, sizeof(int)));
+  cutilSafeCall(cudaMemcpyToSymbol(const_pParams_bBessel, &pParams->bBessel, sizeof(bool)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_bRadAvgOTF,
         &pParams->bRadAvgOTF, sizeof(int)));
   cutilSafeCall(cudaMemcpyToSymbol(const_pParams_nzotf, &pParams->nzotf,
