@@ -34,7 +34,7 @@ option(BUILD_OTF_VIEWER "Build OTF viewer (requires X11)" OFF)
 cmake_minimum_required(VERSION 3.14)
 
 # This is the one place where version is set
-project(cudasirecon VERSION 1.1.1)
+project(cudasirecon VERSION 1.2.0)
 configure_file("${PROJECT_SOURCE_DIR}/cudasireconConfig.h.in" "${PROJECT_SOURCE_DIR}/cudasireconConfig.h")
 include_directories("${PROJECT_SOURCE_DIR}")
 
