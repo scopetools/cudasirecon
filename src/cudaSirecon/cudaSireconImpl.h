@@ -119,6 +119,7 @@ struct ReconParams {
   bool  bWriteTitle;   /** whether to write command line args to title field in mrc header */
 
   /* algorithm related parameters */
+  float otfcutoff; /** below which OTF value will be deemed as noise and not used in makeoverlaps*/
   float zoomfact;
   int   z_zoom;
   int   nzPadTo;  /** pad zero sections to this number of z sections */
